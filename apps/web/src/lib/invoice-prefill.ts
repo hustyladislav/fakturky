@@ -10,9 +10,19 @@ export type InvoicePrefill = {
 }
 
 let pending: InvoicePrefill | null = null
+const listeners = new Set<() => void>()
 
 export function setInvoicePrefill(prefill: InvoicePrefill | null) {
   pending = prefill
+  if (prefill) for (const notify of listeners) notify()
+}
+
+/** Lets an already-open form pick up a prefill that arrives without a navigation. */
+export function onInvoicePrefill(listener: () => void) {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
 }
 
 export function takeInvoicePrefill(): InvoicePrefill | null {

@@ -15,26 +15,43 @@ import {
 import { getApprovalToolsFn } from '@/server/agent-approval-tools'
 import { createClientTools } from './client-tools'
 
-const STORAGE_KEY = 'assistant.messages.v1'
-const THREAD_KEY = 'assistant.thread.v1'
+const STORAGE_PREFIX = 'assistant.messages.v1'
+const THREAD_PREFIX = 'assistant.thread.v1'
+
+/** Per signed-in user, so a shared browser never restores someone else's conversation. */
+const storageKey = (userKey: string) => `${STORAGE_PREFIX}:${userKey}`
+const threadKey = (userKey: string) => `${THREAD_PREFIX}:${userKey}`
+
+/** Called on sign-out: removes every stored conversation of this browser tab. */
+export function clearAssistantStorage() {
+  try {
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith(STORAGE_PREFIX) || key.startsWith(THREAD_PREFIX)) {
+        sessionStorage.removeItem(key)
+      }
+    }
+  } catch {
+    // storage unavailable
+  }
+}
 
 type Message = ReturnType<typeof useChat>['messages'][number]
 
-function newThreadId() {
+function newThreadId(userKey: string) {
   try {
-    const existing = sessionStorage.getItem(THREAD_KEY)
+    const existing = sessionStorage.getItem(threadKey(userKey))
     if (existing) return existing
     const id = crypto.randomUUID()
-    sessionStorage.setItem(THREAD_KEY, id)
+    sessionStorage.setItem(threadKey(userKey), id)
     return id
   } catch {
     return crypto.randomUUID()
   }
 }
 
-function loadMessages(): Message[] {
+function loadMessages(userKey: string): Message[] {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
+    const raw = sessionStorage.getItem(storageKey(userKey))
     const parsed = raw ? (JSON.parse(raw) as unknown) : []
     return Array.isArray(parsed) ? (parsed as Message[]) : []
   } catch {
@@ -42,10 +59,10 @@ function loadMessages(): Message[] {
   }
 }
 
-function saveMessages(messages: ReadonlyArray<Message>) {
+function saveMessages(userKey: string, messages: ReadonlyArray<Message>) {
   try {
-    if (messages.length === 0) sessionStorage.removeItem(STORAGE_KEY)
-    else sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-60)))
+    if (messages.length === 0) sessionStorage.removeItem(storageKey(userKey))
+    else sessionStorage.setItem(storageKey(userKey), JSON.stringify(messages.slice(-60)))
   } catch {
     // storage unavailable (private mode / quota): the conversation simply is not restored on reload
   }
@@ -80,9 +97,11 @@ export function useAssistant() {
  * `pendingQuestion` (from ⌘K) is sent once when it changes.
  */
 export function AssistantProvider({
+  userKey,
   pendingQuestion,
   children,
 }: {
+  userKey: string
   pendingQuestion: { id: number; text: string } | null
   children: ReactNode
 }) {
@@ -122,15 +141,15 @@ export function AssistantProvider({
     [],
   )
 
-  const threadId = useRef(newThreadId()).current
+  const threadId = useRef(newThreadId(userKey)).current
   const chat = useChat({
     threadId,
     connection,
     tools,
-    initialMessages: loadMessages() as never,
+    initialMessages: loadMessages(userKey) as never,
   })
 
-  useEffect(() => saveMessages(chat.messages), [chat.messages])
+  useEffect(() => saveMessages(userKey, chat.messages), [userKey, chat.messages])
 
   // The assistant changes data through the same API as the UI: refresh whatever the user is looking at.
   const wasLoading = useRef(false)

@@ -7,10 +7,10 @@ import { Money } from '@fakturky/ui/components/money'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Plus, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
-import { takeInvoicePrefill } from '@/lib/invoice-prefill'
+import { type InvoicePrefill, onInvoicePrefill, takeInvoicePrefill } from '@/lib/invoice-prefill'
 import { client, orpc } from '@/lib/orpc'
 import { CustomerPicker, type PickedCustomer } from './customer-picker'
 
@@ -76,18 +76,9 @@ export function InvoiceForm({ id }: { id?: string }) {
   const [ready, setReady] = useState(false)
   const [dueTouched, setDueTouched] = useState(false)
 
-  // Seed from defaults (new) or from the stored draft (edit), once.
-  useEffect(() => {
-    if (id || ready || !defaults.data) return
-    const d = defaults.data
-    setDueDate(addDays(today, d.dueDays))
-    setCurrency(d.currency)
-    setPaymentMethod(d.paymentMethod)
-    setFooterText(d.footerText ?? '')
-    setLines([emptyLine(d.vatPayer ? '21' : '0')])
-    // Hand-off from the assistant (`prefillInvoiceForm`): applied once, on top of the defaults.
-    const prefill = takeInvoicePrefill()
-    if (prefill) {
+  const vatPayerDefault = defaults.data?.vatPayer ?? false
+  const applyPrefill = useCallback(
+    (prefill: InvoicePrefill) => {
       if (prefill.dueDate) {
         setDueDate(prefill.dueDate)
         setDueTouched(true)
@@ -100,7 +91,7 @@ export function InvoiceForm({ id }: { id?: string }) {
             quantity: l.quantity || '1',
             unit: 'ks',
             unitPrice: l.unitPrice,
-            vatRate: l.vatRate ?? (d.vatPayer ? '21' : '0'),
+            vatRate: l.vatRate ?? (vatPayerDefault ? '21' : '0'),
           })),
         )
       }
@@ -110,9 +101,32 @@ export function InvoiceForm({ id }: { id?: string }) {
           .then((c) => setCustomer({ id: c.id, name: c.name, ico: c.ico }))
           .catch(() => undefined)
       }
-    }
+    },
+    [vatPayerDefault],
+  )
+  // An assistant prefill that arrives while this form is already open (no remount happens).
+  useEffect(() => {
+    if (id || !ready) return
+    return onInvoicePrefill(() => {
+      const p = takeInvoicePrefill()
+      if (p) applyPrefill(p)
+    })
+  }, [id, ready, applyPrefill])
+
+  // Seed from defaults (new) or from the stored draft (edit), once.
+  useEffect(() => {
+    if (id || ready || !defaults.data) return
+    const d = defaults.data
+    setDueDate(addDays(today, d.dueDays))
+    setCurrency(d.currency)
+    setPaymentMethod(d.paymentMethod)
+    setFooterText(d.footerText ?? '')
+    setLines([emptyLine(d.vatPayer ? '21' : '0')])
+    // Hand-off from the assistant (`prefillInvoiceForm`): applied once, on top of the defaults.
+    const prefill = takeInvoicePrefill()
+    if (prefill) applyPrefill(prefill)
     setReady(true)
-  }, [defaults.data, ready, today, id])
+  }, [defaults.data, ready, today, id, applyPrefill])
   useEffect(() => {
     const d = existing.data
     if (!id || !d || ready || !defaults.data) return

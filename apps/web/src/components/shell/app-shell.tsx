@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useMemo, useState } from 'react'
 import { AssistantPanel } from '@/components/assistant/assistant-panel'
-import { AssistantProvider } from '@/components/assistant/assistant-provider'
+import { AssistantProvider, clearAssistantStorage } from '@/components/assistant/assistant-provider'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
 import { CommandPalette, useRecordRecent } from './command-palette'
@@ -69,7 +69,7 @@ export function AppShell({
 
   return (
     <ShellContext.Provider value={state}>
-      <AssistantProvider pendingQuestion={question}>
+      <AssistantProvider userKey={user.email} pendingQuestion={question}>
         <ShellInner user={user}>{children}</ShellInner>
       </AssistantProvider>
     </ShellContext.Provider>
@@ -235,6 +235,7 @@ function AccountMenu({ user }: { user: { name: string; email: string } }) {
         <DropdownMenuItem render={<Link to="/nastaveni" />}>{cs.nav.settings}</DropdownMenuItem>
         <DropdownMenuItem
           onClick={async () => {
+            clearAssistantStorage()
             await authClient.signOut()
             queryClient.clear()
             await navigate({ to: '/prihlaseni' })
@@ -313,6 +314,7 @@ function MoreMenu({ tabClass }: { tabClass: string }) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {
+            clearAssistantStorage()
             await authClient.signOut()
             queryClient.clear()
             await navigate({ to: '/prihlaseni' })

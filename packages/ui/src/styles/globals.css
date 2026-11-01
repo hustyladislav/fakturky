@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter/wght.css";
-@import "@fontsource-variable/fraunces/full.css";
+@import "@fontsource-variable/fraunces/opsz.css";
 @import "@fontsource-variable/jetbrains-mono/wght.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -50,7 +50,15 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --font-sans: "Geist Variable", sans-serif;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces Variable", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --radius-input: 6px;
+  --radius-button: 8px;
+  --radius-card: 12px;
 }
 
 @theme inline {
@@ -136,8 +144,26 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "tnum", "lnum", "cv11";
+  }
+  h1,
+  h2 {
+    font-family: var(--font-serif);
+    font-variation-settings: "opsz" 48;
+    letter-spacing: -0.01em;
+  }
+  kbd {
+    font-family: var(--font-sans);
+  }
+  .font-serif {
+    font-variation-settings: "opsz" 48;
   }
 }

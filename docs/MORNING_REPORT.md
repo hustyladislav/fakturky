@@ -9,16 +9,22 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Needs you
 
-1. **Domain** — pick a name/domain from `docs/research/names.md` (shortlist) and buy it; then I wire it to Vercel
-   and provision Resend (`mail.<domain>`, EU region) for invoice emails and magic links.
+1. **Domain** — pick a name/domain from `docs/research/names.md` (shortlist; `fakturky.app` is free, $9.99) and
+   buy it (or tell me to). Then: add it in Resend (your existing account, team "moravio") + DNS → switch
+   `EMAIL_FROM` env so magic links/invoice emails reach everyone (today: Resend sandbox, delivers only to you).
+   Also add it to Google OAuth origins and publish the Google consent screen (needs homepage + privacy URL).
 2. **AI Gateway credits** — the assistant uses DeepSeek V4.1 Flash via Vercel AI Gateway. Caps are set ($100/month
    on the key + $100/month team budget). Hobby includes a small free monthly credit; beyond that, top up credits
    in the Vercel dashboard (AI Gateway → Credits) if you want it running for everyone.
 3. **Clerk app** — an unused, empty Clerk app `fakturky-auth` exists on your Vercel team (we went back to Better
    Auth). Say the word and I'll delete it.
-4. **Google sign-in** (optional) — needs a Google Cloud OAuth client; until then email+password and passkeys.
+4. **Google sign-in** — OAuth client created in Google Cloud project `fakturky`; consent screen is in *Testing*
+   (only you can use it) until it's published with the domain + privacy page.
 
 ## Shipped overnight
+
+- Better Auth dashboard connected (dash.better-auth.com → project "Fakturky", free Starter plan): users, orgs,
+  events, security insights (PR #14).
 
 - Domain package: VAT totals, numbering, IČO/DIČ, Czech account → IBAN, bank codes, SPAYD + EPC QR, ARES, ČNB
   rates, VIES, ISDOC 6.0.2 (PRs #1, #3–#7).

@@ -1,6 +1,9 @@
 import { type Auth, createAuth } from '@fakturky/core/auth'
+import { BRAND } from '@fakturky/core/brand'
 import { createDb, type DbHandle, migrate } from '@fakturky/db'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
+
+import { deliverMagicLink } from './email'
 
 type Runtime = { handle: DbHandle; auth: Auth }
 
@@ -34,6 +37,19 @@ export function getRuntime(): Promise<Runtime> {
         baseURL(),
         ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
       ],
+      google:
+        process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+          ? {
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            }
+          : undefined,
+      // Only Vercel preview deployments need to proxy OAuth through production.
+      oauthProxyProductionUrl:
+        process.env.VERCEL_ENV === 'preview'
+          ? (process.env.PRODUCTION_URL ?? BRAND.productionUrl)
+          : undefined,
+      sendMagicLink: deliverMagicLink,
       extraPlugins: [tanstackStartCookies()],
     })
     return { handle, auth }

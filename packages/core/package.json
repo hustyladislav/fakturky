@@ -7,9 +7,12 @@
     ".": "./src/index.ts",
     "./brand": "./src/brand.ts",
     "./router": "./src/router/index.ts",
+    "./agent-tools": "./src/agent-tools/index.ts",
     "./auth": "./src/auth.ts",
     "./context": "./src/context.ts",
-    "./testing": "./src/testing.ts"
+    "./testing": "./src/testing.ts",
+    "./export": "./src/export.ts",
+    "./public-documents": "./src/repositories/public-documents.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
@@ -18,6 +21,7 @@
     "@better-auth/api-key": "catalog:",
     "@better-auth/passkey": "catalog:",
     "@fakturky/db": "workspace:*",
+    "@fakturky/domain": "workspace:*",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
@@ -25,7 +29,8 @@
     "drizzle-orm": "catalog:",
     "uuid": "catalog:",
     "zod": "catalog:",
-    "@better-auth/infra": "0.4.25"
+    "@better-auth/infra": "0.4.25",
+    "@fakturky/domain": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:"

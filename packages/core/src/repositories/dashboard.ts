@@ -120,7 +120,7 @@ export const dashboardRepo = {
             turnover: toFixed(yearTurnover, 2),
             limit: toFixed(limit, 0),
             immediateLimit: toFixed(new Decimal(IMMEDIATE_REGISTRATION_LIMIT), 0),
-            immediateExceeded: yearTurnover.gte(IMMEDIATE_REGISTRATION_LIMIT),
+            immediateExceeded: yearTurnover.gt(IMMEDIATE_REGISTRATION_LIMIT),
             percent: Math.min(100, Math.round(yearTurnover.div(limit).times(100).toNumber())),
           }
         : null,

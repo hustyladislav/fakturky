@@ -61,6 +61,7 @@ export const cs = {
   common: {
     save: 'Uložit',
     exportCsv: 'Export do CSV',
+    edit: 'Upravit',
     cancel: 'Zrušit',
     close: 'Zavřít',
     create: 'Vytvořit',
@@ -530,6 +531,8 @@ export const cs = {
     street: 'Ulice a číslo',
     city: 'Město',
     zip: 'PSČ',
+    edit: 'Upravit kontakt',
+    updated: 'Kontakt byl uložen.',
     taxDocHint: 'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a jeho IČO nebo DIČ.',
     created: 'Kontakt byl vytvořen.',
     archived: 'Kontakt byl archivován.',

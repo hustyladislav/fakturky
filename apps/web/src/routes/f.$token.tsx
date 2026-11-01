@@ -217,7 +217,7 @@ function PublicInvoice() {
           </div>
         </div>
 
-        {d.bank && d.status === 'issued' && (
+        {d.status !== 'cancelled' && (
           <section className="flex flex-wrap items-start justify-between gap-4 text-sm">
             <div className="space-y-1">
               <h2 className="text-xs text-neutral-500">{t.payment}</h2>
@@ -230,15 +230,19 @@ function PublicInvoice() {
                   {t.variableSymbol}: <span className="tabular-nums">{d.variableSymbol}</span>
                 </div>
               )}
-              {d.bank.account && (
-                <div>
-                  {t.account}: <span className="tabular-nums">{d.bank.account}</span>
-                </div>
+              {d.bank && d.status === 'issued' && (
+                <>
+                  {d.bank.account && (
+                    <div>
+                      {t.account}: <span className="tabular-nums">{d.bank.account}</span>
+                    </div>
+                  )}
+                  <div>
+                    {t.iban}: <span className="tabular-nums">{d.bank.iban}</span>
+                    {d.bank.bic ? ` · ${t.bic}: ${d.bank.bic}` : ''}
+                  </div>
+                </>
               )}
-              <div>
-                {t.iban}: <span className="tabular-nums">{d.bank.iban}</span>
-                {d.bank.bic ? ` · ${t.bic}: ${d.bank.bic}` : ''}
-              </div>
             </div>
             {d.qr && (
               <figure className="space-y-1 text-center">

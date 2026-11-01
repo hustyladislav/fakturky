@@ -72,7 +72,8 @@ function Contacts() {
                 <TableCell className="font-medium">{c.name}</TableCell>
                 <TableCell>{c.ico}</TableCell>
                 <TableCell>{c.emails[0]}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="space-x-1 text-right">
+                  <EditContact contact={c} />
                   <Button variant="ghost" size="sm" onClick={() => archive.mutate({ id: c.id })}>
                     {cs.common.archive}
                   </Button>
@@ -174,6 +175,86 @@ function NewContact() {
           <DialogFooter>
             <Button type="submit" disabled={create.isPending}>
               {cs.common.create}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+type ContactRow = Awaited<ReturnType<typeof import('@/lib/orpc').client.contacts.get>>
+
+/** Edit an existing contact, e.g. to add the address a VAT payer's tax document requires. */
+function EditContact({ contact }: { contact: ContactRow }) {
+  const queryClient = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const update = useMutation(
+    orpc.contacts.update.mutationOptions({
+      onSuccess: async () => {
+        toast.success(cs.contacts.updated)
+        setOpen(false)
+        await queryClient.invalidateQueries({ queryKey: orpc.contacts.key() })
+      },
+      onError: () => toast.error(cs.common.error),
+    }),
+  )
+  const field = (id: string, label: string, value: string | null | undefined, extra = {}) => (
+    <div className="space-y-2">
+      <Label htmlFor={`e-${id}`}>{label}</Label>
+      <Input id={`e-${id}`} name={id} defaultValue={value ?? ''} autoComplete="off" {...extra} />
+    </div>
+  )
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button variant="ghost" size="sm" />}>{cs.common.edit}</DialogTrigger>
+      <DialogContent>
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const f = new FormData(e.currentTarget)
+            const text = (k: string) => String(f.get(k) ?? '').trim()
+            const email = text('email')
+            update.mutate({
+              id: contact.id,
+              patch: {
+                name: text('name'),
+                ico: text('ico') || null,
+                dic: text('dic') || null,
+                phone: text('phone') || null,
+                address: {
+                  ...contact.address,
+                  street: text('street'),
+                  city: text('city'),
+                  zip: text('zip'),
+                },
+                emails: email ? [email] : [],
+              },
+            })
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{cs.contacts.edit}</DialogTitle>
+          </DialogHeader>
+          {field('name', cs.contacts.name, contact.name, { required: true })}
+          <div className="grid grid-cols-2 gap-4">
+            {field('ico', cs.contacts.ico, contact.ico, { inputMode: 'numeric' })}
+            {field('dic', cs.contacts.dic, contact.dic)}
+          </div>
+          {field('street', cs.contacts.street, contact.address.street)}
+          <div className="grid grid-cols-2 gap-4">
+            {field('city', cs.contacts.city, contact.address.city)}
+            {field('zip', cs.contacts.zip, contact.address.zip)}
+          </div>
+          <p className="text-muted-foreground text-xs">{cs.contacts.taxDocHint}</p>
+          <div className="grid grid-cols-2 gap-4">
+            {field('email', cs.contacts.email, contact.emails[0], { type: 'email' })}
+            {field('phone', cs.contacts.phone, contact.phone, { type: 'tel' })}
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={update.isPending}>
+              {cs.common.save}
             </Button>
           </DialogFooter>
         </form>

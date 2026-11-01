@@ -13,6 +13,7 @@
     "./context": "./src/context.ts",
     "./testing": "./src/testing.ts",
     "./export": "./src/export.ts",
+    "./documents-repo": "./src/repositories/documents.ts",
     "./public-documents": "./src/repositories/public-documents.ts"
   },
   "scripts": {

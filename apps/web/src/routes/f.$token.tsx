@@ -73,6 +73,14 @@ function PublicInvoice() {
           variant="outline"
           size="sm"
           nativeButton={false}
+          render={<a href={`/f/${token}/pdf`} download />}
+        >
+          <Download /> {t.downloadPdf}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          nativeButton={false}
           render={<a href={`/f/${token}/isdoc`} download />}
         >
           <Download /> {t.downloadIsdoc}

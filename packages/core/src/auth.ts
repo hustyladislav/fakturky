@@ -164,6 +164,8 @@ export async function principalForUser(
     .select({ organizationId: schema.member.organizationId })
     .from(schema.member)
     .where(eq(schema.member.userId, userId))
+    // Deterministic fallback: the user's oldest membership (their personal organization).
+    .orderBy(schema.member.createdAt, schema.member.id)
   const organizationId =
     memberships.find((m) => m.organizationId === preferredOrganizationId)?.organizationId ??
     memberships[0]?.organizationId

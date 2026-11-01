@@ -148,4 +148,20 @@ export const publicRouter = {
         xml: generateIsdoc(toDocumentForExport(found.doc, found.lines)),
       }
     }),
+
+  pdf: publicProcedure
+    .input(z.object({ token: z.string().min(20).max(200) }))
+    .output(z.object({ filename: z.string(), contentBase64: z.string() }))
+    .handler(async ({ context, input }) => {
+      const render = context.services?.renderPdf
+      if (!render)
+        throw new ORPCError('NOT_IMPLEMENTED', { message: 'PDF rendering is not available' })
+      const found = await publicDocumentsRepo.getByToken(context.db, input.token)
+      if (!found) throw new ORPCError('NOT_FOUND', { message: 'Document not found' })
+      const bytes = await render(found.doc, found.lines)
+      return {
+        filename: `${found.doc.number ?? 'faktura'}.pdf`,
+        contentBase64: Buffer.from(bytes).toString('base64'),
+      }
+    }),
 }

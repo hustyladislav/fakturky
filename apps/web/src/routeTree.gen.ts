@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PodminkyRouteImport } from './routes/podminky'
 import { Route as PrihlaseniRouteImport } from './routes/prihlaseni'
 import { Route as RegistraceRouteImport } from './routes/registrace'
 import { Route as SouhlasRouteImport } from './routes/souhlas'
+import { Route as SoukromiRouteImport } from './routes/soukromi'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
@@ -30,8 +32,10 @@ import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
 import { Route as FTokenIsdocRouteImport } from './routes/f.$token.isdoc'
+import { Route as FTokenPdfRouteImport } from './routes/f.$token.pdf'
 import { Route as AppFakturyIdIndexRouteImport } from './routes/_app/faktury.$id.index'
 import { Route as AppFakturyIdUpravitRouteImport } from './routes/_app/faktury.$id.upravit'
+import { Route as ApiDocumentsIdPdfRouteImport } from './routes/api/documents.$id.pdf'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -47,6 +51,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PodminkyRoute = PodminkyRouteImport.update({
+  id: '/podminky',
+  path: '/podminky',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrihlaseniRoute = PrihlaseniRouteImport.update({
   id: '/prihlaseni',
   path: '/prihlaseni',
@@ -60,6 +69,11 @@ const RegistraceRoute = RegistraceRouteImport.update({
 const SouhlasRoute = SouhlasRouteImport.update({
   id: '/souhlas',
   path: '/souhlas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SoukromiRoute = SoukromiRouteImport.update({
+  id: '/soukromi',
+  path: '/soukromi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
@@ -137,6 +151,11 @@ const FTokenIsdocRoute = FTokenIsdocRouteImport.update({
   path: '/isdoc',
   getParentRoute: () => FTokenRoute,
 } as any)
+const FTokenPdfRoute = FTokenPdfRouteImport.update({
+  id: '/pdf',
+  path: '/pdf',
+  getParentRoute: () => FTokenRoute,
+} as any)
 const AppFakturyIdIndexRoute = AppFakturyIdIndexRouteImport.update({
   id: '/$id/',
   path: '/$id/',
@@ -147,14 +166,21 @@ const AppFakturyIdUpravitRoute = AppFakturyIdUpravitRouteImport.update({
   path: '/$id/upravit',
   getParentRoute: () => AppFakturyRoute,
 } as any)
+const ApiDocumentsIdPdfRoute = ApiDocumentsIdPdfRouteImport.update({
+  id: '/api/documents/$id/pdf',
+  path: '/api/documents/$id/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
+  '/podminky': typeof PodminkyRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
   '/souhlas': typeof SouhlasRoute
+  '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/faktury': typeof AppFakturyRouteWithChildren
   '/kontakty': typeof AppKontaktyRoute
@@ -168,16 +194,20 @@ export interface FileRoutesByFullPath {
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/f/$token/isdoc': typeof FTokenIsdocRoute
+  '/f/$token/pdf': typeof FTokenPdfRoute
   '/faktury/': typeof AppFakturyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
+  '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
   '/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
+  '/podminky': typeof PodminkyRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
   '/souhlas': typeof SouhlasRoute
+  '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
@@ -191,8 +221,10 @@ export interface FileRoutesByTo {
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/f/$token/isdoc': typeof FTokenIsdocRoute
+  '/f/$token/pdf': typeof FTokenPdfRoute
   '/faktury': typeof AppFakturyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
+  '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
   '/faktury/$id': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesById {
@@ -200,9 +232,11 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
+  '/podminky': typeof PodminkyRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
   '/souhlas': typeof SouhlasRoute
+  '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/kontakty': typeof AppKontaktyRoute
@@ -217,8 +251,10 @@ export interface FileRoutesById {
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/f/$token/isdoc': typeof FTokenIsdocRoute
+  '/f/$token/pdf': typeof FTokenPdfRoute
   '/_app/faktury/': typeof AppFakturyIndexRoute
   '/_app/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
+  '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
   '/_app/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -227,9 +263,11 @@ export interface FileRouteTypes {
     | '/'
     | '/mcp'
     | '/onboarding'
+    | '/podminky'
     | '/prihlaseni'
     | '/registrace'
     | '/souhlas'
+    | '/soukromi'
     | '/.well-known/$'
     | '/faktury'
     | '/kontakty'
@@ -243,16 +281,20 @@ export interface FileRouteTypes {
     | '/api/v1/$'
     | '/api/v1/openapi.json'
     | '/f/$token/isdoc'
+    | '/f/$token/pdf'
     | '/faktury/'
     | '/faktury/$id/upravit'
+    | '/api/documents/$id/pdf'
     | '/faktury/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/mcp'
     | '/onboarding'
+    | '/podminky'
     | '/prihlaseni'
     | '/registrace'
     | '/souhlas'
+    | '/soukromi'
     | '/.well-known/$'
     | '/kontakty'
     | '/nastaveni'
@@ -266,17 +308,21 @@ export interface FileRouteTypes {
     | '/api/v1/$'
     | '/api/v1/openapi.json'
     | '/f/$token/isdoc'
+    | '/f/$token/pdf'
     | '/faktury'
     | '/faktury/$id/upravit'
+    | '/api/documents/$id/pdf'
     | '/faktury/$id'
   id:
     | '__root__'
     | '/_app'
     | '/mcp'
     | '/onboarding'
+    | '/podminky'
     | '/prihlaseni'
     | '/registrace'
     | '/souhlas'
+    | '/soukromi'
     | '/.well-known/$'
     | '/_app/faktury'
     | '/_app/kontakty'
@@ -291,8 +337,10 @@ export interface FileRouteTypes {
     | '/api/v1/$'
     | '/api/v1/openapi.json'
     | '/f/$token/isdoc'
+    | '/f/$token/pdf'
     | '/_app/faktury/'
     | '/_app/faktury/$id/upravit'
+    | '/api/documents/$id/pdf'
     | '/_app/faktury/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -300,9 +348,11 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   McpRoute: typeof McpRoute
   OnboardingRoute: typeof OnboardingRoute
+  PodminkyRoute: typeof PodminkyRoute
   PrihlaseniRoute: typeof PrihlaseniRoute
   RegistraceRoute: typeof RegistraceRoute
   SouhlasRoute: typeof SouhlasRoute
+  SoukromiRoute: typeof SoukromiRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
   DocsApiRoute: typeof DocsApiRoute
   DocsMcpRoute: typeof DocsMcpRoute
@@ -311,6 +361,7 @@ export interface RootRouteChildren {
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
+  ApiDocumentsIdPdfRoute: typeof ApiDocumentsIdPdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -336,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/podminky': {
+      id: '/podminky'
+      path: '/podminky'
+      fullPath: '/podminky'
+      preLoaderRoute: typeof PodminkyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/prihlaseni': {
       id: '/prihlaseni'
       path: '/prihlaseni'
@@ -355,6 +413,13 @@ declare module '@tanstack/react-router' {
       path: '/souhlas'
       fullPath: '/souhlas'
       preLoaderRoute: typeof SouhlasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/soukromi': {
+      id: '/soukromi'
+      path: '/soukromi'
+      fullPath: '/soukromi'
+      preLoaderRoute: typeof SoukromiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/$': {
@@ -462,6 +527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FTokenIsdocRouteImport
       parentRoute: typeof FTokenRoute
     }
+    '/f/$token/pdf': {
+      id: '/f/$token/pdf'
+      path: '/pdf'
+      fullPath: '/f/$token/pdf'
+      preLoaderRoute: typeof FTokenPdfRouteImport
+      parentRoute: typeof FTokenRoute
+    }
     '/_app/faktury/$id/': {
       id: '/_app/faktury/$id/'
       path: '/$id'
@@ -475,6 +547,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/faktury/$id/upravit'
       preLoaderRoute: typeof AppFakturyIdUpravitRouteImport
       parentRoute: typeof AppFakturyRoute
+    }
+    '/api/documents/$id/pdf': {
+      id: '/api/documents/$id/pdf'
+      path: '/api/documents/$id/pdf'
+      fullPath: '/api/documents/$id/pdf'
+      preLoaderRoute: typeof ApiDocumentsIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -515,10 +594,12 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface FTokenRouteChildren {
   FTokenIsdocRoute: typeof FTokenIsdocRoute
+  FTokenPdfRoute: typeof FTokenPdfRoute
 }
 
 const FTokenRouteChildren: FTokenRouteChildren = {
   FTokenIsdocRoute: FTokenIsdocRoute,
+  FTokenPdfRoute: FTokenPdfRoute,
 }
 
 const FTokenRouteWithChildren =
@@ -528,9 +609,11 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   McpRoute: McpRoute,
   OnboardingRoute: OnboardingRoute,
+  PodminkyRoute: PodminkyRoute,
   PrihlaseniRoute: PrihlaseniRoute,
   RegistraceRoute: RegistraceRoute,
   SouhlasRoute: SouhlasRoute,
+  SoukromiRoute: SoukromiRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
   DocsApiRoute: DocsApiRoute,
   DocsMcpRoute: DocsMcpRoute,
@@ -539,6 +622,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
+  ApiDocumentsIdPdfRoute: ApiDocumentsIdPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

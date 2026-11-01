@@ -1,4 +1,4 @@
-export { registerFonts } from './fonts.ts'
+export { provideFontFiles, registerFonts } from './fonts.ts'
 export type { InvoiceDocumentProps } from './InvoiceDocument.tsx'
 export { InvoiceDocument } from './InvoiceDocument.tsx'
 export type { Labels } from './i18n.ts'

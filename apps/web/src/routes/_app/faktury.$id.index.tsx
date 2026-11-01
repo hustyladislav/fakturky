@@ -305,6 +305,7 @@ function InvoiceDetail() {
             <Button
               variant="ghost"
               size="sm"
+              nativeButton={false}
               render={<a href={publicUrl} target="_blank" rel="noreferrer" />}
             >
               <ExternalLink />
@@ -350,6 +351,7 @@ function InvoiceDetail() {
           <Button
             variant="outline"
             className={full}
+            nativeButton={false}
             render={<Link to="/faktury/$id/upravit" params={{ id }} />}
           >
             <Pencil /> {t.edit}

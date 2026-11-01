@@ -147,6 +147,16 @@ function InvoiceDetail() {
       onError,
     }),
   )
+  const finalInvoice = useMutation(
+    orpc.documents.createFinalInvoice.mutationOptions({
+      onSuccess: async (n) => {
+        toast.success(t.finalInvoiceCreated)
+        await refresh()
+        navigate({ to: '/faktury/$id/upravit', params: { id: n.id } })
+      },
+      onError,
+    }),
+  )
   const saveTemplate = useMutation(
     orpc.templates.createFromDocument.mutationOptions({
       onSuccess: async () => {
@@ -506,6 +516,11 @@ function InvoiceDetail() {
         >
           {cs.templates.saveAs}
         </Button>
+        {d?.type === 'proforma' && d.status === 'paid' && (
+          <Button className={full} onClick={() => finalInvoice.mutate({ id })}>
+            {t.finalInvoice}
+          </Button>
+        )}
         {d?.type === 'invoice' && (open || d.status === 'paid') && (
           <Button
             variant="outline"

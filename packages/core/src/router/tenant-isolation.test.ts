@@ -78,6 +78,10 @@ const cases: Record<string, Case> = {
     kind: 'foreign',
     run: (b, a) => b.documents.createCreditNote({ id: a.issuedId }),
   },
+  'documents.createFinalInvoice': {
+    kind: 'foreign',
+    run: (b, a) => b.documents.createFinalInvoice({ id: a.issuedId }),
+  },
   'documents.send': {
     kind: 'foreign',
     run: (b, a) => b.documents.send({ id: a.issuedId, to: 'attacker@example.com' }),

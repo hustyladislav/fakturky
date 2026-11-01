@@ -602,6 +602,13 @@ export const documentsRepo = {
             : null,
         })
         .where(scoped(orgId, id))
+      // A final invoice fully covered by the advance is settled on issue.
+      if (doc.type === 'invoice' && doc.relatedDocumentId && parseDecimal(totals.total).lte(0)) {
+        await tx
+          .update(document)
+          .set({ status: 'paid', paidAt: new Date() })
+          .where(scoped(orgId, id))
+      }
       await logActivity(tx, orgId, actorId, id, 'issued', { number })
     })
     return this.get(db, orgId, id)
@@ -702,6 +709,64 @@ export const documentsRepo = {
         discountPercent: l.discountPercent,
       })),
     })
+  },
+
+  /**
+   * Final invoice for a fully paid proforma: copies its lines and deducts the advance as a negative line.
+   * VAT payers need a tax receipt for the advance first, which is not supported yet, so this is refused.
+   */
+  async createFinalInvoice(db: Db, orgId: string, actorId: string, id: string) {
+    const src = await this.get(db, orgId, id)
+    if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (src.type !== 'proforma' || src.status !== 'paid') {
+      throw new DocumentError('CONFLICT', 'A final invoice needs a fully paid proforma')
+    }
+    const profile = await loadProfile(db, orgId)
+    if (vatApplies(profile, 'invoice')) {
+      throw new DocumentError(
+        'CONFLICT',
+        'VAT payers need a tax receipt for the advance first; create the final invoice manually',
+      )
+    }
+    const advance = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
+    const draft = await this.createDraft(
+      db,
+      orgId,
+      actorId,
+      {
+        type: 'invoice',
+        contactId: src.contactId,
+        bankAccountId: src.bankAccountId,
+        currency: src.currency,
+        exchangeRate: src.exchangeRate,
+        language: src.language as 'cs' | 'sk' | 'en',
+        paymentMethod: src.paymentMethod,
+        introText: src.introText,
+        footerText: src.footerText,
+        lines: [
+          ...src.lines.map((l) => ({
+            description: l.description,
+            quantity: l.quantity,
+            unit: l.unit,
+            unitPrice: l.unitPrice,
+            vatRate: l.vatRate,
+            discountPercent: l.discountPercent,
+          })),
+          {
+            description: `Uhrazená záloha (zálohová faktura ${src.number})`,
+            quantity: '1',
+            unit: null,
+            unitPrice: advance.negated().toString(),
+            vatRate: '0',
+            discountPercent: '0',
+          },
+        ],
+      },
+      { relatedDocumentId: id },
+    )
+    if (!draft) throw new Error('final invoice draft missing')
+    await logActivity(db, orgId, actorId, id, 'final_invoice_created', { invoiceId: draft.id })
+    return draft
   },
 
   /**

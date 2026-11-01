@@ -59,6 +59,7 @@ export function InvoiceForm({ id }: { id?: string }) {
   })
 
   const today = todayPrague()
+  const [docType, setDocType] = useState<'invoice' | 'proforma'>('invoice')
   const [customer, setCustomer] = useState<PickedCustomer | null>(null)
   const [issueDate, setIssueDate] = useState(today)
   const [dueDate, setDueDate] = useState(addDays(today, 14))
@@ -183,7 +184,7 @@ export function InvoiceForm({ id }: { id?: string }) {
       if (andIssue && body.lines.length === 0) throw new Error(t.needLines)
       const doc = id
         ? await client.documents.updateDraft({ id, patch: body })
-        : await client.documents.createDraft(body)
+        : await client.documents.createDraft({ ...body, type: docType })
       if (!andIssue) return doc
       try {
         return await client.documents.issue({ id: doc.id })
@@ -233,6 +234,23 @@ export function InvoiceForm({ id }: { id?: string }) {
             {cs.nav.settings}
           </Link>
         </p>
+      )}
+
+      {!id && (
+        <Card title={t.documentType}>
+          <select
+            aria-label={t.documentType}
+            className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
+            value={docType}
+            onChange={(e) => setDocType(e.target.value as 'invoice' | 'proforma')}
+          >
+            <option value="invoice">{cs.invoices.type.invoice}</option>
+            <option value="proforma">{cs.invoices.type.proforma}</option>
+          </select>
+          {docType === 'proforma' && (
+            <p className="text-muted-foreground text-sm">{t.proformaHint}</p>
+          )}
+        </Card>
       )}
 
       <Card title={t.customer}>

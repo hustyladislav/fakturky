@@ -299,7 +299,7 @@ export const documentsRepo = {
     }
   },
 
-  async createDraft(db: Db, orgId: string, actorId: string, input: DraftInput) {
+  async createDraft(db: Db, orgId: string, actorId: string, input: DraftInput, via?: 'assistant') {
     const id = await db.transaction(async (tx) => {
       const profile = await loadProfile(tx, orgId)
       const issueDate = input.issueDate ?? todayPrague()
@@ -349,7 +349,7 @@ export const documentsRepo = {
         .returning({ id: document.id })
       if (!row) throw new Error('insert returned no row')
       await writeLines(tx, orgId, row.id, input.lines, totals)
-      await logActivity(tx, orgId, actorId, row.id, 'created')
+      await logActivity(tx, orgId, actorId, row.id, 'created', via ? { via } : undefined)
       return row.id
     })
     return this.get(db, orgId, id)

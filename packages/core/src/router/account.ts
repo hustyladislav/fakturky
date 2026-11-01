@@ -23,7 +23,7 @@ export const accountRouter = {
       z.object({
         organizationId: z.string(),
         organizationName: z.string(),
-        via: z.enum(['session', 'apiKey', 'oauth']),
+        via: z.enum(['session', 'apiKey', 'oauth', 'assistant']),
       }),
     )
     .handler(async ({ context }) => {

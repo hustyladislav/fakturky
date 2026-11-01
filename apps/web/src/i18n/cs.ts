@@ -384,6 +384,8 @@ export const cs = {
       history: 'Průběh',
       timeline: {
         created: 'Vytvořena',
+        sent: 'Odeslána',
+        reminded: 'Upomínka odeslána',
         updated: 'Upravena',
         issued: 'Vystavena',
         viewed: 'Zobrazena odběratelem',
@@ -394,6 +396,22 @@ export const cs = {
         deleted: 'Smazána',
       },
       notFound: 'Faktura nebyla nalezena.',
+      send: 'Odeslat e-mailem',
+      sendTitle: 'Odeslat fakturu',
+      sendTo: 'Příjemce',
+      sendMessage: 'Vzkaz v e-mailu (nepovinné)',
+      sendConfirm: 'Odeslat',
+      sendNoEmail: 'Odběratel nemá e-mail. Zadejte ho prosím ručně.',
+      sent: 'Faktura byla odeslána.',
+      remind: 'Poslat upomínku',
+      reminded: 'Upomínka byla odeslána.',
+      mail: {
+        EMAIL_NOT_CONFIGURED:
+          'Odesílání e-mailů zatím není nastaveno. Fakturu můžete poslat odkazem.',
+        EMAIL_RESTRICTED:
+          'E-mail se nepodařilo doručit: odesílací doména ještě není ověřená, takže zprávy lze posílat jen na adresu majitele účtu. Fakturu zatím pošlete odkazem.',
+        EMAIL_FAILED: 'E-mail se nepodařilo odeslat. Zkuste to prosím znovu nebo pošlete odkaz.',
+      },
     },
   },
   publicInvoice: {

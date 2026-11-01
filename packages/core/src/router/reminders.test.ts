@@ -64,3 +64,35 @@ test('reminders: opt-in only, escalating schedule, max three, CSV exports are fo
     .set({ autoRemind: false })
     .where(eq(schema.businessProfile.organizationId, org))
 })
+
+test('organization JSON export contains own data only and no bearer secrets', async () => {
+  const org = await seedOrg(handle, 'json-a')
+  const other = await seedOrg(handle, 'json-b')
+  for (const id of [org, other]) {
+    await handle.db
+      .insert(schema.businessProfile)
+      .values({ organizationId: id, legalName: `Firma ${id}` })
+  }
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const theirs = clientFor(handle, { userId: 'u', organizationId: other, via: 'session' })
+  const c = await api.contacts.create({ name: 'Můj klient' })
+  const d = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        contactId: c.id,
+        privateNote: 'moje poznámka',
+        lines: [{ description: 'x', quantity: '1', unitPrice: '10' }],
+      })
+    ).id,
+  })
+  await theirs.contacts.create({ name: 'Cizí klient' })
+  const out = JSON.parse((await api.exports.organization({})).json)
+  expect(out.format).toBe('fakturky-export/1')
+  expect(out.contacts.map((x: { name: string }) => x.name)).toEqual(['Můj klient'])
+  expect(out.documents[0].lines).toHaveLength(1)
+  expect(out.documents[0].privateNote).toBe('moje poznámka')
+  const raw = JSON.stringify(out)
+  expect(raw).not.toContain(d.publicToken as string)
+  expect(raw).not.toContain('Cizí klient')
+  expect(raw).not.toContain('publicToken')
+})

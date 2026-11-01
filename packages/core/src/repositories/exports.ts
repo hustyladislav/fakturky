@@ -5,9 +5,68 @@ import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { toCsv } from '../csv'
 import { deriveStatus } from './documents'
 
-const { document, contact, payment } = schema
+const {
+  document,
+  documentLine,
+  contact,
+  payment,
+  bankAccount,
+  businessProfile,
+  template,
+  recurringRule,
+  numberSeries,
+} = schema
 
 export const exportsRepo = {
+  /**
+   * Everything the organization owns, as one JSON document (GDPR-style portability / backup).
+   * Bearer secrets (public link tokens, API keys, sessions) are deliberately left out.
+   */
+  async organizationJson(db: Db, orgId: string) {
+    const [profile, accounts, contacts, docs, lines, payments, templates, rules, series] =
+      await Promise.all([
+        db.select().from(businessProfile).where(eq(businessProfile.organizationId, orgId)),
+        db.select().from(bankAccount).where(eq(bankAccount.organizationId, orgId)),
+        db.select().from(contact).where(eq(contact.organizationId, orgId)),
+        db
+          .select()
+          .from(document)
+          .where(and(eq(document.organizationId, orgId), isNull(document.deletedAt)))
+          .orderBy(asc(document.createdAt)),
+        db.select().from(documentLine).where(eq(documentLine.organizationId, orgId)),
+        db.select().from(payment).where(eq(payment.organizationId, orgId)),
+        db.select().from(template).where(eq(template.organizationId, orgId)),
+        db.select().from(recurringRule).where(eq(recurringRule.organizationId, orgId)),
+        db.select().from(numberSeries).where(eq(numberSeries.organizationId, orgId)),
+      ])
+    const group = <T extends { documentId: string }>(rows: T[]) => {
+      const m = new Map<string, T[]>()
+      for (const r of rows) m.set(r.documentId, [...(m.get(r.documentId) ?? []), r])
+      return m
+    }
+    const linesBy = group(lines)
+    const paymentsBy = group(payments)
+    return JSON.stringify(
+      {
+        exportedAt: new Date().toISOString(),
+        format: 'fakturky-export/1',
+        businessProfile: profile[0] ?? null,
+        bankAccounts: accounts,
+        contacts,
+        documents: docs.map(({ publicToken: _token, ...d }) => ({
+          ...d,
+          lines: (linesBy.get(d.id) ?? []).sort((a, b) => a.position - b.position),
+          payments: paymentsBy.get(d.id) ?? [],
+        })),
+        templates,
+        recurringRules: rules,
+        numberSeries: series,
+      },
+      null,
+      2,
+    )
+  },
+
   async documentsCsv(db: Db, orgId: string) {
     const rows = await db
       .select()

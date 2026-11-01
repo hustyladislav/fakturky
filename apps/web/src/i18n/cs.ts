@@ -406,6 +406,29 @@ export const cs = {
     updated: 'Výchozí účet byl změněn.',
     invalid: 'Číslo účtu nebo IBAN není platné. Zkontrolujte ho prosím.',
   },
+  apiKeys: {
+    title: 'API klíče',
+    description:
+      'Klíče umožňují přístup k vašim datům přes REST API, MCP server (Claude, ChatGPT, Cursor) a příkazový řádek. Zacházejte s nimi jako s heslem.',
+    docsLink: 'Dokumentace API',
+    new: 'Nový klíč',
+    name: 'Název',
+    namePlaceholder: 'např. Claude Desktop',
+    prefix: 'Klíč',
+    created: 'Vytvořeno',
+    lastUsed: 'Naposledy použito',
+    never: 'nikdy',
+    empty: 'Zatím nemáte žádný API klíč.',
+    createAction: 'Vytvořit klíč',
+    revoke: 'Zrušit',
+    revoked: 'Klíč byl zrušen.',
+    revokeConfirm: 'Opravdu zrušit tento klíč? Aplikace, které ho používají, přestanou fungovat.',
+    shownTitle: 'Klíč byl vytvořen',
+    shownWarning: 'Zkopírujte si ho teď. Z bezpečnostních důvodů ho už znovu nezobrazíme.',
+    copy: 'Kopírovat',
+    copied: 'Zkopírováno do schránky.',
+    done: 'Hotovo',
+  },
 } as const
 
 export type Dictionary = typeof cs

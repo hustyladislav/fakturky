@@ -4,5 +4,10 @@ import { getRuntime } from './runtime'
 
 export async function createContext(headers: Headers): Promise<BaseContext> {
   const { handle, auth } = await getRuntime()
-  return { db: handle.db, principal: await resolvePrincipal(auth, handle.db, headers) }
+  const { renderDocumentPdf } = await import('./pdf')
+  return {
+    db: handle.db,
+    principal: await resolvePrincipal(auth, handle.db, headers),
+    services: { renderPdf: renderDocumentPdf },
+  }
 }

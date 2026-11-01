@@ -1,6 +1,6 @@
 import { createDb, type DbHandle, migrate, schema } from '@fakturky/db'
 import { createRouterClient } from '@orpc/server'
-import type { Principal } from './context'
+import type { Principal, Services } from './context'
 import { router } from './router'
 
 /** Fresh in-memory PGlite database with all migrations applied. */
@@ -19,6 +19,6 @@ export async function seedOrg(handle: DbHandle, slug: string): Promise<string> {
   return org.id
 }
 
-export function clientFor(handle: DbHandle, principal: Principal | null) {
-  return createRouterClient(router, { context: { db: handle.db, principal } })
+export function clientFor(handle: DbHandle, principal: Principal | null, services?: Services) {
+  return createRouterClient(router, { context: { db: handle.db, principal, services } })
 }

@@ -1,21 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-/** Authenticated PDF download (session cookie or API key). */
+/** Thin download adapter over the `documents.pdf` procedure (session cookie or API key). */
 export const Route = createFileRoute('/api/documents/$id/pdf')({
   server: {
     handlers: {
-      GET: async ({ request, params }: { request: Request; params: { id: string } }) => {
-        const [{ documentsRepo }, { createContext }, { renderDocumentPdf, pdfResponse }] =
-          await Promise.all([
-            import('@fakturky/core/documents-repo'),
-            import('@/server/context'),
-            import('@/server/pdf'),
-          ])
-        const ctx = await createContext(request.headers)
-        if (!ctx.principal) return new Response('Unauthorized', { status: 401 })
-        const found = await documentsRepo.forExport(ctx.db, ctx.principal.organizationId, params.id)
-        if (!found) return new Response('Not found', { status: 404 })
-        return pdfResponse(await renderDocumentPdf(found.doc, found.lines), found.doc.number)
+      GET: async ({ params }: { params: { id: string } }) => {
+        const [{ serverClient }, { pdfFromBase64 }] = await Promise.all([
+          import('@/server/orpc-server'),
+          import('@/server/pdf'),
+        ])
+        try {
+          return pdfFromBase64(await serverClient.documents.pdf({ id: params.id }))
+        } catch (e) {
+          const code = (e as { code?: string }).code
+          if (code === 'UNAUTHORIZED') return new Response('Unauthorized', { status: 401 })
+          return new Response('Not found', { status: 404 })
+        }
       },
     },
   },

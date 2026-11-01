@@ -49,12 +49,12 @@ export async function renderDocumentPdf(doc: Doc, lines: Lines): Promise<Uint8Ar
   })
 }
 
-export function pdfResponse(bytes: Uint8Array, number: string | null, inline = false) {
-  const name = `${number ?? 'faktura'}.pdf`
-  return new Response(bytes as BodyInit, {
+/** Decodes the router's base64 PDF into a download response. */
+export function pdfFromBase64(file: { filename: string; contentBase64: string }) {
+  return new Response(Buffer.from(file.contentBase64, 'base64'), {
     headers: {
       'content-type': 'application/pdf',
-      'content-disposition': `${inline ? 'inline' : 'attachment'}; filename="${name}"`,
+      'content-disposition': `attachment; filename="${file.filename}"`,
       'x-robots-tag': 'noindex, nofollow',
       'cache-control': 'private, no-store',
     },

@@ -68,7 +68,9 @@ function Contacts() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{c.name}</div>
                   <div className="truncate text-sm text-muted-foreground">
-                    {[c.ico && `IČO ${c.ico}`, c.emails[0]].filter(Boolean).join(' · ') || '—'}
+                    {[c.ico && `${cs.contacts.ico} ${c.ico}`, c.emails[0]]
+                      .filter(Boolean)
+                      .join(' · ') || '—'}
                   </div>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => archive.mutate({ id: c.id })}>

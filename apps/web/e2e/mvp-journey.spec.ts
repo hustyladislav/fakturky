@@ -118,7 +118,10 @@ for (const v of variants) {
     await test.step('public link /f/:token works without a session', async () => {
       const href = await page.locator('a[href*="/f/"]').first().getAttribute('href')
       expect(href).toMatch(/\/f\/[\w-]+$/)
-      const anon = await browser.newContext({ locale: 'cs-CZ' })
+      const anon = await browser.newContext({
+        locale: 'cs-CZ',
+        baseURL: new URL(href as string).origin,
+      })
       const pub = await anon.newPage()
       await pub.goto(href as string) // absolute URL: this context has no baseURL
       await expect(pub.getByText(v.supplierName).first()).toBeVisible()

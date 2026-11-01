@@ -1,0 +1,14 @@
+node_modules
+.env
+.env*.local
+.vercel
+.output
+.nitro
+.tanstack
+dist
+coverage
+.DS_Store
+*.log
+playwright-report
+test-results
+.claude/worktrees

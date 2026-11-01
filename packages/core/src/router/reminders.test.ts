@@ -90,6 +90,8 @@ test('organization JSON export contains own data only and no bearer secrets', as
   expect(out.format).toBe('fakturky-export/1')
   expect(out.contacts.map((x: { name: string }) => x.name)).toEqual(['Můj klient'])
   expect(out.documents[0].lines).toHaveLength(1)
+  expect(out.documents[0].activity.map((a: { action: string }) => a.action)).toContain('issued')
+  expect(out.numberSeriesCounters.length).toBeGreaterThan(0)
   expect(out.documents[0].privateNote).toBe('moje poznámka')
   const raw = JSON.stringify(out)
   expect(raw).not.toContain(d.publicToken as string)

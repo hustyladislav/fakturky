@@ -24,7 +24,8 @@
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
     "uuid": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@better-auth/infra": "0.4.25"
   },
   "devDependencies": {
     "@types/node": "catalog:"

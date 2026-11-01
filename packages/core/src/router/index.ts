@@ -7,6 +7,7 @@ import { dashboardRouter } from './dashboard'
 import { documentsRouter } from './documents'
 import { lookupRouter } from './lookup'
 import { publicRouter } from './public'
+import { recurringRouter, templatesRouter } from './templates'
 
 export const router = {
   account: accountRouter,
@@ -17,6 +18,8 @@ export const router = {
   documents: documentsRouter,
   lookup: lookupRouter,
   public: publicRouter,
+  recurring: recurringRouter,
+  templates: templatesRouter,
 }
 
 export type Router = typeof router

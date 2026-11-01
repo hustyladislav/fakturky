@@ -242,6 +242,7 @@ export const cs = {
     notPayer: 'Neplátce DPH',
     payer: 'Plátce DPH',
     paid: 'Zaplaceno',
+    discount: 'Sleva',
     cancelled: 'Stornováno',
     overdue: 'Po splatnosti',
     downloadIsdoc: 'Stáhnout ISDOC',

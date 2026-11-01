@@ -1,4 +1,4 @@
-import { Decimal, parseDecimal, toFixed } from '@fakturky/domain'
+import { Decimal, generateIsdoc, parseDecimal, todayPrague, toFixed } from '@fakturky/domain'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { toDocumentForExport } from '../export'
@@ -48,6 +48,7 @@ export const publicRouter = {
             unit: z.string().nullable(),
             unitPrice: z.string(),
             vatRate: z.string(),
+            discountPercent: z.string(),
             total: z.string(),
           }),
         ),
@@ -73,7 +74,7 @@ export const publicRouter = {
         new Decimal(0),
       )
       const left = parseDecimal(doc.total).minus(paid)
-      const today = new Date().toISOString().slice(0, 10)
+      const today = todayPrague()
       const bank = x.payment?.bankAccount
       const p = (s: typeof x.supplier) => ({
         name: s.name,
@@ -115,6 +116,7 @@ export const publicRouter = {
           unit: l.unit,
           unitPrice: l.unitPrice,
           vatRate: l.vatRate,
+          discountPercent: l.discountPercent,
           total: l.lineTotal,
         })),
         recap: x.totals.recap.map((r) => ({
@@ -126,9 +128,24 @@ export const publicRouter = {
         subtotal: doc.subtotal,
         vatTotal: doc.vatTotal,
         total: doc.total,
-        remaining: toFixed(left.isNegative() ? new Decimal(0) : left, 2),
+        remaining:
+          doc.status === 'issued' && left.isPositive()
+            ? toFixed(left, 2)
+            : toFixed(new Decimal(0), 2),
         introText: doc.introText,
         footerText: doc.footerText,
+      }
+    }),
+
+  isdoc: publicProcedure
+    .input(z.object({ token: z.string().min(20).max(200) }))
+    .output(z.object({ filename: z.string(), xml: z.string() }))
+    .handler(async ({ context, input }) => {
+      const found = await publicDocumentsRepo.getByToken(context.db, input.token)
+      if (!found) throw new ORPCError('NOT_FOUND', { message: 'Document not found' })
+      return {
+        filename: `${found.doc.number ?? 'faktura'}.isdoc`,
+        xml: generateIsdoc(toDocumentForExport(found.doc, found.lines)),
       }
     }),
 }

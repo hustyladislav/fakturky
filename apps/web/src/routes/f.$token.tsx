@@ -124,7 +124,14 @@ function PublicInvoice() {
                   key={`${l.description}-${l.unitPrice}-${l.quantity}-${l.total}`}
                   className="border-b border-neutral-200"
                 >
-                  <td className="py-2">{l.description}</td>
+                  <td className="py-2">
+                    {l.description}
+                    {Number(l.discountPercent) > 0 && (
+                      <div className="text-xs text-neutral-500">
+                        {t.discount} {Number(l.discountPercent)} %
+                      </div>
+                    )}
+                  </td>
                   <td className="py-2 text-right tabular-nums">
                     {Number(l.quantity)} {l.unit}
                   </td>
@@ -162,12 +169,12 @@ function PublicInvoice() {
           <div className="flex items-baseline justify-between border-t border-b border-neutral-400 py-2">
             <span className="font-medium">{t.amountDue}</span>
             <span className="font-heading text-xl font-semibold">
-              <Money amount={d.status === 'paid' ? '0' : d.remaining} currency={d.currency} />
+              <Money amount={d.remaining} currency={d.currency} />
             </span>
           </div>
         </div>
 
-        {d.bank && (
+        {d.bank && d.status === 'issued' && (
           <section className="space-y-1 text-sm">
             <h2 className="text-xs text-neutral-500">{t.payment}</h2>
             {d.bank.account && (

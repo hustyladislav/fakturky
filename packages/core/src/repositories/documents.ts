@@ -162,6 +162,18 @@ function decorate(doc: DocRow, paid: Decimal, customerName: string | null) {
 }
 
 export const documentsRepo = {
+  /** Issued (numbered) documents only; drafts have no legal content to export. */
+  async forExport(db: Db, orgId: string, id: string) {
+    const [doc] = await db.select().from(document).where(scoped(orgId, id))
+    if (!doc || doc.status === 'draft') return null
+    const lines = await db
+      .select()
+      .from(documentLine)
+      .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, id)))
+      .orderBy(asc(documentLine.position))
+    return { doc, lines }
+  },
+
   async defaults(db: Db, orgId: string) {
     const p = await loadProfile(db, orgId)
     return {

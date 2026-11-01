@@ -1,6 +1,6 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 
 const { document, documentLine, payment, activity } = schema
 
@@ -35,26 +35,29 @@ export const publicDocumentsRepo = {
     return { doc, lines }
   },
 
-  /** Records the first view only (timeline "Zobrazena"). */
+  /** Records the first view only (timeline "Zobrazena"); serialized per document so concurrent opens add one entry. */
   async markViewed(db: Db, doc: typeof document.$inferSelect) {
-    const [seen] = await db
-      .select({ id: activity.id })
-      .from(activity)
-      .where(
-        and(
-          eq(activity.organizationId, doc.organizationId),
-          eq(activity.entityType, 'document'),
-          eq(activity.entityId, doc.id),
-          eq(activity.action, 'viewed'),
-        ),
-      )
-      .limit(1)
-    if (seen) return
-    await db.insert(activity).values({
-      organizationId: doc.organizationId,
-      entityType: 'document',
-      entityId: doc.id,
-      action: 'viewed',
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`viewed:${doc.id}`}))`)
+      const [seen] = await tx
+        .select({ id: activity.id })
+        .from(activity)
+        .where(
+          and(
+            eq(activity.organizationId, doc.organizationId),
+            eq(activity.entityType, 'document'),
+            eq(activity.entityId, doc.id),
+            eq(activity.action, 'viewed'),
+          ),
+        )
+        .limit(1)
+      if (seen) return
+      await tx.insert(activity).values({
+        organizationId: doc.organizationId,
+        entityType: 'document',
+        entityId: doc.id,
+        action: 'viewed',
+      })
     })
   },
 

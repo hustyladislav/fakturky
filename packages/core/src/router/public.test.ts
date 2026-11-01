@@ -50,4 +50,14 @@ test('public invoice is token-gated, hides private data, records the first view'
   const xml = generateIsdoc(toDocumentForExport(found.doc, found.lines))
   expect(xml).toContain('<ID>' + issued.number + '</ID>')
   expect(xml).not.toContain('TAJNÉ')
+
+  const exported = await api.documents.isdoc({ id: issued.id })
+  expect(exported.xml).toBe(xml)
+  expect((await anon.public.isdoc({ token })).filename).toBe(`${issued.number}.isdoc`)
+  await expect(api.documents.isdoc({ id: draft.id })).resolves.toBeTruthy()
+
+  await api.documents.cancel({ id: issued.id })
+  const cancelled = await anon.public.invoice({ token })
+  expect(cancelled.status).toBe('cancelled')
+  expect(cancelled.remaining).toBe('0.00')
 })

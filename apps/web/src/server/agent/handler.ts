@@ -15,7 +15,7 @@ import type { BaseContext } from '@fakturky/core/context'
 import {
   type ChatMiddleware,
   chat,
-  chatParamsFromRequest,
+  chatParamsFromRequestBody,
   EventType,
   maxIterations,
   type StreamChunk,
@@ -43,6 +43,30 @@ const GENERIC_MESSAGE = 'The assistant could not answer.'
 
 function limitChunk(reason: AgentLimitReason) {
   return { message: `Assistant limit reached (${reason}).`, code: LIMIT_ERROR_CODES[reason] }
+}
+
+/** Reads the JSON body while counting bytes, so a missing/forged Content-Length cannot bypass the cap. */
+async function readLimitedJson(request: Request, max: number): Promise<unknown> {
+  if (Number(request.headers.get('content-length') ?? 0) > max) return 'too-large'
+  const reader = request.body?.getReader()
+  if (!reader) return 'invalid'
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > max) {
+      await reader.cancel().catch(() => undefined)
+      return 'too-large'
+    }
+    chunks.push(value)
+  }
+  try {
+    return JSON.parse(new TextDecoder().decode(Buffer.concat(chunks)))
+  } catch {
+    return 'invalid'
+  }
 }
 
 /** A well-formed stream that fails immediately — the client handles it like any other run error. */
@@ -101,11 +125,11 @@ export async function handleAgentRequest(request: Request, ctx: BaseContext): Pr
   if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
     return json(503, { error: 'ASSISTANT_NOT_CONFIGURED' })
   }
-  if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) {
-    return json(413, { error: 'PAYLOAD_TOO_LARGE' })
-  }
-
-  const params = await chatParamsFromRequest(request)
+  const body = await readLimitedJson(request, MAX_BODY_BYTES)
+  if (body === 'too-large') return json(413, { error: 'PAYLOAD_TOO_LARGE' })
+  if (body === 'invalid') return json(400, { error: 'INVALID_BODY' })
+  const params = await chatParamsFromRequestBody(body).catch(() => null)
+  if (!params) return json(400, { error: 'INVALID_BODY' })
 
   const admission = await admitRequest(
     ctx.db,
@@ -135,6 +159,10 @@ export async function handleAgentRequest(request: Request, ctx: BaseContext): Pr
   const assistantPrincipal = { ...principal, via: 'assistant' as const }
   const page = sanitizePageContext(params.forwardedProps?.context)
 
+  // Stop paying for tokens nobody reads when the user closes the tab or presses stop.
+  const abortController = new AbortController()
+  request.signal.addEventListener('abort', () => abortController.abort(), { once: true })
+
   const stream = chat({
     adapter: vercelGatewayText(AGENT_MODEL, { api: 'chat' }),
     messages: params.messages,
@@ -145,7 +173,7 @@ export async function handleAgentRequest(request: Request, ctx: BaseContext): Pr
     systemPrompts: [buildSystemPrompt({ page })],
     // Server tools run here; client tools are declared (no execute) and run in the browser.
     tools: [
-      ...buildServerTools({ db: ctx.db, principal: assistantPrincipal }),
+      ...buildServerTools({ db: ctx.db, principal: assistantPrincipal, services: ctx.services }),
       ...clientToolDefinitions,
     ],
     agentLoopStrategy: maxIterations(AGENT_MAX_ITERATIONS),
@@ -155,9 +183,9 @@ export async function handleAgentRequest(request: Request, ctx: BaseContext): Pr
       // inferenceRegion is a gateway option the adapter types do not list yet; it is passed through verbatim.
       gateway: gatewayOptions(process.env) as never,
     },
-    abortController: new AbortController(),
+    abortController,
     middleware: [costMiddleware],
   } as never) as AsyncIterable<StreamChunk>
 
-  return toServerSentEventsResponse(friendlyErrors(stream))
+  return toServerSentEventsResponse(friendlyErrors(stream), { abortController })
 }

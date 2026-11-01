@@ -4,7 +4,12 @@ import type { AuthedContext } from '@fakturky/core/context'
 import { type AnyServerTool, type JSONSchema, toolDefinition } from '@tanstack/ai'
 
 /** Procedures that are pointless or too heavy for the model (large XML payloads). */
-const EXCLUDED = new Set(['export_document_isdoc'])
+const EXCLUDED = new Set([
+  'export_document_isdoc',
+  'export_document_pdf',
+  'export_contacts_csv',
+  'export_documents_csv',
+])
 
 /** Cap one tool result so a big list cannot blow up the context (and the bill). */
 const MAX_RESULT_CHARS = 24_000
@@ -21,6 +26,7 @@ export function needsApproval(tool: { name: string; annotations: { destructiveHi
 export function buildServerTools(context: {
   db: AuthedContext['db']
   principal: AuthedContext['principal']
+  services?: AuthedContext['services']
 }): AnyServerTool[] {
   return buildAgentTools()
     .filter((tool) => !EXCLUDED.has(tool.name))

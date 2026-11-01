@@ -39,4 +39,10 @@ export const ALWAYS_APPROVE_TOOLS: ReadonlySet<string> = new Set([
   'issue_invoice',
   'mark_document_paid',
   'update_business_profile',
+  // Emails customers / publishes links.
+  'send_invoice_email',
+  'rotate_document_public_link',
+  // Recurring rules can later issue numbered invoices and email customers without the user present.
+  'create_recurring_invoice',
+  'update_recurring_invoice',
 ])

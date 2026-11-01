@@ -75,3 +75,30 @@ test('rejects oversized bodies before parsing', async () => {
   )
   expect(res.status).toBe(413)
 })
+
+test('the body cap holds without a Content-Length header (streamed body)', async () => {
+  const big = new Uint8Array(600 * 1024).fill(32)
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(big)
+      controller.close()
+    },
+  })
+  const res = await handleAgentRequest(
+    new Request('http://localhost/api/agent', {
+      method: 'POST',
+      body: stream,
+      duplex: 'half',
+    } as RequestInit),
+    ctx('session'),
+  )
+  expect(res.status).toBe(413)
+})
+
+test('malformed bodies are 400', async () => {
+  const res = await handleAgentRequest(
+    new Request('http://localhost/api/agent', { method: 'POST', body: '{"nope"' }),
+    ctx('session'),
+  )
+  expect(res.status).toBe(400)
+})

@@ -33,6 +33,10 @@ test('destructive and financially significant tools need approval; reads and dra
     'issue_invoice',
     'mark_document_paid',
     'delete_bank_account',
+    'send_invoice_email',
+    'create_recurring_invoice',
+    'update_recurring_invoice',
+    'rotate_document_public_link',
   ]) {
     expect(byName(name).needsApproval, name).toBe(true)
   }
@@ -47,7 +51,12 @@ test('destructive and financially significant tools need approval; reads and dra
 })
 
 test('heavy tools are not offered to the model', () => {
-  expect(tools().some((t) => t.name === 'export_document_isdoc')).toBe(false)
+  for (const name of ['export_document_isdoc', 'export_document_pdf', 'export_documents_csv']) {
+    expect(
+      tools().some((t) => t.name === name),
+      name,
+    ).toBe(false)
+  }
 })
 
 test('executes procedures as the signed-in organization; results are wrapped', async () => {

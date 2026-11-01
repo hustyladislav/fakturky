@@ -28,6 +28,14 @@ test('sign-up creates org + business profile; session resolves to a principal', 
 
   const principal = await resolvePrincipal(auth, handle.db, new Headers({ cookie }))
   expect(principal).toMatchObject({ via: 'session', organizationId: profile?.organizationId })
+  // Org plugin endpoints go through joined queries (member + user, organization + members).
+  const headers = new Headers({ cookie })
+  const full = await auth.api.getFullOrganization({
+    headers,
+    query: { organizationId: profile?.organizationId },
+  })
+  expect(full?.members).toHaveLength(1)
+  expect(full?.members[0]?.user.email).toBe('jan@example.com')
   expect(await resolvePrincipal(auth, handle.db, new Headers())).toBeNull()
   const members = await handle.db
     .select()

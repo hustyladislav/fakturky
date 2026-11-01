@@ -12,6 +12,7 @@ import { Label } from '@fakturky/ui/components/label'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { Divider, GoogleButton, MagicLinkButton } from '@/components/social-sign-in'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
 
@@ -32,6 +33,8 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <GoogleButton />
+          <Divider />
           <form
             className="space-y-4"
             onSubmit={async (e) => {
@@ -84,6 +87,11 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
               {signUp ? cs.auth.signUpAction : cs.auth.signInAction}
             </Button>
           </form>
+          <MagicLinkButton
+            getEmail={() =>
+              (document.getElementById('email') as HTMLInputElement | null)?.value ?? ''
+            }
+          />
           {!signUp && (
             <Button
               variant="outline"

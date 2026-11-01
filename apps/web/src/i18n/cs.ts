@@ -21,6 +21,19 @@ export const cs = {
     signOut: 'Odhlásit se',
     support: 'Podpořit projekt',
   },
+  theme: {
+    system: 'Podle systému',
+    light: 'Světlý motiv',
+    dark: 'Tmavý motiv',
+  },
+  status: {
+    draft: 'Koncept',
+    issued: 'Vystavená',
+    overdue: 'Po splatnosti',
+    partial: 'Částečně uhrazená',
+    paid: 'Zaplacená',
+    cancelled: 'Stornovaná',
+  },
   auth: {
     signInTitle: 'Přihlášení',
     signInDescription: 'Vítejte zpět. Přihlaste se ke svému účtu.',
@@ -91,6 +104,29 @@ export const cs = {
       'Např. „Fyzická osoba zapsaná v živnostenském rejstříku“ nebo spisová značka.',
     email: 'E-mail',
     phone: 'Telefon',
+  },
+  bankAccounts: {
+    title: 'Bankovní účty',
+    description:
+      'Na tyto účty vám budou chodit platby. Stačí zadat české číslo účtu nebo IBAN, zbytek doplníme.',
+    new: 'Přidat účet',
+    empty:
+      'Zatím nemáte žádný bankovní účet. Přidejte ho, ať jej mohou odběratelé najít na faktuře.',
+    label: 'Název účtu',
+    labelPlaceholder: 'Například Provozní účet',
+    account: 'Číslo účtu nebo IBAN',
+    accountPlaceholder: '123456789/0800 nebo LT12 1000 0111 0100 1000',
+    currency: 'Měna',
+    bic: 'BIC / SWIFT',
+    bicOptional: 'Nepovinné',
+    showQr: 'Zobrazit QR platbu na faktuře',
+    default: 'Výchozí',
+    makeDefault: 'Nastavit jako výchozí',
+    delete: 'Smazat',
+    created: 'Účet byl přidán.',
+    deleted: 'Účet byl smazán.',
+    updated: 'Výchozí účet byl změněn.',
+    invalid: 'Číslo účtu nebo IBAN není platné. Zkontrolujte ho prosím.',
   },
 } as const
 

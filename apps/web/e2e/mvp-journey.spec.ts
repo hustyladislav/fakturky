@@ -88,7 +88,8 @@ for (const v of variants) {
       const total = page.getByText('Celkem k úhradě').locator('..')
       await expect(total).toContainText(amountRe(v.total))
       if (v.vatLines) {
-        for (const vat of v.vatLines) await expect(page.getByText(amountRe(vat)).first()).toBeVisible()
+        for (const vat of v.vatLines)
+          await expect(page.getByText(amountRe(vat)).first()).toBeVisible()
       } else {
         await expect(page.getByText('Nejste plátcem DPH, faktura bude bez DPH.')).toBeVisible()
       }
@@ -115,14 +116,16 @@ for (const v of variants) {
     })
 
     await test.step('public link /f/:token works without a session', async () => {
-      const href = await page.getByRole('link', { name: 'Veřejný odkaz' }).getAttribute('href')
+      const href = await page.locator('a[href*="/f/"]').first().getAttribute('href')
       expect(href).toMatch(/\/f\/[\w-]+$/)
       const anon = await browser.newContext({ locale: 'cs-CZ' })
       const pub = await anon.newPage()
       await pub.goto(new URL(href as string).pathname)
       await expect(pub.getByText(v.supplierName).first()).toBeVisible()
       await expect(pub.getByText(customerName).first()).toBeVisible()
-      await expect(pub.getByText(v.vatPayer ? 'Faktura – daňový doklad' : 'Faktura', { exact: true })).toBeVisible()
+      await expect(
+        pub.getByText(v.vatPayer ? 'Faktura – daňový doklad' : 'Faktura', { exact: true }),
+      ).toBeVisible()
       await expect(pub.getByText(amountRe(v.total)).first()).toBeVisible()
       const token = new URL(pub.url()).pathname.split('/').pop()
       const pdf = await pub.request.get(`/f/${token}/pdf`)
@@ -149,7 +152,9 @@ for (const v of variants) {
       const unpaid = page.locator('div.rounded-xl', { hasText: 'Neuhrazeno' }).first()
       await expect(unpaid).toContainText(/0,00/)
       await expect(unpaid).not.toContainText(amountRe(v.total))
-      await expect(page.locator('div.rounded-xl', { hasText: 'Po splatnosti' }).first()).toContainText('Žádné')
+      await expect(
+        page.locator('div.rounded-xl', { hasText: 'Po splatnosti' }).first(),
+      ).toContainText('Žádné')
       await expect(page.getByText('Poslední doklady')).toBeVisible()
     })
   })

@@ -38,6 +38,7 @@ export default defineConfig({
           command: `rm -rf .data/pglite-e2e && vite dev --port ${PORT} --strictPort`,
           url: `${baseURL}/prihlaseni`,
           reuseExistingServer: false,
+          stderr: process.env.E2E_SERVER_LOGS ? 'pipe' : 'ignore',
           timeout: 120_000,
           env: {
             DATABASE_URL: '',

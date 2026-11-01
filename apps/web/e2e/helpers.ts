@@ -23,7 +23,11 @@ export async function signUp(page: Page, email: string) {
   await page.getByLabel('Jméno a příjmení').fill('E2E Tester')
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Heslo').fill(PASSWORD)
-  await page.getByRole('button', { name: 'Vytvořit účet' }).click()
+  const submit = page.getByRole('button', { name: 'Vytvořit účet' })
+  // The form is only safe to submit once hydrated (see fix in auth-form); also guards older builds.
+  await expect(submit).toBeEnabled()
+  await page.waitForLoadState('networkidle')
+  await submit.click()
   await page.waitForURL(/\/onboarding$/)
 }
 

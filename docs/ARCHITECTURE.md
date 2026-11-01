@@ -29,7 +29,7 @@ Everything a user can do in the web UI is also available through the REST API, t
 | UI | Tailwind CSS v4, shadcn/ui (Base UI), lucide-react, sonner, cmdk-style command palette |
 | API | oRPC (`@orpc/server`, `@orpc/openapi`, `@orpc/tanstack-query`) + Zod 4 |
 | DB | Postgres on Neon (Vercel Marketplace), Drizzle ORM + drizzle-kit migrations; PGlite for tests |
-| Auth | Better Auth: email+password, passkeys, magic link (when email is configured), organizations, API keys, MCP OAuth (CIMD) |
+| Auth | Clerk (Vercel Marketplace, `@clerk/tanstack-react-start`): Google + email sign-in, passkeys, Organizations = tenants, API keys / machine auth, OAuth for MCP clients |
 | MCP | `mcp-handler` v2 + `@modelcontextprotocol/server` v2, Streamable HTTP at `/mcp` |
 | CLI | `packages/cli` — citty + @clack/prompts, talks to `/api/v1` with an API key, published to npm |
 | PDF | `@react-pdf/renderer` with bundled static TTF fonts (Czech diacritics), SPAYD QR via `spayd` + `qrcode` |
@@ -106,11 +106,20 @@ The MCP adapter iterates the router and registers one tool per procedure with th
 
 ## Auth
 
-- Web: Better Auth session cookie. Sign-up with email+password or passkey; magic link once Resend is configured.
-- API/CLI: Better Auth API keys (`Authorization: Bearer fk_…`), scoped to one organization.
-- MCP: OAuth 2.1 via `@better-auth/mcp` + CIMD (spec 2026-07-28), protected-resource metadata at
-  `/.well-known/oauth-protected-resource`; API keys also accepted as bearer tokens.
-- Bot protection (BotID) on sign-up / sign-in.
+- Web: Clerk (`@clerk/tanstack-react-start`), hosted sign-in/sign-up with Czech localization (`@clerk/localizations`
+  `csCZ`), Google + email code + passkeys. Provisioned via Vercel Marketplace (`fakturky-auth`); env
+  `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (map to the Vite client var).
+- Tenancy: a Clerk Organization is a business; our `organization_id` = Clerk org id. Personal accounts get an
+  organization created on onboarding. Members/roles (e.g. accountant read-only) come from Clerk.
+- API/CLI: Clerk API keys (machine auth) as `Authorization: Bearer …`, scoped to the organization.
+- MCP: Clerk as the OAuth authorization server for MCP clients (protected-resource metadata at
+  `/.well-known/oauth-protected-resource`); API keys accepted as bearer tokens too.
+- Bot protection: Clerk's built-in + BotID.
+
+## Email
+
+Resend via Vercel Marketplace (terms accepted). Needs an owned domain: provision with
+`vercel integration add resend --metadata domain=<mail.domain> --metadata region=eu-west-1` once the domain exists.
 
 ## Security
 

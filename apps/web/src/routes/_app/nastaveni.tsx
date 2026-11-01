@@ -17,9 +17,9 @@ export const Route = createFileRoute('/_app/nastaveni')({
 function Settings() {
   const { data: profile } = useQuery(orpc.businessProfile.get.queryOptions())
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-2xl font-semibold">{cs.settings.title}</h1>
-      <section className="space-y-4">
+      <section className="space-y-4 rounded-xl border bg-card p-5">
         <h2 className="text-lg font-medium">{cs.settings.profileTitle}</h2>
         {profile && <BusinessProfileForm profile={profile} submitLabel={cs.common.save} />}
       </section>
@@ -27,7 +27,9 @@ function Settings() {
       <NumberSeriesCard />
       <ReminderSettings />
       <DataExport />
-      <ApiKeys />
+      <div className="rounded-xl border bg-card p-5">
+        <ApiKeys />
+      </div>
     </div>
   )
 }

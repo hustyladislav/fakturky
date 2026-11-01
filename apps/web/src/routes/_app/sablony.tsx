@@ -1,10 +1,12 @@
 import { formatDateCs } from '@fakturky/domain/dates'
 import { Badge } from '@fakturky/ui/components/badge'
 import { Button } from '@fakturky/ui/components/button'
+import { EmptyState } from '@fakturky/ui/components/empty-state'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { FileStack } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
@@ -70,7 +72,11 @@ function Templates() {
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-2xl font-semibold">{t.title}</h1>
 
-      {templates.data?.length === 0 && <p className="text-muted-foreground">{t.empty}</p>}
+      {templates.data?.length === 0 && (
+        <EmptyState icon={FileStack} title={t.emptyTitle}>
+          {t.empty}
+        </EmptyState>
+      )}
       <div className="space-y-2">
         {templates.data?.map((tpl) => (
           <div key={tpl.id} className="space-y-3 rounded-xl border p-3">

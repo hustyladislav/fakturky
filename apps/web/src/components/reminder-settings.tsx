@@ -1,3 +1,4 @@
+import { Button } from '@fakturky/ui/components/button'
 import {
   Card,
   CardContent,
@@ -8,7 +9,38 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
-import { orpc } from '@/lib/orpc'
+import { client, orpc } from '@/lib/orpc'
+
+export function DataExport() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{cs.settings.exportTitle}</CardTitle>
+        <CardDescription>{cs.settings.exportDescription}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            try {
+              const f = await client.exports.organization({})
+              const url = URL.createObjectURL(new Blob([f.json], { type: 'application/json' }))
+              const a = document.createElement('a')
+              a.href = url
+              a.download = f.filename
+              a.click()
+              URL.revokeObjectURL(url)
+            } catch {
+              toast.error(cs.common.error)
+            }
+          }}
+        >
+          {cs.settings.exportButton}
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
 
 export function ReminderSettings() {
   const queryClient = useQueryClient()

@@ -22,7 +22,8 @@
     "./integrations/cnb": "./src/integrations/cnb.ts",
     "./integrations/vies": "./src/integrations/vies.ts",
     "./dic": "./src/dic.ts",
-    "./qr/epc": "./src/qr/epc.ts"
+    "./qr/epc": "./src/qr/epc.ts",
+    "./isdoc": "./src/isdoc.ts"
   },
   "scripts": {
     "test": "vitest run",

@@ -19,11 +19,13 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
+import { Route as AppSablonyRouteImport } from './routes/_app/sablony'
 import { Route as DocsApiRouteImport } from './routes/docs.api'
 import { Route as FTokenRouteImport } from './routes/f.$token'
 import { Route as AppFakturyIndexRouteImport } from './routes/_app/faktury.index'
 import { Route as AppFakturyNovaRouteImport } from './routes/_app/faktury.nova'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
+import { Route as ApiCronRecurringRouteImport } from './routes/api/cron.recurring'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
@@ -82,6 +84,11 @@ const AppNastaveniRoute = AppNastaveniRouteImport.update({
   path: '/nastaveni',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSablonyRoute = AppSablonyRouteImport.update({
+  id: '/sablony',
+  path: '/sablony',
+  getParentRoute: () => AppRoute,
+} as any)
 const DocsApiRoute = DocsApiRouteImport.update({
   id: '/docs/api',
   path: '/docs/api',
@@ -105,6 +112,11 @@ const AppFakturyNovaRoute = AppFakturyNovaRouteImport.update({
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronRecurringRoute = ApiCronRecurringRouteImport.update({
+  id: '/api/cron/recurring',
+  path: '/api/cron/recurring',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
@@ -158,10 +170,12 @@ export interface FileRoutesByFullPath {
   '/faktury': typeof AppFakturyRouteWithChildren
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
+  '/sablony': typeof AppSablonyRoute
   '/docs/api': typeof DocsApiRoute
   '/f/$token': typeof FTokenRouteWithChildren
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -180,11 +194,13 @@ export interface FileRoutesByTo {
   '/soukromi': typeof SoukromiRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
+  '/sablony': typeof AppSablonyRoute
   '/docs/api': typeof DocsApiRoute
   '/f/$token': typeof FTokenRouteWithChildren
   '/': typeof AppIndexRoute
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -206,11 +222,13 @@ export interface FileRoutesById {
   '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/kontakty': typeof AppKontaktyRoute
   '/_app/nastaveni': typeof AppNastaveniRoute
+  '/_app/sablony': typeof AppSablonyRoute
   '/docs/api': typeof DocsApiRoute
   '/f/$token': typeof FTokenRouteWithChildren
   '/_app/': typeof AppIndexRoute
   '/_app/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -233,10 +251,12 @@ export interface FileRouteTypes {
     | '/faktury'
     | '/kontakty'
     | '/nastaveni'
+    | '/sablony'
     | '/docs/api'
     | '/f/$token'
     | '/faktury/nova'
     | '/api/auth/$'
+    | '/api/cron/recurring'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -255,11 +275,13 @@ export interface FileRouteTypes {
     | '/soukromi'
     | '/kontakty'
     | '/nastaveni'
+    | '/sablony'
     | '/docs/api'
     | '/f/$token'
     | '/'
     | '/faktury/nova'
     | '/api/auth/$'
+    | '/api/cron/recurring'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -280,11 +302,13 @@ export interface FileRouteTypes {
     | '/_app/faktury'
     | '/_app/kontakty'
     | '/_app/nastaveni'
+    | '/_app/sablony'
     | '/docs/api'
     | '/f/$token'
     | '/_app/'
     | '/_app/faktury/nova'
     | '/api/auth/$'
+    | '/api/cron/recurring'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -306,6 +330,7 @@ export interface RootRouteChildren {
   DocsApiRoute: typeof DocsApiRoute
   FTokenRoute: typeof FTokenRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCronRecurringRoute: typeof ApiCronRecurringRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
@@ -384,6 +409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNastaveniRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/sablony': {
+      id: '/_app/sablony'
+      path: '/sablony'
+      fullPath: '/sablony'
+      preLoaderRoute: typeof AppSablonyRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/docs/api': {
       id: '/docs/api'
       path: '/docs/api'
@@ -417,6 +449,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/recurring': {
+      id: '/api/cron/recurring'
+      path: '/api/cron/recurring'
+      fullPath: '/api/cron/recurring'
+      preLoaderRoute: typeof ApiCronRecurringRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rpc/$': {
@@ -500,6 +539,7 @@ interface AppRouteChildren {
   AppFakturyRoute: typeof AppFakturyRouteWithChildren
   AppKontaktyRoute: typeof AppKontaktyRoute
   AppNastaveniRoute: typeof AppNastaveniRoute
+  AppSablonyRoute: typeof AppSablonyRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -507,6 +547,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFakturyRoute: AppFakturyRouteWithChildren,
   AppKontaktyRoute: AppKontaktyRoute,
   AppNastaveniRoute: AppNastaveniRoute,
+  AppSablonyRoute: AppSablonyRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -535,6 +576,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsApiRoute: DocsApiRoute,
   FTokenRoute: FTokenRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCronRecurringRoute: ApiCronRecurringRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,

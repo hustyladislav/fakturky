@@ -112,6 +112,15 @@ function InvoiceDetail() {
       onError,
     }),
   )
+  const saveTemplate = useMutation(
+    orpc.templates.createFromDocument.mutationOptions({
+      onSuccess: async () => {
+        toast.success(cs.templates.saved)
+        await queryClient.invalidateQueries({ queryKey: orpc.templates.key() })
+      },
+      onError,
+    }),
+  )
   const remove = useMutation(
     orpc.documents.delete.mutationOptions({
       onSuccess: async () => {
@@ -393,6 +402,16 @@ function InvoiceDetail() {
             {t.cancel}
           </Button>
         )}
+        <Button
+          variant="outline"
+          className={full}
+          onClick={() => {
+            const name = window.prompt(cs.templates.namePrompt, d?.customerName ?? '')
+            if (name?.trim()) saveTemplate.mutate({ documentId: id, name: name.trim() })
+          }}
+        >
+          {cs.templates.saveAs}
+        </Button>
         <Button variant="outline" className={full} onClick={() => duplicate.mutate({ id })}>
           {t.duplicate}
         </Button>

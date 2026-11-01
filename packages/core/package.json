@@ -12,6 +12,7 @@
     "./context": "./src/context.ts",
     "./testing": "./src/testing.ts",
     "./export": "./src/export.ts",
+    "./templates-repo": "./src/repositories/templates.ts",
     "./documents-repo": "./src/repositories/documents.ts",
     "./public-documents": "./src/repositories/public-documents.ts"
   },

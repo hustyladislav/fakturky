@@ -268,7 +268,7 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
   const showVatCols = payer
   const showRecap = payer && !isProforma && doc.totals.recap.length > 0
   const foreign = cur !== 'CZK'
-  const rate = parseDecimal(doc.exchangeRate ?? 1)
+  const rate = parseDecimal(doc.exchangeRate ?? doc.totals.exchangeRate)
   const title = titleFor(doc, t)
   const pay = doc.payment
   const acct = pay?.bankAccount
@@ -484,9 +484,6 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
                 {doc.footerText}
               </Text>
             ) : null}
-            {doc.note ? (
-              <Text style={[s.muted, { marginTop: 6, maxWidth: 250 }]}>{doc.note}</Text>
-            ) : null}
             {isProforma ? <Text style={[s.bold, { marginTop: 8 }]}>{t.notTaxDocument}</Text> : null}
 
             {doc.signature || doc.issuedBy ? (
@@ -599,6 +596,12 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
             </View>
           </View>
         </View>
+
+        {doc.note ? (
+          <View style={{ marginTop: 14 }}>
+            <Text style={s.muted}>{doc.note}</Text>
+          </View>
+        ) : null}
 
         {legalTexts.length > 0 ? (
           <View style={s.legal} wrap={false}>

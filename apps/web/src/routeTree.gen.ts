@@ -16,6 +16,7 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
+import { Route as DocsApiRouteImport } from './routes/docs.api'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
@@ -55,6 +56,11 @@ const AppNastaveniRoute = AppNastaveniRouteImport.update({
   path: '/nastaveni',
   getParentRoute: () => AppRoute,
 } as any)
+const DocsApiRoute = DocsApiRouteImport.update({
+  id: '/docs/api',
+  path: '/docs/api',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/faktury': typeof AppFakturyRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
+  '/docs/api': typeof DocsApiRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/faktury': typeof AppFakturyRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
+  '/docs/api': typeof DocsApiRoute
   '/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/_app/faktury': typeof AppFakturyRoute
   '/_app/kontakty': typeof AppKontaktyRoute
   '/_app/nastaveni': typeof AppNastaveniRoute
+  '/docs/api': typeof DocsApiRoute
   '/_app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/faktury'
     | '/kontakty'
     | '/nastaveni'
+    | '/docs/api'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/api/v1/$'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/faktury'
     | '/kontakty'
     | '/nastaveni'
+    | '/docs/api'
     | '/'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/_app/faktury'
     | '/_app/kontakty'
     | '/_app/nastaveni'
+    | '/docs/api'
     | '/_app/'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   PrihlaseniRoute: typeof PrihlaseniRoute
   RegistraceRoute: typeof RegistraceRoute
+  DocsApiRoute: typeof DocsApiRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
@@ -215,6 +228,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNastaveniRouteImport
       parentRoute: typeof AppRoute
     }
+    '/docs/api': {
+      id: '/docs/api'
+      path: '/docs/api'
+      fullPath: '/docs/api'
+      preLoaderRoute: typeof DocsApiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   PrihlaseniRoute: PrihlaseniRoute,
   RegistraceRoute: RegistraceRoute,
+  DocsApiRoute: DocsApiRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,

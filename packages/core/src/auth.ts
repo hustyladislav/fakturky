@@ -77,7 +77,12 @@ export function createAuth(options: CreateAuthOptions) {
     plugins: [
       organization(),
       passkey({ rpID: url.hostname, rpName: BRAND.name, origin: url.origin }),
-      apiKey({ references: 'organization', defaultPrefix: BRAND.apiKeyPrefix }),
+      apiKey({
+        references: 'organization',
+        defaultPrefix: BRAND.apiKeyPrefix,
+        // Generous per-key limit (the plugin default is 10 requests per day).
+        rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 600 },
+      }),
       dash(),
       ...((options.extraPlugins ?? []) as never[]),
     ],

@@ -1,7 +1,10 @@
 import { isValidIco, normalizeIco } from '../ico.ts'
 import { type ClientOptions, IntegrationError, request } from './fetch.ts'
 
-const BASE = 'https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty'
+const DEFAULT_BASE = 'https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty'
+
+/** `ARES_BASE_URL` lets e2e tests point the server-side lookup at a local mock. */
+const base = () => process.env.ARES_BASE_URL || DEFAULT_BASE
 
 export interface AresAddress {
   street: string
@@ -70,7 +73,7 @@ export function normalizeAresSubject(raw: RawSubject): AresSubject {
 export async function lookupByIco(ico: string, opts: ClientOptions = {}): Promise<AresSubject | null> {
   const normalized = normalizeIco(ico)
   if (!isValidIco(normalized)) throw new IntegrationError(`Invalid IČO: ${ico}`, 'invalid_input')
-  const res = await request(`${BASE}/${normalized}`, { headers: { accept: 'application/json' } }, opts)
+  const res = await request(`${base()}/${normalized}`, { headers: { accept: 'application/json' } }, opts)
   if (res.status === 404) return null
   if (!res.ok) throw new IntegrationError(`ARES responded ${res.status}`, 'http_error', res.status)
   return normalizeAresSubject((await res.json()) as RawSubject)

@@ -164,7 +164,8 @@ async function importDocument(
     (d.customerExternalId ? contactIds.get(d.customerExternalId) : undefined) ??
     (await upsertContact(tx, orgId, d.customer)).id
 
-  const vatPayer = !d.reverseCharge && d.lines.some((l) => parseDecimal(l.vatRate).gt(0))
+  const vatPayer =
+    d.type === 'invoice' && !d.reverseCharge && d.lines.some((l) => parseDecimal(l.vatRate).gt(0))
   const totals = computeDocumentTotals(
     d.lines.map((l) => ({
       quantity: l.quantity,

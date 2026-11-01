@@ -301,3 +301,58 @@ describe('ISDOC import', () => {
     )
   })
 })
+
+describe('review hardening', () => {
+  test('Fakturoid tax documents and corrections are not imported as invoices', async () => {
+    const { mapInvoice } = await import('./fakturoid')
+    expect(mapInvoice({ document_type: 'tax_document', number: 'D1', lines: [] })).toBeNull()
+    expect(mapInvoice({ document_type: 'correction', number: 'K1', lines: [] })).toBeNull()
+  })
+
+  test('CSV rows with malformed amounts are rejected, not imported with altered values', () => {
+    const { documents, problems } = invoicesFromCsv(
+      'number;issue_date;description;quantity;unit_price;vat_rate\nA1;2024-01-01;ok;1;100;21\nA2;2024-01-01;bad;1;abc;21\nA3;2024-01-01;bad2;x;5;0\n',
+    )
+    expect(documents.map((d) => d.number)).toEqual(['A1'])
+    expect(problems.map((p) => p.number).sort()).toEqual(['A2', 'A3'])
+    expect(problems.find((p) => p.number === 'A2')?.message).toContain('unit price')
+  })
+
+  test('ISDOC unit price is derived with Decimal arithmetic', () => {
+    const xml = `<Invoice><DocumentType>1</DocumentType><ID>X</ID><IssueDate>2025-01-01</IssueDate>
+      <InvoiceLines><InvoiceLine><InvoicedQuantity>3</InvoicedQuantity><LineExtensionAmount>0.025</LineExtensionAmount>
+      <ClassifiedTaxCategory><Percent>0</Percent></ClassifiedTaxCategory><Item><Description>d</Description></Item></InvoiceLine></InvoiceLines></Invoice>`
+    const parsed = parseIsdoc(xml)
+    if (!parsed.ok) throw new Error('parse failed')
+    expect(parsed.document.lines[0]?.unitPrice.startsWith('0.00833333333333333333')).toBe(true)
+  })
+
+  test('ISDOC reverse-charge invoices keep their treatment', () => {
+    const xml = `<Invoice><DocumentType>1</DocumentType><ID>R1</ID><IssueDate>2025-01-01</IssueDate>
+      <InvoiceLines><InvoiceLine><InvoicedQuantity>1</InvoicedQuantity><LineExtensionAmount>100</LineExtensionAmount>
+      <ClassifiedTaxCategory><Percent>0</Percent></ClassifiedTaxCategory>
+      <VATNote>Daň odvede zákazník (režim přenesení daňové povinnosti, § 92a zákona o DPH)</VATNote>
+      <Item><Description>d</Description></Item></InvoiceLine></InvoiceLines></Invoice>`
+    const parsed = parseIsdoc(xml)
+    if (!parsed.ok) throw new Error('parse failed')
+    expect(parsed.document.reverseCharge).toBe(true)
+  })
+
+  test('imported proformas never carry VAT', async () => {
+    const org = await seedOrg(handle, 'proforma-vat')
+    const api = clientFor(handle, principal(org))
+    await api.import.file({
+      format: 'csv',
+      kind: 'invoices',
+      content:
+        'number;type;issue_date;description;unit_price;vat_rate\nZ1;proforma;2024-01-01;Záloha;1000;21\n',
+    })
+    const [doc] = await api.documents.list({ filter: 'all' })
+    expect(doc).toMatchObject({
+      type: 'proforma',
+      vatTotal: '0.0000',
+      total: '1000.0000',
+      vatMode: 'none',
+    })
+  })
+})

@@ -1,3 +1,4 @@
+import { Decimal } from '@fakturky/domain'
 import type { ImportContact, ImportDocument, ImportLine } from './types'
 
 /** Tiny, dependency-free ISDOC reader: only the elements an invoice import needs. */
@@ -26,7 +27,9 @@ function text(xml: string | null, tag: string): string | null {
   if (!xml) return null
   const inner = block(xml, tag)
   if (inner === null) return null
-  const v = unescapeXml(inner.replace(/<[^>]+>/g, '')).trim()
+  // Leaf elements only: anything with child markup is not a text value.
+  if (inner.includes('<')) return null
+  const v = unescapeXml(inner).trim()
   return v === '' ? null : v
 }
 
@@ -74,16 +77,23 @@ export function parseIsdoc(xml: string): IsdocParseResult {
       const net = foreignCurrency
         ? (text(inner, 'LineExtensionAmountCurr') ?? text(inner, 'LineExtensionAmount'))
         : text(inner, 'LineExtensionAmount')
-      const qty = Number(quantity) || 1
+      const qty = new Decimal(quantity || '1')
       return {
         description: text(block(inner, 'Item'), 'Description') ?? '—',
         quantity,
         unit: unit ? unescapeXml(unit) : null,
-        unitPrice: net === null ? (text(inner, 'UnitPrice') ?? '0') : String(Number(net) / qty),
+        unitPrice:
+          net === null || qty.isZero()
+            ? (text(inner, 'UnitPrice') ?? '0')
+            : new Decimal(net).div(qty).toString(),
         vatRate: text(block(inner, 'ClassifiedTaxCategory'), 'Percent') ?? '0',
       }
     },
   )
+
+  // Reverse charge is encoded as zero-rate lines carrying the legal VAT note (as this app exports it).
+  const reverseCharge =
+    /přenesen[íi]\s+daňov/i.test(xml) && lines.every((l) => Number(l.vatRate) === 0)
 
   const details = block(xml, 'Details')
   const payable = text(xml, 'PayableAmount')
@@ -113,7 +123,7 @@ export function parseIsdoc(xml: string): IsdocParseResult {
       lines,
       payments: [],
       cancelled: false,
-      reverseCharge: false,
+      reverseCharge,
       sourceTotal: payable && !foreignCurrency ? payable : null,
     },
   }

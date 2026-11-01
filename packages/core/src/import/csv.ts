@@ -98,10 +98,14 @@ export function normalizeDate(value: string): string | null {
   return `${m[3]}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`
 }
 
-const dec = (v: string, fallback = '0') => {
+/** Normalizes a decimal cell (`1 234,50` → `1234.50`); null when not a number. */
+const parseDec = (v: string): string | null => {
   const s = v.replace(/\s/g, '').replace(',', '.')
-  return /^-?\d+(\.\d+)?$/.test(s) ? s : fallback
+  return /^-?\d+(\.\d+)?$/.test(s) ? s : null
 }
+
+/** Lenient variant for optional cells (e.g. exchange rate): invalid → fallback. */
+const dec = (v: string, fallback = '0') => parseDec(v) ?? fallback
 
 const empty = (v: string) => (v === '' ? null : v)
 
@@ -140,6 +144,7 @@ export function invoicesFromCsv(input: string): CsvInvoiceResult {
   const [header, ...rows] = parseCsv(input)
   const documents = new Map<string, ImportDocument>()
   const problems: CsvInvoiceResult['problems'] = []
+  const invalid = new Set<string>()
   if (!header) return { documents: [], problems }
   const get = indexer(header)
 
@@ -191,14 +196,21 @@ export function invoicesFromCsv(input: string): CsvInvoiceResult {
     }
     const description = get(r, 'description')
     if (description) {
-      doc.lines.push({
-        description,
-        quantity: dec(get(r, 'quantity'), '1'),
-        unit: empty(get(r, 'unit')),
-        unitPrice: dec(get(r, 'unit_price')),
-        vatRate: dec(get(r, 'vat_rate')),
-      })
+      // Money cells must parse: never import altered amounts silently.
+      const quantity = get(r, 'quantity') === '' ? '1' : parseDec(get(r, 'quantity'))
+      const unitPrice = parseDec(get(r, 'unit_price'))
+      const vatRate = get(r, 'vat_rate') === '' ? '0' : parseDec(get(r, 'vat_rate'))
+      if (quantity === null || unitPrice === null || vatRate === null) {
+        const what = quantity === null ? 'quantity' : unitPrice === null ? 'unit price' : 'VAT rate'
+        invalid.add(number)
+        problems.push({ number, message: `Invalid or missing ${what} on line "${description}"` })
+        continue
+      }
+      doc.lines.push({ description, quantity, unit: empty(get(r, 'unit')), unitPrice, vatRate })
     }
   }
-  return { documents: [...documents.values()], problems }
+  return {
+    documents: [...documents.values()].filter((d) => !invalid.has(d.number)),
+    problems,
+  }
 }

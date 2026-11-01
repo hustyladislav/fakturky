@@ -87,7 +87,7 @@ export const importRouter = {
               kind: 'document',
               ref,
               level: 'skipped',
-              message: 'Corrections (credit notes) are not supported yet',
+              message: 'Corrections and tax documents for received payments are not supported yet',
             })
           }
         } else {

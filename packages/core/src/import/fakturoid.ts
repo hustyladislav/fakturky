@@ -154,10 +154,10 @@ const PAYMENT_METHODS: Record<string, string> = {
   card: 'card',
 }
 
-/** Null for document types the app does not model (corrections / credit notes). */
+/** Null for document types the app does not model (corrections, tax documents for received payments). */
 export function mapInvoice(i: Json): ImportDocument | null {
   const type = str(i.document_type) ?? 'invoice'
-  if (type === 'correction') return null
+  if (type === 'correction' || type === 'tax_document') return null
   const docType = type === 'proforma' || type === 'partial_proforma' ? 'proforma' : 'invoice'
 
   const rawLines = Array.isArray(i.lines) ? (i.lines as Json[]) : []

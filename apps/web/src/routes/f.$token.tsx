@@ -129,7 +129,7 @@ function PublicInvoice() {
         {d.introText && <p className="text-sm whitespace-pre-line">{d.introText}</p>}
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[34rem] text-sm">
             <thead>
               <tr className="border-b border-neutral-400 text-left text-xs text-neutral-500">
                 <th className="py-2 font-medium">{t.description}</th>

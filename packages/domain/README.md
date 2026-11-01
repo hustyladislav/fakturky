@@ -8,11 +8,11 @@ Pure Czech invoicing logic (no DB, no framework). TypeScript source is exported 
 | `vat` | rates, `vat_treatment` + legal texts, `computeDocumentTotals` |
 | `numbering` | pattern format/parse, period key, variable symbol |
 | `ico`, `iban`, `czech-account`, `bank-codes` | identifiers & bank accounts |
-| `qr/spayd`, `qr/render` | QR Platba (+QR Faktura), SVG |
+| `qr/spayd`, `qr/epc`, `qr/render` | QR Platba (+QR Faktura), SVG |
 | `dic` | CZ/SK/EU VAT ID validation |
 | `dates` | Europe/Prague helpers |
 | `integrations/ares` | ARES lookup by IČO (injectable `fetch`) |
 | `integrations/vies` | VIES VAT number check |
 | `integrations/cnb` | ČNB daily rates, `getRate` with weekend/holiday fallback |
 
-Planned follow-ups: EPC QR, ISDOC.
+Planned follow-ups: ISDOC.

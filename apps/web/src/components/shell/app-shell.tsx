@@ -17,7 +17,6 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import {
   Coffee,
   Ellipsis,
-  FileStack,
   LogOut,
   MessageSquare,
   PanelRight,
@@ -184,17 +183,6 @@ function Sidebar({ user }: { user: { name: string; email: string } }) {
             </Kbd>
           </Link>
         ))}
-        <span
-          className={cn(navLink, 'cursor-not-allowed opacity-50 hover:bg-transparent')}
-          aria-disabled="true"
-          title={cs.nav.templatesSoon}
-        >
-          <FileStack aria-hidden />
-          <span className="max-lg:sr-only">{cs.nav.templates}</span>
-          <span className="ml-auto text-[11px] text-muted-foreground max-lg:hidden">
-            {cs.nav.soon}
-          </span>
-        </span>
       </nav>
       <div className="space-y-1 border-t px-3 py-3 max-lg:px-2">
         <a

@@ -72,6 +72,100 @@ export const cs = {
     signOut: 'Odhlásit se',
     support: 'Podpořit projekt',
   },
+  landing: {
+    metaTitle: `${BRAND.name} — fakturace zdarma pro živnostníky a firmy`,
+    metaDescription:
+      'Svobodný fakturační program: neomezeně faktur a kontaktů, QR platba, ARES, DPH a ISDOC. Zdarma, s otevřeným kódem.',
+    nav: { features: 'Funkce', why: 'Proč zdarma', ai: 'Pro AI asistenty', faq: 'Časté dotazy' },
+    signIn: 'Přihlásit se',
+    start: 'Začít zdarma',
+    heroTitle: 'Fakturujte zdarma. Bez omezení.',
+    heroText:
+      'Přehledný fakturační program pro české živnostníky a firmy. Správná DPH, QR platba, údaje z ARES i export do ISDOC. Bez karty, bez reklam, s otevřeným kódem.',
+    heroNote: 'Vytvoření účtu trvá minutu.',
+    docs: 'Dokumentace API',
+    mock: {
+      invoice: 'Faktura',
+      number: '2026-0042',
+      customer: 'Novák & syn s.r.o.',
+      total: 'Celkem k úhradě',
+      qr: 'QR Platba',
+      recent: 'Poslední doklady',
+    },
+    whyTitle: 'Proč zdarma?',
+    whyText: [
+      `${BRAND.name} provozuje jeden člověk ve svém volném čase. Chtěl jsem fakturační program, který nenutí platit za počet faktur, a nenašel jsem ho, tak vznikl tento.`,
+      'Provoz se platí z dobrovolných darů. Žádné reklamy, žádné prodávání dat, žádné „odemkněte za 199 Kč“. Kód je otevřený na GitHubu, takže vidíte, co se s vašimi daty děje, a můžete si službu klidně spustit sami.',
+      'Když vám aplikace ušetří čas, můžete mi koupit kávu. Nemusíte.',
+    ],
+    whyCoffee: 'Kupte mi kávu',
+    whyGithub: 'Kód na GitHubu',
+    featuresTitle: 'Všechno, co k fakturaci potřebujete',
+    features: [
+      [
+        'Neomezeně faktur a kontaktů',
+        'Žádné měsíční limity ani tarify. Vystavujte, kolik potřebujete.',
+      ],
+      [
+        'QR platba',
+        'Faktury v Kč hrazené převodem nesou QR kód, který klient naskenuje v bankovní aplikaci.',
+      ],
+      ['ARES', 'Zadejte IČO a název, adresa i DIČ se doplní z registru.'],
+      [
+        'DPH bez starostí',
+        'Plátci i neplátci. DPH se počítá po sazbách a zaokrouhluje podle pravidel.',
+      ],
+      [
+        'Opakované faktury (brzy)',
+        'Připravujeme: pravidelné služby se vystaví samy, vy je jen zkontrolujete.',
+      ],
+      [
+        'ISDOC a PDF',
+        'Doklady ve formátu, který přijme každý účetní. PDF čitelné i při černobílém tisku.',
+      ],
+    ],
+    aiTitle: 'Pro AI asistenty',
+    aiText:
+      'Vše, co umíte v aplikaci, je dostupné i programově. Váš AI asistent nebo skript může připravit koncept faktury, dohledat kontakt nebo zjistit, co je po splatnosti. Vy ho vždy schvalujete.',
+    aiCards: [
+      ['REST API', 'Dostupné už dnes. Klíč vytvoříte v Nastavení, popis najdete v dokumentaci.'],
+      ['MCP server', 'Připravujeme. Napojíte Claude nebo jiného asistenta přímo na své faktury.'],
+      ['Příkazová řádka', 'Připravujeme. Fakturujte z terminálu nebo skriptu.'],
+    ],
+    faqTitle: 'Časté dotazy',
+    faq: [
+      [
+        'Opravdu je to zdarma?',
+        'Ano. Bez omezení počtu faktur a kontaktů, bez skrytých poplatků. Provoz se hradí z dobrovolných darů.',
+      ],
+      [
+        'Kdo za tím stojí?',
+        'Jeden člověk, který program vyvíjí a provozuje ve volném čase. Kód je veřejný na GitHubu.',
+      ],
+      [
+        'Co když projekt skončí?',
+        'Data si můžete vyžádat a kód je otevřený, takže si službu můžete spustit sami.',
+      ],
+      [
+        'Jsou faktury v souladu s českými předpisy?',
+        'Doklady obsahují zákonné náležitosti a DPH se počítá podle pravidel. Program ale nenahrazuje účetního; důležité věci si vždy ověřte.',
+      ],
+      ['Umí to fakturovat v eurech?', 'Ano, včetně kurzu a přepočtu DPH do Kč.'],
+      [
+        'Jak je to s mými daty?',
+        'Každý účet je izolovaný. Nic neprodáváme ani nesledujeme. Podrobnosti jsou v zásadách ochrany osobních údajů.',
+      ],
+    ],
+    ctaTitle: 'Vystavte první fakturu ještě dnes',
+    footer: {
+      product: 'Produkt',
+      project: 'Projekt',
+      legal: 'Právní',
+      feedback: 'Zpětná vazba',
+      contact: 'Kontakt',
+      made: 'Vyrobeno v Česku jedním člověkem.',
+    },
+  },
   theme: {
     system: 'Podle systému',
     light: 'Světlý motiv',

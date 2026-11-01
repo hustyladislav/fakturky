@@ -1,6 +1,6 @@
-import { createMiddleware, createStart } from '@tanstack/react-start'
+import { createCsrfMiddleware, createMiddleware, createStart } from '@tanstack/react-start'
 import { nonceStore } from './server/nonce'
-import { buildCsp, generateNonce } from './server/security-headers'
+import { buildCsp, generateNonce, needsCsrfCheck } from './server/security-headers'
 
 const securityHeaders = createMiddleware({ type: 'request' }).server(async ({ next }) => {
   const nonce = generateNonce()
@@ -14,4 +14,11 @@ const securityHeaders = createMiddleware({ type: 'request' }).server(async ({ ne
   return result
 })
 
-export const startInstance = createStart(() => ({ requestMiddleware: [securityHeaders] }))
+// Passing our own `requestMiddleware` switches off Start's built-in CSRF protection for server functions, so it is
+// re-added here and widened to the cookie-authenticated mutation endpoints (/api/rpc, /api/v1).
+const csrf = createCsrfMiddleware({
+  filter: ({ handlerType, request }) =>
+    needsCsrfCheck(handlerType, request.method, new URL(request.url).pathname, request.headers),
+})
+
+export const startInstance = createStart(() => ({ requestMiddleware: [securityHeaders, csrf] }))

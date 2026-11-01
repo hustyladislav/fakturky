@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 import {
   buildCsp,
   generateNonce,
+  needsCsrfCheck,
   STATIC_SECURITY_HEADERS,
   TOKEN_PATH_HEADERS,
 } from './security-headers'
@@ -40,4 +41,20 @@ test('tokenised public pages never leak the URL and are not indexed or cached', 
   expect(TOKEN_PATH_HEADERS['x-robots-tag']).toContain('noindex')
   expect(TOKEN_PATH_HEADERS['cache-control']).toContain('no-store')
   expect(TOKEN_PATH_HEADERS['x-frame-options']).toBe('DENY')
+})
+
+test('CSRF applies to server functions and cookie-authenticated API mutations only', () => {
+  const none = new Headers()
+  const bearer = new Headers({ authorization: 'Bearer fk_x' })
+  const apiKey = new Headers({ 'x-api-key': 'fk_x' })
+  expect(needsCsrfCheck('serverFn', 'GET', '/_serverFn/x', none)).toBe(true)
+  expect(needsCsrfCheck('router', 'POST', '/api/rpc/contacts/create', none)).toBe(true)
+  expect(needsCsrfCheck('router', 'DELETE', '/api/v1/documents/1', none)).toBe(true)
+  // API keys carry no ambient credentials
+  expect(needsCsrfCheck('router', 'POST', '/api/v1/documents', bearer)).toBe(false)
+  expect(needsCsrfCheck('router', 'POST', '/api/v1/documents', apiKey)).toBe(false)
+  // reads and unrelated routes are not gated
+  expect(needsCsrfCheck('router', 'GET', '/api/rpc/contacts/list', none)).toBe(false)
+  expect(needsCsrfCheck('router', 'POST', '/api/auth/sign-in/email', none)).toBe(false)
+  expect(needsCsrfCheck('router', 'POST', '/api/rpcx', none)).toBe(false)
 })

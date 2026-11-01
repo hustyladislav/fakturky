@@ -56,6 +56,23 @@ export function buildCsp(nonce: string): string {
 }
 
 /**
+ * Which requests the CSRF (Sec-Fetch-Site / Origin / Referer) check applies to: server functions, and
+ * state-changing calls to the cookie-authenticated API surfaces. Clients that send an API key carry no ambient
+ * credentials, so they are exempt; reads are exempt by HTTP semantics. `/api/auth` has Better Auth's own check.
+ */
+export function needsCsrfCheck(
+  handlerType: 'serverFn' | 'router',
+  method: string,
+  pathname: string,
+  headers: Pick<Headers, 'has'>,
+): boolean {
+  if (handlerType === 'serverFn') return true
+  if (['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) return false
+  if (!/^\/api\/(rpc|v1)(\/|$)/.test(pathname)) return false
+  return !headers.has('authorization') && !headers.has('x-api-key')
+}
+
+/**
  * Pages whose URL carries a bearer-like token (`/f/:token`) must never leak it via Referer, into caches
  * or search indexes. Applied as a more specific Nitro route rule on top of the static headers.
  */

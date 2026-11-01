@@ -89,8 +89,9 @@ export function createAuth(options: CreateAuthOptions) {
       freshAge: 60 * 15,
     },
     // Serverless instances do not share memory, so counters live in the database (`rate_limit` table).
-    // Better Auth only enforces in production by default; the tight rules below are for credential endpoints.
+    // Enabled explicitly (Better Auth defaults to production only); the tight rules are for credential endpoints.
     rateLimit: {
+      enabled: true,
       storage: 'database',
       window: 60,
       max: 100,

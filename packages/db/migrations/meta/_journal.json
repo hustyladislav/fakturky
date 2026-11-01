@@ -15,6 +15,13 @@
       "when": 1793572309083,
       "tag": "0001_zippy_the_liberteens",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793574071812,
+      "tag": "0002_petite_gateway",
+      "breakpoints": true
     }
   ]
 }

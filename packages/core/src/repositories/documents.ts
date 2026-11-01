@@ -210,7 +210,7 @@ export const documentsRepo = {
     const rows = await db
       .select({ doc: document, contactName: contact.name })
       .from(document)
-      .leftJoin(contact, eq(contact.id, document.contactId))
+      .leftJoin(contact, and(eq(contact.id, document.contactId), eq(contact.organizationId, orgId)))
       .where(
         and(
           eq(document.organizationId, orgId),

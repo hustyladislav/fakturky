@@ -11,7 +11,8 @@ Free, open-source Czech invoicing app (web + REST + MCP + CLI). Read before work
 - Every capability is an oRPC procedure in `packages/core/src/router`. If you add a feature, add/extend the
   procedure, then UI. REST, MCP and CLI pick it up from the router metadata — check they do.
 - Money is `Decimal` (decimal.js-light) / `numeric` strings. Never `number` for amounts.
-- Every query is scoped by `organizationId`. No exceptions; add a tenant-isolation test for new repositories.
+- Every query is scoped by `organizationId`, joins included. No exceptions. Every new oRPC procedure needs a case in
+  `packages/core/src/router/tenant-isolation.test.ts` (it fails until you add one).
 - **Always use the latest stable versions — verify, never assume.** Before adding or upgrading a dependency run
   `npm view <pkg> version` (and read its changelog for breaking changes); before choosing an AI model, query
   `https://ai-gateway.vercel.sh/v1/models` live. Your training data is outdated by definition.

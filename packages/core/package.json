@@ -25,7 +25,8 @@
     "drizzle-orm": "catalog:",
     "uuid": "catalog:",
     "zod": "catalog:",
-    "@better-auth/infra": "0.4.25"
+    "@better-auth/infra": "0.4.25",
+    "@fakturky/domain": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:"

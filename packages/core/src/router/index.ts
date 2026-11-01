@@ -1,7 +1,9 @@
 import type { InferRouterInputs, InferRouterOutputs } from '@orpc/server'
+import { businessProfileRouter } from './business-profile'
 import { contactsRouter } from './contacts'
 
 export const router = {
+  businessProfile: businessProfileRouter,
   contacts: contactsRouter,
 }
 

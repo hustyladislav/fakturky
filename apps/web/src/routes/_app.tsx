@@ -18,12 +18,13 @@ import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/
 import { FileText, Heart, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
-import { getSessionFn } from '@/server/session'
+import { getOnboardedFn, getSessionFn } from '@/server/session'
 
 export const Route = createFileRoute('/_app')({
   beforeLoad: async () => {
     const session = await getSessionFn()
     if (!session) throw redirect({ to: '/prihlaseni' })
+    if (!(await getOnboardedFn())) throw redirect({ to: '/onboarding' })
     return { user: session.user }
   },
   component: AppShell,

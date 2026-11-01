@@ -62,7 +62,35 @@ export const cs = {
   },
   settings: {
     title: 'Nastavení',
-    soon: 'Nastavení firmy a bankovních účtů je v přípravě.',
+    profileTitle: 'Firemní údaje',
+    profileSaved: 'Údaje byly uloženy.',
+  },
+  onboarding: {
+    title: 'Vítejte! Pojďme nastavit vaše údaje',
+    description:
+      'Tyto údaje se objeví na vašich fakturách jako dodavatel. Stačí zadat IČO a zbytek doplníme z registru ARES.',
+    submit: 'Pokračovat',
+    skip: 'Vyplním později',
+  },
+  profile: {
+    ico: 'IČO',
+    icoLookup: 'Načíst z ARES',
+    icoFound: 'Údaje byly načteny z ARES.',
+    icoNotFound: 'IČO se nepodařilo najít v ARES. Vyplňte údaje ručně.',
+    legalName: 'Obchodní jméno / jméno a příjmení',
+    dic: 'DIČ',
+    street: 'Ulice a číslo',
+    city: 'Město',
+    zip: 'PSČ',
+    vatStatus: 'Plátcovství DPH',
+    vatNonPayer: 'Neplátce DPH',
+    vatPayer: 'Plátce DPH',
+    vatIdentified: 'Identifikovaná osoba',
+    registryNote: 'Zápis v rejstříku',
+    registryNoteHint:
+      'Např. „Fyzická osoba zapsaná v živnostenském rejstříku“ nebo spisová značka.',
+    email: 'E-mail',
+    phone: 'Telefon',
   },
 } as const
 

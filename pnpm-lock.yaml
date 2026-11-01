@@ -335,6 +335,9 @@ importers:
       '@fakturky/db':
         specifier: workspace:*
         version: link:../db
+      '@fakturky/domain':
+        specifier: workspace:*
+        version: link:../domain
       '@orpc/openapi':
         specifier: 'catalog:'
         version: 1.16.1(crossws@0.4.17(srvx@1.0.8))(ws@8.18.3)

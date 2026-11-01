@@ -23,15 +23,22 @@ function dateParts(today: string) {
 }
 
 /** A series that resets yearly/monthly must put the period in the number, or numbers repeat. */
-export function validatePattern(pattern: string, reset: 'yearly' | 'never') {
+export function validatePattern(pattern: string, reset: 'yearly' | 'monthly' | 'never') {
   let tokens: ReturnType<typeof parseNumberPattern>
   try {
     tokens = parseNumberPattern(pattern)
   } catch (e) {
     throw new DocumentError('BAD_REQUEST', (e as Error).message)
   }
-  if (reset === 'yearly' && !tokens.some((t) => t.type === 'year4' || t.type === 'year2')) {
-    throw new DocumentError('BAD_REQUEST', 'A yearly series needs {YYYY} or {YY} in the pattern')
+  const hasYear = tokens.some((t) => t.type === 'year4' || t.type === 'year2')
+  if (reset !== 'never' && !hasYear) {
+    throw new DocumentError(
+      'BAD_REQUEST',
+      'A series that restarts needs {YYYY} or {YY} in the pattern',
+    )
+  }
+  if (reset === 'monthly' && !tokens.some((t) => t.type === 'month')) {
+    throw new DocumentError('BAD_REQUEST', 'A monthly series needs {MM} in the pattern')
   }
 }
 
@@ -73,13 +80,20 @@ export const numberSeriesRepo = {
   /** Lists the series, creating the default ones for invoices, proformas and credit notes on first use. */
   async list(db: Db, orgId: string, today = todayPrague()) {
     await db.transaction(async (tx) => {
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`series:${orgId}`}))`)
-      const existing = await tx
-        .select({ type: numberSeries.documentType })
-        .from(numberSeries)
-        .where(and(eq(numberSeries.organizationId, orgId), eq(numberSeries.isDefault, true)))
       for (const [type, name] of TYPES) {
-        if (existing.some((e) => e.type === type)) continue
+        // Same per-type lock as document issuance, so default creation cannot race the first issue.
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`${orgId}:${type}`}))`)
+        const [existing] = await tx
+          .select({ id: numberSeries.id })
+          .from(numberSeries)
+          .where(
+            and(
+              eq(numberSeries.organizationId, orgId),
+              eq(numberSeries.documentType, type),
+              eq(numberSeries.isDefault, true),
+            ),
+          )
+        if (existing) continue
         await tx.insert(numberSeries).values({
           organizationId: orgId,
           documentType: type,

@@ -13,6 +13,13 @@ function baseURL(): string {
   )
 }
 
+function authSecret(): string {
+  const secret = process.env.BETTER_AUTH_SECRET
+  if (secret) return secret
+  if (process.env.NODE_ENV === 'production') throw new Error('BETTER_AUTH_SECRET is required')
+  return 'dev-only-secret-change-me-dev-only-secret'
+}
+
 /** Lazily-initialised singletons: database, auth. PGlite fallback when no DATABASE_URL (local dev). */
 export function getRuntime(): Promise<Runtime> {
   runtime ??= (async () => {
@@ -21,7 +28,7 @@ export function getRuntime(): Promise<Runtime> {
     if (handle.kind === 'pglite') await migrate(handle)
     const auth = createAuth({
       db: handle.db,
-      secret: process.env.BETTER_AUTH_SECRET ?? 'dev-only-secret-change-me-dev-only-secret',
+      secret: authSecret(),
       baseURL: baseURL(),
       trustedOrigins: [
         baseURL(),

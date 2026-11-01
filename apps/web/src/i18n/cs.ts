@@ -16,6 +16,7 @@ export const cs = {
     archive: 'Archivovat',
     search: 'Hledat…',
     loading: 'Načítám…',
+    notFound: 'Stránka nebyla nalezena.',
     error: 'Něco se pokazilo. Zkuste to prosím znovu.',
     signOut: 'Odhlásit se',
     support: 'Podpořit projekt',

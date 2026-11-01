@@ -16,7 +16,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   notFoundComponent: () => (
     <main className="mx-auto p-6 pt-16">
       <h1 className="text-xl font-medium">404</h1>
-      <p className="text-muted-foreground">Stránka nebyla nalezena.</p>
+      <p className="text-muted-foreground">{cs.common.notFound}</p>
     </main>
   ),
   component: () => <Outlet />,

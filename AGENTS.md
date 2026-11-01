@@ -42,6 +42,8 @@ pnpm test           # vitest
 pnpm e2e            # playwright
 pnpm db:generate    # drizzle-kit generate (commit the SQL)
 pnpm db:migrate     # apply migrations (DATABASE_URL_UNPOOLED)
+pnpm db:seed        # local demo data into a RUNNING local dev server (PGlite); refuses non-local URLs.
+                    # Login: demo@example.cz / demo-heslo-123 (plátce), neplatce@example.cz (neplátce)
 ```
 
 ## Code Review Rules

@@ -1,6 +1,7 @@
 import * as p from '@clack/prompts'
 import { BRAND } from '@fakturky/core/brand'
 import { defineCommand, runMain } from 'citty'
+import pkg from '../package.json' with { type: 'json' }
 import { ApiError, loadOperations, request } from './api'
 import { buildGroupCommands, guard, output } from './commands'
 import { clearConfig, DEFAULT_URL, readConfig, resolveCredentials, writeConfig } from './config'
@@ -68,7 +69,7 @@ async function main() {
   const root = defineCommand({
     meta: {
       name: BRAND.slug,
-      version: '0.1.0',
+      version: pkg.version,
       description: `${BRAND.name} CLI — every command is generated from the server OpenAPI spec`,
     },
     subCommands: { login, logout, whoami, ...buildGroupCommands(operations, credentials) },

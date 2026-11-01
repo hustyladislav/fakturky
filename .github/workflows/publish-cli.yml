@@ -5,7 +5,7 @@ name: Publish CLI
 # Release: bump packages/cli/package.json, merge, then `git tag cli-v0.1.0 && git push origin cli-v0.1.0`.
 on:
   push:
-    tags: ['cli-v*']
+    tags: ["cli-v*"]
 
 permissions:
   contents: read
@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
@@ -24,6 +26,13 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
+      - name: Tag must point at a commit on main
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Tag ${GITHUB_REF_NAME} is not on main; refusing to publish unmerged code" >&2
+            exit 1
+          fi
       - name: Tag must match the package version
         run: |
           version="$(node -p "require('./packages/cli/package.json').version")"

@@ -4,6 +4,7 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import { nitro } from 'nitro/vite'
 import { defineConfig } from 'vite'
+import { STATIC_SECURITY_HEADERS, TOKEN_PATH_HEADERS } from './src/server/security-headers'
 
 export default defineConfig({
   resolve: { tsconfigPaths: true },
@@ -12,6 +13,11 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart(),
     nitro({
+      // Baseline security headers on every response, static assets included.
+      routeRules: {
+        '/**': { headers: STATIC_SECURITY_HEADERS },
+        '/f/**': { headers: TOKEN_PATH_HEADERS },
+      },
       // The PDF fonts are read at runtime; bundle them as server assets so they exist on serverless hosts.
       serverAssets: [
         {

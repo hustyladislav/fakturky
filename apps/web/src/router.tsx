@@ -1,7 +1,14 @@
 import { QueryClient } from '@tanstack/react-query'
 import { createRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
+import { createIsomorphicFn } from '@tanstack/react-start'
 import { routeTree } from './routeTree.gen'
+import { nonceStore } from './server/nonce'
+
+/** CSP nonce of the current SSR request (set by the request middleware in `start.ts`); none on the client. */
+const requestNonce = createIsomorphicFn()
+  .server(() => nonceStore.getStore())
+  .client(() => undefined)
 
 export function getRouter() {
   const queryClient = new QueryClient({
@@ -13,6 +20,7 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    ssr: { nonce: requestNonce() },
   })
   setupRouterSsrQueryIntegration({ router, queryClient })
   return router

@@ -9,6 +9,12 @@ describe('formatMoney', () => {
   it('handles negatives and foreign currency', () => {
     expect(formatMoney('-12.05', 'EUR')).toBe('−12,05 EUR')
   })
+  it('rounds scale-4 values half up', () => {
+    expect(formatMoney('100.0050')).toBe('100,01\u00a0Kč')
+    expect(formatMoney('99.9950')).toBe('100,00\u00a0Kč')
+    expect(formatMoney('0.0049')).toBe('0,00\u00a0Kč')
+    expect(formatMoney('-0.0040')).toBe('0,00\u00a0Kč')
+  })
   it('rejects garbage', () => {
     expect(() => formatMoney('1e3')).toThrow()
   })

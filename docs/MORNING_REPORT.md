@@ -23,6 +23,10 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Shipped overnight
 
+- Invoices end-to-end: documents core (drafts, issue with atomic numbering, payments, cancel) #20, invoice UI
+  (list, form, detail) #25, PDF rendering #26, public invoice page `/f/:token` + ISDOC #29, dashboard #28.
+- Onboarding with ARES autofill #19; Google sign-in + magic link (Resend sandbox) #23/#24; DB joins #27.
+- App shell with ⌘K + shortcuts #22; logo, favicon, OG image #21; router → agent-tools adapter #18.
 - Better Auth dashboard connected (dash.better-auth.com → project "Fakturky", free Starter plan): users, orgs,
   events, security insights (PR #14).
 
@@ -33,11 +37,12 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## In progress
 
-- `invoices` — bank accounts, invoice create/issue/PDF/paid, public link, dashboard
-- `agents` — API keys, MCP server, CLI, llms.txt
-- `shell` — design system, navigation, ⌘K, landing page
-- `pdf` — invoice PDF rendering
-- `scaffold` — onboarding + Better Auth dashboard plugin
+- `invoices` — PDF download (#31), then templates, recurring, proformas, credit notes, email sending, CSV export
+- `agents` — API keys (#17), MCP server, CLI, llms.txt
+- `shell` — auth restyle + terms/privacy (#30), landing page, mobile/responsive pass
+- assistant agent — in-app AI assistant (⌘J) with spend caps
+- security agent — tenant-isolation tests, headers, CI security scanners, `docs/SECURITY_AUDIT.md`
+- qa agent — Playwright e2e of the MVP journey, bug bash → GitHub issues
 
 ## Decisions made
 

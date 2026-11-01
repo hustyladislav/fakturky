@@ -78,3 +78,52 @@ test('magic link sign-up: link is delivered, verifying creates user + org + busi
     .where(eq(schema.businessProfile.legalName, 'eva'))
   expect(profile).toBeDefined()
 })
+
+test('API key authenticates as its organization and can be revoked', async () => {
+  const auth = createAuth({
+    db: handle.db,
+    secret: 'test-secret-test-secret-test-secret-123',
+    baseURL: 'http://localhost:3000',
+  })
+  const res = await auth.api.signUpEmail({
+    body: { name: 'Eva Svobodová', email: 'api@example.com', password: 'hunter2hunter2' },
+    asResponse: true,
+  })
+  const cookie = res.headers
+    .getSetCookie()
+    .map((c) => c.split(';')[0])
+    .join('; ')
+  const headers = new Headers({ cookie })
+  const principal = await resolvePrincipal(auth, handle.db, headers)
+  if (!principal) throw new Error('expected principal')
+
+  const created = await auth.api.createApiKey({
+    headers,
+    body: { name: 'test', organizationId: principal.organizationId },
+  })
+  expect(created.key.startsWith('fk_')).toBe(true)
+
+  const viaKey = await resolvePrincipal(
+    auth,
+    handle.db,
+    new Headers({ authorization: `Bearer ${created.key}` }),
+  )
+  expect(viaKey).toMatchObject({ via: 'apiKey', organizationId: principal.organizationId })
+  // An invalid key must not fall back to the ambient session cookie.
+  expect(
+    await resolvePrincipal(
+      auth,
+      handle.db,
+      new Headers({ cookie, authorization: 'Bearer fk_nope' }),
+    ),
+  ).toBeNull()
+
+  await auth.api.deleteApiKey({ headers, body: { keyId: created.id } })
+  expect(
+    await resolvePrincipal(
+      auth,
+      handle.db,
+      new Headers({ authorization: `Bearer ${created.key}` }),
+    ),
+  ).toBeNull()
+})

@@ -5,6 +5,8 @@ export type ProcedureMeta = {
   mcp?: {
     name: string
     title: string
+    /** Tool description for the model; falls back to the OpenAPI summary, then the title. */
+    description?: string
     readOnly?: boolean
     destructive?: boolean
     idempotent?: boolean

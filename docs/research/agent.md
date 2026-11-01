@@ -25,7 +25,7 @@ Approvals: `useChat().interrupts` filter `kind === 'tool-approval'` → `resolve
 Cost: `usage.cost` (USD number) on RUN_FINISHED / middleware `onUsage`.
 
 ## Model & routing
-- `deepseek/deepseek-v4.1-flash` (1M ctx, tool-use). Region pin: **US only** (Baseten, ZDR, ~$0.13/$0.26 per 1M).
+- `deepseek/deepseek-v4.1-flash` (1M ctx, tool-use). Region pin: **US only** (Baseten / Fireworks / Particle, ZDR, ~$0.30/$1.20 per 1M via Baseten).
   `providerOptions.gateway.inferenceRegion = { scope: 'zone', geoRegion: 'us' }` → 400 if unservable.
 - EU-capable fallbacks: `google/gemini-2.5-flash-lite`, `anthropic/claude-haiku-5.5`, `amazon/nova-lite` (verify live).
 - Use `zeroDataRetention: true`.

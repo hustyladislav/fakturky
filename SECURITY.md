@@ -26,7 +26,3 @@ missing best-practice headers without demonstrated impact, and third-party servi
 ## Supported versions
 
 Only the latest deployment of `main` is supported.
-
-## Our practices
-
-See [`docs/SECURITY_AUDIT.md`](docs/SECURITY_AUDIT.md) for the latest audit, residual risks and hardening roadmap.

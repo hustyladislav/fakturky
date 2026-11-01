@@ -75,25 +75,3 @@ export async function lookupByIco(ico: string, opts: ClientOptions = {}): Promis
   if (!res.ok) throw new IntegrationError(`ARES responded ${res.status}`, 'http_error', res.status)
   return normalizeAresSubject((await res.json()) as RawSubject)
 }
-
-/** Searches subjects by trade name (first `limit` hits). */
-export async function searchByName(
-  name: string,
-  opts: ClientOptions & { limit?: number } = {},
-): Promise<AresSubject[]> {
-  const query = name.trim()
-  if (query.length < 2) throw new IntegrationError('Query too short', 'invalid_input')
-  const res = await request(
-    `${BASE}/vyhledat`,
-    {
-      method: 'POST',
-      headers: { accept: 'application/json', 'content-type': 'application/json' },
-      body: JSON.stringify({ obchodniJmeno: query, start: 0, pocet: opts.limit ?? 10 }),
-    },
-    opts,
-  )
-  if (res.status === 404) return []
-  if (!res.ok) throw new IntegrationError(`ARES responded ${res.status}`, 'http_error', res.status)
-  const body = (await res.json()) as { ekonomickeSubjekty?: RawSubject[] }
-  return (body.ekonomickeSubjekty ?? []).map(normalizeAresSubject)
-}

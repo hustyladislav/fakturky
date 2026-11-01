@@ -12,24 +12,17 @@
     "./vat": "./src/vat.ts",
     "./numbering": "./src/numbering.ts",
     "./ico": "./src/ico.ts",
-    "./dic": "./src/dic.ts",
     "./iban": "./src/iban.ts",
     "./czech-account": "./src/czech-account.ts",
-    "./bank-codes": "./src/bank-codes.ts",
     "./qr/spayd": "./src/qr/spayd.ts",
-    "./qr/epc": "./src/qr/epc.ts",
     "./qr/render": "./src/qr/render.ts",
     "./dates": "./src/dates.ts",
-    "./isdoc": "./src/isdoc.ts",
-    "./integrations/ares": "./src/integrations/ares.ts",
-    "./integrations/cnb": "./src/integrations/cnb.ts",
-    "./integrations/vies": "./src/integrations/vies.ts"
+    "./integrations/ares": "./src/integrations/ares.ts"
   },
   "scripts": {
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
-    "gen:bank-codes": "node scripts/generate-bank-codes.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "decimal.js-light": "2.5.1",

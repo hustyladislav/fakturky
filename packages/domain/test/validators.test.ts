@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findBank, isKnownBankCode, BANK_CODES } from '../src/bank-codes.ts'
 import { czechAccountToIban, formatCzechAccount, isValidCzechAccount, parseCzechAccount } from '../src/czech-account.ts'
-import { isValidCzDic, isValidEuVatId, isValidSkVatId, normalizeVatId, parseVatId } from '../src/dic.ts'
 import { czechAccountFromIban, formatIban, ibanCheckDigits, isValidIban, normalizeIban } from '../src/iban.ts'
 import { isValidIco, normalizeIco } from '../src/ico.ts'
 
@@ -17,41 +15,6 @@ describe('IČO', () => {
     expect(normalizeIco(' 6947 ')).toBe('00006947')
     expect(isValidIco('6947')).toBe(true)
     expect(normalizeIco('x1')).toBe('x1')
-  })
-})
-
-describe('DIČ / VAT IDs', () => {
-  it('CZ', () => {
-    expect(isValidCzDic('CZ27082440')).toBe(true)
-    expect(isValidCzDic('cz 27082440')).toBe(true)
-    expect(isValidCzDic('CZ27082441')).toBe(false)
-    expect(isValidCzDic('CZ7501011234')).toBe(true) // 10 digits (natural person)
-    expect(isValidCzDic('CZ750101123')).toBe(true) // 9 digits
-    expect(isValidCzDic('CZ75010112345')).toBe(false)
-    expect(isValidCzDic('CZ1234567')).toBe(false)
-    expect(isValidCzDic('27082440')).toBe(false)
-  })
-  it('SK', () => {
-    expect(isValidSkVatId('SK2020317068')).toBe(true)
-    expect(isValidSkVatId('SK2020317069')).toBe(false)
-    expect(isValidSkVatId('SK0020317068')).toBe(false)
-    expect(isValidSkVatId('SK202031706')).toBe(false)
-    expect(isValidSkVatId('SK2050317068')).toBe(false)
-  })
-  it('EU formats', () => {
-    expect(isValidEuVatId('DE123456789')).toBe(true)
-    expect(isValidEuVatId('ATU12345678')).toBe(true)
-    expect(isValidEuVatId('PL1234567890')).toBe(true)
-    expect(isValidEuVatId('NL123456789B01')).toBe(true)
-    expect(isValidEuVatId('DE12345')).toBe(false)
-    expect(isValidEuVatId('US123456789')).toBe(false)
-    expect(isValidEuVatId('CZ27082440')).toBe(true)
-    expect(isValidEuVatId('SK2020317068')).toBe(true)
-  })
-  it('parses', () => {
-    expect(normalizeVatId(' de 123.456-789 ')).toBe('DE123456789')
-    expect(parseVatId('de123456789')).toEqual({ countryCode: 'DE', number: '123456789' })
-    expect(parseVatId('US123')).toBeNull()
   })
 })
 
@@ -113,15 +76,5 @@ describe('Czech account', () => {
     const acc = czechAccountFromIban(iban)
     expect(acc && formatCzechAccount(acc)).toBe('19-2000145399/0800')
     expect(formatCzechAccount({ prefix: '', number: '123', bankCode: '0100' })).toBe('123/0100')
-  })
-})
-
-describe('bank codes', () => {
-  it('has the big banks', () => {
-    expect(BANK_CODES.length).toBeGreaterThan(20)
-    expect(findBank('0800')?.bic).toBe('GIBACZPX')
-    expect(findBank('0100')?.name).toMatch(/Komerční/)
-    expect(isKnownBankCode('2010')).toBe(true) // Fio
-    expect(isKnownBankCode('9999')).toBe(false)
   })
 })

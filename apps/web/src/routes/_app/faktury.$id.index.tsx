@@ -1,4 +1,4 @@
-import { formatDateCs } from '@fakturky/domain/dates'
+import { formatDateCs, todayPrague } from '@fakturky/domain/dates'
 import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
@@ -441,7 +441,7 @@ function InvoiceDetail() {
               <Check className="text-muted-foreground size-3.5" />
               <span>{t.timeline[a.action as keyof typeof t.timeline] ?? a.action}</span>
               <span className="text-muted-foreground">
-                {formatDateCs(a.createdAt.toISOString().slice(0, 10))}
+                {formatDateCs(todayPrague(a.createdAt))}
                 {(a.data as { amount?: string } | null)?.amount ? (
                   <>
                     {' · '}

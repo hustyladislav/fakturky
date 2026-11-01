@@ -17,6 +17,8 @@ type Fx = {
   bankAccountId: string
   draftId: string
   issuedId: string
+  templateId: string
+  ruleId: string
   token: string
   secret: string
 }
@@ -117,6 +119,25 @@ const cases: Record<string, Case> = {
   'lookup.ares': { kind: 'external' },
   'lookup.exchangeRate': { kind: 'external' },
 
+  'templates.list': { kind: 'scoped', run: (b) => b.templates.list({}) },
+  'templates.createFromDocument': {
+    kind: 'foreign',
+    run: (b, a) => b.templates.createFromDocument({ documentId: a.issuedId, name: 'steal' }),
+  },
+  'templates.use': { kind: 'foreign', run: (b, a) => b.templates.use({ id: a.templateId }) },
+  'templates.delete': { kind: 'foreign', run: (b, a) => b.templates.delete({ id: a.templateId }) },
+
+  'recurring.list': { kind: 'scoped', run: (b) => b.recurring.list({}) },
+  'recurring.create': {
+    kind: 'foreign',
+    run: (b, a) => b.recurring.create({ templateId: a.templateId }),
+  },
+  'recurring.update': {
+    kind: 'foreign',
+    run: (b, a) => b.recurring.update({ id: a.ruleId, active: false }),
+  },
+  'recurring.delete': { kind: 'foreign', run: (b, a) => b.recurring.delete({ id: a.ruleId }) },
+
   'public.invoice': { kind: 'external' },
   'public.isdoc': { kind: 'external' },
   'public.pdf': { kind: 'external' },
@@ -174,7 +195,11 @@ beforeAll(async () => {
   })
   const toIssue = await aApi.documents.createDraft({ contactId: contact.id, lines: [line] })
   const issued = await aApi.documents.issue({ id: toIssue.id })
+  const template = await aApi.templates.createFromDocument({ documentId: issued.id, name: SECRET })
+  const rule = await aApi.recurring.create({ templateId: template.id })
   a = {
+    templateId: template.id,
+    ruleId: rule.id,
     contactId: contact.id,
     bankAccountId: bank.id,
     draftId: draft.id,
@@ -215,7 +240,16 @@ describe('tenant isolation', () => {
     for (const [path, c] of Object.entries(cases)) {
       if (c.kind !== 'scoped') continue
       const out = JSON.stringify(await c.run(bApi, a))
-      for (const needle of [SECRET, a.contactId, a.bankAccountId, a.draftId, a.issuedId, a.token]) {
+      for (const needle of [
+        SECRET,
+        a.templateId,
+        a.ruleId,
+        a.contactId,
+        a.bankAccountId,
+        a.draftId,
+        a.issuedId,
+        a.token,
+      ]) {
         expect(out, `${path} leaked ${needle}`).not.toContain(needle)
       }
       expect(out, `${path} leaked org A id`).not.toContain(orgA)
@@ -261,6 +295,10 @@ describe('tenant isolation', () => {
     expect(profile.legalName).toBe(SECRET)
     const draft = await aApi.documents.get({ id: a.draftId })
     expect(draft).toMatchObject({ status: 'draft', introText: null })
+    expect(await aApi.templates.list({})).toHaveLength(1)
+    const rules = await aApi.recurring.list({})
+    expect(rules).toHaveLength(1)
+    expect(rules[0]).toMatchObject({ id: a.ruleId, active: true })
     const issued = await aApi.documents.get({ id: a.issuedId })
     expect(issued.status).toBe('issued')
     expect(issued.payments).toHaveLength(0)

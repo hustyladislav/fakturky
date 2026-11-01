@@ -1,6 +1,6 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
-import { todayPrague } from '@fakturky/domain'
+import { getRate, todayPrague } from '@fakturky/domain'
 import { and, asc, desc, eq, lte } from 'drizzle-orm'
 import { DocumentError, documentsRepo } from './documents'
 
@@ -90,10 +90,18 @@ export const templatesRepo = {
   async use(db: Db, orgId: string, actorId: string, id: string, issueDate?: string) {
     const t = await this.get(db, orgId, id)
     if (!t) throw new DocumentError('NOT_FOUND', 'Template not found')
+    // Foreign-currency drafts get the ČNB rate of the issue date so they can be issued straight away.
+    let exchangeRate: string | undefined
+    if (t.body.currency && t.body.currency !== 'CZK') {
+      exchangeRate = await getRate(t.body.currency, issueDate ?? todayPrague())
+        .then((r) => r.rate)
+        .catch(() => undefined)
+    }
     return documentsRepo.createDraft(db, orgId, actorId, {
       type: t.documentType === 'proforma' ? 'proforma' : 'invoice',
       contactId: t.body.contactId ?? null,
       currency: t.body.currency,
+      exchangeRate,
       language: t.body.language,
       introText: t.body.introText,
       footerText: t.body.footerText,
@@ -175,61 +183,84 @@ export const recurringRepo = {
   },
 
   /**
-   * Cron entry point (cross-tenant by design; every action below is scoped to the rule's own organization).
-   * A rule is claimed by advancing `nextRunOn` with a compare-and-set, so overlapping runs cannot double-create.
+   * Cron entry point. The only cross-tenant read is the list of organizations that have due rules;
+   * everything after that runs scoped to a single organization.
    */
-  async runDue(
-    db: Db,
-    today = todayPrague(),
-    onIssued?: (orgId: string, documentId: string, autoSend: boolean) => Promise<void>,
-  ) {
+  async runDue(db: Db, today = todayPrague(), onIssued?: RunHook) {
+    const orgs = await db
+      .selectDistinct({ organizationId: recurringRule.organizationId })
+      .from(recurringRule)
+      .where(and(eq(recurringRule.active, true), lte(recurringRule.nextRunOn, today)))
+      .limit(500)
+    const results: RunResult[] = []
+    for (const { organizationId } of orgs) {
+      results.push(...(await this.runDueForOrg(db, organizationId, today, onIssued)))
+    }
+    return results
+  },
+
+  /**
+   * A rule is claimed by advancing `nextRunOn` with a compare-and-set (no double runs on overlap);
+   * if generating the draft fails the claim is rolled back so the next run retries that occurrence.
+   */
+  async runDueForOrg(db: Db, orgId: string, today = todayPrague(), onIssued?: RunHook) {
     const due = await db
       .select()
       .from(recurringRule)
-      .where(and(eq(recurringRule.active, true), lte(recurringRule.nextRunOn, today)))
+      .where(
+        and(
+          eq(recurringRule.organizationId, orgId),
+          eq(recurringRule.active, true),
+          lte(recurringRule.nextRunOn, today),
+        ),
+      )
       .orderBy(asc(recurringRule.nextRunOn))
       .limit(200)
-    const results: Array<{
-      ruleId: string
-      documentId?: string
-      issued?: boolean
-      error?: string
-    }> = []
+    const results: RunResult[] = []
     for (const rule of due) {
       const next = nextOccurrence(rule.nextRunOn, rule.frequency, rule.dayOfMonth)
+      const claimWhere = (on: string) =>
+        and(
+          eq(recurringRule.organizationId, orgId),
+          eq(recurringRule.id, rule.id),
+          eq(recurringRule.nextRunOn, on),
+        )
+      const advanced = next > today ? next : nextOccurrence(today, rule.frequency, rule.dayOfMonth)
       const [claimed] = await db
         .update(recurringRule)
-        .set({
-          nextRunOn: next > today ? next : nextOccurrence(today, rule.frequency, rule.dayOfMonth),
-        })
-        .where(and(eq(recurringRule.id, rule.id), eq(recurringRule.nextRunOn, rule.nextRunOn)))
+        .set({ nextRunOn: advanced })
+        .where(claimWhere(rule.nextRunOn))
         .returning({ id: recurringRule.id })
       if (!claimed) continue
+      let draftId: string | undefined
       try {
-        const draft = await templatesRepo.use(
-          db,
-          rule.organizationId,
-          'system:recurring',
-          rule.templateId,
-          today,
-        )
+        const draft = await templatesRepo.use(db, orgId, 'system:recurring', rule.templateId, today)
         if (!draft) throw new Error('draft not created')
-        let issued = false
-        if (rule.autoIssue) {
-          try {
-            await documentsRepo.issue(db, rule.organizationId, 'system:recurring', draft.id)
-            issued = true
-            await onIssued?.(rule.organizationId, draft.id, rule.autoSend)
-          } catch (e) {
-            results.push({ ruleId: rule.id, documentId: draft.id, error: (e as Error).message })
-            continue
-          }
-        }
-        results.push({ ruleId: rule.id, documentId: draft.id, issued })
+        draftId = draft.id
       } catch (e) {
+        await db
+          .update(recurringRule)
+          .set({ nextRunOn: rule.nextRunOn })
+          .where(claimWhere(advanced))
         results.push({ ruleId: rule.id, error: (e as Error).message })
+        continue
+      }
+      if (!rule.autoIssue) {
+        results.push({ ruleId: rule.id, documentId: draftId, issued: false })
+        continue
+      }
+      try {
+        await documentsRepo.issue(db, orgId, 'system:recurring', draftId)
+        await onIssued?.(orgId, draftId, rule.autoSend)
+        results.push({ ruleId: rule.id, documentId: draftId, issued: true })
+      } catch (e) {
+        // The draft stays for manual review; the occurrence is not repeated.
+        results.push({ ruleId: rule.id, documentId: draftId, error: (e as Error).message })
       }
     }
     return results
   },
 }
+
+type RunHook = (orgId: string, documentId: string, autoSend: boolean) => Promise<void>
+type RunResult = { ruleId: string; documentId?: string; issued?: boolean; error?: string }

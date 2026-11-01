@@ -27,6 +27,8 @@ export type CreateAuthOptions = {
    */
   oauthProxyProductionUrl?: string
   /** Delivers the magic link; throw to signal that email is unavailable. */
+  /** Transport for Client ID Metadata Documents; defaults to the SSRF-hardened Node fetcher. */
+  fetchClientMetadata?: (input: string | URL | Request, init?: RequestInit) => Promise<Response>
   sendMagicLink?: (message: { email: string; url: string }) => Promise<void>
 }
 
@@ -160,7 +162,10 @@ export function createAuth(options: CreateAuthOptions) {
         resource: mcpResource(options.baseURL),
         scopes: ['openid', 'profile', 'email', 'offline_access', MCP_SCOPE],
       }),
-      cimd({ fetchClientMetadataResource, metadataProfile: 'mcp-2026-07-28' }),
+      cimd({
+        fetchClientMetadataResource: options.fetchClientMetadata ?? fetchClientMetadataResource,
+        metadataProfile: 'mcp-2026-07-28',
+      }),
       ...(options.sendMagicLink
         ? [
             magicLink({

@@ -1,13 +1,21 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@fakturky/ui/components/dialog'
 import { Kbd } from '@fakturky/ui/components/kbd'
+import { useEffect, useState } from 'react'
 import { cs } from '@/i18n/cs'
 import { useShell } from './shell-context'
 
-const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
-export const modKey = mac ? '⌘' : 'Ctrl'
+/** SSR-stable: starts as "Ctrl" and switches to "⌘" after mount on Apple platforms. */
+export function useModKey() {
+  const [key, setKey] = useState('Ctrl')
+  useEffect(() => {
+    if (/Mac|iPhone|iPad/.test(navigator.platform)) setKey('⌘')
+  }, [])
+  return key
+}
 
 export function ShortcutsHelp() {
   const { helpOpen, setHelpOpen } = useShell()
+  const modKey = useModKey()
   const rows: { keys: string[]; label: string }[] = [
     { keys: [modKey, 'K'], label: cs.shortcuts.palette },
     { keys: ['/'], label: cs.shortcuts.search },
@@ -21,7 +29,7 @@ export function ShortcutsHelp() {
   ]
   return (
     <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" closeLabel={cs.common.close}>
         <DialogHeader>
           <DialogTitle>{cs.shortcuts.title}</DialogTitle>
         </DialogHeader>

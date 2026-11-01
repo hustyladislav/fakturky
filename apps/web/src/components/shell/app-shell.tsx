@@ -23,6 +23,7 @@ import {
   PanelRight,
   Plus,
   Search,
+  Settings,
   Sparkles,
   X,
 } from 'lucide-react'
@@ -32,7 +33,7 @@ import { authClient } from '@/lib/auth-client'
 import { CommandPalette, useRecordRecent } from './command-palette'
 import { NEW_INVOICE_PATH, navItems } from './nav'
 import { ShellContext, type ShellState, useShell as useShellState } from './shell-context'
-import { modKey, ShortcutsHelp } from './shortcuts-help'
+import { ShortcutsHelp, useModKey } from './shortcuts-help'
 import { useShortcuts } from './use-shortcuts'
 
 const navLink =
@@ -87,6 +88,7 @@ function ShellInner({
   const { setPaletteOpen, assistantOpen, setAssistantOpen } = useShellState()
   useShortcuts()
   useRecordRecent()
+  const modKey = useModKey()
 
   return (
     <div className="min-h-svh">
@@ -261,7 +263,7 @@ function AccountMenu({ user }: { user: { name: string; email: string } }) {
 function MobileTabs() {
   const tab =
     'flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground data-[status=active]:text-primary [&_svg]:size-5'
-  const [overview, invoices, contacts, settings] = navItems
+  const [overview, invoices, contacts] = navItems
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-stretch border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
@@ -288,10 +290,7 @@ function MobileTabs() {
         <contacts.icon aria-hidden />
         {contacts.label}
       </Link>
-      <Link to={settings.to} className={tab}>
-        <Ellipsis aria-hidden />
-        {cs.shell.more}
-      </Link>
+      <MoreMenu tabClass={tab} />
     </nav>
   )
 }
@@ -329,5 +328,43 @@ function AssistantPanel({ question }: { question: string | null }) {
         )}
       </div>
     </aside>
+  )
+}
+
+function MoreMenu({ tabClass }: { tabClass: string }) {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className={cn(tabClass, 'outline-none')} aria-label={cs.shell.more}>
+        <Ellipsis aria-hidden />
+        {cs.shell.more}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="end" className="mb-2">
+        <DropdownMenuItem render={<Link to="/nastaveni" />}>
+          <Settings aria-hidden />
+          {cs.nav.settings}
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<a href={BRAND.supportUrl} target="_blank" rel="noreferrer" />}>
+          <Coffee aria-hidden />
+          {cs.shell.coffee}
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<a href={BRAND.issuesUrl} target="_blank" rel="noreferrer" />}>
+          <MessageSquare aria-hidden />
+          {cs.shell.feedback}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={async () => {
+            await authClient.signOut()
+            queryClient.clear()
+            await navigate({ to: '/prihlaseni' })
+          }}
+        >
+          <LogOut aria-hidden />
+          {cs.common.signOut}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

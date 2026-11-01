@@ -9,7 +9,7 @@ import { useLocation, useNavigate } from '@tanstack/react-router'
 import { FilePlus2, Keyboard, type LucideIcon, Search, Sparkles, UserPlus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cs } from '@/i18n/cs'
-import { NEW_CONTACT_PATH, NEW_INVOICE_PATH, navItems } from './nav'
+import { NEW_INVOICE_PATH, navItems } from './nav'
 import { useShell } from './shell-context'
 
 interface Command {
@@ -84,7 +84,10 @@ export function CommandPalette() {
         group: 'actions',
         label: cs.palette.newContact,
         icon: UserPlus,
-        run: go(NEW_CONTACT_PATH),
+        run: () => {
+          close()
+          void navigate({ to: '/kontakty', search: { novy: true } })
+        },
       },
       {
         id: 'help',

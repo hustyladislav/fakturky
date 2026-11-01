@@ -18,13 +18,15 @@ import {
   TableRow,
 } from '@fakturky/ui/components/table'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/kontakty')({
+  validateSearch: (search: Record<string, unknown>): { novy?: boolean } =>
+    search.novy === true || search.novy === 'true' ? { novy: true } : {},
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(orpc.contacts.list.queryOptions({ input: {} })),
   component: Contacts,
@@ -82,7 +84,15 @@ function Contacts() {
 
 function NewContact() {
   const queryClient = useQueryClient()
+  const { novy } = Route.useSearch()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  // ?novy opens the dialog (used by the ⌘K "Nový kontakt" action), then clears itself.
+  useEffect(() => {
+    if (!novy) return
+    setOpen(true)
+    void navigate({ to: '/kontakty', search: {}, replace: true })
+  }, [novy, navigate])
   const create = useMutation(
     orpc.contacts.create.mutationOptions({
       onSuccess: async () => {

@@ -34,16 +34,19 @@ pnpm db:migrate     # apply migrations (DATABASE_URL_UNPOOLED)
 ## Code Review Rules
 
 ### Correctness
+
 - Money math must use `Decimal`; VAT computed per rate on the recap, rounded to 2 decimals (see `docs/DOMAIN.md`).
 - Document numbers are allocated only at issue, inside a transaction; never reused.
 - Issued documents use snapshots; edits to contacts/profile must not alter issued documents.
 
 ### Security
+
 - Every DB access is scoped by `organizationId` from the authenticated context — flag any query that is not.
 - Inputs validated with Zod at the procedure boundary; outputs never leak other tenants' data or secrets.
 - Public endpoints (`/f/:token`, ARES proxy) must not expose private notes, internal IDs of other entities, or allow enumeration.
 - No secrets, tokens or PII in logs, error messages, or client bundles.
 
 ### Product
+
 - UI strings in Czech and in `i18n/cs.ts`; no English leaking into the UI.
 - New features must be reachable from UI, REST, MCP and CLI.

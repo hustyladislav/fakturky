@@ -1,0 +1,26 @@
+{
+  "name": "fakturky",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @fakturky/web dev",
+    "build": "pnpm --filter @fakturky/web build",
+    "check": "biome check . && pnpm -r typecheck && vitest run",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "e2e": "pnpm --filter @fakturky/web e2e",
+    "db:generate": "pnpm --filter @fakturky/db generate",
+    "db:migrate": "pnpm --filter @fakturky/db migrate"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

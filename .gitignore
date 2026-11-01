@@ -13,4 +13,8 @@ playwright-report
 test-results
 .claude/worktrees
 .env*
+<<<<<<< HEAD
+.data
+=======
+>>>>>>> origin/main
 design/explorations/shots

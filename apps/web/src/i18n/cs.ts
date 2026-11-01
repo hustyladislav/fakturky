@@ -83,6 +83,22 @@ export const cs = {
     paid: 'Zaplacená',
     cancelled: 'Stornovaná',
   },
+  legal: {
+    terms: 'Podmínky používání',
+    privacy: 'Zásady ochrany osobních údajů',
+    updated: (date: string) => `Poslední aktualizace: ${date}`,
+    draftNotice:
+      'Koncept: tento text připravil provozovatel jako výchozí návrh a čeká na právní kontrolu. Do té doby berte znění jako informativní.',
+  },
+  authPanel: {
+    title: 'Faktury, které se píšou samy. A zdarma.',
+    points: [
+      'Neomezený počet faktur a kontaktů',
+      'QR platba a údaje z ARES doplněné za vás',
+      'Správně vypočtená DPH a export do ISDOC',
+    ],
+    note: 'Provozuje jediný člověk, bez reklam a bez upsellu. Kód je otevřený na GitHubu.',
+  },
   auth: {
     google: 'Pokračovat přes Google',
     orDivider: 'nebo',

@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PodminkyRouteImport } from './routes/podminky'
 import { Route as PrihlaseniRouteImport } from './routes/prihlaseni'
 import { Route as RegistraceRouteImport } from './routes/registrace'
+import { Route as SoukromiRouteImport } from './routes/soukromi'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
@@ -35,6 +37,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PodminkyRoute = PodminkyRouteImport.update({
+  id: '/podminky',
+  path: '/podminky',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrihlaseniRoute = PrihlaseniRouteImport.update({
   id: '/prihlaseni',
   path: '/prihlaseni',
@@ -43,6 +50,11 @@ const PrihlaseniRoute = PrihlaseniRouteImport.update({
 const RegistraceRoute = RegistraceRouteImport.update({
   id: '/registrace',
   path: '/registrace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SoukromiRoute = SoukromiRouteImport.update({
+  id: '/soukromi',
+  path: '/soukromi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -109,8 +121,10 @@ const AppFakturyIdUpravitRoute = AppFakturyIdUpravitRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/onboarding': typeof OnboardingRoute
+  '/podminky': typeof PodminkyRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
+  '/soukromi': typeof SoukromiRoute
   '/faktury': typeof AppFakturyRouteWithChildren
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
@@ -125,8 +139,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
+  '/podminky': typeof PodminkyRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
+  '/soukromi': typeof SoukromiRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
   '/': typeof AppIndexRoute
@@ -143,8 +159,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/onboarding': typeof OnboardingRoute
+  '/podminky': typeof PodminkyRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
+  '/soukromi': typeof SoukromiRoute
   '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/kontakty': typeof AppKontaktyRoute
   '/_app/nastaveni': typeof AppNastaveniRoute
@@ -163,8 +181,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/onboarding'
+    | '/podminky'
     | '/prihlaseni'
     | '/registrace'
+    | '/soukromi'
     | '/faktury'
     | '/kontakty'
     | '/nastaveni'
@@ -179,8 +199,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/onboarding'
+    | '/podminky'
     | '/prihlaseni'
     | '/registrace'
+    | '/soukromi'
     | '/kontakty'
     | '/nastaveni'
     | '/'
@@ -196,8 +218,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/onboarding'
+    | '/podminky'
     | '/prihlaseni'
     | '/registrace'
+    | '/soukromi'
     | '/_app/faktury'
     | '/_app/kontakty'
     | '/_app/nastaveni'
@@ -215,8 +239,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   OnboardingRoute: typeof OnboardingRoute
+  PodminkyRoute: typeof PodminkyRoute
   PrihlaseniRoute: typeof PrihlaseniRoute
   RegistraceRoute: typeof RegistraceRoute
+  SoukromiRoute: typeof SoukromiRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
@@ -239,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/podminky': {
+      id: '/podminky'
+      path: '/podminky'
+      fullPath: '/podminky'
+      preLoaderRoute: typeof PodminkyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/prihlaseni': {
       id: '/prihlaseni'
       path: '/prihlaseni'
@@ -251,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/registrace'
       fullPath: '/registrace'
       preLoaderRoute: typeof RegistraceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/soukromi': {
+      id: '/soukromi'
+      path: '/soukromi'
+      fullPath: '/soukromi'
+      preLoaderRoute: typeof SoukromiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -377,8 +417,10 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
+  PodminkyRoute: PodminkyRoute,
   PrihlaseniRoute: PrihlaseniRoute,
   RegistraceRoute: RegistraceRoute,
+  SoukromiRoute: SoukromiRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,

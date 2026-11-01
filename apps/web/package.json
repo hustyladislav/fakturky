@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
+    "seed": "node scripts/seed.mjs",
     "gen:brand": "node scripts/gen-brand-assets.mjs"
   },
   "dependencies": {

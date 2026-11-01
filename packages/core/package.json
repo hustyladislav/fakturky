@@ -7,9 +7,12 @@
     ".": "./src/index.ts",
     "./brand": "./src/brand.ts",
     "./router": "./src/router/index.ts",
+    "./agent-tools": "./src/agent-tools/index.ts",
     "./auth": "./src/auth.ts",
     "./context": "./src/context.ts",
-    "./testing": "./src/testing.ts"
+    "./testing": "./src/testing.ts",
+    "./export": "./src/export.ts",
+    "./public-documents": "./src/repositories/public-documents.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

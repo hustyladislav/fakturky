@@ -80,11 +80,13 @@ function ApprovalCard({ part, interrupt }: { part: ToolPart; interrupt: Interrup
           {toolLabel(part.name)}
         </ItemTitle>
         <ItemDescription className="line-clamp-none">
-          {answered
+          {decided
             ? part.approval?.approved === false
               ? t.rejected
               : t.approved
-            : t.approvalHint}
+            : answered
+              ? t.expired
+              : t.approvalHint}
         </ItemDescription>
         <pre className="mt-1 max-h-32 overflow-auto rounded-md bg-muted p-2 text-[11px] leading-snug text-muted-foreground">
           {formatArgs(part.arguments)}

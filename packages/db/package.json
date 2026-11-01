@@ -1,0 +1,27 @@
+{
+  "name": "@fakturky/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./client": "./src/client.ts",
+    "./migrate": "./src/migrate.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "generate": "drizzle-kit generate",
+    "migrate": "node --experimental-strip-types src/migrate-cli.ts"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "catalog:",
+    "@neondatabase/serverless": "catalog:",
+    "drizzle-orm": "catalog:",
+    "uuid": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "drizzle-kit": "catalog:"
+  }
+}

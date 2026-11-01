@@ -22,21 +22,21 @@ Everything a user can do in the web UI is also available through the REST API, t
 
 ## Stack (pin exact versions; see `package.json`)
 
-| Area | Choice |
-|---|---|
-| Runtime | Node 24, pnpm workspaces |
-| App | TanStack Start (React 19, Vite 8, Nitro → Vercel), TanStack Router / Query / Form / Table |
-| UI | Tailwind CSS v4, shadcn/ui (Base UI), lucide-react, sonner, cmdk-style command palette |
-| API | oRPC (`@orpc/server`, `@orpc/openapi`, `@orpc/tanstack-query`) + Zod 4 |
-| DB | Postgres on Neon (Vercel Marketplace), Drizzle ORM + drizzle-kit migrations; PGlite for tests |
-| Auth | Better Auth: email+password, passkeys, magic link (when email is configured), organizations, API keys, MCP OAuth (CIMD) |
-| MCP | `mcp-handler` v2 + `@modelcontextprotocol/server` v2, Streamable HTTP at `/mcp` |
-| CLI | `packages/cli` — citty + @clack/prompts, talks to `/api/v1` with an API key, published to npm |
-| PDF | `@react-pdf/renderer` with bundled static TTF fonts (Czech diacritics), SPAYD QR via `spayd` + `qrcode` |
-| Email | Resend + react-email (feature-flagged on `RESEND_API_KEY`) |
-| Jobs | Vercel Cron (daily): recurring invoices, overdue reminders, ČNB rates |
-| Storage | Vercel Blob (private) for logos, signatures, cached PDFs |
-| Quality | Biome, Vitest, Playwright, GitHub Actions, CodeQL, gitleaks, OSV-Scanner, Dependabot, Codex PR review |
+| Area    | Choice                                                                                                                  |
+| ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Runtime | Node 24, pnpm workspaces                                                                                                |
+| App     | TanStack Start (React 19, Vite 8, Nitro → Vercel), TanStack Router / Query / Form / Table                               |
+| UI      | Tailwind CSS v4, shadcn/ui (Base UI), lucide-react, sonner, cmdk-style command palette                                  |
+| API     | oRPC (`@orpc/server`, `@orpc/openapi`, `@orpc/tanstack-query`) + Zod 4                                                  |
+| DB      | Postgres on Neon (Vercel Marketplace), Drizzle ORM + drizzle-kit migrations; PGlite for tests                           |
+| Auth    | Better Auth: email+password, passkeys, magic link (when email is configured), organizations, API keys, MCP OAuth (CIMD) |
+| MCP     | `mcp-handler` v2 + `@modelcontextprotocol/server` v2, Streamable HTTP at `/mcp`                                         |
+| CLI     | `packages/cli` — citty + @clack/prompts, talks to `/api/v1` with an API key, published to npm                           |
+| PDF     | `@react-pdf/renderer` with bundled static TTF fonts (Czech diacritics), SPAYD QR via `spayd` + `qrcode`                 |
+| Email   | Resend + react-email (feature-flagged on `RESEND_API_KEY`)                                                              |
+| Jobs    | Vercel Cron (daily): recurring invoices, overdue reminders, ČNB rates                                                   |
+| Storage | Vercel Blob (private) for logos, signatures, cached PDFs                                                                |
+| Quality | Biome, Vitest, Playwright, GitHub Actions, CodeQL, gitleaks, OSV-Scanner, Dependabot, Codex PR review                   |
 
 ## Repository layout
 

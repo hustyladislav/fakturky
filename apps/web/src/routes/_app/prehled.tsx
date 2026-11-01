@@ -27,7 +27,7 @@ function Kpi({
     <div className="min-w-0 rounded-xl border p-4">
       <div className="text-muted-foreground text-sm">{label}</div>
       <div
-        className={`mt-1 text-xl font-semibold break-words sm:text-2xl ${tone === 'danger' ? 'text-destructive' : ''}`}
+        className={`mt-1 font-serif text-2xl font-medium break-words sm:text-3xl ${tone === 'danger' ? 'text-destructive' : ''}`}
       >
         <Money amount={amount} />
       </div>

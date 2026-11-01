@@ -34,6 +34,7 @@ import { Route as AppFakturyNovaRouteImport } from './routes/_app/faktury.nova'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 import { Route as ApiCronRecurringRouteImport } from './routes/api/cron.recurring'
 import { Route as ApiCronRemindersRouteImport } from './routes/api/cron.reminders'
+import { Route as ApiDevDbKindRouteImport } from './routes/api/dev.db-kind'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
@@ -167,6 +168,11 @@ const ApiCronRemindersRoute = ApiCronRemindersRouteImport.update({
   path: '/api/cron/reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDevDbKindRoute = ApiDevDbKindRouteImport.update({
+  id: '/api/dev/db-kind',
+  path: '/api/dev/db-kind',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   id: '/api/rpc/$',
   path: '/api/rpc/$',
@@ -232,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
+  '/api/dev/db-kind': typeof ApiDevDbKindRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
+  '/api/dev/db-kind': typeof ApiDevDbKindRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
+  '/api/dev/db-kind': typeof ApiDevDbKindRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
+    | '/api/dev/db-kind'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
+    | '/api/dev/db-kind'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -405,6 +416,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
+    | '/api/dev/db-kind'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -435,6 +447,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronRecurringRoute: typeof ApiCronRecurringRoute
   ApiCronRemindersRoute: typeof ApiCronRemindersRoute
+  ApiDevDbKindRoute: typeof ApiDevDbKindRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
@@ -618,6 +631,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/dev/db-kind': {
+      id: '/api/dev/db-kind'
+      path: '/api/dev/db-kind'
+      fullPath: '/api/dev/db-kind'
+      preLoaderRoute: typeof ApiDevDbKindRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rpc/$': {
       id: '/api/rpc/$'
       path: '/api/rpc/$'
@@ -745,6 +765,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronRecurringRoute: ApiCronRecurringRoute,
   ApiCronRemindersRoute: ApiCronRemindersRoute,
+  ApiDevDbKindRoute: ApiDevDbKindRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
@@ -755,10 +776,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

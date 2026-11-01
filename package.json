@@ -15,6 +15,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
     "e2e": "pnpm --filter @fakturky/web e2e",
+    "db:seed": "pnpm --filter @fakturky/web seed",
     "db:generate": "pnpm --filter @fakturky/db generate",
     "db:migrate": "pnpm --filter @fakturky/db migrate"
   },

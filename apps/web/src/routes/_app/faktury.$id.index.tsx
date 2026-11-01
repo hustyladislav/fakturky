@@ -1,11 +1,28 @@
 import { formatDateCs } from '@fakturky/domain/dates'
 import { Button } from '@fakturky/ui/components/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@fakturky/ui/components/dropdown-menu'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Check, Copy, Download, ExternalLink, Pencil, RefreshCw, Trash2 } from 'lucide-react'
+import {
+  Check,
+  Copy,
+  Download,
+  Ellipsis,
+  ExternalLink,
+  Pencil,
+  RefreshCw,
+  Send,
+  Trash2,
+} from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
@@ -169,20 +186,23 @@ function InvoiceDetail() {
   const busy = issue.isPending || markPaid.isPending || cancel.isPending
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 pb-28 sm:pb-6">
+    <div className="mx-auto max-w-3xl space-y-4">
       <Link to="/faktury" className="text-muted-foreground text-sm hover:underline">
         ← {t.back}
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tabular-nums">
+          <h1 className="text-3xl font-medium tabular-nums">
             {d.number ?? cs.invoices.draftNumber}
           </h1>
           <InvoiceStatus status={d.displayStatus} />
         </div>
-        <div className="hidden flex-wrap gap-2 sm:flex">
+        <div className="hidden items-center gap-2 sm:flex">
           <Actions />
         </div>
+      </div>
+      <div className="flex flex-col gap-2 sm:hidden">
+        <Actions mobile />
       </div>
 
       <section className="space-y-5 rounded-xl border p-4 sm:p-6">
@@ -209,7 +229,22 @@ function InvoiceDetail() {
           )}
         </dl>
 
-        <div className="overflow-x-auto">
+        <ul className="divide-y sm:hidden">
+          {d.lines.map((l) => (
+            <li key={l.id} className="flex items-start justify-between gap-3 py-3 text-sm">
+              <div className="min-w-0">
+                <div>{l.description}</div>
+                <div className="text-muted-foreground text-xs">
+                  {Number(l.quantity)} {l.unit} ×{' '}
+                  <Money amount={l.unitPrice} currency={d.currency} />
+                  {d.vatMode !== 'none' && <> · {Number(l.vatRate)} %</>}
+                </div>
+              </div>
+              <Money amount={l.lineTotal} currency={d.currency} className="shrink-0" />
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto sm:block">
           <table className="w-full text-sm">
             <thead className="text-muted-foreground text-left text-xs">
               <tr className="border-b">
@@ -254,9 +289,13 @@ function InvoiceDetail() {
                 <Money amount={r.vat} currency={d.currency} />
               </div>
             ))}
-          <div className="flex items-baseline justify-between border-t pt-2 text-lg font-semibold">
-            <span>{cs.invoices.form.total}</span>
-            <Money amount={d.total} currency={d.currency} />
+          <div className="flex items-baseline justify-between gap-4 border-t pt-3">
+            <span className="font-medium whitespace-nowrap">{cs.invoices.form.total}</span>
+            <Money
+              amount={d.total}
+              currency={d.currency}
+              className="font-serif text-2xl font-medium sm:text-3xl"
+            />
           </div>
           {Number(d.paidAmount) > 0 && (
             <>
@@ -426,15 +465,69 @@ function InvoiceDetail() {
           ))}
         </ol>
       </section>
-
-      <div className="from-background fixed inset-x-0 bottom-0 z-10 flex flex-col gap-2 bg-gradient-to-t p-4 sm:hidden">
-        <Actions mobile />
-      </div>
     </div>
   )
 
   function Actions({ mobile }: { mobile?: boolean }) {
-    const full = mobile ? 'w-full' : ''
+    const full = mobile ? 'w-full h-11' : ''
+    const more = (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="outline"
+              className={mobile ? 'h-11 w-full' : undefined}
+              size={mobile ? 'default' : 'icon'}
+              aria-label={t.more}
+            />
+          }
+        >
+          <Ellipsis />
+          {mobile && t.more}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="bottom" align="end">
+          {isDraft ? (
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => window.confirm(t.deleteConfirm) && remove.mutate({ id })}
+            >
+              <Trash2 /> {t.delete}
+            </DropdownMenuItem>
+          ) : (
+            <>
+              <DropdownMenuItem onClick={() => duplicate.mutate({ id })}>
+                {t.duplicate}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  const name = window.prompt(cs.templates.namePrompt, d?.customerName ?? '')
+                  if (name?.trim()) saveTemplate.mutate({ documentId: id, name: name.trim() })
+                }}
+              >
+                {cs.templates.saveAs}
+              </DropdownMenuItem>
+              {d?.status === 'paid' && (
+                <DropdownMenuItem onClick={() => markUnpaid.mutate({ id })}>
+                  {t.markUnpaid}
+                </DropdownMenuItem>
+              )}
+              {d?.status !== 'cancelled' && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    disabled={busy}
+                    onClick={() => window.confirm(t.cancelConfirm) && cancel.mutate({ id })}
+                  >
+                    {t.cancel}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
     if (isDraft) {
       return (
         <>
@@ -446,14 +539,12 @@ function InvoiceDetail() {
           >
             <Pencil /> {t.edit}
           </Button>
+          {more}
           <Button
-            variant="ghost"
-            className={full}
-            onClick={() => window.confirm(t.deleteConfirm) && remove.mutate({ id })}
+            className={`${full} ${mobile ? 'order-first' : ''}`}
+            disabled={busy}
+            onClick={() => issue.mutate({ id })}
           >
-            <Trash2 /> {t.delete}
-          </Button>
-          <Button className={full} disabled={busy} onClick={() => issue.mutate({ id })}>
             {t.issue}
           </Button>
         </>
@@ -461,54 +552,28 @@ function InvoiceDetail() {
     }
     return (
       <>
-        {!isDraft && (
+        {open && (
           <Button
-            variant="outline"
-            className={full}
-            nativeButton={false}
-            render={<a href={`/api/documents/${id}/pdf`} download />}
+            className={`${full} ${mobile ? 'order-first' : 'order-last'}`}
+            onClick={() => setPaying(true)}
           >
-            <Download /> {t.downloadPdf}
+            <Check /> {t.markPaid}
           </Button>
         )}
-        {d?.status === 'cancelled' ? null : (
-          <Button
-            variant="ghost"
-            className={full}
-            disabled={busy}
-            onClick={() => window.confirm(t.cancelConfirm) && cancel.mutate({ id })}
-          >
-            {t.cancel}
+        {(open || d?.status === 'paid') && (
+          <Button variant="outline" className={full} onClick={() => setSending(true)}>
+            <Send /> {d?.displayStatus === 'overdue' ? t.remind : t.send}
           </Button>
         )}
         <Button
           variant="outline"
           className={full}
-          onClick={() => {
-            const name = window.prompt(cs.templates.namePrompt, d?.customerName ?? '')
-            if (name?.trim()) saveTemplate.mutate({ documentId: id, name: name.trim() })
-          }}
+          nativeButton={false}
+          render={<a href={`/api/documents/${id}/pdf`} download />}
         >
-          {cs.templates.saveAs}
+          <Download /> {t.downloadPdf}
         </Button>
-        <Button variant="outline" className={full} onClick={() => duplicate.mutate({ id })}>
-          {t.duplicate}
-        </Button>
-        {d?.status === 'paid' && (
-          <Button variant="outline" className={full} onClick={() => markUnpaid.mutate({ id })}>
-            {t.markUnpaid}
-          </Button>
-        )}
-        {(open || d?.status === 'paid') && (
-          <Button variant="outline" className={full} onClick={() => setSending(true)}>
-            {d?.displayStatus === 'overdue' ? t.remind : t.send}
-          </Button>
-        )}
-        {open && (
-          <Button className={full} onClick={() => setPaying(true)}>
-            {t.markPaid}
-          </Button>
-        )}
+        {more}
       </>
     )
   }

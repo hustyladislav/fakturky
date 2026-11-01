@@ -4,7 +4,7 @@ import { Input } from '@fakturky/ui/components/input'
 import { Money } from '@fakturky/ui/components/money'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Plus, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { CsvDownload } from '@/components/csv-download'
@@ -40,14 +40,11 @@ function InvoiceList() {
   const t = cs.invoices
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-4 pb-20 sm:pb-0">
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{t.title}</h1>
-        <div className="hidden gap-2 sm:flex">
+        <div className="flex gap-2">
           <CsvDownload kind="documents" />
-          <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
-            <Plus /> {t.new}
-          </Button>
         </div>
       </div>
 
@@ -89,56 +86,71 @@ function InvoiceList() {
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-muted-foreground hidden text-left text-xs sm:table-header-group">
-              <tr>
-                <th className="px-4 py-2 font-medium">{t.columns.number}</th>
-                <th className="px-4 py-2 font-medium">{t.columns.customer}</th>
-                <th className="px-4 py-2 font-medium">{t.columns.issued}</th>
-                <th className="px-4 py-2 font-medium">{t.columns.due}</th>
-                <th className="px-4 py-2 text-right font-medium">{t.columns.total}</th>
-                <th className="px-4 py-2 font-medium">{t.columns.status}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.data?.map((d) => (
-                <tr key={d.id} className="hover:bg-muted/30 border-t [&>td]:p-0">
-                  <Cell id={d.id} draft={d.status === 'draft'} strong>
-                    {d.number ?? t.draftNumber}
-                  </Cell>
-                  <Cell id={d.id} draft={d.status === 'draft'}>
-                    {d.customerName ?? '—'}
-                  </Cell>
-                  <Cell id={d.id} draft={d.status === 'draft'} hide>
-                    {d.issueDate ? formatDateCs(d.issueDate) : '—'}
-                  </Cell>
-                  <Cell id={d.id} draft={d.status === 'draft'} hide>
-                    {d.dueDate ? formatDateCs(d.dueDate) : '—'}
-                  </Cell>
-                  <Cell id={d.id} draft={d.status === 'draft'} right>
-                    <Money amount={d.total} currency={d.currency} />
-                  </Cell>
-                  <Cell id={d.id} draft={d.status === 'draft'}>
+        <>
+          <ul className="divide-y overflow-hidden rounded-xl border sm:hidden">
+            {list.data?.map((d) => (
+              <li key={d.id}>
+                <Link
+                  to={d.status === 'draft' ? '/faktury/$id/upravit' : '/faktury/$id'}
+                  params={{ id: d.id }}
+                  className="flex min-h-16 items-center gap-3 px-4 py-3 active:bg-muted/50"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium tabular-nums">
+                      {d.number ?? t.draftNumber}
+                    </span>
+                    <span className="text-muted-foreground block truncate text-sm">
+                      {d.customerName ?? '—'}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <Money amount={d.total} currency={d.currency} className="text-sm" />
                     <InvoiceStatus status={d.displayStatus} />
-                  </Cell>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-hidden rounded-xl border sm:block">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-muted-foreground hidden text-left text-xs sm:table-header-group">
+                <tr>
+                  <th className="px-4 py-2 font-medium">{t.columns.number}</th>
+                  <th className="px-4 py-2 font-medium">{t.columns.customer}</th>
+                  <th className="px-4 py-2 font-medium">{t.columns.issued}</th>
+                  <th className="px-4 py-2 font-medium">{t.columns.due}</th>
+                  <th className="px-4 py-2 text-right font-medium">{t.columns.total}</th>
+                  <th className="px-4 py-2 font-medium">{t.columns.status}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {list.data?.map((d) => (
+                  <tr key={d.id} className="hover:bg-muted/30 border-t [&>td]:p-0">
+                    <Cell id={d.id} draft={d.status === 'draft'} strong>
+                      {d.number ?? t.draftNumber}
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'}>
+                      {d.customerName ?? '—'}
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'} hide>
+                      {d.issueDate ? formatDateCs(d.issueDate) : '—'}
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'} hide>
+                      {d.dueDate ? formatDateCs(d.dueDate) : '—'}
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'} right>
+                      <Money amount={d.total} currency={d.currency} />
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'}>
+                      <InvoiceStatus status={d.displayStatus} />
+                    </Cell>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
-
-      <div className="from-background fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t p-4 sm:hidden">
-        <Button
-          nativeButton={false}
-          render={<Link to="/faktury/nova" />}
-          size="lg"
-          className="w-full"
-        >
-          <Plus /> {t.new}
-        </Button>
-      </div>
     </div>
   )
 }

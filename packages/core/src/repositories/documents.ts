@@ -6,7 +6,9 @@ import {
   computeDocumentTotals,
   DEFAULT_NUMBER_PATTERNS,
   Decimal,
+  formatDateCs,
   formatDocumentNumber,
+  formatMoney,
   parseDecimal,
   periodKey,
   todayPrague,
@@ -14,6 +16,7 @@ import {
   variableSymbolFromNumber,
 } from '@fakturky/domain'
 import { and, asc, desc, eq, ilike, inArray, isNull, lt, or, sql } from 'drizzle-orm'
+import { MailError, type Services } from '../context'
 import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
 import { bankAccountsRepo } from './bank-accounts'
 
@@ -536,6 +539,58 @@ export const documentsRepo = {
         })
         .where(scoped(orgId, id))
       await logActivity(tx, orgId, actorId, id, 'issued', { number })
+    })
+    return this.get(db, orgId, id)
+  },
+
+  /**
+   * E-mails an issued (open) invoice with the PDF attached and the public link; records `sent`.
+   * `reminder` sends a payment reminder instead (records `reminded`).
+   */
+  async send(
+    db: Db,
+    orgId: string,
+    actorId: string,
+    id: string,
+    services: Services | undefined,
+    opts: { to?: string; message?: string | null; reminder?: boolean } = {},
+  ) {
+    const found = await this.forExport(db, orgId, id)
+    if (!found) throw new DocumentError('NOT_FOUND', 'Issued document not found')
+    const { doc, lines } = found
+    if (doc.status === 'cancelled' || (opts.reminder && doc.status !== 'issued')) {
+      throw new DocumentError('CONFLICT', 'This document cannot be sent')
+    }
+    const customerEmails = (doc.customerSnapshot?.emails as string[] | undefined) ?? []
+    const to = opts.to ?? customerEmails[0]
+    if (!to) throw new DocumentError('PRECONDITION_FAILED', 'The customer has no e-mail address')
+    if (
+      !services?.sendInvoice ||
+      !services.renderPdf ||
+      !services.publicBaseUrl ||
+      !doc.publicToken
+    ) {
+      throw new MailError('EMAIL_NOT_CONFIGURED')
+    }
+    const bytes = await services.renderPdf(doc, lines)
+    const supplier = doc.supplierSnapshot ?? {}
+    await services.sendInvoice({
+      to,
+      replyTo: (supplier.email as string | null) ?? null,
+      supplierName: String(supplier.name ?? ''),
+      number: doc.number ?? '',
+      total: formatMoney(doc.total, doc.currency),
+      dueDate: doc.dueDate ? formatDateCs(doc.dueDate) : '',
+      publicUrl: `${services.publicBaseUrl}/f/${doc.publicToken}`,
+      message: opts.message ?? null,
+      isReminder: opts.reminder ?? false,
+      pdf: { filename: `${doc.number}.pdf`, bytes },
+    })
+    await db.transaction(async (tx) => {
+      if (!opts.reminder) {
+        await tx.update(document).set({ sentAt: new Date() }).where(scoped(orgId, id))
+      }
+      await logActivity(tx, orgId, actorId, id, opts.reminder ? 'reminded' : 'sent', { to })
     })
     return this.get(db, orgId, id)
   },

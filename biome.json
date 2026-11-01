@@ -14,7 +14,8 @@
       "!pnpm-lock.yaml",
       "!**/.output/**",
       "!packages/domain",
-      "!design", "!docs"
+      "!design",
+      "!docs"
     ]
   },
   "formatter": {

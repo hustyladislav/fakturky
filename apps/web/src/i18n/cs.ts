@@ -1,4 +1,5 @@
 import { BRAND } from '@fakturky/core/brand'
+import { privacySections, termsSections } from './legal'
 
 /** All user-facing copy lives here. Natural Czech, correct diacritics. */
 export const cs = {
@@ -84,6 +85,8 @@ export const cs = {
     cancelled: 'Stornovaná',
   },
   legal: {
+    termsSections,
+    privacySections,
     terms: 'Podmínky používání',
     privacy: 'Zásady ochrany osobních údajů',
     updated: (date: string) => `Poslední aktualizace: ${date}`,

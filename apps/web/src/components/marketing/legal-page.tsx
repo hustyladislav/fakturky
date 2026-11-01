@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router'
 import { TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cs } from '@/i18n/cs'
+import type { LegalSection } from '@/i18n/legal'
 
 export function LegalPage({
   title,
@@ -43,5 +44,53 @@ export function LegalPage({
         </div>
       </main>
     </div>
+  )
+}
+
+/** Renders [text](url) and **bold** inline markup from the dictionary. */
+function Inline({ text }: { text: string }) {
+  const parts = text.split(/(\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*)/g)
+  return (
+    <>
+      {parts.map((part, i) => {
+        const link = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part)
+        if (link) {
+          return (
+            <a key={i} href={link[2]} target="_blank" rel="noreferrer">
+              {link[1]}
+            </a>
+          )
+        }
+        const bold = /^\*\*([^*]+)\*\*$/.exec(part)
+        return bold ? <strong key={i}>{bold[1]}</strong> : <span key={i}>{part}</span>
+      })}
+    </>
+  )
+}
+
+export function LegalSections({ sections }: { sections: readonly LegalSection[] }) {
+  return (
+    <>
+      {sections.map((s) => (
+        <section key={s.heading}>
+          <h2>{s.heading}</h2>
+          {s.body.map((block) =>
+            typeof block === 'string' ? (
+              <p key={block} className="mt-3">
+                <Inline text={block} />
+              </p>
+            ) : (
+              <ul key={block.list[0]} className="mt-3">
+                {block.list.map((li) => (
+                  <li key={li}>
+                    <Inline text={li} />
+                  </li>
+                ))}
+              </ul>
+            ),
+          )}
+        </section>
+      ))}
+    </>
   )
 }

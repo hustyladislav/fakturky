@@ -12,6 +12,9 @@ Free, open-source Czech invoicing app (web + REST + MCP + CLI). Read before work
   procedure, then UI. REST, MCP and CLI pick it up from the router metadata — check they do.
 - Money is `Decimal` (decimal.js-light) / `numeric` strings. Never `number` for amounts.
 - Every query is scoped by `organizationId`. No exceptions; add a tenant-isolation test for new repositories.
+- **Always use the latest stable versions — verify, never assume.** Before adding or upgrading a dependency run
+  `npm view <pkg> version` (and read its changelog for breaking changes); before choosing an AI model, query
+  `https://ai-gateway.vercel.sh/v1/models` live. Your training data is outdated by definition.
 - Use exact versions from the root `package.json`/catalog. Do not add dependencies casually; prefer the platform.
 - Small, focused PRs with tests. Conventional Commits (`feat:`, `fix:`, `chore:` …).
 - Before pushing: `pnpm check` (biome + typecheck + tests) must pass.

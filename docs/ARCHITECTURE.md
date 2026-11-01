@@ -135,7 +135,7 @@ right-hand side panel that keeps the conversation while the user works. It can d
 
 - **Library:** TanStack AI (`@tanstack/ai`, `@tanstack/ai-react`), streamed from a TanStack Start server route
   `/api/agent`. Chat UI built from native shadcn components (see `docs/DESIGN.md`), no separate design language.
-- **Model:** via Vercel AI Gateway (OIDC auth on Vercel). Default `deepseek-v4-flash` (exact gateway id in
+- **Model:** via Vercel AI Gateway (OIDC auth on Vercel). Default `deepseek/deepseek-v4.1-flash` (latest DeepSeek Flash on the gateway as of 2026-11-01; re-check) (exact gateway id in
   `packages/core/src/agent/models.ts`), routed only to providers hosted in the EU or US; fallbacks configured
   there too. Model is a server-side constant, never chosen by the client.
 - **Server tools = the oRPC router.** The same adapter that builds MCP tools builds agent tools from procedure

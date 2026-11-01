@@ -33,7 +33,7 @@ mark paid. Deployed to production. Everything else below lands in small follow-u
 12. **Agents** — REST API + OpenAPI docs, MCP server (OAuth + API key) with every operation, CLI `fakturky`,
     `llms.txt`.
 13. **Asistent** — Linear-style AI agent (⌘K + side panel) that can do everything in the app and navigate it;
-    DeepSeek V4 Flash via Vercel AI Gateway, hard $100/month global spend cap, per-org caps.
+    latest DeepSeek Flash (V4.1) via Vercel AI Gateway, US-hosted with zero data retention, hard $100/month global spend cap, per-org caps.
 14. **Support & feedback** — "Kup mi kávu" link (buymeacoffee.com/ladislavhusty), feedback link, GitHub issues.
 15. **Fast & responsive** — keyboard shortcuts (N = new invoice, / = search, ⌘K command palette), mobile layout.
 

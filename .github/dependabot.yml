@@ -14,7 +14,7 @@ updates:
         update-types: [minor, patch]
       security:
         applies-to: security-updates
-        patterns: ['*']
+        patterns: ["*"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -23,4 +23,4 @@ updates:
       default-days: 7
     groups:
       actions:
-        patterns: ['*']
+        patterns: ["*"]

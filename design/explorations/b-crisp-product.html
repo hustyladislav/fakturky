@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="cs" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fakturky — směr B · Crisp product tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@0.469.0"></script>
+<script>
+tailwind.config={theme:{extend:{
+  colors:{bg:'var(--bg)',surface:'var(--surface)',surface2:'var(--surface2)',ink:'var(--ink)',ink2:'var(--ink2)',muted:'var(--muted)',line:'var(--line)',line2:'var(--line2)',accent:'var(--accent)','accent-text':'var(--accent-text)','accent-soft':'var(--accent-soft)',ok:'var(--ok)',warn:'var(--warn)',danger:'var(--danger)'},
+  borderColor:{DEFAULT:'var(--line)'},
+  fontFamily:{sans:['Geist','Inter','system-ui','sans-serif'],mono:['Geist Mono','ui-monospace','monospace']}}}}
+</script>
+<style>
+/* ── Design tokens ─────────────────────────────────────────── */
+:root{
+  --bg:#F6F7F9;--surface:#FFFFFF;--surface2:#F0F2F5;--ink:#0B0D12;--ink2:#3A404C;--muted:#667085;
+  --line:#E4E7EC;--line2:#D0D5DD;--accent:#3B5BFF;--accent-text:#3B5BFF;--accent-soft:rgba(59,91,255,.10);
+  --ok:#12805C;--ok-soft:#E6F6EE;--warn:#B25E09;--warn-soft:#FEF3E2;--danger:#D92D3A;--danger-soft:#FDECEE;
+  --pop:0 0 0 1px var(--line),0 16px 40px -12px rgba(11,13,18,.22);--grid:rgba(11,13,18,.055);
+}
+[data-theme=dark]{
+  --bg:#0A0B0E;--surface:#101216;--surface2:#16191F;--ink:#ECEEF3;--ink2:#B4B9C6;--muted:#8B92A3;
+  --line:#22262E;--line2:#2E333D;--accent:#5B73FF;--accent-text:#8EA0FF;--accent-soft:rgba(111,134,255,.16);
+  --ok:#3DD68C;--ok-soft:rgba(61,214,140,.12);--warn:#F5A524;--warn-soft:rgba(245,165,36,.12);--danger:#FF6B73;--danger-soft:rgba(255,107,115,.12);
+  --pop:0 0 0 1px var(--line2),0 24px 60px -12px rgba(0,0,0,.7);--grid:rgba(255,255,255,.05);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:'Geist','Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+[data-theme]{color:var(--ink)}
+.num{font-family:'Geist Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:-.015em;white-space:nowrap}
+:where(svg.lucide){width:16px;height:16px;flex:none;stroke-width:1.75}
+.container{max-width:1280px;margin:0 auto;padding:0 24px}
+.seclabel{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:24px;flex-wrap:wrap}
+.seclabel b{font-size:15px;font-weight:600;letter-spacing:-.01em}.seclabel .num{color:var(--accent-text);font-size:12px}.seclabel span:last-child{color:var(--muted);font-size:13px}
+.frame{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg);box-shadow:0 1px 0 var(--line),0 30px 60px -30px rgba(11,13,18,.25)}
+.chrome{height:36px;display:flex;align-items:center;gap:6px;padding:0 12px;background:var(--surface);border-bottom:1px solid var(--line)}
+.chrome i{width:10px;height:10px;border-radius:50%;background:var(--line2)}.chrome .url{margin-left:12px;font-size:11px;color:var(--muted);background:var(--surface2);padding:2px 10px;border-radius:5px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:6px;font-size:13px;font-weight:500;border:1px solid var(--line2);background:var(--surface);color:var(--ink);white-space:nowrap;cursor:pointer;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--surface2)}
+.btn-p{background:var(--accent);border-color:var(--accent);color:#fff}.btn-p:hover{background:var(--accent);filter:brightness(1.08)}
+.btn-lg{height:42px;padding:0 18px;font-size:14px;border-radius:8px}
+.btn-g{border-color:transparent;background:transparent;color:var(--muted)}
+.kbd{font-family:'Geist Mono',monospace;font-size:10.5px;min-width:18px;height:18px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line2);border-bottom-width:2px;border-radius:4px;color:var(--muted);background:var(--surface2);font-weight:500}
+.btn-p .kbd{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);color:#fff}
+.in{height:34px;width:100%;border:1px solid var(--line2);border-radius:6px;background:var(--surface);padding:0 10px;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:8px;outline:none}
+.in{white-space:nowrap;overflow:hidden}.in.r{justify-content:flex-end}
+.in:focus,.in.f{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.in .m{color:var(--muted)}
+.fl{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 8px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-draft{color:var(--muted);background:var(--surface2)}.p-sent{color:var(--accent-text);background:var(--accent-soft)}
+.p-over{color:var(--danger);background:var(--danger-soft)}.p-paid{color:var(--ok);background:var(--ok-soft)}
+.p-void{color:var(--muted);box-shadow:inset 0 0 0 1px var(--line2);text-decoration:line-through}.p-void::before{background:transparent;box-shadow:inset 0 0 0 1.5px currentColor}
+.nav{display:flex;align-items:center;gap:10px;height:30px;padding:0 10px;border-radius:6px;color:var(--muted);font-size:13px;font-weight:500}
+.nav.on{background:var(--surface2);color:var(--ink)}.nav .kbd{margin-left:auto;opacity:.8;font-size:9.5px;height:16px}
+.nav .bd{margin-left:auto;font-size:11px;background:var(--accent-soft);color:var(--accent-text);border-radius:99px;padding:0 6px}
+.irow{display:grid;grid-template-columns:92px 1fr 80px 190px 112px 124px;gap:12px;white-space:nowrap;align-items:center;padding:0 16px;height:44px;border-top:1px solid var(--line);font-size:13px}
+.irow.h{height:34px;border-top:0;background:var(--surface2)}.irow.sel{box-shadow:inset 2px 0 0 var(--accent);background:var(--accent-soft)}
+.r{text-align:right;justify-self:end}
+.dd{position:absolute;left:0;right:0;top:40px;z-index:5;background:var(--surface);border-radius:10px;box-shadow:var(--pop);padding:4px}
+.opt{display:flex;gap:10px;align-items:center;padding:7px 8px;border-radius:6px}.opt.on{background:var(--accent-soft)}
+.opt small,.dd small{color:var(--muted);font-size:12px}.dd .gl{padding:6px 8px 2px}
+.lgrid{display:grid;grid-template-columns:1fr 52px 54px 88px 54px 100px 16px;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:6px;padding:2px;gap:2px;background:var(--surface2)}
+.seg span{padding:2px 10px;font-size:12px;border-radius:4px;color:var(--muted);font-weight:500}.seg .on{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line2)}
+.bgrid{background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse 75% 70% at 50% 25%,#000 30%,transparent 78%);mask-image:radial-gradient(ellipse 75% 70% at 50% 25%,#000 30%,transparent 78%)}
+.sw{width:30px;height:30px;border-radius:7px;border:1px solid rgba(128,128,128,.28);flex:none}
+.mk{width:24px;height:24px;flex:none}
+.wm{font-weight:600;letter-spacing:-.035em}
+.phone{width:375px;height:800px;border:1px solid var(--line2);border-radius:38px;overflow:hidden;position:relative;background:var(--bg);box-shadow:0 30px 60px -30px rgba(11,13,18,.35);flex:none;display:flex;flex-direction:column}
+.sb{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:600;flex:none}
+.tabbar{margin-top:auto;height:72px;border-top:1px solid var(--line);background:var(--surface);display:flex;justify-content:space-around;align-items:flex-start;padding:10px 6px 0;flex:none}
+.tabbar div{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--muted);width:60px}.tabbar .on{color:var(--accent-text)}
+.fab{width:44px;height:44px;border-radius:14px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;margin-top:-4px}
+.clone{position:relative;overflow:hidden}.clone>.paper{position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:0 0 0 1px rgba(11,13,18,.08),0 10px 30px -10px rgba(11,13,18,.25)}
+
+/* ── The invoice document (always paper-white, A4 794×1123) ── */
+.paper{--pl:#E4E7EC;--pm:#667085;--pa:#3B5BFF;--pi:#0B0D12;
+  width:794px;height:1123px;background:#fff;color:var(--pi);padding:56px 56px 40px;font-size:11.5px;line-height:1.45;position:relative;display:flex;flex-direction:column;overflow:hidden;font-family:'Geist',sans-serif}
+.paper::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:linear-gradient(90deg,var(--pa) 0 38%,var(--pi) 38% 100%)}
+.paper .pl{font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--pm);font-weight:500;margin-bottom:3px}
+.paper .po{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--pa);font-weight:600}
+.paper .pn{font-size:36px;font-weight:500;letter-spacing:-.04em;line-height:1.1;margin-top:4px}
+.paper .ph{display:flex;justify-content:space-between;align-items:flex-start}
+.paper .jn{width:40px;height:40px;border-radius:10px;background:var(--pi);color:#fff;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center;letter-spacing:-.02em}
+.paper .pmeta{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;border-top:1px solid var(--pl);border-bottom:1px solid var(--pl);padding:13px 0;margin:30px 0 28px}
+.paper .pmeta b{font-size:12.5px;font-weight:500}
+.paper .party{display:grid;grid-template-columns:1fr 1.05fr;gap:28px}
+.paper .party h4{font-size:14px;font-weight:600;letter-spacing:-.015em;margin-bottom:2px}
+.paper .party p{color:#3A404C}.paper .party .num{font-size:10.5px;color:var(--pi)}
+.paper .cust{background:#F6F7F9;border-radius:10px;padding:14px 16px}
+.paper .tag{display:inline-block;font-size:8.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--pa);background:rgba(59,91,255,.1);padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:2px}
+.paper table{width:100%;border-collapse:collapse}
+.paper .pt{margin-top:32px}
+.paper .pt th{font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--pm);font-weight:500;text-align:right;padding:0 0 7px;border-bottom:1.5px solid var(--pi)}
+.paper .pt th:first-child,.paper .pt td:first-child{text-align:left}
+.paper .pt td{padding:11px 0;border-bottom:1px solid var(--pl);text-align:right;vertical-align:top;font-size:11px}
+.paper .pt td:first-child{font-size:11.5px;font-weight:500;padding-right:14px}.paper .pt td:first-child small{display:block;font-weight:400;color:var(--pm);font-size:10px}
+.paper .note{margin-top:16px;color:var(--pm);font-size:10.5px}
+.paper .bot{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;margin-top:30px}
+.paper .pay{border:1px solid var(--pl);border-radius:10px;padding:14px 16px;display:flex;gap:16px}
+.paper .pay dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-content:start;flex:1}
+.paper .pay dt{color:var(--pm);font-size:10px;white-space:nowrap}.paper .pay dd{font-size:10.5px;font-weight:500;white-space:nowrap}.paper .pay dd.iban{font-size:9.8px}
+.paper .qrb{width:92px;flex:none;text-align:center}.paper .qrb .qr{width:92px;height:92px;display:block}
+.paper .qrb small{display:block;font-size:8.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-top:5px;color:var(--pm)}
+.paper .rec th{font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--pm);font-weight:500;text-align:right;padding:0 0 6px}
+.paper .rec td{text-align:right;padding:5px 0;font-size:10.5px;border-top:1px solid var(--pl)}
+.paper .rec th:first-child,.paper .rec td:first-child{text-align:left}.paper .rec tr:last-child td{font-weight:600}
+.paper .total{background:var(--pi);color:#fff;border-radius:10px;padding:14px 16px;margin-top:14px;display:flex;justify-content:space-between;align-items:flex-end}
+.paper .total .t{font-size:23px;font-weight:500;letter-spacing:-.04em;line-height:1}.paper .total small{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#9AA3B5;display:block;margin-bottom:6px}
+.paper .foot{margin-top:auto;border-top:1px solid var(--pl);padding-top:12px;display:flex;justify-content:space-between;gap:30px;font-size:9px;color:var(--pm);line-height:1.5}
+.paper .foot b{color:var(--pi);font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- Logo mark symbol: dokument s ohnutým rohem + písmeno F -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="mk" viewBox="0 0 32 32">
+  <path d="M9 1h12l10 10v12a8 8 0 0 1-8 8H9a8 8 0 0 1-8-8V9a8 8 0 0 1 8-8z" fill="var(--mk-bg,#3B5BFF)"/>
+  <path d="M21 1l10 10H21z" fill="var(--mk-fg,#fff)" opacity=".38"/>
+  <rect x="9" y="9" width="3.4" height="15" rx="1.7" fill="var(--mk-fg,#fff)"/>
+  <rect x="9" y="9" width="9.2" height="3.4" rx="1.7" fill="var(--mk-fg,#fff)"/>
+  <rect x="9" y="15.2" width="7" height="3.4" rx="1.7" fill="var(--mk-fg,#fff)"/>
+</symbol></defs></svg>
+
+<!-- Sticky doc bar -->
+<div class="sticky top-0 z-40 border-b bg-surface/90" style="backdrop-filter:blur(10px);background:color-mix(in srgb,var(--surface) 86%,transparent)">
+  <div class="container flex items-center gap-4 h-12">
+    <svg class="mk"><use href="#mk"/></svg>
+    <span class="wm text-[15px]">Fakturky</span><span class="text-muted text-[13px] hidden sm:inline">Směr B · Crisp product tool</span>
+    <nav class="ml-auto hidden md:flex gap-1 text-[13px] text-muted">
+      <a class="nav" href="#s1">01 Značka</a><a class="nav" href="#s2">02 Landing</a><a class="nav" href="#s3">03 Přehled</a><a class="nav" href="#s4">04 Nová faktura</a><a class="nav" href="#s5">05 Dokument</a><a class="nav" href="#s6">06 Mobil</a>
+    </nav>
+    <button class="btn ml-auto md:ml-2" id="themeBtn"><i data-lucide="moon"></i><span>Tmavý motiv</span></button>
+  </div>
+</div>
+
+<!-- ═════════════ 01 BRAND SHEET ═════════════ -->
+<section id="s1" class="pt-12 pb-6"><div class="container">
+  <div class="seclabel"><span class="num">01</span><b>Brand sheet</b><span>Značka, jména, barvy, typografie, tvary</span></div>
+
+  <div class="grid grid-cols-12 gap-4">
+    <!-- logo -->
+    <div class="card col-span-12 lg:col-span-7 p-6">
+      <div class="lbl mb-4">Logo · znak „dokument + F“</div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="rounded-lg border flex items-center justify-center gap-3 h-36 bg-bg"><svg width="40" height="40"><use href="#mk"/></svg><span class="wm text-[28px]">Fakturky</span></div>
+        <div class="rounded-lg border flex items-center justify-center gap-3 h-36" data-theme="dark" style="background:#0A0B0E"><svg width="40" height="40" style="--mk-bg:#5B73FF"><use href="#mk"/></svg><span class="wm text-[28px]">Fakturky</span></div>
+        <div class="rounded-lg flex items-center justify-center h-36" style="background:#3B5BFF"><svg width="64" height="64" style="--mk-bg:#fff;--mk-fg:#3B5BFF"><use href="#mk"/></svg></div>
+      </div>
+      <div class="flex flex-wrap items-end gap-6 mt-5 text-[12px] text-muted">
+        <div class="flex items-end gap-3"><svg width="64" height="64"><use href="#mk"/></svg><svg width="32" height="32"><use href="#mk"/></svg><svg width="16" height="16"><use href="#mk"/></svg><span>64 / 32 / 16 px — favicon</span></div>
+        <div class="flex items-center gap-2"><svg width="28" height="28" style="--mk-bg:var(--ink);--mk-fg:var(--bg)"><use href="#mk"/></svg>Mono varianta pro tisk a PDF</div>
+      </div>
+      <p class="text-[13px] text-ink2 mt-5 max-w-xl">Znak: ohnutý roh papíru (klíčový gesto dokumentu) a písmeno F složené ze tří linek — jako řádky na faktuře. Zaoblení 8/32 sedí s radiem prvků v aplikaci. Wordmark Geist 600, tracking −3,5 %.</p>
+    </div>
+    <!-- names -->
+    <div class="card col-span-12 lg:col-span-5 p-6">
+      <div class="lbl mb-4">Alternativy názvu · funguje v češtině i slovenštině</div>
+      <div class="flex flex-col gap-3">
+        <div class="flex gap-3 items-start border rounded-lg p-3"><span class="num text-accent-text text-[12px] mt-1">A</span><div><div class="wm text-[20px] leading-tight">Fakt</div><p class="text-[13px] text-muted">„Fakt“ znamená česky i slovensky „opravdu“ a je kořenem slova faktura. Krátké, vtipné, rychle se píše.</p></div></div>
+        <div class="flex gap-3 items-start border rounded-lg p-3"><span class="num text-accent-text text-[12px] mt-1">B</span><div><div class="wm text-[20px] leading-tight">Splatno</div><p class="text-[13px] text-muted">Slovo, které stojí na každé faktuře („splatno do…“). Klidné, důvěryhodné, rozumí mu CZ i SK.</p></div></div>
+        <div class="flex gap-3 items-start border rounded-lg p-3"><span class="num text-accent-text text-[12px] mt-1">C</span><div><div class="wm text-[20px] leading-tight">Vystav</div><p class="text-[13px] text-muted">Rozkazovací způsob — „vystav fakturu“. Akce místo nálepky, v CLI přirozené: <span class="num text-ink">vystav new</span>.</p></div></div>
+      </div>
+      <p class="text-[12px] text-muted mt-3">Pracovní název <b class="text-ink font-medium">Fakturky</b> zůstává výchozí; návrh používá jeho wordmark.</p>
+    </div>
+
+    <!-- palette -->
+    <div class="card col-span-12 lg:col-span-6 p-6" data-theme="light" style="background:#fff"><div class="lbl mb-3">Paleta · světlý motiv</div><div id="palLight" class="flex flex-col"></div></div>
+    <div class="card col-span-12 lg:col-span-6 p-6" data-theme="dark" style="background:#101216"><div class="lbl mb-3">Paleta · tmavý motiv (první třídy)</div><div id="palDark" class="flex flex-col"></div></div>
+
+    <!-- type -->
+    <div class="card col-span-12 lg:col-span-7 p-6">
+      <div class="lbl mb-3">Typografie · Geist + Geist Mono (číslice vždy tabulární)</div>
+      <div class="flex flex-col divide-y">
+        <div class="py-3 flex items-baseline justify-between gap-4"><span class="num text-[11px] text-muted w-40 shrink-0">Display · 48/52 · 600 · −3 %</span><span class="text-[44px] leading-[1.05] font-semibold tracking-[-0.035em] text-right">Faktury bez ruchu</span></div>
+        <div class="py-3 flex items-baseline justify-between gap-4"><span class="num text-[11px] text-muted w-40 shrink-0">Title · 28/34 · 600 · −2 %</span><span class="text-[28px] leading-tight font-semibold tracking-[-0.025em]">Přehled za říjen 2026</span></div>
+        <div class="py-3 flex items-baseline justify-between gap-4"><span class="num text-[11px] text-muted w-40 shrink-0">Heading · 18/26 · 600 · −1 %</span><span class="text-[18px] font-semibold tracking-[-0.01em]">Neuhrazené faktury</span></div>
+        <div class="py-3 flex items-baseline justify-between gap-4"><span class="num text-[11px] text-muted w-40 shrink-0">Body · 14/21 · 400</span><span class="text-[14px]">Studio Lípa s.r.o. — splatnost za 14 dní</span></div>
+        <div class="py-3 flex items-baseline justify-between gap-4"><span class="num text-[11px] text-muted w-40 shrink-0">Small · 12/18 · 500</span><span class="text-[12px] font-medium text-muted">Uloženo před 3 s · koncept</span></div>
+        <div class="py-3 flex items-baseline justify-between gap-4"><span class="num text-[11px] text-muted w-40 shrink-0">Overline · 11 · 500 · +6 %</span><span class="lbl">Rekapitulace DPH</span></div>
+        <div class="py-3 flex items-baseline justify-between gap-4"><span class="num text-[11px] text-muted w-40 shrink-0">Částky · Geist Mono · tnum</span><span class="num text-[28px] font-medium">119 222,00 Kč</span></div>
+      </div>
+    </div>
+    <!-- shape -->
+    <div class="card col-span-12 lg:col-span-5 p-6">
+      <div class="lbl mb-3">Radius · stíny · stavy</div>
+      <div class="grid grid-cols-4 gap-3 text-[11px] text-muted text-center">
+        <div><div class="h-14 border-2 border-line2 mb-1" style="border-radius:4px"></div>4 · tagy</div>
+        <div><div class="h-14 border-2 border-line2 mb-1" style="border-radius:6px"></div>6 · prvky</div>
+        <div><div class="h-14 border-2 border-line2 mb-1" style="border-radius:10px"></div>10 · karty</div>
+        <div><div class="h-14 border-2 border-line2 mb-1" style="border-radius:14px"></div>14 · dialogy</div>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mt-4 text-[11px] text-muted">
+        <div><div class="h-14 rounded-[10px] bg-surface border mb-1"></div>Plochý — jen 1px linka</div>
+        <div><div class="h-14 rounded-[10px] bg-surface mb-1" style="box-shadow:var(--pop)"></div>Popover — linka + měkký stín</div>
+        <div><div class="h-14 rounded-[10px] bg-surface mb-1 border border-accent" style="box-shadow:0 0 0 3px var(--accent-soft)"></div>Fokus — 3px prstenec</div>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-5"><span class="pill p-draft">Koncept</span><span class="pill p-sent">Vystavená</span><span class="pill p-over">Po splatnosti</span><span class="pill p-paid">Zaplacená</span><span class="pill p-void">Stornovaná</span></div>
+      <div class="flex flex-wrap items-center gap-2 mt-4 text-[12px] text-muted"><span class="kbd">⌘</span><span class="kbd">K</span> paleta <span class="kbd ml-2">N</span> nová faktura <span class="kbd ml-2">G</span><span class="kbd">F</span> faktury</div>
+      <p class="text-[12px] text-muted mt-4">Základ 4 px. Hloubku dělají linky, ne stíny; stín má jen vše, co se vznáší.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ═════════════ 02 LANDING ═════════════ -->
+<section id="s2" class="py-12"><div class="container">
+  <div class="seclabel"><span class="num">02</span><b>Landing page</b><span>Hero, desktop 1280</span></div>
+  <div class="frame">
+    <div class="chrome"><i></i><i></i><i></i><span class="url num">fakturky.cz</span></div>
+    <div class="relative bg-surface">
+      <div class="absolute inset-0 bgrid pointer-events-none"></div>
+      <div class="absolute pointer-events-none" style="left:50%;top:-120px;width:760px;height:420px;transform:translateX(-50%);background:radial-gradient(closest-side,var(--accent-soft),transparent)"></div>
+      <div class="relative">
+        <div class="flex items-center gap-6 px-8 h-14">
+          <div class="flex items-center gap-2"><svg class="mk"><use href="#mk"/></svg><span class="wm text-[16px]">Fakturky</span></div>
+          <nav class="hidden md:flex gap-5 text-[13px] text-muted ml-4"><a>Funkce</a><a>Pro agenty</a><a>Dokumentace</a><a>Zdarma navždy</a></nav>
+          <div class="ml-auto flex items-center gap-2 text-[13px]">
+            <a class="text-muted hidden sm:flex items-center gap-1.5 mr-2"><i data-lucide="coffee" class="w-3.5 h-3.5"></i>Kup mi kávu</a>
+            <a class="btn btn-g"><i data-lucide="github"></i><span class="num text-[12px]">2,4k</span></a><a class="btn btn-g">Přihlásit se</a><a class="btn btn-p">Začít zdarma</a>
+          </div>
+        </div>
+        <div class="text-center px-6 pt-16 pb-12 max-w-3xl mx-auto">
+          <a class="inline-flex items-center gap-2 h-7 pl-1 pr-3 rounded-full border bg-surface text-[12.5px] text-ink2"><span class="px-2 rounded-full bg-accent-soft text-accent-text text-[11px] font-medium leading-5">Nové</span>MCP server pro AI agenty<i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></a>
+          <h1 class="mt-6 text-[60px] leading-[1.02] font-semibold tracking-[-0.045em]">Faktury, které <span class="text-accent-text">nepřekážejí.</span></h1>
+          <p class="mt-5 text-[18px] leading-relaxed text-muted max-w-xl mx-auto">Zdarma, open-source a bez upsellů. Vystavte fakturu za půl minuty, pošlete ji s QR platbou a sledujte, kdo už zaplatil. To je celé.</p>
+          <div class="mt-8 flex justify-center gap-3"><a class="btn btn-p btn-lg">Začít zdarma<i data-lucide="arrow-right"></i></a><a class="btn btn-lg"><i data-lucide="github"></i>Zdrojový kód</a></div>
+          <p class="mt-4 text-[12.5px] text-muted flex justify-center gap-x-4 flex-wrap"><span>ARES podle IČO</span><span>·</span><span>QR Platba</span><span>·</span><span>DPH 21 % / 12 %</span><span>·</span><span>Export ISDOC</span><span>·</span><span>Bez reklam</span></p>
+        </div>
+
+        <!-- product composition -->
+        <div class="relative max-w-[1040px] mx-auto px-6">
+          <div class="card overflow-hidden" style="box-shadow:0 40px 80px -30px rgba(11,13,18,.3)">
+            <div class="chrome"><i></i><i></i><i></i><span class="url num">app.fakturky.cz/faktury</span><span class="ml-auto flex gap-1 items-center text-[11px] text-muted"><span class="kbd">N</span> nová faktura</span></div>
+            <div class="flex" style="height:440px">
+              <div class="w-[44%] border-r bg-surface">
+                <div class="flex items-center justify-between px-4 h-12 border-b"><b class="text-[14px] font-semibold">Faktury</b><span class="flex gap-1.5 text-[11px]"><span class="pill p-sent">3</span><span class="pill p-over">1</span></span></div>
+                <div class="text-[13px]">
+                  <div class="flex items-center gap-3 px-4 h-14 border-b bg-accent-soft" style="box-shadow:inset 2px 0 0 var(--accent)"><div class="flex-1 min-w-0"><div class="font-medium">Studio Lípa s.r.o.</div><div class="num text-[11px] text-muted">2026-0058 · 1. 11.</div></div><div class="text-right"><div class="num">119 222,00</div><span class="pill p-sent mt-0.5">Vystavená</span></div></div>
+                  <div class="flex items-center gap-3 px-4 h-14 border-b"><div class="flex-1"><div class="font-medium">Kavárna U Mostu s.r.o.</div><div class="num text-[11px] text-muted">2026-0057 · 28. 10.</div></div><div class="text-right"><div class="num">7 500,00</div><span class="pill p-over mt-0.5">Po splatnosti</span></div></div>
+                  <div class="flex items-center gap-3 px-4 h-14 border-b"><div class="flex-1"><div class="font-medium">Orion Marketing a.s.</div><div class="num text-[11px] text-muted">2026-0056 · 21. 10.</div></div><div class="text-right"><div class="num">52 000,00</div><span class="pill p-paid mt-0.5">Zaplacená</span></div></div>
+                  <div class="flex items-center gap-3 px-4 h-14 border-b"><div class="flex-1"><div class="font-medium">Truhlářství Dvořák</div><div class="num text-[11px] text-muted">2026-0055 · 15. 10.</div></div><div class="text-right"><div class="num">26 700,00</div><span class="pill p-paid mt-0.5">Zaplacená</span></div></div>
+                  <div class="flex items-center gap-3 px-4 h-14 border-b"><div class="flex-1"><div class="font-medium">Nadace Zelené Střechy</div><div class="num text-[11px] text-muted">2026-0054 · 9. 10.</div></div><div class="text-right"><div class="num">18 000,00</div><span class="pill p-draft mt-0.5">Koncept</span></div></div>
+                </div>
+              </div>
+              <div class="flex-1 bg-surface2 p-6 relative" style="-webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent)"><div class="clone" data-clone data-h=".62"></div></div>
+            </div>
+          </div>
+          <!-- floating palette + toast -->
+          <div class="absolute left-14 bottom-[-28px] w-[380px] rounded-xl bg-surface text-[13px]" style="box-shadow:var(--pop)">
+            <div class="flex items-center gap-2 px-3 h-11 border-b"><i data-lucide="search" class="text-muted"></i><span>nová faktura pro stud<span class="inline-block w-px h-4 bg-accent align-middle"></span></span><span class="kbd ml-auto">esc</span></div>
+            <div class="p-1"><div class="opt on"><i data-lucide="file-plus-2" class="text-accent-text"></i>Nová faktura pro Studio Lípa s.r.o.<span class="kbd ml-auto">↵</span></div><div class="opt"><i data-lucide="copy" class="text-muted"></i>Duplikovat fakturu 2026-0046</div></div>
+          </div>
+          <div class="absolute right-14 top-24 card px-3 py-2.5 flex items-center gap-3 text-[13px]" style="box-shadow:var(--pop);border-radius:12px"><span class="w-7 h-7 rounded-full bg-[var(--ok-soft)] text-ok flex items-center justify-center"><i data-lucide="check" class="w-4 h-4"></i></span><div><div class="font-medium leading-tight">Platba přijata</div><div class="text-[11.5px] text-muted num">Orion Marketing a.s. · 52 000,00 Kč</div></div></div>
+        </div>
+
+        <!-- Pro agenty -->
+        <div class="max-w-[1040px] mx-auto px-6 mt-24">
+          <div class="card grid md:grid-cols-2 overflow-hidden">
+            <div class="p-8"><div class="lbl text-accent-text">Pro agenty</div>
+              <h3 class="mt-2 text-[26px] leading-tight font-semibold tracking-[-0.03em]">Vaše faktury umí číst i AI.</h3>
+              <p class="mt-3 text-[14px] text-muted">MCP server a CLI — nechte Clauda nebo Cursor vystavit fakturu, najít neuhrazené a připravit upomínku. Stejná pravidla i data jako v aplikaci.</p>
+              <ul class="mt-4 text-[13px] text-ink2 flex flex-col gap-1.5"><li class="flex gap-2"><i data-lucide="check" class="text-ok mt-0.5"></i>9 nástrojů: vystavit, najít, označit jako zaplacené…</li><li class="flex gap-2"><i data-lucide="check" class="text-ok mt-0.5"></i>Konceptům musí člověk dát souhlas</li><li class="flex gap-2"><i data-lucide="check" class="text-ok mt-0.5"></i>Open-source, běží i u vás doma</li></ul></div>
+            <div class="p-6 num text-[12.5px] leading-relaxed whitespace-pre overflow-x-auto" style="background:#0A0B0E;color:#B4B9C6;white-space:pre"><span style="color:#667085">$</span> npx fakturky mcp --stdio
+<span style="color:#3DD68C">✓</span> MCP server běží · 9 nástrojů
+
+<span style="color:#667085">$</span> fakturky invoice create \
+    --client "Studio Lípa s.r.o." \
+    --item "Správa webu – listopad" 1 1900
+<span style="color:#3DD68C">✓</span> Faktura 2026-0058 vytvořena <span style="color:#667085">(koncept)</span>
+<span style="color:#667085">  → app.fakturky.cz/faktury/2026-0058</span></div>
+          </div>
+        </div>
+        <div class="max-w-[1040px] mx-auto px-6 py-10 flex flex-wrap justify-between gap-4 text-[12.5px] text-muted">
+          <span>© 2026 Fakturky · open-source (MIT) · vyrobeno v Praze</span>
+          <a class="inline-flex items-center gap-1.5 hover:text-ink"><i data-lucide="coffee" class="w-3.5 h-3.5"></i>Bez reklam a bez tlaku. Líbí se? <u class="underline-offset-2">Kup mi kávu</u></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ═════════════ 03 DASHBOARD ═════════════ -->
+<section id="s3" class="py-12"><div class="container">
+  <div class="seclabel"><span class="num">03</span><b>Přehled</b><span>Tmavý motiv · neplátce DPH (Eva Svobodová) · stiskni <span class="kbd">⌘</span> <span class="kbd">K</span> pro paletu</span></div>
+  <div class="frame relative" data-theme="dark" id="dash" style="height:900px">
+    <div class="chrome"><i></i><i></i><i></i><span class="url num">app.fakturky.cz/prehled</span></div>
+    <div class="flex" style="height:calc(100% - 36px)">
+      <aside class="w-56 shrink-0 border-r bg-surface p-3 flex flex-col gap-0.5">
+        <div class="flex items-center gap-2 px-2 h-9 mb-1"><svg class="mk"><use href="#mk"/></svg><span class="wm text-[15px]">Fakturky</span></div>
+        <button class="btn btn-g justify-start w-full mb-2 border-line" style="border-color:var(--line)" id="palBtn"><i data-lucide="search"></i>Hledat…<span class="kbd ml-auto">⌘K</span></button>
+        <a class="nav on"><i data-lucide="layout-dashboard"></i>Přehled<span class="kbd">G D</span></a>
+        <a class="nav"><i data-lucide="file-text"></i>Faktury<span class="kbd">G F</span></a>
+        <a class="nav"><i data-lucide="users"></i>Klienti<span class="kbd">G K</span></a>
+        <a class="nav"><i data-lucide="repeat"></i>Opakované<span class="bd">3</span></a>
+        <a class="nav"><i data-lucide="receipt"></i>Daně a DPH</a>
+        <a class="nav"><i data-lucide="settings"></i>Nastavení<span class="kbd">,</span></a>
+        <div class="mt-auto flex flex-col gap-2">
+          <a class="flex items-center gap-2 px-2.5 py-2 rounded-md text-[12.5px] text-muted hover:text-ink"><i data-lucide="coffee" class="w-3.5 h-3.5"></i>Kup mi kávu</a>
+          <div class="flex items-center gap-2 px-2 pt-3 border-t"><span class="w-7 h-7 rounded-full bg-accent-soft text-accent-text text-[11px] font-semibold flex items-center justify-center">ES</span><div class="leading-tight"><div class="text-[13px] font-medium">Eva Svobodová</div><div class="text-[11px] text-muted">Neplátce DPH</div></div></div>
+        </div>
+      </aside>
+      <main class="flex-1 min-w-0 overflow-hidden">
+        <div class="flex items-center h-14 px-6 border-b gap-3 bg-surface"><b class="text-[15px] font-semibold">Přehled</b><span class="btn btn-g h-7 px-2 text-[12.5px]">Říjen 2026<i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></span><a class="btn btn-p ml-auto"><i data-lucide="plus"></i>Nová faktura<span class="kbd">N</span></a></div>
+        <div class="p-6 flex flex-col gap-4">
+          <div class="flex items-center gap-3 rounded-lg border px-3.5 h-10 text-[13px] bg-accent-soft" style="border-color:transparent"><i data-lucide="repeat" class="text-accent-text"></i><span>Zítra se vystaví <b class="font-medium">3 opakované faktury</b> — Studio Lípa, Kavárna U Mostu, Orion Marketing.</span><a class="ml-auto text-accent-text font-medium">Zkontrolovat</a></div>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="card p-4"><div class="lbl">Tržby · říjen</div><div class="num text-[28px] font-medium mt-2 leading-none">148 500,00</div><div class="text-[12px] mt-2 flex gap-2 items-center"><span class="text-ok flex items-center gap-1"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i>+12 %</span><span class="text-muted">oproti září</span></div></div>
+            <div class="card p-4"><div class="lbl">Neuhrazeno</div><div class="num text-[28px] font-medium mt-2 leading-none">96 200,00</div><div class="text-[12px] mt-2 text-muted">4 faktury · nejbližší splatnost <span class="text-warn">za 5 dní</span></div></div>
+            <div class="card p-4" style="box-shadow:inset 2px 0 0 var(--danger)"><div class="lbl">Po splatnosti</div><div class="num text-[28px] font-medium mt-2 leading-none text-danger">31 000,00</div><div class="text-[12px] mt-2 text-muted">2 faktury · <a class="text-accent-text">Poslat upomínky</a></div></div>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="card p-4 col-span-2">
+              <div class="flex justify-between items-baseline"><div class="lbl">Tržby po měsících</div><div class="text-[12px] text-muted">posledních 12 měsíců · <span class="num text-ink">1 482 300 Kč</span></div></div>
+              <div id="bars" class="flex items-end gap-2 mt-4" style="height:116px"></div><div id="barl" class="flex gap-2 mt-2 text-[10.5px] text-muted num"></div>
+            </div>
+            <div class="card p-4">
+              <div class="flex justify-between"><div class="lbl">Limit DPH</div><span class="pill p-sent">74 %</span></div>
+              <div class="num text-[22px] font-medium mt-2 leading-none">1 482 300 <span class="text-muted text-[13px]">/ 2 000 000</span></div>
+              <div class="relative h-2 rounded-full bg-surface2 mt-4"><div class="absolute inset-y-0 left-0 rounded-full bg-accent" style="width:74.1%"></div><div class="absolute -top-1 w-px h-4 bg-warn" style="left:90%"></div></div>
+              <div class="relative h-4 text-[11px] text-muted mt-1.5 num"><span class="absolute left-0">0</span><span class="absolute text-warn -translate-x-1/2" style="left:90%">90 %</span><span class="absolute right-0 translate-x-0 hidden">2 mil.</span></div>
+              <p class="text-[12px] text-muted mt-3">Zbývá <b class="num font-medium text-ink">517 700 Kč</b> obratu za posledních 12 měsíců. Upozorníme vás při 90 %.</p>
+            </div>
+          </div>
+          <div class="card overflow-hidden">
+            <div class="flex items-center h-12 px-4"><b class="text-[14px] font-semibold">Poslední faktury</b><span class="ml-3 text-[12px] text-muted">Zobrazit vše <span class="kbd">G</span> <span class="kbd">F</span></span><div class="ml-auto flex gap-2"><span class="seg"><span class="on">Vše</span><span>Neuhrazené</span><span>Koncepty</span></span></div></div>
+            <div class="irow h lbl"><span>Číslo</span><span>Klient</span><span>Vystaveno</span><span>Splatnost</span><span class="r">Částka</span><span>Stav</span></div>
+            <div class="irow"><span class="num text-muted">2026-0074</span><span class="font-medium">Kavárna U Mostu s.r.o.</span><span class="num text-muted">24. 10.</span><span class="text-muted">—</span><span class="num r">7 500,00</span><span><span class="pill p-draft">Koncept</span></span></div>
+            <div class="irow sel"><span class="num text-muted">2026-0073</span><span class="font-medium">Studio Lípa s.r.o.</span><span class="num text-muted">22. 10.</span><span><span class="num">5. 11.</span> <span class="text-muted text-[12px]">za 12 dní</span></span><span class="num r">38 500,00</span><span><span class="pill p-sent">Vystavená</span></span></div>
+            <div class="irow"><span class="num text-muted">2026-0072</span><span class="font-medium">Nadace Zelené Střechy</span><span class="num text-muted">6. 10.</span><span><span class="num">20. 10.</span> <span class="text-danger text-[12px]">před 4 dny</span></span><span class="num r">18 000,00</span><span><span class="pill p-over">Po splatnosti</span></span></div>
+            <div class="irow"><span class="num text-muted">2026-0071</span><span class="font-medium">Truhlářství Pavel Dvořák</span><span class="num text-muted">15. 10.</span><span><span class="num">29. 10.</span> <span class="text-warn text-[12px]">za 5 dní</span></span><span class="num r">26 700,00</span><span><span class="pill p-sent">Vystavená</span></span></div>
+            <div class="irow"><span class="num text-muted">2026-0070</span><span class="font-medium">Orion Marketing a.s.</span><span class="num text-muted">9. 10.</span><span><span class="num">23. 10.</span> <span class="text-muted text-[12px]">uhrazeno 21. 10.</span></span><span class="num r">52 000,00</span><span><span class="pill p-paid">Zaplacená</span></span></div>
+            <div class="irow"><span class="num text-muted">2026-0069</span><span class="font-medium text-muted">Hotel Panorama s.r.o.</span><span class="num text-muted">2. 10.</span><span class="text-muted">—</span><span class="num r text-muted line-through">12 000,00</span><span><span class="pill p-void">Stornovaná</span></span></div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <!-- command palette -->
+    <div id="pal" class="absolute inset-0 flex items-start justify-center pt-28 z-20" style="background:rgba(5,6,8,.62);backdrop-filter:blur(3px)">
+      <div class="w-[580px] rounded-[14px] bg-surface text-[13.5px] overflow-hidden" style="box-shadow:var(--pop)">
+        <div class="flex items-center gap-3 px-4 h-12 border-b"><i data-lucide="search" class="text-muted"></i><span class="text-[15px]">nová<span class="inline-block w-px h-5 bg-accent align-middle ml-px"></span></span><span class="kbd ml-auto">esc</span></div>
+        <div class="p-2">
+          <div class="lbl px-2 py-1.5">Akce</div>
+          <div class="opt on"><i data-lucide="file-plus-2" class="text-accent-text"></i><span>Nová faktura</span><span class="kbd ml-auto">N</span></div>
+          <div class="opt"><i data-lucide="file-plus-2" class="text-muted"></i><span>Nová faktura pro <b class="font-medium">Studio Lípa s.r.o.</b></span></div>
+          <div class="opt"><i data-lucide="user-plus" class="text-muted"></i><span>Nový klient z ARES podle IČO</span><span class="kbd ml-auto">⇧N</span></div>
+          <div class="lbl px-2 pt-3 pb-1.5">Přejít na</div>
+          <div class="opt"><i data-lucide="file-text" class="text-muted"></i><span>Faktury</span><span class="ml-auto flex gap-1"><span class="kbd">G</span><span class="kbd">F</span></span></div>
+          <div class="opt"><i data-lucide="receipt" class="text-muted"></i><span>Daně a DPH</span><span class="ml-auto flex gap-1"><span class="kbd">G</span><span class="kbd">D</span></span></div>
+          <div class="lbl px-2 pt-3 pb-1.5">Poslední</div>
+          <div class="opt"><i data-lucide="clock" class="text-muted"></i><span class="num text-muted">2026-0073</span><span>Studio Lípa s.r.o.</span><span class="pill p-sent ml-auto">Vystavená</span></div>
+        </div>
+        <div class="flex gap-4 px-4 h-10 items-center border-t text-[12px] text-muted bg-surface2"><span class="flex gap-1.5 items-center"><span class="kbd">↑</span><span class="kbd">↓</span>vybrat</span><span class="flex gap-1.5 items-center"><span class="kbd">↵</span>otevřít</span><span class="ml-auto">Fakturky · příkazy</span></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ═════════════ 04 NEW INVOICE ═════════════ -->
+<section id="s4" class="py-12"><div class="container">
+  <div class="seclabel"><span class="num">04</span><b>Nová faktura</b><span>Formulář s živým náhledem · plátce DPH (Jan Novák)</span></div>
+  <div class="frame">
+    <div class="chrome"><i></i><i></i><i></i><span class="url num">app.fakturky.cz/faktury/nova</span></div>
+    <div class="flex items-center h-14 px-6 border-b bg-surface gap-3">
+      <a class="btn btn-g px-2"><i data-lucide="arrow-left"></i></a><b class="text-[15px] font-semibold">Nová faktura</b><span class="pill p-draft">Koncept</span><span class="text-[12px] text-muted hidden md:inline">Uloženo před 3 s</span>
+      <div class="ml-auto flex gap-2"><a class="btn btn-g">Zrušit<span class="kbd">esc</span></a><a class="btn">Uložit koncept<span class="kbd">⌘S</span></a><a class="btn btn-p"><i data-lucide="send"></i>Vystavit a odeslat<span class="kbd">⌘↵</span></a></div>
+    </div>
+    <div class="grid lg:grid-cols-[1fr_440px]">
+      <div class="p-6 flex flex-col gap-4 min-w-0">
+        <!-- client -->
+        <div class="card p-4"><div class="lbl mb-3">Odběratel</div>
+          <div class="grid sm:grid-cols-2 gap-4" style="min-height:312px">
+            <div class="relative"><label class="fl">Klient · název nebo IČO</label>
+              <div class="in f"><i data-lucide="search" class="m"></i><span>Studio Lípa</span><span class="ml-auto kbd">ARES</span></div>
+              <div class="dd" style="top:62px">
+                <div class="lbl gl">Ve tvých klientech</div>
+                <div class="opt on"><div class="flex-1"><div class="font-medium text-[13px]">Studio Lípa s.r.o.</div><small class="num">IČO 27412956 · Praha 2</small></div><span class="kbd">↵</span></div>
+                <div class="lbl gl">Registr ARES</div>
+                <div class="opt"><div class="flex-1"><div class="text-[13px]">Studio Lípa Brno s.r.o.</div><small class="num">IČO 29384710 · Brno</small></div><i data-lucide="cloud-download" class="m text-muted"></i></div>
+                <div class="opt"><div class="flex-1"><div class="text-[13px]">Lípa Studio, s.r.o.</div><small class="num">IČO 05931827 · Plzeň</small></div><i data-lucide="cloud-download" class="text-muted"></i></div>
+                <div class="opt" style="border-top:1px solid var(--line);border-radius:0;margin-top:2px"><i data-lucide="plus" class="text-accent-text"></i><span class="text-[13px] text-accent-text">Přidat nového klienta</span></div>
+              </div>
+            </div>
+            <div><label class="fl">Vybraný klient</label>
+              <div class="border rounded-lg p-3 bg-surface2 text-[13px]">
+                <div class="flex items-center justify-between"><b class="font-semibold">Studio Lípa s.r.o.</b><span class="pill p-paid">Ověřeno v ARES</span></div>
+                <div class="text-muted mt-1.5 leading-snug">Vinohradská 1234/56<br>120 00 Praha 2 – Vinohrady</div>
+                <div class="num text-[12px] mt-2 text-ink2">IČO 27412956 · DIČ CZ27412956</div>
+                <div class="text-[11.5px] text-muted mt-2">Splatnost klienta 14 dní · 11 faktur · naposledy 2026-0046</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- dates -->
+        <div class="card p-4"><div class="lbl mb-3">Termíny</div>
+          <div class="grid grid-cols-3 gap-4">
+            <div><label class="fl">Datum vystavení</label><div class="in"><i data-lucide="calendar" class="m"></i><span class="num">1. 11. 2026</span></div></div>
+            <div><label class="fl">DUZP <span class="font-normal">(zdanitelné plnění)</span></label><div class="in"><i data-lucide="calendar" class="m"></i><span class="num">31. 10. 2026</span></div></div>
+            <div><label class="fl">Splatnost</label><div class="in"><i data-lucide="calendar-check" class="m"></i><span class="num">15. 11. 2026</span></div></div>
+          </div>
+          <div class="flex items-center gap-3 mt-3 text-[12px] text-muted">Splatnost za <span class="seg"><span>7 dní</span><span class="on">14 dní</span><span>30 dní</span><span>Vlastní</span></span><span>Sobota — ale banky převedou v pondělí 16. 11.</span></div>
+        </div>
+        <!-- payment -->
+        <div class="card p-4"><div class="lbl mb-3">Platba</div>
+          <div class="grid grid-cols-3 gap-4">
+            <div><label class="fl">Měna</label><div class="in"><span>CZK · česká koruna</span><i data-lucide="chevrons-up-down" class="m ml-auto"></i></div></div>
+            <div class="col-span-2"><label class="fl">Bankovní účet</label><div class="in"><i data-lucide="landmark" class="m"></i><span>Česká spořitelna</span><span class="num m">19-145399/0800</span><i data-lucide="chevrons-up-down" class="m ml-auto"></i></div></div>
+            <div><label class="fl">Variabilní symbol</label><div class="in num">20260058<span class="ml-auto m text-[11px]">auto</span></div></div>
+            <div><label class="fl">Způsob úhrady</label><div class="in"><span>Bankovním převodem</span><i data-lucide="chevrons-up-down" class="m ml-auto"></i></div></div>
+            <div><label class="fl">Číslo faktury</label><div class="in num">2026-0058<span class="ml-auto m text-[11px]">auto</span></div></div>
+          </div>
+        </div>
+        <!-- items -->
+        <div class="card p-4"><div class="lbl mb-3">Položky</div>
+          <div class="lgrid lbl mb-1.5 text-[10px]"><span>Popis</span><span class="r">Množ.</span><span>Jedn.</span><span class="r">Cena / j.</span><span class="r">DPH</span><span class="r">Celkem</span><span></span></div>
+          <div class="flex flex-col gap-2 text-[13px]">
+            <div class="lgrid"><div class="in">Webdesign – návrh uživatelského rozhraní</div><div class="in num r">24</div><div class="in">hod</div><div class="in num r">1 200,00</div><div class="in r">21 %</div><div class="num r text-[13px]">28 800,00</div><i data-lucide="x" class="text-muted w-3.5 h-3.5"></i></div>
+            <div class="lgrid"><div class="in">Frontend vývoj (React, TypeScript)</div><div class="in num r">40</div><div class="in">hod</div><div class="in num r">1 400,00</div><div class="in r">21 %</div><div class="num r">56 000,00</div><i data-lucide="x" class="text-muted w-3.5 h-3.5"></i></div>
+            <div class="lgrid"><div class="in">Správa a hosting webu – listopad 2026</div><div class="in num r">1</div><div class="in">měs</div><div class="in num r">1 900,00</div><div class="in r">21 %</div><div class="num r">1 900,00</div><i data-lucide="x" class="text-muted w-3.5 h-3.5"></i></div>
+            <div class="lgrid"><div class="in">Licence písma (web, neomezená)</div><div class="in num r">1</div><div class="in">ks</div><div class="in num r">3 500,00</div><div class="in r">21 %</div><div class="num r">3 500,00</div><i data-lucide="x" class="text-muted w-3.5 h-3.5"></i></div>
+            <div class="lgrid"><div class="in f">Tištěný manuál značky<span class="inline-block w-px h-4 bg-accent"></span></div><div class="in num r">20</div><div class="in">ks</div><div class="in num r">450,00</div><div class="in r" style="color:var(--accent-text)">12 %</div><div class="num r">9 000,00</div><i data-lucide="x" class="text-muted w-3.5 h-3.5"></i></div>
+          </div>
+          <div class="flex items-center justify-between mt-3"><a class="btn btn-g text-accent-text px-1"><i data-lucide="plus"></i>Přidat položku<span class="kbd">I</span></a><span class="text-[12px] text-muted">Tab → další pole · ⌘D duplikuje řádek</span></div>
+          <div class="mt-3 pt-3 border-t flex justify-end"><div class="w-[330px] text-[13px]">
+            <div class="flex justify-between py-1"><span class="text-muted">Základ 21 %</span><span class="num">90 200,00</span></div>
+            <div class="flex justify-between py-1"><span class="text-muted">DPH 21 %</span><span class="num">18 942,00</span></div>
+            <div class="flex justify-between py-1"><span class="text-muted">Základ 12 %</span><span class="num">9 000,00</span></div>
+            <div class="flex justify-between py-1"><span class="text-muted">DPH 12 %</span><span class="num">1 080,00</span></div>
+            <div class="flex justify-between items-baseline pt-2 mt-1 border-t"><b class="font-semibold">Celkem k úhradě</b><span class="num text-[22px] font-medium">119 222,00 Kč</span></div>
+          </div></div>
+        </div>
+      </div>
+      <!-- preview -->
+      <aside class="border-l bg-surface2 p-6">
+        <div class="flex items-center justify-between mb-3"><span class="lbl">Živý náhled · A4</span><span class="seg"><span class="on">PDF</span><span>E-mail</span></span></div>
+        <div class="clone" data-clone></div>
+        <p class="text-[12px] text-muted mt-3 flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-ok"></i>Číslo faktury se doplní samo · QR Platba vzniká z účtu a VS</p>
+      </aside>
+    </div>
+  </div>
+</div></section>
+
+<!-- ═════════════ 05 INVOICE DOCUMENT ═════════════ -->
+<section id="s5" class="py-12"><div class="container">
+  <div class="seclabel"><span class="num">05</span><b>Faktura — dokument</b><span>A4 · 794 × 1123 px · vždy bílý papír, i v tmavém motivu</span></div>
+  <div class="rounded-xl border p-8 flex flex-col xl:flex-row gap-10 justify-center items-start overflow-x-auto" style="background:var(--surface2)">
+    <div class="paper" id="paper">
+      <div class="ph">
+        <div><div class="po">Faktura – daňový doklad</div><div class="pn num">2026-0058</div></div>
+        <div style="display:flex;gap:12px;align-items:center;text-align:right"><div><b style="font-size:13px;font-weight:600">Jan Novák</b><div style="color:#667085;font-size:10.5px">Digitální produkty a design</div></div><div class="jn">JN</div></div>
+      </div>
+      <div class="pmeta">
+        <div><div class="pl">Datum vystavení</div><b class="num">1. 11. 2026</b></div>
+        <div><div class="pl">DUZP</div><b class="num">31. 10. 2026</b></div>
+        <div><div class="pl">Splatnost</div><b class="num" style="color:var(--pa)">15. 11. 2026</b></div>
+        <div><div class="pl">Způsob úhrady</div><b>Bankovní převod</b></div>
+      </div>
+      <div class="party">
+        <div><div class="pl">Dodavatel</div><h4>Jan Novák<span class="tag">Plátce DPH</span></h4><p>Pod Lipami 14<br>602 00 Brno – Brno-střed</p><p class="num" style="margin-top:6px">IČO 07583921<br>DIČ CZ07583921</p><p style="margin-top:6px;font-size:10.5px">jan@novak-design.cz · +420 603 118 245</p></div>
+        <div class="cust"><div class="pl">Odběratel</div><h4>Studio Lípa s.r.o.</h4><p>Vinohradská 1234/56<br>120 00 Praha 2 – Vinohrady</p><p class="num" style="margin-top:6px">IČO 27412956<br>DIČ CZ27412956</p></div>
+      </div>
+      <table class="pt">
+        <thead><tr><th>Popis</th><th style="width:48px">Množ.</th><th style="width:38px;text-align:left;padding-left:8px">Jedn.</th><th style="width:84px">Cena / j.</th><th style="width:42px">DPH</th><th style="width:96px">Bez DPH</th></tr></thead>
+        <tbody>
+          <tr><td>Webdesign – návrh uživatelského rozhraní<small>12 obrazovek, podklady ve Figmě</small></td><td class="num">24</td><td style="text-align:left;padding-left:8px;color:#667085">hod</td><td class="num">1 200,00</td><td class="num">21 %</td><td class="num">28 800,00</td></tr>
+          <tr><td>Frontend vývoj (React, TypeScript)<small>Fáze 2 – administrace klientů</small></td><td class="num">40</td><td style="text-align:left;padding-left:8px;color:#667085">hod</td><td class="num">1 400,00</td><td class="num">21 %</td><td class="num">56 000,00</td></tr>
+          <tr><td>Správa a hosting webu – listopad 2026</td><td class="num">1</td><td style="text-align:left;padding-left:8px;color:#667085">měs</td><td class="num">1 900,00</td><td class="num">21 %</td><td class="num">1 900,00</td></tr>
+          <tr><td>Licence písma (web, neomezená)</td><td class="num">1</td><td style="text-align:left;padding-left:8px;color:#667085">ks</td><td class="num">3 500,00</td><td class="num">21 %</td><td class="num">3 500,00</td></tr>
+          <tr><td>Tištěný manuál značky<small>Brožura A5, 24 stran</small></td><td class="num">20</td><td style="text-align:left;padding-left:8px;color:#667085">ks</td><td class="num">450,00</td><td class="num">12 %</td><td class="num">9 000,00</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Fakturace dle nabídky č. N-2026-031 ze dne 2. 9. 2026. Děkuji za spolupráci.</p>
+      <div class="bot">
+        <div class="pay">
+          <dl>
+            <dt>Banka</dt><dd>Česká spořitelna</dd>
+            <dt>Číslo účtu</dt><dd class="num">19-145399/0800</dd>
+            <dt>IBAN</dt><dd class="num iban">CZ65 0800 0000 1920 0014 5399</dd>
+            <dt>SWIFT / BIC</dt><dd class="num">GIBACZPX</dd>
+            <dt>Var. symbol</dt><dd class="num">20260058</dd>
+            <dt>Částka</dt><dd class="num">119 222,00 CZK</dd>
+          </dl>
+          <div class="qrb"><svg class="qr" viewBox="0 0 29 29" shape-rendering="crispEdges"></svg><small>QR Platba</small></div>
+        </div>
+        <div>
+          <table class="rec"><thead><tr><th>Sazba</th><th>Základ</th><th>DPH</th><th>Celkem</th></tr></thead><tbody>
+            <tr><td class="num">21 %</td><td class="num">90 200,00</td><td class="num">18 942,00</td><td class="num">109 142,00</td></tr>
+            <tr><td class="num">12 %</td><td class="num">9 000,00</td><td class="num">1 080,00</td><td class="num">10 080,00</td></tr>
+            <tr><td>Celkem</td><td class="num">99 200,00</td><td class="num">20 022,00</td><td class="num">119 222,00</td></tr></tbody></table>
+          <div class="total"><div><small>Celkem k úhradě · CZK</small><div class="t num">119 222,00 <span style="font-size:14px;color:#9AA3B5">Kč</span></div></div></div>
+        </div>
+      </div>
+      <div class="foot">
+        <div>Fyzická osoba zapsaná v živnostenském rejstříku. Jsem plátce DPH. Při prodlení s úhradou účtuji zákonný úrok z prodlení. Dokument byl vystaven elektronicky a je platný bez razítka a podpisu.</div>
+        <div style="text-align:right;white-space:nowrap;display:flex;gap:8px;align-items:center"><svg width="18" height="18" style="--mk-bg:#0B0D12"><use href="#mk"/></svg><span><b>Fakturky</b><br>fakturky.cz</span></div>
+      </div>
+    </div>
+    <!-- notes -->
+    <div class="w-full xl:w-[280px] flex flex-col gap-4 text-[13px] text-ink2 shrink-0">
+      <div class="lbl">Designové poznámky</div>
+      <div class="flex gap-3"><i data-lucide="hash" class="text-accent-text mt-0.5"></i><p><b class="text-ink font-medium">Čísla jsou hrdinové.</b> Geist Mono, tabulární, zarovnané doprava — sloupce lze číst očima jako účtenku.</p></div>
+      <div class="flex gap-3"><i data-lucide="columns-2" class="text-accent-text mt-0.5"></i><p><b class="text-ink font-medium">Odběratel v tónované ploše.</b> Okamžitě je vidět, komu doklad patří.</p></div>
+      <div class="flex gap-3"><i data-lucide="qr-code" class="text-accent-text mt-0.5"></i><p><b class="text-ink font-medium">Platba na jednom místě.</b> Účet, IBAN, VS a QR Platba (SPAYD) vedle sebe, bez hledání.</p></div>
+      <div class="flex gap-3"><i data-lucide="scale" class="text-accent-text mt-0.5"></i><p><b class="text-ink font-medium">Rekapitulace DPH po sazbách</b> a tmavý blok s částkou k úhradě — jediný těžký prvek na stránce.</p></div>
+      <div class="flex gap-3"><i data-lucide="printer" class="text-accent-text mt-0.5"></i><p><b class="text-ink font-medium">Tiskne se i černobíle.</b> Akcent je jen proužek a datum splatnosti.</p></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ═════════════ 06 MOBILE ═════════════ -->
+<section id="s6" class="py-12 pb-24"><div class="container">
+  <div class="seclabel"><span class="num">06</span><b>Mobil</b><span>375 px · přehled (tmavý) a detail faktury (světlý)</span></div>
+  <div class="flex flex-wrap gap-10 justify-center">
+
+    <!-- mobile dashboard -->
+    <div class="phone" data-theme="dark">
+      <div class="sb"><span class="num">9:41</span><span class="flex gap-1.5"><i data-lucide="signal" class="w-3.5 h-3.5"></i><i data-lucide="wifi" class="w-3.5 h-3.5"></i><i data-lucide="battery-full" class="w-4 h-4"></i></span></div>
+      <div class="flex items-center gap-2 px-4 h-12"><svg class="mk"><use href="#mk"/></svg><span class="btn btn-g h-7 px-2 text-ink">Říjen 2026<i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></span><i data-lucide="search" class="ml-auto text-muted"></i><span class="w-7 h-7 rounded-full bg-accent-soft text-accent-text text-[11px] font-semibold flex items-center justify-center">ES</span></div>
+      <div class="px-4 overflow-hidden">
+        <div class="lbl mt-2">Tržby · říjen</div>
+        <div class="num text-[38px] font-medium leading-none mt-1.5 tracking-[-0.04em]">148 500<span class="text-muted text-[20px]">,00 Kč</span></div>
+        <div class="text-[12px] mt-1.5 flex gap-2"><span class="text-ok flex items-center gap-1"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i>+12 %</span><span class="text-muted">oproti září</span></div>
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div class="card p-3"><div class="lbl">Neuhrazeno</div><div class="num text-[17px] mt-1.5 font-medium">96 200</div><div class="text-[11px] text-muted">4 faktury</div></div>
+          <div class="card p-3" style="box-shadow:inset 2px 0 0 var(--danger)"><div class="lbl">Po splatnosti</div><div class="num text-[17px] mt-1.5 font-medium text-danger">31 000</div><div class="text-[11px] text-muted">2 faktury</div></div>
+        </div>
+        <div class="card p-3 mt-3"><div class="flex justify-between items-center"><span class="lbl">Limit DPH</span><span class="num text-[12px]">1,48 / 2 mil. Kč</span></div><div class="relative h-1.5 rounded-full bg-surface2 mt-2.5"><div class="absolute inset-y-0 left-0 rounded-full bg-accent" style="width:74.1%"></div></div><div class="text-[11px] text-muted mt-2">Zbývá 517 700 Kč · 74 %</div></div>
+        <div class="flex justify-between items-center mt-4 mb-2"><b class="text-[14px] font-semibold">Poslední faktury</b><span class="text-[12px] text-accent-text">Vše</span></div>
+        <div class="card overflow-hidden text-[13px]">
+          <div class="flex items-center gap-3 px-3 h-[54px]"><div class="flex-1 min-w-0"><div class="font-medium truncate">Kavárna U Mostu s.r.o.</div><div class="num text-[11px] text-muted">2026-0074</div></div><div class="text-right"><div class="num">7 500,00</div><span class="pill p-draft" style="height:18px;font-size:11px">Koncept</span></div></div>
+          <div class="flex items-center gap-3 px-3 h-[54px] border-t"><div class="flex-1 min-w-0"><div class="font-medium truncate">Studio Lípa s.r.o.</div><div class="num text-[11px] text-muted">2026-0073</div></div><div class="text-right"><div class="num">38 500,00</div><span class="pill p-sent" style="height:18px;font-size:11px">Vystavená</span></div></div>
+          <div class="flex items-center gap-3 px-3 h-[54px] border-t"><div class="flex-1 min-w-0"><div class="font-medium truncate">Nadace Zelené Střechy</div><div class="num text-[11px] text-muted">2026-0072</div></div><div class="text-right"><div class="num">18 000,00</div><span class="pill p-over" style="height:18px;font-size:11px">Po splatnosti</span></div></div>
+          <div class="flex items-center gap-3 px-3 h-[54px] border-t"><div class="flex-1 min-w-0"><div class="font-medium truncate">Orion Marketing a.s.</div><div class="num text-[11px] text-muted">2026-0070</div></div><div class="text-right"><div class="num">52 000,00</div><span class="pill p-paid" style="height:18px;font-size:11px">Zaplacená</span></div></div>
+        </div>
+      </div>
+      <div class="tabbar"><div class="on"><i data-lucide="layout-dashboard"></i>Přehled</div><div><i data-lucide="file-text"></i>Faktury</div><div><span class="fab"><i data-lucide="plus"></i></span></div><div><i data-lucide="users"></i>Klienti</div><div><i data-lucide="ellipsis"></i>Více</div></div>
+    </div>
+
+    <!-- mobile invoice detail -->
+    <div class="phone" data-theme="light">
+      <div class="sb"><span class="num">9:41</span><span class="flex gap-1.5"><i data-lucide="signal" class="w-3.5 h-3.5"></i><i data-lucide="wifi" class="w-3.5 h-3.5"></i><i data-lucide="battery-full" class="w-4 h-4"></i></span></div>
+      <div class="flex items-center h-12 px-3 gap-1 bg-surface border-b"><span class="btn btn-g px-2 text-ink"><i data-lucide="chevron-left"></i>Faktury</span><b class="num absolute left-1/2 -translate-x-1/2 text-[14px] font-medium" style="position:absolute">2026-0058</b><i data-lucide="ellipsis" class="ml-auto mr-2 text-muted"></i></div>
+      <div class="bg-surface px-4 pt-5 pb-4 border-b">
+        <span class="pill p-sent">Vystavená</span>
+        <div class="num text-[34px] font-medium leading-none mt-3 tracking-[-0.04em]">119 222<span class="text-muted text-[18px]">,00 Kč</span></div>
+        <div class="text-[14px] mt-2 font-medium">Studio Lípa s.r.o.</div>
+        <div class="flex gap-4 text-[12px] text-muted mt-1"><span>Vystaveno <span class="num text-ink2">1. 11.</span></span><span>Splatnost <span class="num text-warn">15. 11. · za 14 dní</span></span></div>
+      </div>
+      <div class="px-4 pt-4 flex flex-col gap-2.5">
+        <a class="btn btn-p btn-lg justify-center w-full"><i data-lucide="send"></i>Odeslat</a>
+        <div class="grid grid-cols-2 gap-2.5"><a class="btn btn-lg justify-center"><i data-lucide="download"></i>Stáhnout PDF</a><a class="btn btn-lg justify-center"><i data-lucide="link"></i>Sdílet odkaz</a></div>
+        <a class="btn btn-lg justify-center w-full" style="color:var(--ok);border-color:var(--ok)"><i data-lucide="circle-check"></i>Označit jako zaplacené</a>
+      </div>
+      <div class="px-4 mt-4"><div class="seg w-full"><span class="on flex-1 text-center">Náhled</span><span class="flex-1 text-center">Platba</span><span class="flex-1 text-center">Historie</span></div></div>
+      <div class="px-4 mt-3 flex-1 overflow-hidden relative" style="-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)"><div class="clone" data-clone data-h=".5"></div></div>
+    </div>
+  </div>
+</div></section>
+
+<script>
+/* palette swatches */
+const PAL={
+ light:[['Pozadí','#F6F7F9','Pozadí aplikace'],['Povrch','#FFFFFF','Karty, panely, vstupy'],['Inkoust','#0B0D12','Text, nadpisy, čísla'],['Tlumená','#667085','Popisky, sekundární text'],['Linka','#E4E7EC','1px ohraničení (--line)'],['Akcent','#3B5BFF','Primární akce, fokus, odkazy'],['Zaplaceno','#12805C','Zaplacená, potvrzení'],['Blíží se','#B25E09','Splatnost do 7 dní'],['Po splatnosti','#D92D3A','Po splatnosti, chyby, mazání']],
+ dark:[['Pozadí','#0A0B0E','Pozadí aplikace'],['Povrch','#101216','Karty, panely, vstupy'],['Inkoust','#ECEEF3','Text, nadpisy, čísla'],['Tlumená','#8B92A3','Popisky, sekundární text'],['Linka','#22262E','1px ohraničení (--line)'],['Akcent','#5B73FF','Výplň tlačítek · text #8EA0FF'],['Zaplaceno','#3DD68C','Zaplacená, potvrzení'],['Blíží se','#F5A524','Splatnost do 7 dní'],['Po splatnosti','#FF6B73','Po splatnosti, chyby, mazání']]};
+for(const k of ['light','dark']){document.getElementById(k==='light'?'palLight':'palDark').innerHTML=PAL[k].map(([n,h,r])=>`<div class="flex items-center gap-3 py-2 border-t first:border-0 text-[13px]"><span class="sw" style="background:${h}"></span><span class="w-28 font-medium">${n}</span><span class="num text-[12px] w-20 text-ink2">${h}</span><span class="text-muted text-[12.5px]">${r}</span></div>`).join('')}
+
+/* revenue bars */
+const R=[97.8,121,90,134,110,142,118,99,156,127,139,148.5],M=['11','12','1','2','3','4','5','6','7','8','9','10'];
+document.getElementById('bars').innerHTML=R.map((v,i)=>`<div class="flex-1 rounded-[4px]" style="height:${v/160*100}%;background:${i===11?'var(--accent)':'var(--line2)'}" title="${v} tis. Kč"></div>`).join('');
+document.getElementById('barl').innerHTML=M.map(m=>`<span class="flex-1 text-center">${m}</span>`).join('');
+
+/* QR Platba placeholder (decorative, deterministic) */
+function qr(svg){const n=29;let s=7,o='';const rnd=()=>(s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+ const fin=(x,y)=>x<8&&y<8||x>n-9&&y<8||x<8&&y>n-9;
+ for(let y=0;y<n;y++)for(let x=0;x<n;x++){if(fin(x,y))continue;if(rnd()>.52)o+=`M${x} ${y}h1v1h-1z`}
+ [[0,0],[n-7,0],[0,n-7]].forEach(([x,y])=>{o+=`M${x} ${y}h7v7h-7zM${x+1} ${y+1}v5h5v-5z`;o+=`M${x+2} ${y+2}h3v3h-3z`});
+ svg.innerHTML=`<path d="${o}" fill="#0B0D12" fill-rule="evenodd"/>`}
+document.querySelectorAll('.qr').forEach(qr);
+
+/* clone invoice into previews, scaled to slot width */
+const paper=document.getElementById('paper');
+function fit(){document.querySelectorAll('[data-clone]').forEach(s=>{
+  if(!s.firstChild){const c=paper.cloneNode(true);c.removeAttribute('id');s.appendChild(c)}
+  const k=s.clientWidth/794;s.firstChild.style.transform=`scale(${k})`;s.style.height=(1123*k*(parseFloat(s.dataset.h)||1))+'px'})}
+addEventListener('resize',fit);
+
+/* command palette + theme */
+const pal=document.getElementById('pal');
+const togglePal=v=>pal.style.display=(v??pal.style.display==='none')?'flex':'none';
+document.getElementById('palBtn').onclick=()=>togglePal(true);
+pal.onclick=e=>{if(e.target===pal)togglePal(false)};
+addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();togglePal()}if(e.key==='Escape')togglePal(false)});
+const tb=document.getElementById('themeBtn');
+tb.onclick=()=>{const d=document.documentElement,dk=d.dataset.theme==='dark';d.dataset.theme=dk?'light':'dark';tb.innerHTML=`<i data-lucide="${dk?'moon':'sun'}"></i><span>${dk?'Tmavý motiv':'Světlý motiv'}</span>`;lucide.createIcons()};
+lucide.createIcons();fit();
+document.fonts?.ready.then(fit);
+</script>
+</body>
+</html>

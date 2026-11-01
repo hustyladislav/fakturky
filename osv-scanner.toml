@@ -1,0 +1,11 @@
+# Accepted findings. Each entry needs a reason and a review date; delete the entry once a fix is reachable.
+
+[[IgnoredVulns]]
+id = "GHSA-67mh-4wv8-2f99"
+ignoreUntil = 2027-02-01
+reason = "esbuild 0.18.20 is pulled in by drizzle-kit's @esbuild-kit loader (dev tooling). The flaw is in esbuild's dev server, which we never start."
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2027-02-01
+reason = "deepmerge 4.3.1 is used by html-to-text (react-email) and shadcn CLI with static, trusted options; no upstream fix exists."

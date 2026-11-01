@@ -74,7 +74,7 @@ export const cs = {
   landing: {
     metaTitle: `${BRAND.name} — fakturace zdarma pro živnostníky a firmy`,
     metaDescription:
-      'Svobodný fakturační program: neomezeně faktur a kontaktů, QR platba, ARES, DPH, opakované faktury a ISDOC. Zdarma, s otevřeným kódem.',
+      'Svobodný fakturační program: neomezeně faktur a kontaktů, QR platba, ARES, DPH a ISDOC. Zdarma, s otevřeným kódem.',
     nav: { features: 'Funkce', why: 'Proč zdarma', ai: 'Pro AI asistenty', faq: 'Časté dotazy' },
     signIn: 'Přihlásit se',
     start: 'Začít zdarma',
@@ -93,7 +93,7 @@ export const cs = {
     },
     whyTitle: 'Proč zdarma?',
     whyText: [
-      'Fakturky provozuje jeden člověk ve svém volném čase. Chtěl jsem fakturační program, který nenutí platit za počet faktur, a nenašel jsem ho, tak vznikl tento.',
+      `${BRAND.name} provozuje jeden člověk ve svém volném čase. Chtěl jsem fakturační program, který nenutí platit za počet faktur, a nenašel jsem ho, tak vznikl tento.`,
       'Provoz se platí z dobrovolných darů. Žádné reklamy, žádné prodávání dat, žádné „odemkněte za 199 Kč“. Kód je otevřený na GitHubu, takže vidíte, co se s vašimi daty děje, a můžete si službu klidně spustit sami.',
       'Když vám aplikace ušetří čas, můžete mi koupit kávu. Nemusíte.',
     ],
@@ -105,13 +105,19 @@ export const cs = {
         'Neomezeně faktur a kontaktů',
         'Žádné měsíční limity ani tarify. Vystavujte, kolik potřebujete.',
       ],
-      ['QR platba', 'Každá faktura v Kč nese QR kód, který klient naskenuje v bankovní aplikaci.'],
+      [
+        'QR platba',
+        'Faktury v Kč hrazené převodem nesou QR kód, který klient naskenuje v bankovní aplikaci.',
+      ],
       ['ARES', 'Zadejte IČO a název, adresa i DIČ se doplní z registru.'],
       [
         'DPH bez starostí',
         'Plátci i neplátci. DPH se počítá po sazbách a zaokrouhluje podle pravidel.',
       ],
-      ['Opakované faktury', 'Pravidelné služby se vystaví samy, vy je jen zkontrolujete.'],
+      [
+        'Opakované faktury (brzy)',
+        'Připravujeme: pravidelné služby se vystaví samy, vy je jen zkontrolujete.',
+      ],
       [
         'ISDOC a PDF',
         'Doklady ve formátu, který přijme každý účetní. PDF čitelné i při černobílém tisku.',

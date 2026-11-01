@@ -18,6 +18,7 @@ import {
   Search,
   Terminal,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { cs } from '@/i18n/cs'
 
 function Github({ className, ...props }: React.ComponentProps<'svg'> & { 'data-icon'?: string }) {
@@ -320,16 +321,25 @@ function ForAssistants() {
             <ArrowRight data-icon="inline-end" />
           </Button>
         </div>
-        <pre className="min-w-0 self-start overflow-x-auto rounded-xl border bg-card p-5 font-mono text-[13px] leading-relaxed">
-          <code>{`# ${t.aiCards[0]?.[0]}
-curl https://fakturky.vercel.app/api/v1/documents \\
+        <ApiExample />
+      </div>
+    </section>
+  )
+}
+
+function ApiExample() {
+  // Derived from the current origin so the key never points at another deployment.
+  const [origin, setOrigin] = useState('https://vase-instance.example')
+  useEffect(() => setOrigin(window.location.origin), [])
+  return (
+    <pre className="min-w-0 self-start overflow-x-auto rounded-xl border bg-card p-5 font-mono text-[13px] leading-relaxed">
+      <code>{`# ${t.aiCards[0]?.[0]}
+curl ${origin}/api/v1/documents \\
   -H "Authorization: Bearer ${BRAND.apiKeyPrefix}…"
 
 # OpenAPI
-https://fakturky.vercel.app/api/v1/openapi.json`}</code>
-        </pre>
-      </div>
-    </section>
+${origin}/api/v1/openapi.json`}</code>
+    </pre>
   )
 }
 

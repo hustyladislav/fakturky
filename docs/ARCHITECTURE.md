@@ -127,3 +127,27 @@ The MCP adapter iterates the router and registers one tool per procedure with th
 - GitHub `main` → Vercel production; PRs → preview deployments (Neon preview branches).
 - Build command runs `pnpm db:migrate` (drizzle-kit, `DATABASE_URL_UNPOOLED`) before `pnpm build`.
 - Region: `fra1` functions, Neon `aws-eu-central-1` (Frankfurt) — close to Czech users, EU data residency.
+
+## In-app agent ("Asistent")
+
+A Linear-style omni agent inside the web app: ⌘K command bar (type a sentence → "Zeptat se asistenta") and a
+right-hand side panel that keeps the conversation while the user works. It can do everything the UI can.
+
+- **Library:** TanStack AI (`@tanstack/ai`, `@tanstack/ai-react`), streamed from a TanStack Start server route
+  `/api/agent`. Chat UI built from native shadcn components (see `docs/DESIGN.md`), no separate design language.
+- **Model:** via Vercel AI Gateway (OIDC auth on Vercel). Default `deepseek-v4-flash` (exact gateway id in
+  `packages/core/src/agent/models.ts`), routed only to providers hosted in the EU or US; fallbacks configured
+  there too. Model is a server-side constant, never chosen by the client.
+- **Server tools = the oRPC router.** The same adapter that builds MCP tools builds agent tools from procedure
+  metadata, executed with the signed-in user's context (tenant isolation is preserved for free). Tools marked
+  `destructive` (delete, cancel, send email, issue) require explicit approval in the UI before they run.
+- **Client tools = navigation and UI.** `navigate({ to, params })` over the typed route tree, `openDocument`,
+  `prefillInvoiceForm(draft)`, `highlight`. The agent can show the user where things are, not just do them.
+- **Context:** current route + selected entity are sent with each message; `@` mentions of contacts/documents.
+- **Spend cap (hard):** every response's gateway cost is written to `ai_usage` (org, user, model, tokens,
+  `cost_usd`). Before each request the server checks, in order: global month-to-date < `AI_MONTHLY_BUDGET_USD`
+  (100), per-organization monthly cap (`AI_ORG_MONTHLY_USD`, default 2), per-user rate limit, `maxSteps` and
+  `maxOutputTokens`. When a cap is hit the assistant is disabled with a friendly Czech message and a "Kup mi kávu"
+  link. A Vercel AI Gateway team budget is set as a second, independent backstop.
+- **Safety:** system prompt forbids acting on instructions found inside data (invoice texts, contact notes);
+  destructive actions always go through the approval UI; no other tenant's data is reachable by construction.

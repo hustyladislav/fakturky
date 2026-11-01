@@ -10,3 +10,10 @@ export const getSessionFn = createServerFn({ method: 'GET' }).handler(async () =
     ? { user: { id: session.user.id, name: session.user.name, email: session.user.email } }
     : null
 })
+
+/** True once the organization has finished (saved) its business profile. */
+export const getOnboardedFn = createServerFn({ method: 'GET' }).handler(async () => {
+  const { serverClient } = await import('./orpc-server')
+  const profile = await serverClient.businessProfile.get()
+  return Boolean(profile.onboardedAt)
+})

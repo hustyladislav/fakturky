@@ -47,10 +47,13 @@ export function MagicLinkButton({ getEmail }: { getEmail: () => string }) {
           const result = await authClient.signIn.magicLink({ email, callbackURL: '/' })
           setPending(false)
           if (!result.error) return setMessage({ text: cs.auth.magicLinkSent, error: false })
-          const unavailable =
-            result.error.status === 503 || result.error.message?.includes('EMAIL_NOT_CONFIGURED')
+          const code = result.error.message ?? ''
           setMessage({
-            text: unavailable ? cs.auth.magicLinkUnavailable : cs.auth.magicLinkFailed,
+            text: code.includes('EMAIL_RESTRICTED')
+              ? cs.auth.magicLinkRestricted
+              : code.includes('EMAIL_NOT_CONFIGURED')
+                ? cs.auth.magicLinkUnavailable
+                : cs.auth.magicLinkFailed,
             error: true,
           })
         }}

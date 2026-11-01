@@ -81,7 +81,7 @@ export const cs = {
     vatLimit: {
       title: 'Limit obratu pro registraci k DPH',
       description: (year: number) =>
-        `Jste neplátce DPH. Plátcem se stanete, když váš obrat za rok ${year} překročí 2 000 000 Kč.`,
+        `Jste neplátce DPH. Obrat za rok ${year} nesmí překročit 2 000 000 Kč; po jeho překročení se musíte registrovat k DPH. Překročíte-li 2 536 500 Kč, stáváte se plátcem ihned.`,
       progress: (percent: number) => `${percent} % limitu`,
       warn: 'Blížíte se limitu. Zvažte registraci k DPH včas.',
     },

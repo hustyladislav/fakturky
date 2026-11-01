@@ -36,7 +36,10 @@ export const dashboardRepo = {
           eq(document.type, 'invoice'),
           or(
             eq(document.status, 'issued'),
-            and(eq(document.status, 'paid'), gte(document.issueDate, since)),
+            and(
+              eq(document.status, 'paid'),
+              or(gte(document.issueDate, since), gte(document.taxableDate, since)),
+            ),
           ),
         ),
       )
@@ -74,7 +77,8 @@ export const dashboardRepo = {
     }
 
     for (const d of rows) {
-      const issue = d.issueDate ?? ''
+      // Turnover is attributed by DUZP (taxable date), falling back to the issue date.
+      const issue = d.taxableDate ?? d.issueDate ?? ''
       if (issue >= since) {
         const net = czk(d, parseDecimal(d.subtotal))
         const key = issue.slice(0, 7)

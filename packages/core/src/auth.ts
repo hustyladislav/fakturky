@@ -58,6 +58,9 @@ export function createAuth(options: CreateAuthOptions) {
     database: drizzleAdapter(db, { provider: 'pg', schema }),
     advanced: {
       database: { generateId: () => newId(), joins: true },
+      // Cookies: Secure on https (production + previews), never readable by scripts.
+      useSecureCookies: url.protocol === 'https:',
+      defaultCookieAttributes: { httpOnly: true, sameSite: 'lax' },
       // Vercel sets both headers at the edge; they cannot be spoofed by the client.
       ipAddress: { ipAddressHeaders: ['x-real-ip', 'x-forwarded-for'] },
     },
@@ -73,7 +76,35 @@ export function createAuth(options: CreateAuthOptions) {
       : {},
     // OAuth provider mode: the plugin's own /token and set-auth-jwt header must be off.
     disabledPaths: ['/token'],
-    emailAndPassword: { enabled: true, minPasswordLength: 8 },
+    emailAndPassword: {
+      enabled: true,
+      minPasswordLength: 8,
+      // A password reset must kick out whoever held the old password.
+      revokeSessionsOnPasswordReset: true,
+    },
+    session: {
+      expiresIn: 60 * 60 * 24 * 14,
+      updateAge: 60 * 60 * 24,
+      // Sensitive changes (password, API keys, ...) require a login younger than this.
+      freshAge: 60 * 15,
+    },
+    // Serverless instances do not share memory, so counters live in the database (`rate_limit` table).
+    // Enabled explicitly (Better Auth defaults to production only); the tight rules are for credential endpoints.
+    rateLimit: {
+      enabled: true,
+      storage: 'database',
+      window: 60,
+      max: 100,
+      customRules: {
+        '/sign-in/email': { window: 60, max: 5 },
+        '/sign-up/email': { window: 3600, max: 10 },
+        '/sign-in/magic-link': { window: 600, max: 5 },
+        '/request-password-reset': { window: 3600, max: 5 },
+        '/reset-password': { window: 3600, max: 10 },
+        '/passkey/generate-authenticate-options': { window: 60, max: 20 },
+        '/passkey/verify-authentication': { window: 60, max: 10 },
+      },
+    },
     databaseHooks: {
       user: {
         create: {

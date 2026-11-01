@@ -1,4 +1,5 @@
 import {
+  bigint,
   boolean,
   index,
   integer,
@@ -176,6 +177,14 @@ export const apikey = pgTable(
   },
   (t) => [index('apikey_reference_idx').on(t.referenceId), index('apikey_key_idx').on(t.key)],
 )
+
+// Better Auth rate limiter state (shared across serverless instances).
+export const rateLimit = pgTable('rate_limit', {
+  id: id(),
+  key: text('key').notNull().unique(),
+  count: integer('count').notNull(),
+  lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
+})
 
 // OAuth provider (MCP) + JWT plugin tables, generated with `auth generate`.
 export const jwks = pgTable('jwks', {

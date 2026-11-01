@@ -515,6 +515,10 @@ export const cs = {
     archived: 'Kontakt byl archivován.',
   },
   settings: {
+    exportTitle: 'Export dat',
+    exportDescription:
+      'Stáhněte si všechna svá data (doklady, kontakty, bankovní účty, šablony, nastavení) jako jeden soubor JSON.',
+    exportButton: 'Stáhnout všechna data (JSON)',
     remindersTitle: 'Upomínky',
     remindersDescription:
       'Zdvořilé e-mailové upomínky odběratelům po splatnosti: 3., 10. a 17. den po termínu, nejvýše třikrát. Odesílají se jen na e-mail uvedený u odběratele.',

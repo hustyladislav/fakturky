@@ -5,7 +5,7 @@ import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Check, Pencil, Trash2 } from 'lucide-react'
+import { Check, Copy, ExternalLink, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
@@ -130,6 +130,7 @@ function InvoiceDetail() {
   const isDraft = d.status === 'draft'
   const open = d.status === 'issued'
   const bank = d.bankSnapshot as Record<string, string | null> | null
+  const publicUrl = d.publicToken ? `${window.location.origin}/f/${d.publicToken}` : null
   const busy = issue.isPending || markPaid.isPending || cancel.isPending
 
   return (
@@ -282,6 +283,34 @@ function InvoiceDetail() {
             </Button>
             <Button variant="ghost" onClick={() => setPaying(false)}>
               {cs.common.cancel}
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {publicUrl && (
+        <section className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm">
+          <span className="text-muted-foreground">{t.publicLink}</span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await navigator.clipboard.writeText(publicUrl)
+                toast.success(t.linkCopied)
+              }}
+            >
+              <Copy /> {t.copyLink}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              nativeButton={false}
+              render={
+                <a href={publicUrl} target="_blank" rel="noreferrer" aria-label={t.publicLink} />
+              }
+            >
+              <ExternalLink />
             </Button>
           </div>
         </section>

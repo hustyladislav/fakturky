@@ -1,5 +1,7 @@
+import { generateIsdoc } from '@fakturky/domain'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
+import { toDocumentForExport } from '../export'
 import { procedure } from '../orpc'
 import { DocumentError, documentsRepo } from '../repositories/documents'
 import {
@@ -25,6 +27,34 @@ async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
 }
 
 export const documentsRouter = {
+  isdoc: procedure({
+    mcp: {
+      name: 'export_document_isdoc',
+      title: 'Export an issued document as ISDOC XML',
+      readOnly: true,
+    },
+    openapi: {
+      method: 'GET',
+      path: '/documents/{id}/isdoc',
+      summary: 'ISDOC 6.0.2 XML of an issued document',
+      tags: tag,
+    },
+  })
+    .input(idInput)
+    .output(z.object({ filename: z.string(), xml: z.string() }))
+    .handler(async ({ context, input }) => {
+      const found = await documentsRepo.forExport(
+        context.db,
+        context.principal.organizationId,
+        input.id,
+      )
+      if (!found) throw new ORPCError('NOT_FOUND', { message: 'Issued document not found' })
+      return {
+        filename: `${found.doc.number ?? 'faktura'}.isdoc`,
+        xml: generateIsdoc(toDocumentForExport(found.doc, found.lines)),
+      }
+    }),
+
   defaults: procedure({
     mcp: {
       name: 'get_invoice_defaults',

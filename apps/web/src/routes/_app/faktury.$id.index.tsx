@@ -137,6 +137,16 @@ function InvoiceDetail() {
       },
     }),
   )
+  const creditNote = useMutation(
+    orpc.documents.createCreditNote.mutationOptions({
+      onSuccess: async (n) => {
+        toast.success(t.creditNoteCreated)
+        await refresh()
+        navigate({ to: '/faktury/$id/upravit', params: { id: n.id } })
+      },
+      onError,
+    }),
+  )
   const saveTemplate = useMutation(
     orpc.templates.createFromDocument.mutationOptions({
       onSuccess: async () => {
@@ -162,7 +172,7 @@ function InvoiceDetail() {
   if (!d) return <p className="text-muted-foreground">{cs.common.loading}</p>
 
   const isDraft = d.status === 'draft'
-  const open = d.status === 'issued'
+  const open = d.status === 'issued' && d.type !== 'credit_note'
   const bank = d.bankSnapshot as Record<string, string | null> | null
   const publicUrl = d.publicToken ? `${window.location.origin}/f/${d.publicToken}` : null
   const defaultTo = ((d.customerSnapshot?.emails as string[] | undefined) ?? [])[0]
@@ -178,6 +188,11 @@ function InvoiceDetail() {
           <h1 className="text-2xl font-semibold tabular-nums">
             {d.number ?? cs.invoices.draftNumber}
           </h1>
+          {d.type !== 'invoice' && (
+            <span className="text-muted-foreground text-sm">
+              {cs.invoices.type[d.type as keyof typeof cs.invoices.type]}
+            </span>
+          )}
           <InvoiceStatus status={d.displayStatus} />
         </div>
         <div className="hidden flex-wrap gap-2 sm:flex">
@@ -491,6 +506,18 @@ function InvoiceDetail() {
         >
           {cs.templates.saveAs}
         </Button>
+        {d?.type === 'invoice' && (open || d.status === 'paid') && (
+          <Button
+            variant="outline"
+            className={full}
+            onClick={() => {
+              const reason = window.prompt(t.creditNotePrompt, '')
+              if (reason !== null) creditNote.mutate({ id, reason: reason.trim() || undefined })
+            }}
+          >
+            {t.creditNote}
+          </Button>
+        )}
         <Button variant="outline" className={full} onClick={() => duplicate.mutate({ id })}>
           {t.duplicate}
         </Button>
@@ -499,7 +526,7 @@ function InvoiceDetail() {
             {t.markUnpaid}
           </Button>
         )}
-        {(open || d?.status === 'paid') && (
+        {(open || d?.status === 'paid' || (d?.type === 'credit_note' && d.status === 'issued')) && (
           <Button variant="outline" className={full} onClick={() => setSending(true)}>
             {d?.displayStatus === 'overdue' ? t.remind : t.send}
           </Button>

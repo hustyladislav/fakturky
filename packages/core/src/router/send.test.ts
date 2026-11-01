@@ -1,4 +1,5 @@
 import { type DbHandle, schema } from '@fakturky/db'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { MailError, type SendInvoiceArgs } from '../context'
 import { clientFor, createTestDb, seedOrg } from '../testing'
@@ -75,4 +76,54 @@ test('send e-mails the PDF + public link, records history, maps delivery failure
   await expect(api.documents.send({ id: bare.id, reminder: true })).rejects.toMatchObject({
     code: 'CONFLICT',
   })
+})
+
+test('credit note reverses an invoice, numbered in its own series, exported with the original', async () => {
+  const org = await seedOrg(handle, 'cn-a')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({ name: 'Odběratel' })
+  const inv = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        contactId: c.id,
+        lines: [{ description: 'Práce', quantity: '2', unitPrice: '1000', vatRate: '21' }],
+      })
+    ).id,
+  })
+  const draft = await api.documents.createCreditNote({ id: inv.id, reason: 'Chybná cena' })
+  expect(draft.type).toBe('credit_note')
+  expect(draft.total).toBe('-2420.0000')
+  expect(draft.introText).toBe('Chybná cena')
+  // The generic path cannot create credit notes; duplicating one is refused too.
+  await expect(
+    api.documents.createDraft({ type: 'credit_note', contactId: c.id, lines: [] }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  // VAT treatment follows the corrected invoice even if the supplier is no longer a payer.
+  await handle.db
+    .update(schema.businessProfile)
+    .set({ vatStatus: 'non_payer' })
+    .where(eq(schema.businessProfile.organizationId, org))
+  const cn = await api.documents.issue({ id: draft.id })
+  expect(cn.vatMode).not.toBe('none')
+  expect(cn.total).toBe('-2420.0000')
+  await expect(api.documents.duplicate({ id: cn.id })).rejects.toMatchObject({ code: 'CONFLICT' })
+  expect((await api.documents.get({ id: cn.id })).displayStatus).toBe('issued')
+  expect(cn.number).toMatch(/^D\d{4}-0001$/)
+  expect((await api.documents.isdoc({ id: cn.id })).xml).toContain(inv.number as string)
+  expect((await api.documents.get({ id: inv.id })).activity.map((a) => a.action)).toContain(
+    'credit_note_created',
+  )
+  await expect(api.documents.createCreditNote({ id: cn.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+  await expect(api.documents.createCreditNote({ id: draft.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+  const unpaid = await api.documents.list({ filter: 'unpaid' })
+  expect(unpaid.some((d) => d.id === cn.id)).toBe(false)
+  const dash = await api.dashboard.summary({})
+  expect(dash.monthTurnover).toBe('0.00')
 })

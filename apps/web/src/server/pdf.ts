@@ -35,9 +35,13 @@ type Doc = Parameters<typeof toDocumentForExport>[0]
 type Lines = Parameters<typeof toDocumentForExport>[1]
 
 /** Renders an issued document. Private notes are never part of the export. */
-export async function renderDocumentPdf(doc: Doc, lines: Lines): Promise<Uint8Array> {
+export async function renderDocumentPdf(
+  doc: Doc,
+  lines: Lines,
+  original?: Parameters<typeof toDocumentForExport>[2],
+): Promise<Uint8Array> {
   await loadFonts()
-  const base = toDocumentForExport(doc, lines)
+  const base = toDocumentForExport(doc, lines, original)
   return renderInvoicePdf({
     ...base,
     note: null,

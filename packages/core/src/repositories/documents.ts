@@ -13,7 +13,7 @@ import {
   toFixed,
   variableSymbolFromNumber,
 } from '@fakturky/domain'
-import { and, asc, desc, eq, ilike, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
 import { bankAccountsRepo } from './bank-accounts'
 
@@ -74,6 +74,10 @@ async function loadProfile(db: Db | Tx, orgId: string) {
   return p ?? null
 }
 
+/** VAT applies only to tax documents issued by a VAT payer; proformas never carry VAT. */
+const vatApplies = (profile: { vatStatus: string } | null, type: string) =>
+  profile?.vatStatus === 'payer' && type === 'invoice'
+
 function totalsFor(
   lines: DraftInput['lines'],
   opts: { vatPayer: boolean; currency: string; exchangeRate?: string | null },
@@ -100,7 +104,9 @@ async function writeLines(
   lines: DraftInput['lines'],
   totals: ReturnType<typeof computeDocumentTotals>,
 ) {
-  await tx.delete(documentLine).where(eq(documentLine.documentId, documentId))
+  await tx
+    .delete(documentLine)
+    .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, documentId)))
   if (lines.length === 0) return
   await tx.insert(documentLine).values(
     lines.map((l, i) => ({
@@ -136,7 +142,7 @@ async function paidSums(db: Db | Tx, orgId: string, ids: string[]) {
   const rows = await db
     .select({ documentId: payment.documentId, amount: payment.amount })
     .from(payment)
-    .where(and(eq(payment.organizationId, orgId), sql`${payment.documentId} in ${ids}`))
+    .where(and(eq(payment.organizationId, orgId), inArray(payment.documentId, ids)))
   for (const r of rows) {
     map.set(r.documentId, (map.get(r.documentId) ?? new Decimal(0)).plus(parseDecimal(r.amount)))
   }
@@ -279,7 +285,7 @@ export const documentsRepo = {
         dueDays = c.defaultDueDays ?? dueDays
       }
       const currency = input.currency ?? profile?.defaultCurrency ?? 'CZK'
-      const vatPayer = profile?.vatStatus === 'payer'
+      const vatPayer = vatApplies(profile, input.type)
       const totals = totalsFor(input.lines, {
         vatPayer,
         currency,
@@ -347,16 +353,25 @@ export const documentsRepo = {
       const exchangeRate = rest.exchangeRate === undefined ? doc.exchangeRate : rest.exchangeRate
       const existingLines = lines
         ? null
-        : await tx.select().from(documentLine).where(eq(documentLine.documentId, id))
+        : await tx
+            .select()
+            .from(documentLine)
+            .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, id)))
       const effective = (lines ?? existingLines ?? []) as DraftInput['lines']
       const totals = totalsFor(effective, {
-        vatPayer: profile?.vatStatus === 'payer',
+        vatPayer: vatApplies(profile, doc.type),
         currency,
         exchangeRate,
       })
       await tx
         .update(document)
-        .set({ ...rest, currency, exchangeRate, ...totalColumns(totals, currency) })
+        .set({
+          ...rest,
+          currency,
+          exchangeRate,
+          vatMode: vatApplies(profile, doc.type) ? 'standard' : 'none',
+          ...totalColumns(totals, currency),
+        })
         .where(scoped(orgId, id))
       if (lines) await writeLines(tx, orgId, id, lines, totals)
       await logActivity(tx, orgId, actorId, id, 'updated')
@@ -377,7 +392,10 @@ export const documentsRepo = {
         )
       }
       if (!doc.contactId) throw new DocumentError('PRECONDITION_FAILED', 'Choose a customer first')
-      const lines = await tx.select().from(documentLine).where(eq(documentLine.documentId, id))
+      const lines = await tx
+        .select()
+        .from(documentLine)
+        .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, id)))
       if (lines.length === 0)
         throw new DocumentError('PRECONDITION_FAILED', 'Add at least one line')
       if (doc.currency !== 'CZK' && !doc.exchangeRate) {
@@ -395,7 +413,18 @@ export const documentsRepo = {
         ? await bankAccountsRepo.get(tx, orgId, doc.bankAccountId)
         : await bankAccountsRepo.defaultFor(tx, orgId, doc.currency)
 
+      // Totals are recomputed under the VAT status being snapshotted (it may have changed since the draft).
+      const vatOn = vatApplies(profile, doc.type)
+      const totals = totalsFor(lines as unknown as DraftInput['lines'], {
+        vatPayer: vatOn,
+        currency: doc.currency,
+        exchangeRate: doc.exchangeRate,
+      })
+      await writeLines(tx, orgId, id, lines as unknown as DraftInput['lines'], totals)
+
       // Number allocation: lazily created default series + atomic counter bump.
+      // Serialize per (org, type) so concurrent first issues cannot create two default series.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`${orgId}:${doc.type}`}))`)
       let [series] = await tx
         .select()
         .from(numberSeries)
@@ -439,6 +468,8 @@ export const documentsRepo = {
         .update(document)
         .set({
           status: 'issued',
+          vatMode: vatOn ? 'standard' : 'none',
+          ...totalColumns(totals, doc.currency),
           number,
           seriesId: series.id,
           variableSymbol: variableSymbolFromNumber(number),

@@ -1,4 +1,5 @@
 import { type DbHandle, schema } from '@fakturky/db'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { clientFor, createTestDb, seedOrg } from '../testing'
 
@@ -49,6 +50,39 @@ describe('documents', () => {
     expect(b.vatTotal).toBe('420.0000')
     expect(b.total).toBe('2420.0000')
     expect(b.vatRecap).toHaveLength(1)
+  })
+
+  test('proformas carry no VAT even for payers; VAT status is recomputed at issue', async () => {
+    const api = clientFor(handle, principal(orgB))
+    const c = await api.contacts.create({ name: 'Z' })
+    const pf = await api.documents.createDraft({ type: 'proforma', contactId: c.id, lines: [line] })
+    expect(pf.vatTotal).toBe('0.0000')
+    expect(pf.vatMode).toBe('none')
+    const inv = await api.documents.createDraft({ contactId: c.id, lines: [line] })
+    expect(inv.total).toBe('2420.0000')
+    await handle.db
+      .update(schema.businessProfile)
+      .set({ vatStatus: 'non_payer' })
+      .where(eq(schema.businessProfile.organizationId, orgB))
+    const issued = await api.documents.issue({ id: inv.id })
+    expect(issued.total).toBe('2000.0000')
+    expect(issued.vatMode).toBe('none')
+    await handle.db
+      .update(schema.businessProfile)
+      .set({ vatStatus: 'payer' })
+      .where(eq(schema.businessProfile.organizationId, orgB))
+  })
+
+  test('concurrent first issues get distinct numbers from one series', async () => {
+    const org = await seedOrg(handle, 'doc-race')
+    await profile(org)
+    const api = clientFor(handle, principal(org))
+    const c = await api.contacts.create({ name: 'R' })
+    const ds = await Promise.all(
+      [1, 2, 3].map(() => api.documents.createDraft({ contactId: c.id, lines: [line] })),
+    )
+    const issued = await Promise.all(ds.map((d) => api.documents.issue({ id: d.id })))
+    expect(new Set(issued.map((i) => i.number)).size).toBe(3)
   })
 
   test('issue allocates sequential numbers, VS, snapshots and a public token', async () => {

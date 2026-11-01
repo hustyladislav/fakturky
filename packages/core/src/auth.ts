@@ -28,7 +28,7 @@ export type CreateAuthOptions = {
   oauthProxyProductionUrl?: string
   /** Delivers the magic link; throw to signal that email is unavailable. */
   /** Transport for Client ID Metadata Documents; defaults to the SSRF-hardened Node fetcher. */
-  fetchClientMetadata?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+  fetchClientMetadata?: (input: string | URL | Request, init?: RequestInit) => Promise<Response>
   sendMagicLink?: (message: { email: string; url: string }) => Promise<void>
 }
 

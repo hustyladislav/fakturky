@@ -12,7 +12,7 @@ const clientId = 'https://agent.example.test/client.json'
 const redirectUri = 'http://localhost:8123/callback'
 
 /** Stand-in for the public HTTPS host serving the client's metadata document. */
-const metadataFetch = async (input: RequestInfo | URL) => {
+const metadataFetch = async (input: string | URL | Request) => {
   expect(String(input)).toBe(clientId)
   return Response.json({
     client_id: clientId,
@@ -32,7 +32,7 @@ const auth = createAuth({
 })
 
 // Token verification fetches the JWKS from the issuer URL; serve it from the in-process auth handler.
-vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
   const url = new Request(input, init).url
   if (!url.startsWith(baseURL)) throw new Error(`unexpected network call: ${url}`)
   return auth.handler(new Request(input, init))

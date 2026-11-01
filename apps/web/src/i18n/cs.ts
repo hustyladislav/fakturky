@@ -67,8 +67,33 @@ export const cs = {
   },
   overview: {
     title: 'Přehled',
-    welcome: 'Vítejte',
-    empty: 'Zatím tu nic není. Začněte přidáním prvního kontaktu.',
+    greeting: 'Dobrý den',
+    kpi: {
+      month: 'Obrat tento měsíc',
+      monthHint: 'Vystavené faktury bez DPH',
+      unpaid: 'Neuhrazeno',
+      unpaidHint: 'Vystavené a dosud nezaplacené',
+      overdue: 'Po splatnosti',
+      overdueHint: (count: number) =>
+        count === 1 ? '1 faktura po splatnosti' : `${count} faktur po splatnosti`,
+      none: 'Žádné',
+    },
+    vatLimit: {
+      title: 'Limit obratu pro registraci k DPH',
+      description: (year: number) =>
+        `Jste neplátce DPH. Plátcem se stanete, když váš obrat za rok ${year} překročí 2 000 000 Kč.`,
+      progress: (percent: number) => `${percent} % limitu`,
+      warn: 'Blížíte se limitu. Zvažte registraci k DPH včas.',
+    },
+    chart: 'Obrat za posledních 6 měsíců',
+    recent: 'Poslední doklady',
+    allInvoices: 'Všechny faktury',
+    emptyTitle: 'Začněte první fakturou',
+    emptyText: 'Přidejte bankovní účet a vystavte první fakturu. Zabere to pár minut.',
+    nudgeOverdue: (days: number) =>
+      `Nejstarší faktura po splatnosti čeká už ${days} ${days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}.`,
+    nudgeAction: 'Zobrazit',
+    months: ['led', 'úno', 'bře', 'dub', 'kvě', 'čvn', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro'],
   },
   invoices: {
     title: 'Faktury',

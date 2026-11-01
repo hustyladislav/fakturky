@@ -12,6 +12,38 @@ const { bankAccount } = schema
 const scoped = (orgId: string, id: string) =>
   and(eq(bankAccount.organizationId, orgId), eq(bankAccount.id, id), isNull(bankAccount.archivedAt))
 
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
+
+/** Keeps the invariants: one default per currency and one overall default (when any account exists). */
+async function reconcileDefaults(tx: Tx, orgId: string) {
+  const rows = await tx
+    .select()
+    .from(bankAccount)
+    .where(and(eq(bankAccount.organizationId, orgId), isNull(bankAccount.archivedAt)))
+    .orderBy(asc(bankAccount.createdAt), asc(bankAccount.id))
+  const byCurrency = new Map<string, typeof rows>()
+  for (const r of rows) byCurrency.set(r.currency, [...(byCurrency.get(r.currency) ?? []), r])
+  const fix = async (id: string, set: { defaultForCurrency?: boolean; isDefault?: boolean }) =>
+    tx
+      .update(bankAccount)
+      .set(set)
+      .where(and(eq(bankAccount.organizationId, orgId), eq(bankAccount.id, id)))
+  for (const group of byCurrency.values()) {
+    const flagged = group.filter((r) => r.defaultForCurrency)
+    const keep = flagged[0] ?? group[0]
+    for (const r of group) {
+      const want = r.id === keep?.id
+      if (r.defaultForCurrency !== want) await fix(r.id, { defaultForCurrency: want })
+    }
+  }
+  const overall = rows.filter((r) => r.isDefault)
+  const keepOverall = overall[0] ?? rows[0]
+  for (const r of rows) {
+    const want = r.id === keepOverall?.id
+    if (r.isDefault !== want) await fix(r.id, { isDefault: want })
+  }
+}
+
 export const bankAccountsRepo = {
   list(db: Db, orgId: string) {
     return db
@@ -75,12 +107,16 @@ export const bankAccountsRepo = {
       : bic !== undefined
         ? { bic: bic?.trim().toUpperCase() || null }
         : {}
-    const [row] = await db
-      .update(bankAccount)
-      .set({ ...rest, ...resolved })
-      .where(scoped(orgId, id))
-      .returning()
-    return row ?? null
+    return db.transaction(async (tx) => {
+      const currencyChanged = rest.currency !== undefined && rest.currency !== current.currency
+      const [row] = await tx
+        .update(bankAccount)
+        .set({ ...rest, ...resolved, ...(currencyChanged ? { defaultForCurrency: false } : {}) })
+        .where(scoped(orgId, id))
+        .returning()
+      if (currencyChanged) await reconcileDefaults(tx, orgId)
+      return row ?? null
+    })
   },
 
   async setDefault(db: Db, orgId: string, id: string) {
@@ -127,24 +163,7 @@ export const bankAccountsRepo = {
         .where(scoped(orgId, id))
         .returning()
       if (!row) return null
-      // Promote the oldest remaining account of that currency to default.
-      const [next] = await tx
-        .select()
-        .from(bankAccount)
-        .where(
-          and(
-            eq(bankAccount.organizationId, orgId),
-            eq(bankAccount.currency, row.currency),
-            isNull(bankAccount.archivedAt),
-          ),
-        )
-        .orderBy(asc(bankAccount.createdAt))
-        .limit(1)
-      if (next)
-        await tx
-          .update(bankAccount)
-          .set({ defaultForCurrency: true })
-          .where(eq(bankAccount.id, next.id))
+      await reconcileDefaults(tx, orgId)
       return row
     })
   },

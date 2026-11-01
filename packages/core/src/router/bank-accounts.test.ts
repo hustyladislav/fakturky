@@ -80,3 +80,33 @@ describe('bank accounts', () => {
     expect((await b.bankAccounts.list({})).some((x) => x.id === mine.id)).toBe(false)
   })
 })
+
+describe('bank account defaults', () => {
+  test('partial update keeps unrelated fields; deleting a non-default keeps the default', async () => {
+    const org = await seedOrg(handle, 'ba-c')
+    const api = clientFor(handle, principal(org))
+    const a = await api.bankAccounts.create({ label: 'A', account: '19-2000145399/0800' })
+    const b = await api.bankAccounts.create({ label: 'B', account: '123/0800', showQr: false })
+    const c = await api.bankAccounts.create({ label: 'C', account: '19-2000145399/0800' })
+    await api.bankAccounts.setDefault({ id: b.id })
+    const renamed = await api.bankAccounts.update({ id: b.id, patch: { label: 'B2' } })
+    expect(renamed).toMatchObject({ showQr: false, currency: 'CZK', defaultForCurrency: true })
+    await api.bankAccounts.delete({ id: c.id })
+    const list = await api.bankAccounts.list({})
+    expect(list.find((x) => x.id === b.id)?.defaultForCurrency).toBe(true)
+    expect(list.find((x) => x.id === a.id)?.defaultForCurrency).toBe(false)
+  })
+
+  test('changing currency reconciles defaults', async () => {
+    const org = await seedOrg(handle, 'ba-d')
+    const api = clientFor(handle, principal(org))
+    const a = await api.bankAccounts.create({ label: 'A', account: '19-2000145399/0800' })
+    const b = await api.bankAccounts.create({ label: 'B', account: '123/0800' })
+    await api.bankAccounts.update({ id: a.id, patch: { currency: 'eur' } })
+    const list = await api.bankAccounts.list({})
+    expect(list.filter((x) => x.currency === 'CZK' && x.defaultForCurrency)).toHaveLength(1)
+    expect(list.filter((x) => x.currency === 'EUR' && x.defaultForCurrency)).toHaveLength(1)
+    expect(list.filter((x) => x.isDefault)).toHaveLength(1)
+    expect(b.id).toBeTruthy()
+  })
+})

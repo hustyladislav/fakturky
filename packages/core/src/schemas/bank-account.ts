@@ -17,9 +17,10 @@ const currency = z
  * Either a Czech account (`[prefix-]number/bank`) or an IBAN. The server derives
  * IBAN + BIC so callers (UI, MCP, CLI) only need to supply what the user knows.
  */
-export const bankAccountInputSchema = z.object({
+// Field definitions without defaults, shared by create and patch (Zod 4 `.partial()` keeps defaults).
+const fields = {
   label: z.string().trim().min(1).max(100),
-  currency: currency.default('CZK'),
+  currency,
   account: z
     .string()
     .trim()
@@ -32,10 +33,16 @@ export const bankAccountInputSchema = z.object({
     .max(11)
     .nullish()
     .describe('Optional; filled in from the bank code for Czech accounts'),
-  showQr: z.boolean().default(true),
+  showQr: z.boolean(),
+}
+
+export const bankAccountInputSchema = z.object({
+  ...fields,
+  currency: fields.currency.default('CZK'),
+  showQr: fields.showQr.default(true),
 })
 
-export const bankAccountPatchSchema = bankAccountInputSchema.partial()
+export const bankAccountPatchSchema = z.object(fields).partial()
 
 export const bankAccountSchema = z.object({
   id: z.string(),

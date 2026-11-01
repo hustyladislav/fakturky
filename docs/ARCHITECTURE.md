@@ -60,7 +60,7 @@ design/             explorations and the chosen design system
 
 All tables: `id` (uuid v7, text), `organization_id`, `created_at`, `updated_at`. Soft delete via `deleted_at` where noted.
 
-- **organization / member / invitation** — Better Auth organization plugin. One user can run several businesses
+- **organization** — mirrors the Clerk Organization (id = Clerk org id); members/invitations live in Clerk. One user can run several businesses
   (e.g. OSVČ + s.r.o.) and invite an accountant later.
 - **business_profile** (1:1 organization) — legal name, IČO, DIČ, address, `vat_status`
   (`non_payer` | `payer` | `identified_person`), registry note (živnostenský rejstřík / spisová značka), contact

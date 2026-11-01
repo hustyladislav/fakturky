@@ -1,1 +1,0 @@
-ALTER TABLE "business_profile" ADD COLUMN "auto_remind" boolean DEFAULT false NOT NULL;

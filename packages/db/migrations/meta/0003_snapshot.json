@@ -1,5 +1,5 @@
 {
-  "id": "a47e3c54-af49-4477-bb1e-1740c86ed1be",
+  "id": "aebf92b5-9696-4a3f-b1d2-9f23c65a3b2e",
   "prevId": "f456555c-2c1c-4318-b277-d208364804e1",
   "version": "7",
   "dialect": "postgresql",
@@ -1890,6 +1890,51 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.rate_limit": {
+      "name": "rate_limit",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_request": {
+          "name": "last_request",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "rate_limit_key_unique": {
+          "name": "rate_limit_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.session": {
       "name": "session",
       "schema": "",
@@ -2388,13 +2433,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "auto_remind": {
-          "name": "auto_remind",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "onboarded_at": {
           "name": "onboarded_at",

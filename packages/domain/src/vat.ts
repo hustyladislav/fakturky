@@ -260,9 +260,10 @@ export function computeDocumentTotals(
   const lineTotals: LineTotals[] = work.map((w, i) => ({
     vatRate: w.rate.toString(),
     vatTreatment: w.treatment,
-    base: toFixed(w.base),
+    // VAT-inclusive: the entered gross is fixed, so the base absorbs any VAT reconciliation.
+    base: toFixed(pricesIncludeVat ? w.gross.minus(lineVat[i] as Decimal) : w.base),
     vat: toFixed(lineVat[i] as Decimal),
-    total: toFixed(w.base.plus(lineVat[i] as Decimal)),
+    total: toFixed(pricesIncludeVat ? w.gross : w.base.plus(lineVat[i] as Decimal)),
     discount: toFixed(w.discount),
   }))
 

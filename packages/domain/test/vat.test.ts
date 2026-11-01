@@ -59,6 +59,14 @@ describe('computeDocumentTotals', () => {
     expect(t.recap[0]).toMatchObject({ base: '182.64', vat: '38.35', total: '220.99' })
   })
 
+  it('VAT-inclusive line figures reconcile with the recap and keep the gross', () => {
+    const t = computeDocumentTotals(Array.from({ length: 3 }, () => ({ quantity: '1', unitPrice: '0.03', vatRate: '21' })), { pricesIncludeVat: true })
+    expect(t.recap[0]).toMatchObject({ base: '0.07', vat: '0.02', total: '0.09' })
+    const sumOf = (k: 'base' | 'vat' | 'total') => t.lines.reduce((a, l) => a + Number(l[k]), 0).toFixed(2)
+    expect([sumOf('base'), sumOf('vat'), sumOf('total')]).toEqual(['0.07', '0.02', '0.09'])
+    expect(t.lines.map((l) => l.total)).toEqual(['0.03', '0.03', '0.03'])
+  })
+
   it('line and document discounts', () => {
     const t = computeDocumentTotals(
       [{ quantity: '2', unitPrice: '1000', vatRate: '21', discountPercent: '10' }],

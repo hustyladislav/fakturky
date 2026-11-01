@@ -1,4 +1,4 @@
-import { Decimal } from 'decimal.js-light'
+import Decimal from 'decimal.js-light'
 
 Decimal.set({ precision: 40, rounding: Decimal.ROUND_HALF_UP })
 

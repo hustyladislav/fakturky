@@ -7,14 +7,17 @@ export interface ClientOptions {
   timeoutMs?: number
 }
 
+export type IntegrationErrorCode = 'http_error' | 'invalid_input' | 'bad_response' | 'unavailable'
+
 export class IntegrationError extends Error {
-  constructor(
-    message: string,
-    readonly code: 'http_error' | 'invalid_input' | 'bad_response' | 'unavailable',
-    readonly status?: number,
-  ) {
+  readonly code: IntegrationErrorCode
+  readonly status?: number
+
+  constructor(message: string, code: IntegrationErrorCode, status?: number) {
     super(message)
     this.name = 'IntegrationError'
+    this.code = code
+    if (status !== undefined) this.status = status
   }
 }
 

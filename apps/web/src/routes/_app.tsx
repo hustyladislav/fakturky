@@ -1,5 +1,6 @@
 import { BRAND } from '@fakturky/core/brand'
 import { Button } from '@fakturky/ui/components/button'
+import { Logo } from '@fakturky/ui/components/logo'
 import {
   Sidebar,
   SidebarContent,
@@ -46,7 +47,7 @@ function AppShell() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <span className="px-2 py-1 text-lg font-semibold">{cs.brand}</span>
+          <Logo name={BRAND.name} className="px-2 py-1" markClassName="size-7" />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>

@@ -10,9 +10,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: cs.brand },
+      { title: `${cs.brand} — ${cs.meta.title}` },
+      { name: 'description', content: cs.meta.description },
+      { name: 'theme-color', content: '#1F4D3C' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:locale', content: 'cs_CZ' },
+      { property: 'og:site_name', content: cs.brand },
+      { property: 'og:title', content: `${cs.brand} — ${cs.meta.title}` },
+      { property: 'og:description', content: cs.meta.description },
+      { property: 'og:image', content: '/og.png' },
+      { name: 'twitter:card', content: 'summary_large_image' },
     ],
-    links: [{ rel: 'stylesheet', href: appCss }],
+    links: [
+      { rel: 'stylesheet', href: appCss },
+      { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+      { rel: 'icon', href: '/favicon-32.png', type: 'image/png', sizes: '32x32' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+      { rel: 'manifest', href: '/site.webmanifest' },
+    ],
   }),
   notFoundComponent: () => (
     <main className="mx-auto p-6 pt-16">

@@ -3,6 +3,11 @@ import { BRAND } from '@fakturky/core/brand'
 /** All user-facing copy lives here. Natural Czech, correct diacritics. */
 export const cs = {
   brand: BRAND.name,
+  meta: {
+    title: 'Fakturace zdarma pro živnostníky a firmy',
+    description:
+      'Svobodné fakturační řešení: neomezeně faktur a kontaktů, QR platba, ARES, DPH a ISDOC. Zdarma, s otevřeným kódem.',
+  },
   nav: {
     overview: 'Přehled',
     invoices: 'Faktury',

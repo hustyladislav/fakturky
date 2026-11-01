@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "gen:brand": "node scripts/gen-brand-assets.mjs"
   },
   "dependencies": {
     "@fakturky/core": "workspace:*",

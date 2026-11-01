@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { ApiKeys } from '@/components/api-keys'
 import { BankAccountsCard } from '@/components/bank-accounts-card'
 import { BusinessProfileForm } from '@/components/business-profile-form'
+import { ReminderSettings } from '@/components/reminder-settings'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 
@@ -22,6 +23,7 @@ function Settings() {
         {profile && <BusinessProfileForm profile={profile} submitLabel={cs.common.save} />}
       </section>
       <BankAccountsCard />
+      <ReminderSettings />
       <ApiKeys />
     </div>
   )

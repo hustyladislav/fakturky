@@ -7,6 +7,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
+import { CsvDownload } from '@/components/csv-download'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
@@ -42,13 +43,12 @@ function InvoiceList() {
     <div className="mx-auto max-w-[1200px] space-y-4 pb-20 sm:pb-0">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{t.title}</h1>
-        <Button
-          nativeButton={false}
-          render={<Link to="/faktury/nova" />}
-          className="hidden sm:inline-flex"
-        >
-          <Plus /> {t.new}
-        </Button>
+        <div className="hidden gap-2 sm:flex">
+          <CsvDownload kind="documents" />
+          <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
+            <Plus /> {t.new}
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

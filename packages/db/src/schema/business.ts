@@ -43,6 +43,8 @@ export const businessProfile = pgTable('business_profile', {
   defaultPaymentMethod: text('default_payment_method').notNull().default('bank_transfer'),
   defaultFooter: text('default_footer'),
   defaultNote: text('default_note'),
+  /** Opt-in: e-mail payment reminders for overdue invoices (3, 10 and 17 days after the due date). */
+  autoRemind: boolean('auto_remind').notNull().default(false),
   /** Set when the user finishes (or skips) onboarding; null sends them to the onboarding screen. */
   onboardedAt: timestamp('onboarded_at', { withTimezone: true }),
   ...timestamps(),

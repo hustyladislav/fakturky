@@ -60,6 +60,7 @@ export const cs = {
   },
   common: {
     save: 'Uložit',
+    exportCsv: 'Export do CSV',
     cancel: 'Zrušit',
     close: 'Zavřít',
     create: 'Vytvořit',
@@ -492,6 +493,10 @@ export const cs = {
     archived: 'Kontakt byl archivován.',
   },
   settings: {
+    remindersTitle: 'Upomínky',
+    remindersDescription:
+      'Zdvořilé e-mailové upomínky odběratelům po splatnosti: 3., 10. a 17. den po termínu, nejvýše třikrát. Odesílají se jen na e-mail uvedený u odběratele.',
+    remindersToggle: 'Automaticky posílat upomínky po splatnosti',
     title: 'Nastavení',
     profileTitle: 'Firemní údaje',
     profileSaved: 'Údaje byly uloženy.',

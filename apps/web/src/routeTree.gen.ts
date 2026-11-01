@@ -32,6 +32,7 @@ import { Route as AppFakturyIndexRouteImport } from './routes/_app/faktury.index
 import { Route as AppFakturyNovaRouteImport } from './routes/_app/faktury.nova'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 import { Route as ApiCronRecurringRouteImport } from './routes/api/cron.recurring'
+import { Route as ApiCronRemindersRouteImport } from './routes/api/cron.reminders'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
@@ -155,6 +156,11 @@ const ApiCronRecurringRoute = ApiCronRecurringRouteImport.update({
   path: '/api/cron/recurring',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronRemindersRoute = ApiCronRemindersRouteImport.update({
+  id: '/api/cron/reminders',
+  path: '/api/cron/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   id: '/api/rpc/$',
   path: '/api/rpc/$',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
+  '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
+  '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -283,6 +291,7 @@ export interface FileRoutesById {
   '/_app/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
+  '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -317,6 +326,7 @@ export interface FileRouteTypes {
     | '/faktury/nova'
     | '/api/auth/$'
     | '/api/cron/recurring'
+    | '/api/cron/reminders'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -348,6 +358,7 @@ export interface FileRouteTypes {
     | '/faktury/nova'
     | '/api/auth/$'
     | '/api/cron/recurring'
+    | '/api/cron/reminders'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -381,6 +392,7 @@ export interface FileRouteTypes {
     | '/_app/faktury/nova'
     | '/api/auth/$'
     | '/api/cron/recurring'
+    | '/api/cron/reminders'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -409,6 +421,7 @@ export interface RootRouteChildren {
   FTokenRoute: typeof FTokenRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronRecurringRoute: typeof ApiCronRecurringRoute
+  ApiCronRemindersRoute: typeof ApiCronRemindersRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
@@ -578,6 +591,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronRecurringRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/reminders': {
+      id: '/api/cron/reminders'
+      path: '/api/cron/reminders'
+      fullPath: '/api/cron/reminders'
+      preLoaderRoute: typeof ApiCronRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rpc/$': {
       id: '/api/rpc/$'
       path: '/api/rpc/$'
@@ -703,6 +723,7 @@ const rootRouteChildren: RootRouteChildren = {
   FTokenRoute: FTokenRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronRecurringRoute: ApiCronRecurringRoute,
+  ApiCronRemindersRoute: ApiCronRemindersRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,

@@ -24,9 +24,11 @@ function Kpi({
   tone?: 'danger'
 }) {
   return (
-    <div className="rounded-xl border p-4">
+    <div className="min-w-0 rounded-xl border p-4">
       <div className="text-muted-foreground text-sm">{label}</div>
-      <div className={`mt-1 text-2xl font-semibold ${tone === 'danger' ? 'text-destructive' : ''}`}>
+      <div
+        className={`mt-1 text-xl font-semibold break-words sm:text-2xl ${tone === 'danger' ? 'text-destructive' : ''}`}
+      >
         <Money amount={amount} />
       </div>
       <div className="text-muted-foreground mt-1 text-xs">{hint}</div>
@@ -121,12 +123,14 @@ function Overview() {
             <h2 className="font-semibold">{t.chart}</h2>
             <div className="flex h-32 items-end gap-2" role="img" aria-label={t.chart}>
               {s.months.map((m) => (
-                <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
-                  <div
-                    className="bg-primary/70 w-full rounded-t"
-                    style={{ height: `${Math.max(2, (Number(m.turnover) / max) * 100)}%` }}
-                    title={m.turnover}
-                  />
+                <div key={m.month} className="flex h-full flex-1 flex-col items-center gap-1">
+                  <div className="flex w-full flex-1 items-end">
+                    <div
+                      className="bg-primary/70 w-full rounded-t"
+                      style={{ height: `${Math.max(2, (Number(m.turnover) / max) * 100)}%` }}
+                      title={m.turnover}
+                    />
+                  </div>
                   <span className="text-muted-foreground text-xs">
                     {t.months[Number(m.month.slice(5, 7)) - 1]}
                   </span>

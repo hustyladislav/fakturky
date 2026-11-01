@@ -142,9 +142,10 @@ right-hand side panel that keeps the conversation while the user works. It can d
 
 - **Library:** TanStack AI (`@tanstack/ai`, `@tanstack/ai-react`), streamed from a TanStack Start server route
   `/api/agent`. Chat UI built from native shadcn components (see `docs/DESIGN.md`), no separate design language.
-- **Model:** via Vercel AI Gateway (OIDC auth on Vercel). Default `deepseek/deepseek-v4.1-flash` (latest DeepSeek Flash on the gateway as of 2026-11-01; re-check) (exact gateway id in
-  `packages/core/src/agent/models.ts`), routed only to providers hosted in the EU or US; fallbacks configured
-  there too. Model is a server-side constant, never chosen by the client.
+- **Model:** via Vercel AI Gateway (`AI_GATEWAY_API_KEY`). `deepseek/deepseek-v4.1-flash` (newest DeepSeek Flash on the
+  gateway as of 2026-11-01; re-check) with `models` fallbacks, defined in `packages/core/src/agent/models.ts`. Requests
+  pin `inferenceRegion` US and `disallowPromptTraining`; zero data retention is opt-in (`AI_ZERO_DATA_RETENTION=1`)
+  because the gateway only offers it on Pro/Enterprise teams. The model is a server-side constant, never chosen by the client.
 - **Server tools = the oRPC router.** The same adapter that builds MCP tools builds agent tools from procedure
   metadata, executed with the signed-in user's context (tenant isolation is preserved for free). Tools marked
   `destructive` (delete, cancel, send email, issue) require explicit approval in the UI before they run.

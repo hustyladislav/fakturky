@@ -349,6 +349,7 @@ export const documentsRepo = {
     actorId: string,
     input: DraftInput,
     opts: { relatedDocumentId?: string } = {},
+    via?: 'assistant',
   ) {
     if (input.type === 'credit_note' && !opts.relatedDocumentId) {
       throw new DocumentError(
@@ -406,7 +407,7 @@ export const documentsRepo = {
         .returning({ id: document.id })
       if (!row) throw new Error('insert returned no row')
       await writeLines(tx, orgId, row.id, input.lines, totals)
-      await logActivity(tx, orgId, actorId, row.id, 'created')
+      await logActivity(tx, orgId, actorId, row.id, 'created', via ? { via } : undefined)
       return row.id
     })
     return this.get(db, orgId, id)
@@ -818,6 +819,26 @@ export const documentsRepo = {
         .set({ status: 'cancelled', cancelledAt: new Date() })
         .where(scoped(orgId, id))
       await logActivity(tx, orgId, actorId, id, 'cancelled')
+    })
+    return this.get(db, orgId, id)
+  },
+
+  /**
+   * Replaces the public link token of an issued document: the previous link stops working immediately
+   * (revocation) and the returned document carries the new token to share.
+   */
+  async rotatePublicToken(db: Db, orgId: string, actorId: string, id: string) {
+    await db.transaction(async (tx) => {
+      const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
+      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (doc.status === 'draft') {
+        throw new DocumentError('CONFLICT', 'Drafts have no public link; issue the document first')
+      }
+      await tx
+        .update(document)
+        .set({ publicToken: randomBytes(24).toString('base64url') })
+        .where(scoped(orgId, id))
+      await logActivity(tx, orgId, actorId, id, 'link_rotated')
     })
     return this.get(db, orgId, id)
   },

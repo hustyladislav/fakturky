@@ -4,7 +4,7 @@ import type { Db, schema } from '@fakturky/db'
 export type Principal = {
   userId: string
   organizationId: string
-  via: 'session' | 'apiKey' | 'oauth'
+  via: 'session' | 'apiKey' | 'oauth' | 'assistant'
 }
 
 /** Heavy or host-specific capabilities injected by the transport adapter (kept out of core's dependency graph). */

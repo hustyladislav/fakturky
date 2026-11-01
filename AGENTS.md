@@ -20,6 +20,12 @@ Free, open-source Czech invoicing app (web + REST + MCP + CLI). Read before work
 - Small, focused PRs with tests. Conventional Commits (`feat:`, `fix:`, `chore:` …).
 - Before pushing: `pnpm check` (biome + typecheck + tests) must pass.
 
+## Deploys
+
+Production deploys **only** from `main` via the Vercel Git integration; PRs get preview deployments.
+Never run `vercel deploy --prod` (or `vercel --prod`) from a worktree — it would ship an unmerged branch.
+To verify a change on production, merge it and wait for the Git deployment of `main`.
+
 ## Commands
 
 ```bash

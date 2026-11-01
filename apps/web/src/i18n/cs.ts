@@ -367,6 +367,10 @@ export const cs = {
       deleteConfirm: 'Opravdu chcete koncept smazat?',
       publicLink: 'Veřejný odkaz',
       copyLink: 'Zkopírovat odkaz',
+      rotateLink: 'Vytvořit nový odkaz',
+      rotateLinkConfirm:
+        'Starý odkaz přestane okamžitě fungovat a odběratel ho už neotevře. Vytvořit nový odkaz?',
+      linkRotated: 'Vytvořen nový odkaz, starý už nefunguje.',
       linkCopied: 'Odkaz byl zkopírován.',
       manual: 'Označeno ručně',
       paid: 'Faktura byla označena jako zaplacená.',
@@ -400,6 +404,7 @@ export const cs = {
         unpaid: 'Platba odebrána',
         cancelled: 'Stornována',
         deleted: 'Smazána',
+        link_rotated: 'Veřejný odkaz nahrazen novým',
       },
       notFound: 'Faktura nebyla nalezena.',
       creditNote: 'Vytvořit opravný doklad',

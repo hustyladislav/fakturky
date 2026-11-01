@@ -5,10 +5,8 @@ export const Route = createFileRoute('/api/cron/recurring')({
   server: {
     handlers: {
       GET: async ({ request }: { request: Request }) => {
-        const secret = process.env.CRON_SECRET
-        if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
-          return new Response('Unauthorized', { status: 401 })
-        }
+        const { isCronAuthorized } = await import('@/server/cron-auth')
+        if (!isCronAuthorized(request)) return new Response('Unauthorized', { status: 401 })
         const [{ recurringRepo }, { documentsRepo }, { createContext }] = await Promise.all([
           import('@fakturky/core/templates-repo'),
           import('@fakturky/core/documents-repo'),

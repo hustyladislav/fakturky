@@ -452,11 +452,47 @@ export const cs = {
     updated: 'Výchozí účet byl změněn.',
     invalid: 'Číslo účtu nebo IBAN není platné. Zkontrolujte ho prosím.',
   },
+  docsMcp: {
+    title: 'Připojení přes MCP',
+    intro:
+      'Fakturky mají vzdálený MCP server. Díky němu může AI asistent (Claude, ChatGPT, Cursor…) vystavovat faktury, hledat kontakty a zapisovat platby za vás – stejně jako vy v aplikaci.',
+    urlLabel: 'Adresa MCP serveru',
+    authTitle: 'Přihlášení',
+    authBody:
+      'Klient se při prvním připojení otevře přihlášení a požádá vás o souhlas (OAuth 2.1). Pokud klient OAuth nepodporuje, použijte API klíč z Nastavení a pošlete ho v hlavičce Authorization: Bearer fk_….',
+    claudeTitle: 'Claude (claude.ai a aplikace)',
+    claudeBody:
+      'Nastavení → Konektory → Přidat vlastní konektor, vložte adresu serveru výše a potvrďte přihlášení.',
+    claudeCodeTitle: 'Claude Code',
+    chatgptTitle: 'ChatGPT',
+    chatgptBody:
+      'Nastavení → Konektory → Pokročilé → Vývojářský režim, poté vytvořte konektor s adresou serveru výše a autentizací OAuth.',
+    cursorTitle: 'Cursor a další klienti (soubor mcp.json)',
+    toolsTitle: 'Co asistent umí',
+    toolsBody:
+      'Všechny akce, které jsou v aplikaci: kontakty, bankovní účty, firemní profil, koncepty a vystavení faktur, platby, storno, export ISDOC. Nevratné akce jsou označené jako destruktivní, takže klient se před nimi zeptá na potvrzení.',
+    apiLink: 'Dokumentace REST API',
+    keysLink: 'Správa API klíčů',
+  },
+  consent: {
+    title: 'Povolit přístup',
+    description: (client: string) =>
+      `Aplikace ${client} žádá o přístup k vašim fakturám a kontaktům.`,
+    unknownClient: 'neznámá aplikace',
+    scopeTitle: 'Aplikace bude moci:',
+    scopeTools:
+      'číst a upravovat vaše kontakty, faktury a bankovní účty (včetně vystavování faktur)',
+    allow: 'Povolit',
+    deny: 'Zamítnout',
+    invalid: 'Neplatná žádost o autorizaci. Zkuste ji spustit znovu z aplikace.',
+    footer: 'Přístup můžete kdykoli odebrat zrušením propojení v nastavení.',
+  },
   apiKeys: {
     title: 'API klíče',
     description:
       'Klíče umožňují přístup k vašim datům přes REST API, MCP server (Claude, ChatGPT, Cursor) a příkazový řádek. Zacházejte s nimi jako s heslem.',
     docsLink: 'Dokumentace API',
+    mcpLink: 'Připojení přes MCP',
     new: 'Nový klíč',
     name: 'Název',
     namePlaceholder: 'např. Claude Desktop',

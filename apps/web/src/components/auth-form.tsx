@@ -48,6 +48,12 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
                 return
               }
               queryClient.clear()
+              // Signing in as part of an OAuth (MCP) authorization: continue to the consent step.
+              const next = (result.data as { redirect?: boolean; url?: string } | null)?.url
+              if ((result.data as { redirect?: boolean } | null)?.redirect && next) {
+                window.location.href = next
+                return
+              }
               await navigate({ to: '/' })
             }}
           >

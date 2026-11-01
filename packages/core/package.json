@@ -8,6 +8,7 @@
     "./brand": "./src/brand.ts",
     "./router": "./src/router/index.ts",
     "./agent-tools": "./src/agent-tools/index.ts",
+    "./mcp": "./src/mcp/index.ts",
     "./auth": "./src/auth.ts",
     "./context": "./src/context.ts",
     "./testing": "./src/testing.ts",
@@ -21,6 +22,9 @@
   },
   "dependencies": {
     "@better-auth/api-key": "catalog:",
+    "@better-auth/cimd": "catalog:",
+    "@better-auth/mcp": "catalog:",
+    "@modelcontextprotocol/server": "catalog:",
     "@better-auth/passkey": "catalog:",
     "@fakturky/db": "workspace:*",
     "@fakturky/domain": "workspace:*",

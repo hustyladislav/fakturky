@@ -1,6 +1,7 @@
 import { generateIsdoc } from '@fakturky/domain'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
+import { MailError } from '../context'
 import { toDocumentForExport } from '../export'
 import { procedure } from '../orpc'
 import { DocumentError, documentsRepo } from '../repositories/documents'
@@ -22,11 +23,53 @@ async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
     return out
   } catch (e) {
     if (e instanceof DocumentError) throw new ORPCError(e.code, { message: e.message })
+    if (e instanceof MailError) {
+      throw new ORPCError('SERVICE_UNAVAILABLE', { message: e.reason, data: { reason: e.reason } })
+    }
     throw e
   }
 }
 
 export const documentsRouter = {
+  send: procedure({
+    mcp: {
+      name: 'send_invoice_email',
+      title: 'E-mail an issued invoice (PDF attached + public link) to the customer',
+      destructive: true,
+    },
+    openapi: {
+      method: 'POST',
+      path: '/documents/{id}/send',
+      summary:
+        "E-mail an issued invoice. Defaults to the customer's first e-mail. Set `reminder` for an overdue reminder.",
+      tags: tag,
+    },
+  })
+    .input(
+      idInput.extend({
+        to: z.email().optional(),
+        message: z
+          .string()
+          .max(2000)
+          .nullish()
+          .describe('Optional personal note shown in the e-mail'),
+        reminder: z.boolean().default(false),
+      }),
+    )
+    .output(documentDetailSchema)
+    .handler(({ context, input }) =>
+      guard(() =>
+        documentsRepo.send(
+          context.db,
+          context.principal.organizationId,
+          context.principal.userId,
+          input.id,
+          context.services,
+          { to: input.to, message: input.message, reminder: input.reminder },
+        ),
+      ),
+    ),
+
   pdf: procedure({
     mcp: {
       name: 'export_document_pdf',

@@ -105,6 +105,7 @@ function Templates() {
                     dayOfMonth: Number(f.get('day')),
                     startOn: String(f.get('startOn') || '') || undefined,
                     autoIssue: f.get('autoIssue') === 'on',
+                    autoSend: f.get('autoSend') === 'on',
                   })
                 }}
               >
@@ -139,6 +140,9 @@ function Templates() {
                 </div>
                 <label className="flex items-center gap-2 text-sm sm:col-span-3">
                   <input type="checkbox" name="autoIssue" /> {t.autoIssue}
+                </label>
+                <label className="flex items-center gap-2 text-sm sm:col-span-3">
+                  <input type="checkbox" name="autoSend" /> {t.autoSend}
                 </label>
                 <div className="flex gap-2 sm:col-span-3">
                   <Button type="submit" disabled={create.isPending}>

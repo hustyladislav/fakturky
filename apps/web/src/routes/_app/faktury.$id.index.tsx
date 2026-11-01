@@ -112,6 +112,22 @@ function InvoiceDetail() {
       onError,
     }),
   )
+  const [sending, setSending] = useState(false)
+  const [mailTo, setMailTo] = useState('')
+  const [mailMsg, setMailMsg] = useState('')
+  const send = useMutation(
+    orpc.documents.send.mutationOptions({
+      onSuccess: async (_d, v) => {
+        toast.success(v.reminder ? t.reminded : t.sent)
+        setSending(false)
+        await refresh()
+      },
+      onError: (e) => {
+        const reason = (e as { data?: { reason?: keyof typeof t.mail } }).data?.reason
+        toast.error(reason ? t.mail[reason] : (e as Error).message || cs.common.error)
+      },
+    }),
+  )
   const saveTemplate = useMutation(
     orpc.templates.createFromDocument.mutationOptions({
       onSuccess: async () => {
@@ -140,6 +156,7 @@ function InvoiceDetail() {
   const open = d.status === 'issued'
   const bank = d.bankSnapshot as Record<string, string | null> | null
   const publicUrl = d.publicToken ? `${window.location.origin}/f/${d.publicToken}` : null
+  const defaultTo = ((d.customerSnapshot?.emails as string[] | undefined) ?? [])[0]
   const busy = issue.isPending || markPaid.isPending || cancel.isPending
 
   return (
@@ -253,6 +270,51 @@ function InvoiceDetail() {
           <p className="text-muted-foreground text-sm whitespace-pre-line">{d.footerText}</p>
         )}
       </section>
+
+      {sending && (
+        <section className="space-y-3 rounded-xl border p-4">
+          <h2 className="font-semibold">{t.sendTitle}</h2>
+          <div className="space-y-2">
+            <Label htmlFor="mailTo">{t.sendTo}</Label>
+            <Input
+              id="mailTo"
+              type="email"
+              value={mailTo}
+              placeholder={defaultTo ?? ''}
+              onChange={(e) => setMailTo(e.target.value)}
+            />
+            {!defaultTo && <p className="text-muted-foreground text-xs">{t.sendNoEmail}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="mailMsg">{t.sendMessage}</Label>
+            <textarea
+              id="mailMsg"
+              rows={3}
+              className="border-input bg-background w-full rounded-md border p-2 text-sm"
+              value={mailMsg}
+              onChange={(e) => setMailMsg(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              disabled={send.isPending || !(mailTo || defaultTo)}
+              onClick={() =>
+                send.mutate({
+                  id,
+                  to: mailTo || undefined,
+                  message: mailMsg || undefined,
+                  reminder: d.displayStatus === 'overdue',
+                })
+              }
+            >
+              {t.sendConfirm}
+            </Button>
+            <Button variant="ghost" onClick={() => setSending(false)}>
+              {cs.common.cancel}
+            </Button>
+          </div>
+        </section>
+      )}
 
       {paying && (
         <section className="space-y-3 rounded-xl border p-4">
@@ -418,6 +480,11 @@ function InvoiceDetail() {
         {d?.status === 'paid' && (
           <Button variant="outline" className={full} onClick={() => markUnpaid.mutate({ id })}>
             {t.markUnpaid}
+          </Button>
+        )}
+        {(open || d?.status === 'paid') && (
+          <Button variant="outline" className={full} onClick={() => setSending(true)}>
+            {d?.displayStatus === 'overdue' ? t.remind : t.send}
           </Button>
         )}
         {open && (

@@ -1,4 +1,5 @@
-import { EmailDeliveryError, sendMagicLinkEmail } from '@fakturky/email'
+import { MailError, type SendInvoiceArgs } from '@fakturky/core/context'
+import { EmailDeliveryError, sendInvoiceEmail, sendMagicLinkEmail } from '@fakturky/email'
 import { APIError } from 'better-auth/api'
 
 /**
@@ -28,5 +29,43 @@ export async function deliverMagicLink({ email, url }: { email: string; url: str
       throw new APIError('SERVICE_UNAVAILABLE', { message: 'EMAIL_RESTRICTED' })
     }
     throw error
+  }
+}
+
+/** Public origin for links in e-mails: BETTER_AUTH_URL, else the request's own origin. */
+export function publicBaseUrl(headers: Headers): string {
+  const configured =
+    process.env.BETTER_AUTH_URL ??
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : undefined)
+  if (configured) return configured.replace(/\/$/, '')
+  const host = headers.get('x-forwarded-host') ?? headers.get('host') ?? 'localhost:3000'
+  const proto =
+    headers.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https')
+  return `${proto}://${host}`
+}
+
+/** Invoice / reminder delivery through Resend; failures are mapped to `MailError` reasons. */
+export async function deliverInvoice(args: SendInvoiceArgs): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.info(`[invoice-email] would send ${args.number} (RESEND_API_KEY not set)`)
+      return
+    }
+    throw new MailError('EMAIL_NOT_CONFIGURED')
+  }
+  try {
+    await sendInvoiceEmail(
+      { apiKey, from: process.env.EMAIL_FROM ?? 'Fakturky <onboarding@resend.dev>' },
+      args,
+    )
+  } catch (error) {
+    // Resend only delivers to verified domains / the account owner until a domain is verified.
+    if (error instanceof EmailDeliveryError && (error.status === 403 || error.status === 422)) {
+      throw new MailError('EMAIL_RESTRICTED')
+    }
+    throw new MailError('EMAIL_FAILED')
   }
 }

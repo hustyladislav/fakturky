@@ -24,9 +24,10 @@ import {
   Search,
   Settings,
   Sparkles,
-  X,
 } from 'lucide-react'
 import { type ReactNode, useMemo, useState } from 'react'
+import { AssistantPanel } from '@/components/assistant/assistant-panel'
+import { AssistantProvider } from '@/components/assistant/assistant-provider'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
 import { CommandPalette, useRecordRecent } from './command-palette'
@@ -48,7 +49,7 @@ export function AppShell({
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)
-  const [question, setQuestion] = useState<string | null>(null)
+  const [question, setQuestion] = useState<{ id: number; text: string } | null>(null)
 
   const state = useMemo<ShellState>(
     () => ({
@@ -59,7 +60,7 @@ export function AppShell({
       assistantOpen,
       setAssistantOpen,
       askAssistant: (q) => {
-        setQuestion(q)
+        setQuestion((prev) => ({ id: (prev?.id ?? 0) + 1, text: q }))
         setAssistantOpen(true)
       },
     }),
@@ -68,20 +69,18 @@ export function AppShell({
 
   return (
     <ShellContext.Provider value={state}>
-      <ShellInner user={user} question={question}>
-        {children}
-      </ShellInner>
+      <AssistantProvider pendingQuestion={question}>
+        <ShellInner user={user}>{children}</ShellInner>
+      </AssistantProvider>
     </ShellContext.Provider>
   )
 }
 
 function ShellInner({
   user,
-  question,
   children,
 }: {
   user: { name: string; email: string }
-  question: string | null
   children: ReactNode
 }) {
   const { setPaletteOpen, assistantOpen, setAssistantOpen } = useShellState()
@@ -151,7 +150,7 @@ function ShellInner({
         </main>
       </div>
 
-      <AssistantPanel question={question} />
+      {assistantOpen && <AssistantPanel onClose={() => setAssistantOpen(false)} />}
       <MobileTabs />
       <CommandPalette />
       <ShortcutsHelp />
@@ -284,43 +283,8 @@ function MobileTabs() {
   )
 }
 
-function AssistantPanel({ question }: { question: string | null }) {
-  const { assistantOpen, setAssistantOpen } = useShellState()
-  if (!assistantOpen) return null
-  return (
-    <aside
-      className="fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l bg-muted sm:w-[380px]"
-      aria-label={cs.shell.assistant}
-    >
-      <div className="flex h-14 items-center justify-between border-b px-4">
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <Sparkles className="size-4 text-primary" aria-hidden />
-          {cs.shell.assistant}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={cs.common.close}
-          onClick={() => setAssistantOpen(false)}
-        >
-          <X />
-        </Button>
-      </div>
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-        <Sparkles className="size-8 text-muted-foreground" aria-hidden />
-        <p className="font-serif text-lg font-medium">{cs.shell.assistantSoonTitle}</p>
-        <p className="text-sm text-muted-foreground">{cs.shell.assistantSoonBody}</p>
-        {question && (
-          <p className="mt-2 rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
-            „{question}“
-          </p>
-        )}
-      </div>
-    </aside>
-  )
-}
-
 function MoreMenu({ tabClass }: { tabClass: string }) {
+  const { setAssistantOpen } = useShellState()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   return (
@@ -330,6 +294,10 @@ function MoreMenu({ tabClass }: { tabClass: string }) {
         {cs.shell.more}
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="end" className="mb-2">
+        <DropdownMenuItem onClick={() => setAssistantOpen(true)}>
+          <Sparkles aria-hidden />
+          {cs.shell.assistant}
+        </DropdownMenuItem>
         <DropdownMenuItem render={<Link to="/nastaveni" />}>
           <Settings aria-hidden />
           {cs.nav.settings}

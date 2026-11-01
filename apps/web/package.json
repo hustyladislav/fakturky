@@ -29,6 +29,8 @@
     "@orpc/zod": "catalog:",
     "@tailwindcss/vite": "4.3.3",
     "@tanstack/ai": "1.0.1",
+    "@tanstack/ai-client": "1.0.1",
+    "@tanstack/ai-react": "1.0.1",
     "@tanstack/ai-vercel-gateway": "1.0.0",
     "@tanstack/react-query": "5.105.1",
     "@tanstack/react-router": "1.170.46",

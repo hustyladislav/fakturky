@@ -18,6 +18,17 @@ export function needsApproval(tool: { name: string; annotations: { destructiveHi
   return tool.annotations.destructiveHint || ALWAYS_APPROVE_TOOLS.has(tool.name)
 }
 
+/** Name, description and input schema of every tool that needs approval (for the client's interrupt binding). */
+export function listApprovalTools() {
+  return buildAgentTools()
+    .filter((tool) => !EXCLUDED.has(tool.name) && needsApproval(tool))
+    .map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      inputSchema: tool.inputSchema as Record<string, unknown>,
+    }))
+}
+
 /**
  * Server tools for one request: every oRPC procedure with `meta.mcp`, executed with the signed-in user's
  * context (`via: 'assistant'`), so tenant isolation and validation are exactly those of the API.

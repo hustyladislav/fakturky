@@ -124,6 +124,7 @@ function NewContact() {
               ico: text('ico'),
               dic: text('dic'),
               phone: text('phone'),
+              address: { street: text('street'), city: text('city'), zip: text('zip') },
               emails: email ? [email] : [],
             })
           }}
@@ -145,6 +146,21 @@ function NewContact() {
               <Input id="dic" name="dic" />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="street">{cs.contacts.street}</Label>
+            <Input id="street" name="street" autoComplete="off" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="city">{cs.contacts.city}</Label>
+              <Input id="city" name="city" autoComplete="off" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="zip">{cs.contacts.zip}</Label>
+              <Input id="zip" name="zip" autoComplete="off" />
+            </div>
+          </div>
+          <p className="text-muted-foreground text-xs">{cs.contacts.taxDocHint}</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email">{cs.contacts.email}</Label>

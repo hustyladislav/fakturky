@@ -84,7 +84,21 @@ test('credit note reverses an invoice, numbered in its own series, exported with
     .insert(schema.businessProfile)
     .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
   const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
-  const c = await api.contacts.create({ name: 'Odběratel' })
+  const bare = await api.contacts.create({ name: 'Bez údajů' })
+  const incomplete = await api.documents.createDraft({
+    contactId: bare.id,
+    lines: [{ description: 'x', quantity: '1', unitPrice: '1', vatRate: '21' }],
+  })
+  // §29 ZDPH: a tax invoice needs the customer's address and IČO/DIČ (field-level error).
+  await expect(api.documents.issue({ id: incomplete.id })).rejects.toMatchObject({
+    code: 'PRECONDITION_FAILED',
+    data: { fields: ['customer.address', 'customer.taxId'] },
+  })
+  const c = await api.contacts.create({
+    name: 'Odběratel',
+    ico: '12345678',
+    address: { street: 'Hlavní 1', city: 'Praha', zip: '11000' },
+  })
   const inv = await api.documents.issue({
     id: (
       await api.documents.createDraft({

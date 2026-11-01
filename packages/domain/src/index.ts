@@ -12,6 +12,7 @@ export type { NumberDate, NumberPatternToken, NumberingReset } from './numbering
 export * from './ico.ts'
 export * from './iban.ts'
 export * from './czech-account.ts'
+export * from './bank-codes.ts'
 export * from './qr/spayd.ts'
 export * from './qr/render.ts'
 export * from './dates.ts'

@@ -7,9 +7,9 @@ Pure Czech invoicing logic (no DB, no framework). TypeScript source is exported 
 | `money` | Decimal helpers, `formatCzk`, `formatMoney` |
 | `vat` | rates, `vat_treatment` + legal texts, `computeDocumentTotals` |
 | `numbering` | pattern format/parse, period key, variable symbol |
-| `ico`, `iban`, `czech-account` | identifiers & bank accounts |
+| `ico`, `iban`, `czech-account`, `bank-codes` | identifiers & bank accounts |
 | `qr/spayd`, `qr/render` | QR Platba (+QR Faktura), SVG |
 | `dates` | Europe/Prague helpers |
 | `integrations/ares` | ARES lookup by IČO (injectable `fetch`) |
 
-Planned follow-ups: bank-code snapshot, ČNB rates, VIES, EPC QR, ISDOC, DIČ validation.
+Planned follow-ups: ČNB rates, VIES, EPC QR, ISDOC, DIČ validation.

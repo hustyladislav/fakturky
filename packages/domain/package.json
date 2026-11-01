@@ -17,12 +17,14 @@
     "./qr/spayd": "./src/qr/spayd.ts",
     "./qr/render": "./src/qr/render.ts",
     "./dates": "./src/dates.ts",
-    "./integrations/ares": "./src/integrations/ares.ts"
+    "./integrations/ares": "./src/integrations/ares.ts",
+    "./bank-codes": "./src/bank-codes.ts"
   },
   "scripts": {
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gen:bank-codes": "node scripts/generate-bank-codes.ts"
   },
   "dependencies": {
     "decimal.js-light": "2.5.1",

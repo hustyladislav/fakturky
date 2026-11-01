@@ -6,8 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./brand": "./src/brand.ts",
+    "./organizations": "./src/organizations.ts",
     "./router": "./src/router/index.ts",
-    "./auth": "./src/auth.ts",
     "./context": "./src/context.ts",
     "./testing": "./src/testing.ts"
   },
@@ -15,13 +15,10 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@better-auth/api-key": "catalog:",
-    "@better-auth/passkey": "catalog:",
     "@fakturky/db": "workspace:*",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
-    "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
     "uuid": "catalog:",
     "zod": "catalog:"

@@ -10,7 +10,7 @@ const handler = new OpenAPIHandler(router)
 export async function handleRest(request: Request): Promise<Response> {
   const { response } = await handler.handle(request, {
     prefix: '/api/v1',
-    context: await createContext(request.headers),
+    context: await createContext(),
   })
   return response ?? new Response('Not found', { status: 404 })
 }

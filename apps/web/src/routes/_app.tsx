@@ -1,5 +1,5 @@
+import { OrganizationSwitcher, UserButton } from '@clerk/tanstack-react-start'
 import { BRAND } from '@fakturky/core/brand'
-import { Button } from '@fakturky/ui/components/button'
 import {
   Sidebar,
   SidebarContent,
@@ -13,18 +13,16 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@fakturky/ui/components/sidebar'
-import { useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/react-router'
-import { FileText, Heart, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react'
+import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router'
+import { FileText, Heart, LayoutDashboard, Settings, Users } from 'lucide-react'
 import { cs } from '@/i18n/cs'
-import { authClient } from '@/lib/auth-client'
-import { getSessionFn } from '@/server/session'
+import { getAuthStateFn } from '@/server/session'
 
 export const Route = createFileRoute('/_app')({
   beforeLoad: async () => {
-    const session = await getSessionFn()
-    if (!session) throw redirect({ to: '/prihlaseni' })
-    return { user: session.user }
+    const { userId, orgId } = await getAuthStateFn()
+    if (!userId) throw redirect({ href: '/prihlaseni' })
+    if (!orgId) throw redirect({ to: '/onboarding' })
   },
   component: AppShell,
 })
@@ -37,10 +35,6 @@ const nav = [
 ] as const
 
 function AppShell() {
-  const { user } = Route.useRouteContext()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-
   return (
     <SidebarProvider>
       <Sidebar>
@@ -74,20 +68,9 @@ function AppShell() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-          <div className="flex items-center justify-between gap-2 px-2 text-sm">
-            <span className="truncate text-muted-foreground">{user.email}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={cs.common.signOut}
-              onClick={async () => {
-                await authClient.signOut()
-                queryClient.clear()
-                await navigate({ to: '/prihlaseni' })
-              }}
-            >
-              <LogOut />
-            </Button>
+          <div className="flex items-center justify-between gap-2 px-2">
+            <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/" />
+            <UserButton />
           </div>
         </SidebarFooter>
       </Sidebar>

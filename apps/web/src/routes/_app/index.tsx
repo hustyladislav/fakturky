@@ -1,3 +1,4 @@
+import { useUser } from '@clerk/tanstack-react-start'
 import { Card, CardContent, CardHeader, CardTitle } from '@fakturky/ui/components/card'
 import { createFileRoute } from '@tanstack/react-router'
 import { cs } from '@/i18n/cs'
@@ -7,14 +8,14 @@ export const Route = createFileRoute('/_app/')({
 })
 
 function Overview() {
-  const { user } = Route.useRouteContext()
+  const { user } = useUser()
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">{cs.overview.title}</h1>
       <Card>
         <CardHeader>
           <CardTitle>
-            {cs.overview.welcome}, {user.name}
+            {cs.overview.welcome}, {user?.firstName}
           </CardTitle>
         </CardHeader>
         <CardContent className="text-muted-foreground">{cs.overview.empty}</CardContent>

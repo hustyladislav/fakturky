@@ -15,9 +15,6 @@ catalog:
   "@orpc/openapi": 1.16.1
   "@orpc/zod": 1.16.1
   "@orpc/tanstack-query": 1.16.1
-  better-auth: 1.7.15
-  "@better-auth/passkey": 1.7.15
-  "@better-auth/api-key": 1.7.15
   uuid: 14.0.3
   "@types/node": 24.10.1
 

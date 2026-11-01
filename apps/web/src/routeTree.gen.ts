@@ -10,13 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
-import { Route as PrihlaseniRouteImport } from './routes/prihlaseni'
-import { Route as RegistraceRouteImport } from './routes/registrace'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
+import { Route as PrihlaseniSplatRouteImport } from './routes/prihlaseni.$'
+import { Route as RegistraceSplatRouteImport } from './routes/registrace.$'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
@@ -25,14 +25,9 @@ const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PrihlaseniRoute = PrihlaseniRouteImport.update({
-  id: '/prihlaseni',
-  path: '/prihlaseni',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegistraceRoute = RegistraceRouteImport.update({
-  id: '/registrace',
-  path: '/registrace',
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -55,9 +50,14 @@ const AppNastaveniRoute = AppNastaveniRouteImport.update({
   path: '/nastaveni',
   getParentRoute: () => AppRoute,
 } as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
+const PrihlaseniSplatRoute = PrihlaseniSplatRouteImport.update({
+  id: '/prihlaseni/$',
+  path: '/prihlaseni/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistraceSplatRoute = RegistraceSplatRouteImport.update({
+  id: '/registrace/$',
+  path: '/registrace/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
@@ -78,24 +78,24 @@ const ApiV1OpenapiDotjsonRoute = ApiV1OpenapiDotjsonRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/prihlaseni': typeof PrihlaseniRoute
-  '/registrace': typeof RegistraceRoute
+  '/onboarding': typeof OnboardingRoute
   '/faktury': typeof AppFakturyRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/prihlaseni/$': typeof PrihlaseniSplatRoute
+  '/registrace/$': typeof RegistraceSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
 }
 export interface FileRoutesByTo {
-  '/prihlaseni': typeof PrihlaseniRoute
-  '/registrace': typeof RegistraceRoute
+  '/onboarding': typeof OnboardingRoute
   '/faktury': typeof AppFakturyRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
+  '/prihlaseni/$': typeof PrihlaseniSplatRoute
+  '/registrace/$': typeof RegistraceSplatRoute
   '/': typeof AppIndexRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -103,13 +103,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
-  '/prihlaseni': typeof PrihlaseniRoute
-  '/registrace': typeof RegistraceRoute
+  '/onboarding': typeof OnboardingRoute
   '/_app/faktury': typeof AppFakturyRoute
   '/_app/kontakty': typeof AppKontaktyRoute
   '/_app/nastaveni': typeof AppNastaveniRoute
+  '/prihlaseni/$': typeof PrihlaseniSplatRoute
+  '/registrace/$': typeof RegistraceSplatRoute
   '/_app/': typeof AppIndexRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -118,37 +118,37 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/prihlaseni'
-    | '/registrace'
+    | '/onboarding'
     | '/faktury'
     | '/kontakty'
     | '/nastaveni'
-    | '/api/auth/$'
+    | '/prihlaseni/$'
+    | '/registrace/$'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/prihlaseni'
-    | '/registrace'
+    | '/onboarding'
     | '/faktury'
     | '/kontakty'
     | '/nastaveni'
+    | '/prihlaseni/$'
+    | '/registrace/$'
     | '/'
-    | '/api/auth/$'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
   id:
     | '__root__'
     | '/_app'
-    | '/prihlaseni'
-    | '/registrace'
+    | '/onboarding'
     | '/_app/faktury'
     | '/_app/kontakty'
     | '/_app/nastaveni'
+    | '/prihlaseni/$'
+    | '/registrace/$'
     | '/_app/'
-    | '/api/auth/$'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -156,9 +156,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
-  PrihlaseniRoute: typeof PrihlaseniRoute
-  RegistraceRoute: typeof RegistraceRoute
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  OnboardingRoute: typeof OnboardingRoute
+  PrihlaseniSplatRoute: typeof PrihlaseniSplatRoute
+  RegistraceSplatRoute: typeof RegistraceSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
@@ -173,18 +173,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/prihlaseni': {
-      id: '/prihlaseni'
-      path: '/prihlaseni'
-      fullPath: '/prihlaseni'
-      preLoaderRoute: typeof PrihlaseniRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/registrace': {
-      id: '/registrace'
-      path: '/registrace'
-      fullPath: '/registrace'
-      preLoaderRoute: typeof RegistraceRouteImport
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -215,11 +208,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNastaveniRouteImport
       parentRoute: typeof AppRoute
     }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
+    '/prihlaseni/$': {
+      id: '/prihlaseni/$'
+      path: '/prihlaseni/$'
+      fullPath: '/prihlaseni/$'
+      preLoaderRoute: typeof PrihlaseniSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registrace/$': {
+      id: '/registrace/$'
+      path: '/registrace/$'
+      fullPath: '/registrace/$'
+      preLoaderRoute: typeof RegistraceSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rpc/$': {
@@ -264,9 +264,9 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
-  PrihlaseniRoute: PrihlaseniRoute,
-  RegistraceRoute: RegistraceRoute,
-  ApiAuthSplatRoute: ApiAuthSplatRoute,
+  OnboardingRoute: OnboardingRoute,
+  PrihlaseniSplatRoute: PrihlaseniSplatRoute,
+  RegistraceSplatRoute: RegistraceSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
@@ -276,10 +276,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

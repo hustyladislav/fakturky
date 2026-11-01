@@ -13,7 +13,7 @@ export async function createTestDb(): Promise<DbHandle> {
 export async function seedOrg(handle: DbHandle, slug: string): Promise<string> {
   const [org] = await handle.db
     .insert(schema.organization)
-    .values({ name: slug, slug })
+    .values({ id: slug, name: slug, slug })
     .returning({ id: schema.organization.id })
   if (!org) throw new Error('seed failed')
   return org.id

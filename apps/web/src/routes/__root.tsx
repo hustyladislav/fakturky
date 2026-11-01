@@ -1,3 +1,5 @@
+import { csCZ } from '@clerk/localizations'
+import { ClerkProvider } from '@clerk/tanstack-react-start'
 import { Toaster } from '@fakturky/ui/components/sonner'
 import appCss from '@fakturky/ui/globals.css?url'
 import type { QueryClient } from '@tanstack/react-query'
@@ -30,7 +32,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <ClerkProvider
+          publishableKey={import.meta.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+          localization={csCZ}
+          signInUrl="/prihlaseni"
+          signUpUrl="/registrace"
+          signInFallbackRedirectUrl="/"
+          signUpFallbackRedirectUrl="/"
+        >
+          {children}
+        </ClerkProvider>
         <Toaster />
         <Scripts />
       </body>

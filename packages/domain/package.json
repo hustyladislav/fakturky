@@ -21,7 +21,8 @@
     "./bank-codes": "./src/bank-codes.ts",
     "./integrations/cnb": "./src/integrations/cnb.ts",
     "./integrations/vies": "./src/integrations/vies.ts",
-    "./dic": "./src/dic.ts"
+    "./dic": "./src/dic.ts",
+    "./qr/epc": "./src/qr/epc.ts"
   },
   "scripts": {
     "test": "vitest run",

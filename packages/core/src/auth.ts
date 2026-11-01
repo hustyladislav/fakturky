@@ -4,7 +4,7 @@ import { passkey } from '@better-auth/passkey'
 import { type Db, newId, schema } from '@fakturky/db'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { organization } from 'better-auth/plugins'
+import { magicLink, oAuthProxy, organization } from 'better-auth/plugins'
 import { eq } from 'drizzle-orm'
 import { BRAND } from './brand'
 import type { Principal } from './context'
@@ -16,6 +16,15 @@ export type CreateAuthOptions = {
   /** Extra plugins; `tanstackStartCookies()` must be last, so the web app appends it. */
   extraPlugins?: unknown[]
   trustedOrigins?: string[]
+  /** Google sign-in; omitted when the credentials are not configured. */
+  google?: { clientId: string; clientSecret: string }
+  /**
+   * Preview deployments have random URLs Google doesn't know: when set, OAuth callbacks go through
+   * this (production) URL and are proxied back.
+   */
+  oauthProxyProductionUrl?: string
+  /** Delivers the magic link; throw to signal that email is unavailable. */
+  sendMagicLink?: (message: { email: string; url: string }) => Promise<void>
 }
 
 function slugify(input: string): string {
@@ -38,11 +47,29 @@ export function createAuth(options: CreateAuthOptions) {
     secret: options.secret,
     trustedOrigins: options.trustedOrigins,
     database: drizzleAdapter(db, { provider: 'pg', schema }),
-    advanced: { database: { generateId: () => newId() } },
+    advanced: {
+      database: { generateId: () => newId() },
+      // Vercel sets both headers at the edge; they cannot be spoofed by the client.
+      ipAddress: { ipAddressHeaders: ['x-real-ip', 'x-forwarded-for'] },
+    },
+    socialProviders: options.google
+      ? {
+          google: {
+            ...options.google,
+            ...(options.oauthProxyProductionUrl
+              ? { redirectURI: `${options.oauthProxyProductionUrl}/api/auth/callback/google` }
+              : {}),
+          },
+        }
+      : {},
     emailAndPassword: { enabled: true, minPasswordLength: 8 },
     databaseHooks: {
       user: {
         create: {
+          // Magic-link / social sign-ups may arrive without a name.
+          before: async (user) => ({
+            data: { ...user, name: user.name?.trim() || user.email.split('@')[0] || user.email },
+          }),
           // First sign-up: every user gets a personal organization + empty business profile.
           after: async (user) => {
             await db.transaction(async (tx) => {
@@ -79,6 +106,17 @@ export function createAuth(options: CreateAuthOptions) {
       passkey({ rpID: url.hostname, rpName: BRAND.name, origin: url.origin }),
       apiKey({ references: 'organization', defaultPrefix: BRAND.apiKeyPrefix }),
       dash(),
+      ...(options.sendMagicLink
+        ? [
+            magicLink({
+              expiresIn: 300,
+              sendMagicLink: async ({ email, url }) => options.sendMagicLink?.({ email, url }),
+            }),
+          ]
+        : []),
+      ...(options.oauthProxyProductionUrl
+        ? [oAuthProxy({ productionURL: options.oauthProxyProductionUrl })]
+        : []),
       ...((options.extraPlugins ?? []) as never[]),
     ],
   })

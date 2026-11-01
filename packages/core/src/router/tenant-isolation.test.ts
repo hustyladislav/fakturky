@@ -73,7 +73,16 @@ const cases: Record<string, Case> = {
   'dashboard.summary': { kind: 'scoped', run: (b) => b.dashboard.summary({}) },
 
   'exports.documents': { kind: 'scoped', run: (b) => b.exports.documents({}) },
+  'exports.organization': { kind: 'scoped', run: (b) => b.exports.organization({}) },
   'exports.contacts': { kind: 'scoped', run: (b) => b.exports.contacts({}) },
+  'documents.createCreditNote': {
+    kind: 'foreign',
+    run: (b, a) => b.documents.createCreditNote({ id: a.issuedId }),
+  },
+  'documents.createFinalInvoice': {
+    kind: 'foreign',
+    run: (b, a) => b.documents.createFinalInvoice({ id: a.issuedId }),
+  },
   'documents.send': {
     kind: 'foreign',
     run: (b, a) => b.documents.send({ id: a.issuedId, to: 'attacker@example.com' }),
@@ -220,7 +229,13 @@ beforeAll(async () => {
   }
   const bContact = await bApi.contacts.create({ name: 'B client' })
   bOwn = {
-    draftId: (await bApi.documents.createDraft({ contactId: bContact.id, lines: [line] })).id,
+    draftId: (
+      await bApi.documents.createDraft({
+        contactId: bContact.id,
+        // Org B's own data must not reuse org A's marker, or whole-payload scans cannot tell them apart.
+        lines: [{ ...line, description: 'B line' }],
+      })
+    ).id,
   }
 })
 afterAll(() => handle.close())

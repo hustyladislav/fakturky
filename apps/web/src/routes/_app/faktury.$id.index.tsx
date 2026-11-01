@@ -1,28 +1,11 @@
-import { formatDateCs } from '@fakturky/domain/dates'
+import { formatDateCs, todayPrague } from '@fakturky/domain/dates'
 import { Button } from '@fakturky/ui/components/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@fakturky/ui/components/dropdown-menu'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import {
-  Check,
-  Copy,
-  Download,
-  Ellipsis,
-  ExternalLink,
-  Pencil,
-  RefreshCw,
-  Send,
-  Trash2,
-} from 'lucide-react'
+import { Check, Copy, Download, ExternalLink, Pencil, RefreshCw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
@@ -154,6 +137,27 @@ function InvoiceDetail() {
       },
     }),
   )
+  const creditNote = useMutation(
+    orpc.documents.createCreditNote.mutationOptions({
+      onSuccess: async (n) => {
+        toast.success(t.creditNoteCreated)
+        await refresh()
+        navigate({ to: '/faktury/$id/upravit', params: { id: n.id } })
+      },
+      onError,
+    }),
+  )
+  const finalInvoice = useMutation(
+    orpc.documents.createFinalInvoice.mutationOptions({
+      onSuccess: async (n) => {
+        toast.success(t.finalInvoiceCreated)
+        await refresh()
+        navigate({ to: '/faktury/$id/upravit', params: { id: n.id } })
+      },
+      onError,
+    }),
+  )
+  const defaults = useQuery(orpc.documents.defaults.queryOptions({ input: {} }))
   const saveTemplate = useMutation(
     orpc.templates.createFromDocument.mutationOptions({
       onSuccess: async () => {
@@ -179,30 +183,35 @@ function InvoiceDetail() {
   if (!d) return <p className="text-muted-foreground">{cs.common.loading}</p>
 
   const isDraft = d.status === 'draft'
-  const open = d.status === 'issued'
+  const open = d.status === 'issued' && d.type !== 'credit_note'
   const bank = d.bankSnapshot as Record<string, string | null> | null
   const publicUrl = d.publicToken ? `${window.location.origin}/f/${d.publicToken}` : null
   const defaultTo = ((d.customerSnapshot?.emails as string[] | undefined) ?? [])[0]
   const busy = issue.isPending || markPaid.isPending || cancel.isPending
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="mx-auto max-w-3xl space-y-4 pb-28 sm:pb-6">
       <Link to="/faktury" className="text-muted-foreground text-sm hover:underline">
         ← {t.back}
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-medium tabular-nums">
+          <h1 className="text-2xl font-semibold tabular-nums">
             {d.number ?? cs.invoices.draftNumber}
           </h1>
+          {d.type !== 'invoice' && (
+            <span className="text-muted-foreground text-sm">
+              {cs.invoices.type[d.type as keyof typeof cs.invoices.type]}
+            </span>
+          )}
           <InvoiceStatus status={d.displayStatus} />
         </div>
-        <div className="hidden items-center gap-2 sm:flex">
+        <div className="hidden flex-wrap gap-2 sm:flex">
           <Actions />
         </div>
       </div>
-      <div className="flex flex-col gap-2 sm:hidden">
-        <Actions mobile />
+      <div className="flex flex-wrap gap-2 sm:hidden">
+        <Actions part="secondary" />
       </div>
 
       <section className="space-y-5 rounded-xl border p-4 sm:p-6">
@@ -229,23 +238,8 @@ function InvoiceDetail() {
           )}
         </dl>
 
-        <ul className="divide-y sm:hidden">
-          {d.lines.map((l) => (
-            <li key={l.id} className="flex items-start justify-between gap-3 py-3 text-sm">
-              <div className="min-w-0">
-                <div>{l.description}</div>
-                <div className="text-muted-foreground text-xs">
-                  {Number(l.quantity)} {l.unit} ×{' '}
-                  <Money amount={l.unitPrice} currency={d.currency} />
-                  {d.vatMode !== 'none' && <> · {Number(l.vatRate)} %</>}
-                </div>
-              </div>
-              <Money amount={l.lineTotal} currency={d.currency} className="shrink-0" />
-            </li>
-          ))}
-        </ul>
-        <div className="hidden overflow-x-auto sm:block">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[34rem] text-sm">
             <thead className="text-muted-foreground text-left text-xs">
               <tr className="border-b">
                 <th className="py-2 font-medium">{cs.invoices.form.description}</th>
@@ -289,13 +283,9 @@ function InvoiceDetail() {
                 <Money amount={r.vat} currency={d.currency} />
               </div>
             ))}
-          <div className="flex items-baseline justify-between gap-4 border-t pt-3">
-            <span className="font-medium whitespace-nowrap">{cs.invoices.form.total}</span>
-            <Money
-              amount={d.total}
-              currency={d.currency}
-              className="font-serif text-2xl font-medium sm:text-3xl"
-            />
+          <div className="flex items-baseline justify-between border-t pt-2 text-lg font-semibold">
+            <span>{cs.invoices.form.total}</span>
+            <Money amount={d.total} currency={d.currency} />
           </div>
           {Number(d.paidAmount) > 0 && (
             <>
@@ -451,7 +441,7 @@ function InvoiceDetail() {
               <Check className="text-muted-foreground size-3.5" />
               <span>{t.timeline[a.action as keyof typeof t.timeline] ?? a.action}</span>
               <span className="text-muted-foreground">
-                {formatDateCs(a.createdAt.toISOString().slice(0, 10))}
+                {formatDateCs(todayPrague(a.createdAt))}
                 {(a.data as { amount?: string } | null)?.amount ? (
                   <>
                     {' · '}
@@ -465,115 +455,131 @@ function InvoiceDetail() {
           ))}
         </ol>
       </section>
+
+      {/* Sits above the mobile tab bar (h-16); only the primary action is pinned, the rest is in flow. */}
+      <div className="from-background fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex flex-col gap-2 bg-gradient-to-t p-4 sm:hidden">
+        <Actions mobile part="primary" />
+      </div>
     </div>
   )
 
-  function Actions({ mobile }: { mobile?: boolean }) {
-    const full = mobile ? 'w-full h-11' : ''
-    const more = (
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant="outline"
-              className={mobile ? 'h-11 w-full' : undefined}
-              size={mobile ? 'default' : 'icon'}
-              aria-label={t.more}
-            />
-          }
-        >
-          <Ellipsis />
-          {mobile && t.more}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="bottom" align="end">
-          {isDraft ? (
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={() => window.confirm(t.deleteConfirm) && remove.mutate({ id })}
-            >
-              <Trash2 /> {t.delete}
-            </DropdownMenuItem>
-          ) : (
-            <>
-              <DropdownMenuItem onClick={() => duplicate.mutate({ id })}>
-                {t.duplicate}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  const name = window.prompt(cs.templates.namePrompt, d?.customerName ?? '')
-                  if (name?.trim()) saveTemplate.mutate({ documentId: id, name: name.trim() })
-                }}
-              >
-                {cs.templates.saveAs}
-              </DropdownMenuItem>
-              {d?.status === 'paid' && (
-                <DropdownMenuItem onClick={() => markUnpaid.mutate({ id })}>
-                  {t.markUnpaid}
-                </DropdownMenuItem>
-              )}
-              {d?.status !== 'cancelled' && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    disabled={busy}
-                    onClick={() => window.confirm(t.cancelConfirm) && cancel.mutate({ id })}
-                  >
-                    {t.cancel}
-                  </DropdownMenuItem>
-                </>
-              )}
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    )
+  function Actions({
+    mobile,
+    part = 'all',
+  }: {
+    mobile?: boolean
+    part?: 'all' | 'primary' | 'secondary'
+  }) {
+    const full = mobile ? 'w-full' : ''
+    const showSecondary = part !== 'primary'
+    const showPrimary = part !== 'secondary'
     if (isDraft) {
       return (
         <>
-          <Button
-            variant="outline"
-            className={full}
-            nativeButton={false}
-            render={<Link to="/faktury/$id/upravit" params={{ id }} />}
-          >
-            <Pencil /> {t.edit}
-          </Button>
-          {more}
-          <Button
-            className={`${full} ${mobile ? 'order-first' : ''}`}
-            disabled={busy}
-            onClick={() => issue.mutate({ id })}
-          >
-            {t.issue}
-          </Button>
+          {showSecondary && (
+            <>
+              <Button
+                variant="outline"
+                className={full}
+                nativeButton={false}
+                render={<Link to="/faktury/$id/upravit" params={{ id }} />}
+              >
+                <Pencil /> {t.edit}
+              </Button>
+              <Button
+                variant="ghost"
+                className={full}
+                onClick={() => window.confirm(t.deleteConfirm) && remove.mutate({ id })}
+              >
+                <Trash2 /> {t.delete}
+              </Button>
+            </>
+          )}
+          {showPrimary && (
+            <Button className={full} disabled={busy} onClick={() => issue.mutate({ id })}>
+              {t.issue}
+            </Button>
+          )}
         </>
       )
     }
     return (
       <>
-        {open && (
-          <Button
-            className={`${full} ${mobile ? 'order-first' : 'order-last'}`}
-            onClick={() => setPaying(true)}
-          >
-            <Check /> {t.markPaid}
+        {showSecondary && (
+          <>
+            {!isDraft && (
+              <Button
+                variant="outline"
+                className={full}
+                nativeButton={false}
+                render={<a href={`/api/documents/${id}/pdf`} download />}
+              >
+                <Download /> {t.downloadPdf}
+              </Button>
+            )}
+            {d?.status === 'cancelled' ? null : (
+              <Button
+                variant="ghost"
+                className={full}
+                disabled={busy}
+                onClick={() => window.confirm(t.cancelConfirm) && cancel.mutate({ id })}
+              >
+                {t.cancel}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              className={full}
+              onClick={() => {
+                const name = window.prompt(cs.templates.namePrompt, d?.customerName ?? '')
+                if (name?.trim()) saveTemplate.mutate({ documentId: id, name: name.trim() })
+              }}
+            >
+              {cs.templates.saveAs}
+            </Button>
+            {d?.type === 'proforma' && d.status === 'paid' && !defaults.data?.vatPayer && (
+              <Button
+                className={full}
+                disabled={finalInvoice.isPending}
+                onClick={() => finalInvoice.mutate({ id })}
+              >
+                {t.finalInvoice}
+              </Button>
+            )}
+            {d?.type === 'invoice' && (open || d.status === 'paid') && (
+              <Button
+                variant="outline"
+                className={full}
+                onClick={() => {
+                  const reason = window.prompt(t.creditNotePrompt, '')
+                  if (reason !== null) creditNote.mutate({ id, reason: reason.trim() || undefined })
+                }}
+              >
+                {t.creditNote}
+              </Button>
+            )}
+            <Button variant="outline" className={full} onClick={() => duplicate.mutate({ id })}>
+              {t.duplicate}
+            </Button>
+            {d?.status === 'paid' && !(d.type === 'invoice' && Number(d.total) <= 0) && (
+              <Button variant="outline" className={full} onClick={() => markUnpaid.mutate({ id })}>
+                {t.markUnpaid}
+              </Button>
+            )}
+            {(open ||
+              d?.status === 'paid' ||
+              (d?.type === 'credit_note' && d.status === 'issued')) && (
+              <Button variant="outline" className={full} onClick={() => setSending(true)}>
+                {d?.displayStatus === 'overdue' ? t.remind : t.send}
+              </Button>
+            )}
+          </>
+        )}
+        {showPrimary && open && (
+          <Button className={full} onClick={() => setPaying(true)}>
+            {t.markPaid}
           </Button>
         )}
-        {(open || d?.status === 'paid') && (
-          <Button variant="outline" className={full} onClick={() => setSending(true)}>
-            <Send /> {d?.displayStatus === 'overdue' ? t.remind : t.send}
-          </Button>
-        )}
-        <Button
-          variant="outline"
-          className={full}
-          nativeButton={false}
-          render={<a href={`/api/documents/${id}/pdf`} download />}
-        >
-          <Download /> {t.downloadPdf}
-        </Button>
-        {more}
       </>
     )
   }

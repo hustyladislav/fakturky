@@ -4,7 +4,7 @@ import { Input } from '@fakturky/ui/components/input'
 import { Money } from '@fakturky/ui/components/money'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Search } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { CsvDownload } from '@/components/csv-download'
@@ -40,11 +40,14 @@ function InvoiceList() {
   const t = cs.invoices
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-[1200px] space-y-4 pb-20 sm:pb-0">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{t.title}</h1>
-        <div className="flex gap-2">
+        <div className="hidden gap-2 sm:flex">
           <CsvDownload kind="documents" />
+          <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
+            <Plus /> {t.new}
+          </Button>
         </div>
       </div>
 
@@ -87,26 +90,27 @@ function InvoiceList() {
         </div>
       ) : (
         <>
+          {/* Phone: one card-like row per invoice; the table below is for sm+ */}
           <ul className="divide-y overflow-hidden rounded-xl border sm:hidden">
             {list.data?.map((d) => (
               <li key={d.id}>
                 <Link
                   to={d.status === 'draft' ? '/faktury/$id/upravit' : '/faktury/$id'}
                   params={{ id: d.id }}
-                  className="flex min-h-16 items-center gap-3 px-4 py-3 active:bg-muted/50"
+                  className="hover:bg-muted/30 flex items-center justify-between gap-3 p-3"
                 >
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-medium tabular-nums">
+                  <div className="min-w-0">
+                    <div className="font-medium whitespace-nowrap tabular-nums">
                       {d.number ?? t.draftNumber}
-                    </span>
-                    <span className="text-muted-foreground block truncate text-sm">
+                    </div>
+                    <div className="text-muted-foreground truncate text-sm">
                       {d.customerName ?? '—'}
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 flex-col items-end gap-1">
-                    <Money amount={d.total} currency={d.currency} className="text-sm" />
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <Money amount={d.total} currency={d.currency} />
                     <InvoiceStatus status={d.displayStatus} />
-                  </span>
+                  </div>
                 </Link>
               </li>
             ))}
@@ -170,7 +174,7 @@ function Cell({
   right?: boolean
   strong?: boolean
 }) {
-  const cls = `block px-4 py-3 ${strong ? 'font-medium tabular-nums' : ''}`
+  const cls = `block px-4 py-3 whitespace-nowrap ${strong ? 'font-medium tabular-nums' : ''}`
   return (
     <td className={`${hide ? 'hidden sm:table-cell' : ''} ${right ? 'text-right' : ''}`}>
       {draft ? (

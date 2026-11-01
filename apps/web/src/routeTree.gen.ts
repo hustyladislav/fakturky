@@ -25,6 +25,7 @@ import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
 import { Route as AppPrehledRouteImport } from './routes/_app/prehled'
 import { Route as AppSablonyRouteImport } from './routes/_app/sablony'
+import { Route as ApiAgentRouteImport } from './routes/api/agent'
 import { Route as DocsApiRouteImport } from './routes/docs.api'
 import { Route as DocsMcpRouteImport } from './routes/docs.mcp'
 import { Route as FTokenRouteImport } from './routes/f.$token'
@@ -120,6 +121,11 @@ const AppSablonyRoute = AppSablonyRouteImport.update({
   id: '/sablony',
   path: '/sablony',
   getParentRoute: () => AppRoute,
+} as any)
+const ApiAgentRoute = ApiAgentRouteImport.update({
+  id: '/api/agent',
+  path: '/api/agent',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DocsApiRoute = DocsApiRouteImport.update({
   id: '/docs/api',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/nastaveni': typeof AppNastaveniRoute
   '/prehled': typeof AppPrehledRoute
   '/sablony': typeof AppSablonyRoute
+  '/api/agent': typeof ApiAgentRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   '/nastaveni': typeof AppNastaveniRoute
   '/prehled': typeof AppPrehledRoute
   '/sablony': typeof AppSablonyRoute
+  '/api/agent': typeof ApiAgentRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
@@ -285,6 +293,7 @@ export interface FileRoutesById {
   '/_app/nastaveni': typeof AppNastaveniRoute
   '/_app/prehled': typeof AppPrehledRoute
   '/_app/sablony': typeof AppSablonyRoute
+  '/api/agent': typeof ApiAgentRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
@@ -320,6 +329,7 @@ export interface FileRouteTypes {
     | '/nastaveni'
     | '/prehled'
     | '/sablony'
+    | '/api/agent'
     | '/docs/api'
     | '/docs/mcp'
     | '/f/$token'
@@ -352,6 +362,7 @@ export interface FileRouteTypes {
     | '/nastaveni'
     | '/prehled'
     | '/sablony'
+    | '/api/agent'
     | '/docs/api'
     | '/docs/mcp'
     | '/f/$token'
@@ -386,6 +397,7 @@ export interface FileRouteTypes {
     | '/_app/nastaveni'
     | '/_app/prehled'
     | '/_app/sablony'
+    | '/api/agent'
     | '/docs/api'
     | '/docs/mcp'
     | '/f/$token'
@@ -416,6 +428,7 @@ export interface RootRouteChildren {
   SouhlasRoute: typeof SouhlasRoute
   SoukromiRoute: typeof SoukromiRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
+  ApiAgentRoute: typeof ApiAgentRoute
   DocsApiRoute: typeof DocsApiRoute
   DocsMcpRoute: typeof DocsMcpRoute
   FTokenRoute: typeof FTokenRouteWithChildren
@@ -541,6 +554,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sablony'
       preLoaderRoute: typeof AppSablonyRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/agent': {
+      id: '/api/agent'
+      path: '/api/agent'
+      fullPath: '/api/agent'
+      preLoaderRoute: typeof ApiAgentRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/docs/api': {
       id: '/docs/api'
@@ -718,6 +738,7 @@ const rootRouteChildren: RootRouteChildren = {
   SouhlasRoute: SouhlasRoute,
   SoukromiRoute: SoukromiRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
+  ApiAgentRoute: ApiAgentRoute,
   DocsApiRoute: DocsApiRoute,
   DocsMcpRoute: DocsMcpRoute,
   FTokenRoute: FTokenRouteWithChildren,
@@ -734,11 +755,10 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
+import type { createStart } from '@tanstack/react-start'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

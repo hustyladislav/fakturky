@@ -3,7 +3,7 @@ import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthLayout } from '@/components/auth-layout'
 import { Divider, GoogleButton, MagicLinkButton } from '@/components/social-sign-in'
 import { cs } from '@/i18n/cs'
@@ -14,6 +14,10 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  // Before hydration the browser would submit the form natively (GET), putting the
+  // password into the URL. Keep the button disabled until the JS handler is attached.
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => setHydrated(true), [])
   const signUp = mode === 'sign-up'
 
   return (
@@ -31,6 +35,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           <GoogleButton />
           <Divider />
           <form
+            method="post"
             className="space-y-4"
             onSubmit={async (e) => {
               e.preventDefault()
@@ -84,7 +89,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
                 {error}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={pending}>
+            <Button type="submit" className="w-full" disabled={pending || !hydrated}>
               {signUp ? cs.auth.signUpAction : cs.auth.signInAction}
             </Button>
           </form>

@@ -38,6 +38,7 @@ export const remindersRepo = {
         and(
           eq(document.organizationId, orgId),
           eq(document.status, 'issued'),
+          eq(document.type, 'invoice'),
           isNull(document.deletedAt),
           lt(document.dueDate, today),
         ),

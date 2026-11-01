@@ -55,7 +55,15 @@ function PublicInvoice() {
     )
   }
   const title =
-    d.type === 'proforma' ? t.titleProforma : d.vatPayer ? t.titleTaxInvoice : t.titleInvoice
+    d.type === 'proforma'
+      ? t.titleProforma
+      : d.type === 'credit_note'
+        ? d.vatPayer
+          ? t.titleCreditNoteTax
+          : t.titleCreditNote
+        : d.vatPayer
+          ? t.titleTaxInvoice
+          : t.titleInvoice
   const label = (k: string, v: React.ReactNode) => (
     <div>
       <div className="text-xs text-neutral-500">{k}</div>
@@ -92,6 +100,11 @@ function PublicInvoice() {
           <div>
             <h1 className="font-heading text-2xl font-semibold">{title}</h1>
             <div className="font-heading text-xl tabular-nums">{d.number}</div>
+            {d.original && (
+              <div className="text-sm text-neutral-600">
+                {t.corrects(d.original.number, formatDateCs(d.original.issueDate))}
+              </div>
+            )}
           </div>
           {d.status !== 'issued' || d.overdue ? (
             <span className="rounded border border-neutral-400 px-2 py-0.5 text-sm font-medium">
@@ -116,7 +129,7 @@ function PublicInvoice() {
         {d.introText && <p className="text-sm whitespace-pre-line">{d.introText}</p>}
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[34rem] text-sm">
             <thead>
               <tr className="border-b border-neutral-400 text-left text-xs text-neutral-500">
                 <th className="py-2 font-medium">{t.description}</th>

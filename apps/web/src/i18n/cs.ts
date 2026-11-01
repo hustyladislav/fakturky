@@ -284,9 +284,16 @@ export const cs = {
       status: 'Stav',
     },
     draftNumber: 'Koncept',
-    type: { invoice: 'Faktura', proforma: 'Zálohová faktura' },
+    type: {
+      invoice: 'Faktura',
+      proforma: 'Zálohová faktura',
+      credit_note: 'Opravný daňový doklad',
+    },
     form: {
       titleNew: 'Nová faktura',
+      documentType: 'Typ dokladu',
+      proformaHint:
+        'Zálohová faktura není daňový doklad. Po zaplacení z ní vytvoříte konečnou fakturu.',
       titleEdit: 'Upravit koncept',
       customer: 'Odběratel',
       customerSearch: 'Hledat podle názvu nebo IČO…',
@@ -390,6 +397,8 @@ export const cs = {
       history: 'Průběh',
       timeline: {
         created: 'Vytvořena',
+        final_invoice_created: 'Vytvořena konečná faktura',
+        credit_note_created: 'Vytvořen opravný doklad',
         sent: 'Odeslána',
         reminded: 'Upomínka odeslána',
         updated: 'Upravena',
@@ -403,6 +412,11 @@ export const cs = {
         link_rotated: 'Veřejný odkaz nahrazen novým',
       },
       notFound: 'Faktura nebyla nalezena.',
+      finalInvoice: 'Vystavit konečnou fakturu',
+      finalInvoiceCreated: 'Vytvořili jsme koncept konečné faktury s odečtenou zálohou.',
+      creditNote: 'Vytvořit opravný doklad',
+      creditNotePrompt: 'Důvod opravy (zobrazí se na dokladu)',
+      creditNoteCreated: 'Vytvořili jsme koncept opravného dokladu. Upravte ho a vystavte.',
       send: 'Odeslat e-mailem',
       sendTitle: 'Odeslat fakturu',
       sendTo: 'Příjemce',
@@ -425,6 +439,9 @@ export const cs = {
     titleInvoice: 'Faktura',
     titleTaxInvoice: 'Faktura – daňový doklad',
     titleProforma: 'Zálohová faktura',
+    titleCreditNote: 'Opravný doklad',
+    titleCreditNoteTax: 'Opravný daňový doklad',
+    corrects: (n: string, d: string) => `Oprava faktury ${n} ze dne ${d}`,
     supplier: 'Dodavatel',
     customer: 'Odběratel',
     issueDate: 'Datum vystavení',
@@ -499,6 +516,10 @@ export const cs = {
     archived: 'Kontakt byl archivován.',
   },
   settings: {
+    exportTitle: 'Export dat',
+    exportDescription:
+      'Stáhněte si všechna svá data (doklady, kontakty, bankovní účty, šablony, nastavení) jako jeden soubor JSON.',
+    exportButton: 'Stáhnout všechna data (JSON)',
     remindersTitle: 'Upomínky',
     remindersDescription:
       'Zdvořilé e-mailové upomínky odběratelům po splatnosti: 3., 10. a 17. den po termínu, nejvýše třikrát. Odesílají se jen na e-mail uvedený u odběratele.',

@@ -5,9 +5,92 @@ import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { toCsv } from '../csv'
 import { deriveStatus } from './documents'
 
-const { document, contact, payment } = schema
+const {
+  document,
+  documentLine,
+  contact,
+  payment,
+  bankAccount,
+  businessProfile,
+  template,
+  recurringRule,
+  numberSeries,
+  numberSeriesCounter,
+  activity,
+} = schema
 
 export const exportsRepo = {
+  /**
+   * Everything the organization owns, as one JSON document (GDPR-style portability / backup).
+   * Bearer secrets (public link tokens, API keys, sessions) are deliberately left out.
+   */
+  async organizationJson(db: Db, orgId: string) {
+    // One repeatable-read snapshot so headers, lines and payments are mutually consistent.
+    const snap = await db.transaction(
+      async (tx) => ({
+        profile: await tx
+          .select()
+          .from(businessProfile)
+          .where(eq(businessProfile.organizationId, orgId)),
+        accounts: await tx.select().from(bankAccount).where(eq(bankAccount.organizationId, orgId)),
+        contacts: await tx.select().from(contact).where(eq(contact.organizationId, orgId)),
+        docs: await tx
+          .select()
+          .from(document)
+          .where(and(eq(document.organizationId, orgId), isNull(document.deletedAt)))
+          .orderBy(asc(document.createdAt)),
+        lines: await tx.select().from(documentLine).where(eq(documentLine.organizationId, orgId)),
+        payments: await tx.select().from(payment).where(eq(payment.organizationId, orgId)),
+        history: await tx
+          .select()
+          .from(activity)
+          .where(and(eq(activity.organizationId, orgId), eq(activity.entityType, 'document')))
+          .orderBy(asc(activity.createdAt)),
+        templates: await tx.select().from(template).where(eq(template.organizationId, orgId)),
+        rules: await tx.select().from(recurringRule).where(eq(recurringRule.organizationId, orgId)),
+        series: await tx.select().from(numberSeries).where(eq(numberSeries.organizationId, orgId)),
+        counters: await tx
+          .select()
+          .from(numberSeriesCounter)
+          .where(eq(numberSeriesCounter.organizationId, orgId)),
+      }),
+      { isolationLevel: 'repeatable read', accessMode: 'read only' },
+    )
+    const { profile, accounts, contacts, docs, lines, payments, templates, rules, series } = snap
+    const group = <T extends { documentId: string }>(rows: T[]) => {
+      const m = new Map<string, T[]>()
+      for (const r of rows) m.set(r.documentId, [...(m.get(r.documentId) ?? []), r])
+      return m
+    }
+    const linesBy = group(lines)
+    const paymentsBy = group(payments)
+    const historyBy = new Map<string, (typeof snap.history)[number][]>()
+    for (const h of snap.history) {
+      if (h.entityId) historyBy.set(h.entityId, [...(historyBy.get(h.entityId) ?? []), h])
+    }
+    return JSON.stringify(
+      {
+        exportedAt: new Date().toISOString(),
+        format: 'fakturky-export/1',
+        businessProfile: profile[0] ?? null,
+        bankAccounts: accounts,
+        contacts,
+        documents: docs.map(({ publicToken: _token, ...d }) => ({
+          ...d,
+          lines: (linesBy.get(d.id) ?? []).sort((a, b) => a.position - b.position),
+          payments: paymentsBy.get(d.id) ?? [],
+          activity: historyBy.get(d.id) ?? [],
+        })),
+        templates,
+        recurringRules: rules,
+        numberSeries: series,
+        numberSeriesCounters: snap.counters,
+      },
+      null,
+      2,
+    )
+  },
+
   async documentsCsv(db: Db, orgId: string) {
     const rows = await db
       .select()

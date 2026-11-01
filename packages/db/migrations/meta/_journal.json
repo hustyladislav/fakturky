@@ -36,6 +36,13 @@
       "when": 1793575428837,
       "tag": "0004_cuddly_martin_li",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793575479587,
+      "tag": "0005_chief_ghost_rider",
+      "breakpoints": true
     }
   ]
 }

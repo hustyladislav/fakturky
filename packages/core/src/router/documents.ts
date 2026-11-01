@@ -210,6 +210,7 @@ export const documentsRouter = {
           context.principal.organizationId,
           context.principal.userId,
           input,
+          context.principal.via === 'assistant' ? 'assistant' : undefined,
         ),
       ),
     ),

@@ -18,13 +18,16 @@
     "@better-auth/api-key": "catalog:",
     "@better-auth/passkey": "catalog:",
     "@fakturky/db": "workspace:*",
+    "@fakturky/domain": "workspace:*",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
     "uuid": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@better-auth/infra": "0.4.25",
+    "@fakturky/domain": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:"

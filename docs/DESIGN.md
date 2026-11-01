@@ -7,11 +7,7 @@ B's product shell (⌘K, shortcuts, density, dark mode) and C's mobile flow. Ref
 
 ## Principles
 
-<<<<<<< HEAD
 1. **Calm and trustworthy.** Warm paper, near-black ink, one green that means _action_. No upsells, ever.
-=======
-1. **Calm and trustworthy.** Warm paper, near-black ink, one green that means *action*. No upsells, ever.
->>>>>>> origin/main
 2. **The document is the product.** The PDF/web invoice is what clients and accountants see. It must be legally
    complete, unambiguous, grayscale-safe and beautiful.
 3. **Fast hands.** Keyboard first on desktop (⌘K, N, /, G F…), thumb first on mobile (primary action full-width
@@ -20,7 +16,6 @@ B's product shell (⌘K, shortcuts, density, dark mode) and C's mobile flow. Ref
 
 ## Tokens (shadcn names, Tailwind v4 `@theme` in `packages/ui/src/styles/globals.css`)
 
-<<<<<<< HEAD
 | Token                        | Light                                             | Dark                                              |
 | ---------------------------- | ------------------------------------------------- | ------------------------------------------------- |
 | background                   | `#F6F2EA`                                         | `#121310`                                         |
@@ -40,27 +35,6 @@ B's product shell (⌘K, shortcuts, density, dark mode) and C's mobile flow. Ref
 | success                      | `#2F6A2E`                                         | `#8FCB8A`                                         |
 | warning                      | `#9A5B0B`                                         | `#E0A84F`                                         |
 | info                         | `#2F5D7C`                                         | `#8FB4D1`                                         |
-=======
-| Token | Light | Dark |
-|---|---|---|
-| background | `#F6F2EA` | `#121310` |
-| foreground | `#1B1A17` | `#EEE9DD` |
-| card | `#FCFAF5` | `#1A1B17` |
-| popover | `#FFFFFF` | `#1F201B` |
-| primary / primary-foreground | `#1F4D3C` / `#F6F2EA` | `#8CC4A4` / `#0F1A14` |
-| secondary, muted | `#EFE9DD` | `#1F201B` |
-| muted-foreground | `#6B665B` | `#9C978A` |
-| accent / accent-foreground | `#E1EBE3` / `#1F4D3C` | `#1D2B24` / `#8CC4A4` |
-| destructive | `#A12F22` | `#E27B6A` |
-| border | `#E2DACB` | `#2B2C26` |
-| input (≥3:1 for controls) | `#9A917D` | `#4A4B42` |
-| ring | primary @ 40 % | primary @ 50 % |
-| chart-1…5 | `#1F4D3C` `#B7791F` `#3F6E8C` `#A12F22` `#8A8472` | `#8CC4A4` `#E0A84F` `#8FB4D1` `#E27B6A` `#9C978A` |
-| sidebar / sidebar-accent | `#EFE9DD` / `#E4DDCD` | `#0E0F0C` / `#1D2B24` |
-| success | `#2F6A2E` | `#8FCB8A` |
-| warning | `#9A5B0B` | `#E0A84F` |
-| info | `#2F5D7C` | `#8FB4D1` |
->>>>>>> origin/main
 
 Soft tints for pills/badges use the semantic color at 10–14 % alpha, so they work in both themes.
 

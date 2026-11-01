@@ -3,6 +3,11 @@ import { BRAND } from '@fakturky/core/brand'
 /** All user-facing copy lives here. Natural Czech, correct diacritics. */
 export const cs = {
   brand: BRAND.name,
+  meta: {
+    title: 'Fakturace zdarma pro živnostníky a firmy',
+    description:
+      'Svobodné fakturační řešení: neomezeně faktur a kontaktů, QR platba, ARES, DPH a ISDOC. Zdarma, s otevřeným kódem.',
+  },
   nav: {
     overview: 'Přehled',
     invoices: 'Faktury',
@@ -21,7 +26,29 @@ export const cs = {
     signOut: 'Odhlásit se',
     support: 'Podpořit projekt',
   },
+  theme: {
+    system: 'Podle systému',
+    light: 'Světlý motiv',
+    dark: 'Tmavý motiv',
+  },
+  status: {
+    draft: 'Koncept',
+    issued: 'Vystavená',
+    overdue: 'Po splatnosti',
+    partial: 'Částečně uhrazená',
+    paid: 'Zaplacená',
+    cancelled: 'Stornovaná',
+  },
   auth: {
+    google: 'Pokračovat přes Google',
+    orDivider: 'nebo',
+    magicLinkAction: 'Poslat přihlašovací odkaz e-mailem',
+    magicLinkSent: 'Odkaz jsme poslali na váš e-mail. Platí 5 minut.',
+    magicLinkUnavailable: 'Odkaz e-mailem zatím není dostupný, použijte Google nebo heslo.',
+    magicLinkRestricted:
+      'Přihlašovací odkaz e-mailem zatím umíme poslat jen omezeně — použijte prosím Google nebo heslo.',
+    magicLinkFailed: 'Odkaz se nepodařilo odeslat. Zkuste to prosím znovu.',
+    magicLinkNeedsEmail: 'Nejdřív zadejte e-mail.',
     signInTitle: 'Přihlášení',
     signInDescription: 'Vítejte zpět. Přihlaste se ke svému účtu.',
     signUpTitle: 'Vytvořit účet',
@@ -62,7 +89,58 @@ export const cs = {
   },
   settings: {
     title: 'Nastavení',
-    soon: 'Nastavení firmy a bankovních účtů je v přípravě.',
+    profileTitle: 'Firemní údaje',
+    profileSaved: 'Údaje byly uloženy.',
+  },
+  onboarding: {
+    title: 'Vítejte! Pojďme nastavit vaše údaje',
+    description:
+      'Tyto údaje se objeví na vašich fakturách jako dodavatel. Stačí zadat IČO a zbytek doplníme z registru ARES.',
+    submit: 'Pokračovat',
+    skip: 'Vyplním později',
+  },
+  profile: {
+    ico: 'IČO',
+    icoLookup: 'Načíst z ARES',
+    icoFound: 'Údaje byly načteny z ARES.',
+    icoNotFound: 'IČO se nepodařilo najít v ARES. Vyplňte údaje ručně.',
+    legalName: 'Obchodní jméno / jméno a příjmení',
+    dic: 'DIČ',
+    street: 'Ulice a číslo',
+    city: 'Město',
+    zip: 'PSČ',
+    vatStatus: 'Plátcovství DPH',
+    vatNonPayer: 'Neplátce DPH',
+    vatPayer: 'Plátce DPH',
+    vatIdentified: 'Identifikovaná osoba',
+    registryNote: 'Zápis v rejstříku',
+    registryNoteHint:
+      'Např. „Fyzická osoba zapsaná v živnostenském rejstříku“ nebo spisová značka.',
+    email: 'E-mail',
+    phone: 'Telefon',
+  },
+  bankAccounts: {
+    title: 'Bankovní účty',
+    description:
+      'Na tyto účty vám budou chodit platby. Stačí zadat české číslo účtu nebo IBAN, zbytek doplníme.',
+    new: 'Přidat účet',
+    empty:
+      'Zatím nemáte žádný bankovní účet. Přidejte ho, ať jej mohou odběratelé najít na faktuře.',
+    label: 'Název účtu',
+    labelPlaceholder: 'Například Provozní účet',
+    account: 'Číslo účtu nebo IBAN',
+    accountPlaceholder: '123456789/0800 nebo LT12 1000 0111 0100 1000',
+    currency: 'Měna',
+    bic: 'BIC / SWIFT',
+    bicOptional: 'Nepovinné',
+    showQr: 'Zobrazit QR platbu na faktuře',
+    default: 'Výchozí',
+    makeDefault: 'Nastavit jako výchozí',
+    delete: 'Smazat',
+    created: 'Účet byl přidán.',
+    deleted: 'Účet byl smazán.',
+    updated: 'Výchozí účet byl změněn.',
+    invalid: 'Číslo účtu nebo IBAN není platné. Zkontrolujte ho prosím.',
   },
 } as const
 

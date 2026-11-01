@@ -43,6 +43,8 @@ export const businessProfile = pgTable('business_profile', {
   defaultPaymentMethod: text('default_payment_method').notNull().default('bank_transfer'),
   defaultFooter: text('default_footer'),
   defaultNote: text('default_note'),
+  /** Set when the user finishes (or skips) onboarding; null sends them to the onboarding screen. */
+  onboardedAt: timestamp('onboarded_at', { withTimezone: true }),
   ...timestamps(),
 })
 

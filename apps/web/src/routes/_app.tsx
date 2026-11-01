@@ -1,5 +1,6 @@
 import { BRAND } from '@fakturky/core/brand'
 import { Button } from '@fakturky/ui/components/button'
+import { Logo } from '@fakturky/ui/components/logo'
 import {
   Sidebar,
   SidebarContent,
@@ -13,17 +14,19 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@fakturky/ui/components/sidebar'
+import { ThemeToggle } from '@fakturky/ui/components/theme'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/react-router'
 import { FileText, Heart, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
-import { getSessionFn } from '@/server/session'
+import { getOnboardedFn, getSessionFn } from '@/server/session'
 
 export const Route = createFileRoute('/_app')({
   beforeLoad: async () => {
     const session = await getSessionFn()
     if (!session) throw redirect({ to: '/prihlaseni' })
+    if (!(await getOnboardedFn())) throw redirect({ to: '/onboarding' })
     return { user: session.user }
   },
   component: AppShell,
@@ -45,7 +48,7 @@ function AppShell() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <span className="px-2 py-1 text-lg font-semibold">{cs.brand}</span>
+          <Logo name={BRAND.name} className="px-2 py-1" markClassName="size-7" />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
@@ -94,6 +97,9 @@ function AppShell() {
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4">
           <SidebarTrigger />
+          <div className="ml-auto">
+            <ThemeToggle labels={cs.theme} />
+          </div>
         </header>
         <div className="p-6">
           <Outlet />

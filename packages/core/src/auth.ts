@@ -1,4 +1,5 @@
 import { apiKey } from '@better-auth/api-key'
+import { dash } from '@better-auth/infra'
 import { passkey } from '@better-auth/passkey'
 import { type Db, newId, schema } from '@fakturky/db'
 import { betterAuth } from 'better-auth'
@@ -77,6 +78,7 @@ export function createAuth(options: CreateAuthOptions) {
       organization(),
       passkey({ rpID: url.hostname, rpName: BRAND.name, origin: url.origin }),
       apiKey({ references: 'organization', defaultPrefix: BRAND.apiKeyPrefix }),
+      dash(),
       ...((options.extraPlugins ?? []) as never[]),
     ],
   })

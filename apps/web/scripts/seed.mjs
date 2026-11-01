@@ -8,6 +8,15 @@ if (!/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(base)) {
   throw new Error(`Refusing to seed non-local target: ${base}`)
 }
 
+const kind = await fetch(`${base}/api/dev/db-kind`)
+  .then((r) => (r.ok ? r.json() : null))
+  .catch(() => null)
+if (kind?.kind !== 'pglite') {
+  throw new Error(
+    `The server at ${base} is not running on local PGlite (got ${JSON.stringify(kind)}). Start it WITHOUT DATABASE_URL.`,
+  )
+}
+
 const PASSWORD = 'demo-heslo-123' // local test credential, documented in .env.example
 const day = 86_400_000
 const iso = (offset) => new Date(Date.now() + offset * day).toISOString().slice(0, 10)
@@ -47,14 +56,22 @@ const contacts = [
   ['Mateřská škola Sluníčko', '70890013', null, 'Hradec Králové', 'Školní 2', '500 02'],
 ]
 
+// [description, unit, price CZK, price EUR] — fixed strings, no float math on money.
 const items = [
-  ['Webový vývoj', 'hod', '1500'],
-  ['Konzultace', 'hod', '1200'],
-  ['Měsíční správa webu', 'ks', '3500'],
-  ['Grafický návrh loga', 'ks', '9000'],
-  ['Licence softwaru', 'ks', '4800'],
-  ['Cestovné', 'km', '9.5'],
+  ['Webový vývoj', 'hod', '1500', '60'],
+  ['Konzultace', 'hod', '1200', '48'],
+  ['Měsíční správa webu', 'ks', '3500', '140'],
+  ['Grafický návrh loga', 'ks', '9000', '360'],
+  ['Licence softwaru', 'ks', '4800', '192'],
+  ['Cestovné', 'km', '9.5', '0.4'],
 ]
+
+/** One third of a decimal string, rounded down to cents (BigInt, scale 4 → 2). */
+function thirdOf(total) {
+  const [int, frac = ''] = total.split('.')
+  const cents = BigInt(int + frac.padEnd(4, '0').slice(0, 4)) / 3n / 100n
+  return `${cents / 100n}.${String(cents % 100n).padStart(2, '0')}`
+}
 
 async function seedUser({ email, name, payer, invoices, euro }) {
   const cookie = await signUp(email, name)
@@ -62,7 +79,14 @@ async function seedUser({ email, name, payer, invoices, euro }) {
     new RPCLink({ url: `${base}/api/rpc`, headers: { cookie, origin: base } }),
   )
 
-  if ((await api.contacts.list({})).length > 0) return console.log(`${email}: already seeded`)
+  const existing = (await api.contacts.list({})).length
+  if (existing > 0) {
+    const docs = (await api.documents.list({ limit: 200 })).length
+    if (docs >= invoices) return console.log(`${email}: already seeded`)
+    throw new Error(
+      `${email} is only partially seeded. Stop the dev server, delete apps/web/.data and run again.`,
+    )
+  }
 
   await api.businessProfile.update({
     legalName: payer ? 'Webová dílna Dvořák s.r.o.' : name,
@@ -106,12 +130,12 @@ async function seedUser({ email, name, payer, invoices, euro }) {
     const age = 100 - Math.round((i / invoices) * 95) // oldest first
     const issueDate = iso(-age)
     const lines = [0, 1, 2].slice(0, 1 + (i % 3)).map((k) => {
-      const [description, unit, price] = items[(i + k) % items.length]
+      const [description, unit, czk, eur] = items[(i + k) % items.length]
       return {
         description,
         unit,
         quantity: String(1 + ((i + k) % 5)),
-        unitPrice: foreign ? String(Math.round(Number(price) / 25)) : price,
+        unitPrice: foreign ? eur : czk,
         vatRate: payer ? '21' : '0',
       }
     })

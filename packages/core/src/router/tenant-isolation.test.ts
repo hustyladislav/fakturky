@@ -35,6 +35,7 @@ const services = { renderPdf: async () => new Uint8Array([1]) }
 const line = { description: SECRET, quantity: '1', unitPrice: '100', vatRate: '21' }
 
 const cases: Record<string, Case> = {
+  'account.whoami': { kind: 'scoped', run: (b) => b.account.whoami({}) },
   'bankAccounts.list': { kind: 'scoped', run: (b) => b.bankAccounts.list({}) },
   'bankAccounts.create': {
     kind: 'scoped',

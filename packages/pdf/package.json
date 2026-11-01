@@ -1,0 +1,28 @@
+{
+  "name": "@fakturky/pdf",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Server-side invoice PDF rendering (react-pdf) and the shared InvoiceDocument component.",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fakturky/domain": "workspace:*",
+    "@react-pdf/renderer": "4.9.0",
+    "react": "19.3.1"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "1.1.0",
+    "@types/node": "catalog:",
+    "@types/react": "19.3.0",
+    "typescript": "catalog:",
+    "unpdf": "2.1.0",
+    "vitest": "catalog:"
+  }
+}

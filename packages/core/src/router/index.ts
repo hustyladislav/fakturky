@@ -4,6 +4,7 @@ import { businessProfileRouter } from './business-profile'
 import { contactsRouter } from './contacts'
 import { documentsRouter } from './documents'
 import { lookupRouter } from './lookup'
+import { publicRouter } from './public'
 
 export const router = {
   bankAccounts: bankAccountsRouter,
@@ -11,6 +12,7 @@ export const router = {
   contacts: contactsRouter,
   documents: documentsRouter,
   lookup: lookupRouter,
+  public: publicRouter,
 }
 
 export type Router = typeof router

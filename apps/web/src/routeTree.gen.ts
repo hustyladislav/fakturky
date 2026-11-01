@@ -17,12 +17,14 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
+import { Route as FTokenRouteImport } from './routes/f.$token'
 import { Route as AppFakturyIndexRouteImport } from './routes/_app/faktury.index'
 import { Route as AppFakturyNovaRouteImport } from './routes/_app/faktury.nova'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
+import { Route as FTokenIsdocRouteImport } from './routes/f.$token.isdoc'
 import { Route as AppFakturyIdIndexRouteImport } from './routes/_app/faktury.$id.index'
 import { Route as AppFakturyIdUpravitRouteImport } from './routes/_app/faktury.$id.upravit'
 
@@ -65,6 +67,11 @@ const AppNastaveniRoute = AppNastaveniRouteImport.update({
   path: '/nastaveni',
   getParentRoute: () => AppRoute,
 } as any)
+const FTokenRoute = FTokenRouteImport.update({
+  id: '/f/$token',
+  path: '/f/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppFakturyIndexRoute = AppFakturyIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -95,6 +102,11 @@ const ApiV1OpenapiDotjsonRoute = ApiV1OpenapiDotjsonRouteImport.update({
   path: '/api/v1/openapi.json',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FTokenIsdocRoute = FTokenIsdocRouteImport.update({
+  id: '/isdoc',
+  path: '/isdoc',
+  getParentRoute: () => FTokenRoute,
+} as any)
 const AppFakturyIdIndexRoute = AppFakturyIdIndexRouteImport.update({
   id: '/$id/',
   path: '/$id/',
@@ -114,11 +126,13 @@ export interface FileRoutesByFullPath {
   '/faktury': typeof AppFakturyRouteWithChildren
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
+  '/f/$token': typeof FTokenRouteWithChildren
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/f/$token/isdoc': typeof FTokenIsdocRoute
   '/faktury/': typeof AppFakturyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/faktury/$id/': typeof AppFakturyIdIndexRoute
@@ -129,12 +143,14 @@ export interface FileRoutesByTo {
   '/registrace': typeof RegistraceRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
+  '/f/$token': typeof FTokenRouteWithChildren
   '/': typeof AppIndexRoute
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/f/$token/isdoc': typeof FTokenIsdocRoute
   '/faktury': typeof AppFakturyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/faktury/$id': typeof AppFakturyIdIndexRoute
@@ -148,12 +164,14 @@ export interface FileRoutesById {
   '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/kontakty': typeof AppKontaktyRoute
   '/_app/nastaveni': typeof AppNastaveniRoute
+  '/f/$token': typeof FTokenRouteWithChildren
   '/_app/': typeof AppIndexRoute
   '/_app/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/f/$token/isdoc': typeof FTokenIsdocRoute
   '/_app/faktury/': typeof AppFakturyIndexRoute
   '/_app/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/_app/faktury/$id/': typeof AppFakturyIdIndexRoute
@@ -168,11 +186,13 @@ export interface FileRouteTypes {
     | '/faktury'
     | '/kontakty'
     | '/nastaveni'
+    | '/f/$token'
     | '/faktury/nova'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
+    | '/f/$token/isdoc'
     | '/faktury/'
     | '/faktury/$id/upravit'
     | '/faktury/$id/'
@@ -183,12 +203,14 @@ export interface FileRouteTypes {
     | '/registrace'
     | '/kontakty'
     | '/nastaveni'
+    | '/f/$token'
     | '/'
     | '/faktury/nova'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
+    | '/f/$token/isdoc'
     | '/faktury'
     | '/faktury/$id/upravit'
     | '/faktury/$id'
@@ -201,12 +223,14 @@ export interface FileRouteTypes {
     | '/_app/faktury'
     | '/_app/kontakty'
     | '/_app/nastaveni'
+    | '/f/$token'
     | '/_app/'
     | '/_app/faktury/nova'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
+    | '/f/$token/isdoc'
     | '/_app/faktury/'
     | '/_app/faktury/$id/upravit'
     | '/_app/faktury/$id/'
@@ -217,6 +241,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   PrihlaseniRoute: typeof PrihlaseniRoute
   RegistraceRoute: typeof RegistraceRoute
+  FTokenRoute: typeof FTokenRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
@@ -281,6 +306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNastaveniRouteImport
       parentRoute: typeof AppRoute
     }
+    '/f/$token': {
+      id: '/f/$token'
+      path: '/f/$token'
+      fullPath: '/f/$token'
+      preLoaderRoute: typeof FTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/faktury/': {
       id: '/_app/faktury/'
       path: '/'
@@ -322,6 +354,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/openapi.json'
       preLoaderRoute: typeof ApiV1OpenapiDotjsonRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/f/$token/isdoc': {
+      id: '/f/$token/isdoc'
+      path: '/isdoc'
+      fullPath: '/f/$token/isdoc'
+      preLoaderRoute: typeof FTokenIsdocRouteImport
+      parentRoute: typeof FTokenRoute
     }
     '/_app/faktury/$id/': {
       id: '/_app/faktury/$id/'
@@ -374,11 +413,23 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface FTokenRouteChildren {
+  FTokenIsdocRoute: typeof FTokenIsdocRoute
+}
+
+const FTokenRouteChildren: FTokenRouteChildren = {
+  FTokenIsdocRoute: FTokenIsdocRoute,
+}
+
+const FTokenRouteWithChildren =
+  FTokenRoute._addFileChildren(FTokenRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
   PrihlaseniRoute: PrihlaseniRoute,
   RegistraceRoute: RegistraceRoute,
+  FTokenRoute: FTokenRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,

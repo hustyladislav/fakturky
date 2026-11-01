@@ -1,0 +1,134 @@
+import { Decimal, parseDecimal, toFixed } from '@fakturky/domain'
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
+import { toDocumentForExport } from '../export'
+import { publicProcedure } from '../orpc'
+import { publicDocumentsRepo } from '../repositories/public-documents'
+
+const party = z.object({
+  name: z.string(),
+  ico: z.string().nullable(),
+  dic: z.string().nullable(),
+  street: z.string(),
+  city: z.string(),
+  zip: z.string(),
+  registerNote: z.string().nullable(),
+})
+
+/** Customer-facing view of an issued invoice. No private notes, no internal ids, no customer contact details. */
+export const publicRouter = {
+  invoice: publicProcedure
+    .input(z.object({ token: z.string().min(20).max(200) }))
+    .output(
+      z.object({
+        number: z.string(),
+        type: z.string(),
+        status: z.enum(['issued', 'paid', 'cancelled']),
+        overdue: z.boolean(),
+        issueDate: z.string(),
+        dueDate: z.string(),
+        taxableDate: z.string().nullable(),
+        currency: z.string(),
+        exchangeRate: z.string().nullable(),
+        vatPayer: z.boolean(),
+        supplier: party.extend({ email: z.string().nullable(), phone: z.string().nullable() }),
+        customer: party,
+        bank: z
+          .object({
+            iban: z.string(),
+            bic: z.string().nullable(),
+            account: z.string().nullable(),
+          })
+          .nullable(),
+        variableSymbol: z.string().nullable(),
+        lines: z.array(
+          z.object({
+            description: z.string(),
+            quantity: z.string(),
+            unit: z.string().nullable(),
+            unitPrice: z.string(),
+            vatRate: z.string(),
+            total: z.string(),
+          }),
+        ),
+        recap: z.array(
+          z.object({ vatRate: z.string(), base: z.string(), vat: z.string(), total: z.string() }),
+        ),
+        subtotal: z.string(),
+        vatTotal: z.string(),
+        total: z.string(),
+        remaining: z.string(),
+        introText: z.string().nullable(),
+        footerText: z.string().nullable(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      const found = await publicDocumentsRepo.getByToken(context.db, input.token)
+      if (!found) throw new ORPCError('NOT_FOUND', { message: 'Document not found' })
+      const { doc, lines } = found
+      await publicDocumentsRepo.markViewed(context.db, doc)
+      const x = toDocumentForExport(doc, lines)
+      const paid = (await publicDocumentsRepo.paidAmount(context.db, doc)).reduce(
+        (s, a) => s.plus(parseDecimal(a)),
+        new Decimal(0),
+      )
+      const left = parseDecimal(doc.total).minus(paid)
+      const today = new Date().toISOString().slice(0, 10)
+      const bank = x.payment?.bankAccount
+      const p = (s: typeof x.supplier) => ({
+        name: s.name,
+        ico: s.ico ?? null,
+        dic: s.dic ?? null,
+        street: s.street,
+        city: s.city,
+        zip: s.zip,
+        registerNote: s.registerNote ?? null,
+      })
+      return {
+        number: x.number,
+        type: x.type,
+        status: doc.status as 'issued' | 'paid' | 'cancelled',
+        overdue: doc.status === 'issued' && !!doc.dueDate && doc.dueDate < today,
+        issueDate: x.issueDate,
+        dueDate: doc.dueDate ?? x.issueDate,
+        taxableDate: x.taxableDate ?? null,
+        currency: doc.currency,
+        exchangeRate: doc.currency === 'CZK' ? null : doc.exchangeRate,
+        vatPayer: x.vatPayer,
+        supplier: {
+          ...p(x.supplier),
+          email: x.supplier.email ?? null,
+          phone: x.supplier.phone ?? null,
+        },
+        customer: p(x.customer),
+        bank: bank
+          ? {
+              iban: bank.iban,
+              bic: bank.bic ?? null,
+              account: bank.accountNumber ? `${bank.accountNumber}/${bank.bankCode}` : null,
+            }
+          : null,
+        variableSymbol: doc.variableSymbol,
+        lines: lines.map((l) => ({
+          description: l.description,
+          quantity: l.quantity,
+          unit: l.unit,
+          unitPrice: l.unitPrice,
+          vatRate: l.vatRate,
+          total: l.lineTotal,
+        })),
+        recap: x.totals.recap.map((r) => ({
+          vatRate: r.vatRate,
+          base: r.base,
+          vat: r.vat,
+          total: r.total,
+        })),
+        subtotal: doc.subtotal,
+        vatTotal: doc.vatTotal,
+        total: doc.total,
+        remaining: toFixed(left.isNegative() ? new Decimal(0) : left, 2),
+        introText: doc.introText,
+        footerText: doc.footerText,
+      }
+    }),
+}

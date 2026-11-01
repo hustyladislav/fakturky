@@ -708,6 +708,26 @@ export const documentsRepo = {
     return this.get(db, orgId, id)
   },
 
+  /**
+   * Replaces the public link token of an issued document: the previous link stops working immediately
+   * (revocation) and the returned document carries the new token to share.
+   */
+  async rotatePublicToken(db: Db, orgId: string, actorId: string, id: string) {
+    await db.transaction(async (tx) => {
+      const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
+      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (doc.status === 'draft') {
+        throw new DocumentError('CONFLICT', 'Drafts have no public link; issue the document first')
+      }
+      await tx
+        .update(document)
+        .set({ publicToken: randomBytes(24).toString('base64url') })
+        .where(scoped(orgId, id))
+      await logActivity(tx, orgId, actorId, id, 'link_rotated')
+    })
+    return this.get(db, orgId, id)
+  },
+
   /** Drafts only: issued numbers are never reused, so issued documents are cancelled instead. */
   async deleteDraft(db: Db, orgId: string, actorId: string, id: string) {
     return db.transaction(async (tx) => {

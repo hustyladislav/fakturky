@@ -1,4 +1,4 @@
-import { IntegrationError, lookupByIco } from '@fakturky/domain'
+import { IntegrationError, lookupByIco, normalizeIco } from '@fakturky/domain'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
@@ -8,6 +8,7 @@ import {
   businessProfilePatchSchema,
   businessProfileSchema,
 } from '../schemas/business-profile'
+import { cached, enforceRateLimit } from '../upstream-guard'
 
 export const businessProfileRouter = {
   get: procedure({
@@ -62,9 +63,11 @@ export const businessProfileRouter = {
   })
     .input(z.object({ ico: z.string().trim().min(1).max(20) }))
     .output(aresSubjectSchema)
-    .handler(async ({ input }) => {
+    .handler(async ({ context, input }) => {
+      enforceRateLimit(`ares:${context.principal.organizationId}`, 30)
       try {
-        const subject = await lookupByIco(input.ico)
+        const ico = normalizeIco(input.ico)
+        const subject = await cached(`ares:${ico}`, 60 * 60_000, () => lookupByIco(ico))
         if (!subject) throw new ORPCError('NOT_FOUND', { message: 'IČO nebylo v ARES nalezeno' })
         return subject
       } catch (error) {

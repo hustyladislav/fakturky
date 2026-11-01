@@ -121,6 +121,10 @@ const cases: Record<string, Case> = {
     run: (b, a) => b.documents.markUnpaid({ id: a.issuedId }),
   },
   'documents.cancel': { kind: 'foreign', run: (b, a) => b.documents.cancel({ id: a.issuedId }) },
+  'documents.rotateLink': {
+    kind: 'foreign',
+    run: (b, a) => b.documents.rotateLink({ id: a.issuedId }),
+  },
   'documents.delete': { kind: 'foreign', run: (b, a) => b.documents.delete({ id: a.draftId }) },
 
   'lookup.ares': { kind: 'external' },

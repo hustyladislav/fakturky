@@ -371,6 +371,33 @@ export const documentsRouter = {
       ),
     ),
 
+  rotateLink: procedure({
+    mcp: {
+      name: 'rotate_document_public_link',
+      title: 'Revoke the public link of an issued document and create a new one',
+      destructive: true,
+    },
+    openapi: {
+      method: 'POST',
+      path: '/documents/{id}/rotate-link',
+      summary:
+        'Invalidate the current public link (/f/:token) and issue a new one. Use when a link leaked or was sent to the wrong person.',
+      tags: tag,
+    },
+  })
+    .input(idInput)
+    .output(documentDetailSchema)
+    .handler(({ context, input }) =>
+      guard(() =>
+        documentsRepo.rotatePublicToken(
+          context.db,
+          context.principal.organizationId,
+          context.principal.userId,
+          input.id,
+        ),
+      ),
+    ),
+
   delete: procedure({
     mcp: { name: 'delete_document_draft', title: 'Delete a draft', destructive: true },
     openapi: {

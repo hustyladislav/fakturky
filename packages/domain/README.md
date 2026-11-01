@@ -11,5 +11,6 @@ Pure Czech invoicing logic (no DB, no framework). TypeScript source is exported 
 | `qr/spayd`, `qr/render` | QR Platba (+QR Faktura), SVG |
 | `dates` | Europe/Prague helpers |
 | `integrations/ares` | ARES lookup by IČO (injectable `fetch`) |
+| `integrations/cnb` | ČNB daily rates, `getRate` with weekend/holiday fallback |
 
-Planned follow-ups: ČNB rates, VIES, EPC QR, ISDOC, DIČ validation.
+Planned follow-ups: VIES, EPC QR, ISDOC, DIČ validation.

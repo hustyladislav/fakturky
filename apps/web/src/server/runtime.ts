@@ -27,7 +27,7 @@ function authSecret(): string {
 export function getRuntime(): Promise<Runtime> {
   runtime ??= (async () => {
     const url = process.env.DATABASE_URL
-    const handle = await createDb({ url, pgliteDir: url ? undefined : '.data/pglite' })
+    const handle = await createDb({ url, pgliteDir: url ? undefined : (process.env.PGLITE_DIR ?? '.data/pglite') })
     if (handle.kind === 'pglite') await migrate(handle)
     const auth = createAuth({
       db: handle.db,

@@ -135,6 +135,7 @@ function ShellInner({
             <Button
               size="lg"
               className="ml-2 hidden md:inline-flex"
+              nativeButton={false}
               render={<Link to={NEW_INVOICE_PATH as never} />}
             >
               <Plus data-icon="inline-start" />

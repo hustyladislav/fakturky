@@ -26,6 +26,7 @@ import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
 import { Route as AppPrehledRouteImport } from './routes/_app/prehled'
 import { Route as AppSablonyRouteImport } from './routes/_app/sablony'
+import { Route as ApiAgentRouteImport } from './routes/api/agent'
 import { Route as DocsApiRouteImport } from './routes/docs.api'
 import { Route as DocsMcpRouteImport } from './routes/docs.mcp'
 import { Route as FTokenRouteImport } from './routes/f.$token'
@@ -34,6 +35,7 @@ import { Route as AppFakturyNovaRouteImport } from './routes/_app/faktury.nova'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 import { Route as ApiCronRecurringRouteImport } from './routes/api/cron.recurring'
 import { Route as ApiCronRemindersRouteImport } from './routes/api/cron.reminders'
+import { Route as ApiDevDbKindRouteImport } from './routes/api/dev.db-kind'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
@@ -127,6 +129,11 @@ const AppSablonyRoute = AppSablonyRouteImport.update({
   path: '/sablony',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiAgentRoute = ApiAgentRouteImport.update({
+  id: '/api/agent',
+  path: '/api/agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DocsApiRoute = DocsApiRouteImport.update({
   id: '/docs/api',
   path: '/docs/api',
@@ -165,6 +172,11 @@ const ApiCronRecurringRoute = ApiCronRecurringRouteImport.update({
 const ApiCronRemindersRoute = ApiCronRemindersRouteImport.update({
   id: '/api/cron/reminders',
   path: '/api/cron/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDevDbKindRoute = ApiDevDbKindRouteImport.update({
+  id: '/api/dev/db-kind',
+  path: '/api/dev/db-kind',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
@@ -225,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/nastaveni': typeof AppNastaveniRoute
   '/prehled': typeof AppPrehledRoute
   '/sablony': typeof AppSablonyRoute
+  '/api/agent': typeof ApiAgentRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
@@ -232,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
+  '/api/dev/db-kind': typeof ApiDevDbKindRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -258,6 +272,7 @@ export interface FileRoutesByTo {
   '/nastaveni': typeof AppNastaveniRoute
   '/prehled': typeof AppPrehledRoute
   '/sablony': typeof AppSablonyRoute
+  '/api/agent': typeof ApiAgentRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
@@ -265,6 +280,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
+  '/api/dev/db-kind': typeof ApiDevDbKindRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -294,6 +310,7 @@ export interface FileRoutesById {
   '/_app/nastaveni': typeof AppNastaveniRoute
   '/_app/prehled': typeof AppPrehledRoute
   '/_app/sablony': typeof AppSablonyRoute
+  '/api/agent': typeof ApiAgentRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
@@ -301,6 +318,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
+  '/api/dev/db-kind': typeof ApiDevDbKindRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -330,6 +348,7 @@ export interface FileRouteTypes {
     | '/nastaveni'
     | '/prehled'
     | '/sablony'
+    | '/api/agent'
     | '/docs/api'
     | '/docs/mcp'
     | '/f/$token'
@@ -337,6 +356,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
+    | '/api/dev/db-kind'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -363,6 +383,7 @@ export interface FileRouteTypes {
     | '/nastaveni'
     | '/prehled'
     | '/sablony'
+    | '/api/agent'
     | '/docs/api'
     | '/docs/mcp'
     | '/f/$token'
@@ -370,6 +391,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
+    | '/api/dev/db-kind'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -398,6 +420,7 @@ export interface FileRouteTypes {
     | '/_app/nastaveni'
     | '/_app/prehled'
     | '/_app/sablony'
+    | '/api/agent'
     | '/docs/api'
     | '/docs/mcp'
     | '/f/$token'
@@ -405,6 +428,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
+    | '/api/dev/db-kind'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -428,12 +452,14 @@ export interface RootRouteChildren {
   SouhlasRoute: typeof SouhlasRoute
   SoukromiRoute: typeof SoukromiRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
+  ApiAgentRoute: typeof ApiAgentRoute
   DocsApiRoute: typeof DocsApiRoute
   DocsMcpRoute: typeof DocsMcpRoute
   FTokenRoute: typeof FTokenRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronRecurringRoute: typeof ApiCronRecurringRoute
   ApiCronRemindersRoute: typeof ApiCronRemindersRoute
+  ApiDevDbKindRoute: typeof ApiDevDbKindRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
@@ -561,6 +587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSablonyRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/agent': {
+      id: '/api/agent'
+      path: '/api/agent'
+      fullPath: '/api/agent'
+      preLoaderRoute: typeof ApiAgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/docs/api': {
       id: '/docs/api'
       path: '/docs/api'
@@ -615,6 +648,13 @@ declare module '@tanstack/react-router' {
       path: '/api/cron/reminders'
       fullPath: '/api/cron/reminders'
       preLoaderRoute: typeof ApiCronRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/dev/db-kind': {
+      id: '/api/dev/db-kind'
+      path: '/api/dev/db-kind'
+      fullPath: '/api/dev/db-kind'
+      preLoaderRoute: typeof ApiDevDbKindRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rpc/$': {
@@ -739,12 +779,14 @@ const rootRouteChildren: RootRouteChildren = {
   SouhlasRoute: SouhlasRoute,
   SoukromiRoute: SoukromiRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
+  ApiAgentRoute: ApiAgentRoute,
   DocsApiRoute: DocsApiRoute,
   DocsMcpRoute: DocsMcpRoute,
   FTokenRoute: FTokenRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronRecurringRoute: ApiCronRecurringRoute,
   ApiCronRemindersRoute: ApiCronRemindersRoute,
+  ApiDevDbKindRoute: ApiDevDbKindRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,

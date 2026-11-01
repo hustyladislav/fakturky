@@ -40,8 +40,15 @@ export type Services = {
   /** HTTP transport for outbound integrations (Fakturoid import); tests inject recorded responses. */
   fetch?: (input: string, init?: RequestInit) => Promise<Response>
   /** Renders an issued document to PDF bytes. */
-  renderPdf?: (doc: IssuedDocument, lines: IssuedLine[]) => Promise<Uint8Array>
+  renderPdf?: (
+    doc: IssuedDocument,
+    lines: IssuedLine[],
+    original?: OriginalDocument | null,
+  ) => Promise<Uint8Array>
 }
+
+/** The corrected document of a credit note. */
+export type OriginalDocument = { number: string; issueDate: string; uuid: string }
 
 export type IssuedDocument = typeof schema.document.$inferSelect
 export type IssuedLine = typeof schema.documentLine.$inferSelect

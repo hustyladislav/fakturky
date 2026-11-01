@@ -6,7 +6,7 @@ const decimal = z
   .transform((v) => String(v).trim().replace(',', '.'))
   .refine((v) => /^-?\d+(\.\d+)?$/.test(v), 'Expected a decimal number')
 
-export const DOCUMENT_TYPES = ['invoice', 'proforma'] as const
+export const DOCUMENT_TYPES = ['invoice', 'proforma', 'credit_note'] as const
 export const documentTypeSchema = z.enum(DOCUMENT_TYPES)
 
 export const lineInputSchema = z.object({

@@ -15,7 +15,7 @@ import {
   toFixed,
   variableSymbolFromNumber,
 } from '@fakturky/domain'
-import { and, asc, desc, eq, ilike, inArray, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm'
 import { MailError, type Services } from '../context'
 import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
 import { bankAccountsRepo } from './bank-accounts'
@@ -39,7 +39,7 @@ const scoped = (orgId: string, id: string) =>
   and(eq(document.organizationId, orgId), eq(document.id, id), isNull(document.deletedAt))
 
 export function deriveStatus(
-  doc: Pick<DocRow, 'status' | 'dueDate'>,
+  doc: Pick<DocRow, 'status' | 'dueDate'> & { type?: string },
   paid: Decimal,
   today = todayPrague(),
 ): DisplayStatus {
@@ -51,7 +51,8 @@ export function deriveStatus(
     case 'cancelled':
       return 'cancelled'
     default:
-      if (doc.dueDate && doc.dueDate < today) return 'overdue'
+      // A credit note is a correction, never a receivable: it cannot be overdue.
+      if (doc.type !== 'credit_note' && doc.dueDate && doc.dueDate < today) return 'overdue'
       return paid.gt(0) ? 'partially_paid' : 'issued'
   }
 }
@@ -78,8 +79,34 @@ async function loadProfile(db: Db | Tx, orgId: string) {
 }
 
 /** VAT applies only to tax documents issued by a VAT payer; proformas never carry VAT. */
+const SERIES_NAMES: Record<string, string> = {
+  invoice: 'Faktury',
+  proforma: 'Zálohové faktury',
+  credit_note: 'Opravné doklady',
+}
+
 const vatApplies = (profile: { vatStatus: string } | null, type: string) =>
-  profile?.vatStatus === 'payer' && type === 'invoice'
+  profile?.vatStatus === 'payer' && (type === 'invoice' || type === 'credit_note')
+
+/**
+ * Whether VAT is computed. A credit note follows the VAT treatment of the invoice it corrects (the
+ * supplier's status may have changed since), everything else follows the current profile.
+ */
+async function vatOn(
+  db: Db | Tx,
+  orgId: string,
+  profile: { vatStatus: string } | null,
+  type: string,
+  relatedId: string | null | undefined,
+) {
+  if (type !== 'credit_note') return vatApplies(profile, type)
+  if (!relatedId) return false
+  const [o] = await db
+    .select({ vatMode: document.vatMode })
+    .from(document)
+    .where(and(eq(document.organizationId, orgId), eq(document.id, relatedId)))
+  return !!o && o.vatMode !== 'none'
+}
 
 function totalsFor(
   lines: DraftInput['lines'],
@@ -164,6 +191,16 @@ function decorate(doc: DocRow, paid: Decimal, customerName: string | null) {
   }
 }
 
+/** The corrected document of a credit note (same organization), or null. */
+export async function loadOriginal(db: Db | Tx, orgId: string, doc: DocRow) {
+  if (doc.type !== 'credit_note' || !doc.relatedDocumentId) return null
+  const [o] = await db
+    .select({ id: document.id, number: document.number, issueDate: document.issueDate })
+    .from(document)
+    .where(and(eq(document.organizationId, orgId), eq(document.id, doc.relatedDocumentId)))
+  return o?.number && o.issueDate ? { number: o.number, issueDate: o.issueDate, uuid: o.id } : null
+}
+
 export const documentsRepo = {
   /** Issued (numbered) documents only; drafts have no legal content to export. */
   async forExport(db: Db, orgId: string, id: string) {
@@ -174,7 +211,7 @@ export const documentsRepo = {
       .from(documentLine)
       .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, id)))
       .orderBy(asc(documentLine.position))
-    return { doc, lines }
+    return { doc, lines, original: await loadOriginal(db, orgId, doc) }
   },
 
   async defaults(db: Db, orgId: string) {
@@ -205,8 +242,12 @@ export const documentsRepo = {
     const statusWhere = {
       all: undefined,
       draft: eq(document.status, 'draft'),
-      unpaid: eq(document.status, 'issued'),
-      overdue: and(eq(document.status, 'issued'), lt(document.dueDate, today)),
+      unpaid: and(eq(document.status, 'issued'), ne(document.type, 'credit_note')),
+      overdue: and(
+        eq(document.status, 'issued'),
+        ne(document.type, 'credit_note'),
+        lt(document.dueDate, today),
+      ),
       paid: eq(document.status, 'paid'),
       cancelled: eq(document.status, 'cancelled'),
     }[opts.filter]
@@ -281,7 +322,10 @@ export const documentsRepo = {
     const paid = payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
     const profile = doc.status === 'draft' ? await loadProfile(db, orgId) : null
     const totals = totalsFor(lines.map((l) => ({ ...l, unit: l.unit })) as DraftInput['lines'], {
-      vatPayer: doc.status === 'draft' ? profile?.vatStatus === 'payer' : doc.vatMode !== 'none',
+      vatPayer:
+        doc.status === 'draft'
+          ? await vatOn(db, orgId, profile, doc.type, doc.relatedDocumentId)
+          : doc.vatMode !== 'none',
       currency: doc.currency,
       exchangeRate: doc.exchangeRate,
     })
@@ -299,7 +343,20 @@ export const documentsRepo = {
     }
   },
 
-  async createDraft(db: Db, orgId: string, actorId: string, input: DraftInput, via?: 'assistant') {
+  async createDraft(
+    db: Db,
+    orgId: string,
+    actorId: string,
+    input: DraftInput,
+    opts: { relatedDocumentId?: string } = {},
+    via?: 'assistant',
+  ) {
+    if (input.type === 'credit_note' && !opts.relatedDocumentId) {
+      throw new DocumentError(
+        'BAD_REQUEST',
+        'Credit notes are created from an invoice (createCreditNote)',
+      )
+    }
     const id = await db.transaction(async (tx) => {
       const profile = await loadProfile(tx, orgId)
       const issueDate = input.issueDate ?? todayPrague()
@@ -313,7 +370,7 @@ export const documentsRepo = {
         dueDays = c.defaultDueDays ?? dueDays
       }
       const currency = input.currency ?? profile?.defaultCurrency ?? 'CZK'
-      const vatPayer = vatApplies(profile, input.type)
+      const vatPayer = await vatOn(tx, orgId, profile, input.type, opts.relatedDocumentId)
       const totals = totalsFor(input.lines, {
         vatPayer,
         currency,
@@ -329,6 +386,7 @@ export const documentsRepo = {
         .values({
           organizationId: orgId,
           type: input.type,
+          relatedDocumentId: opts.relatedDocumentId ?? null,
           contactId: input.contactId ?? null,
           bankAccountId: bank?.id ?? null,
           issueDate,
@@ -442,9 +500,15 @@ export const documentsRepo = {
         : await bankAccountsRepo.defaultFor(tx, orgId, doc.currency)
 
       // Totals are recomputed under the VAT status being snapshotted (it may have changed since the draft).
-      const vatOn = vatApplies(profile, doc.type)
+      if (doc.type === 'credit_note' && (!doc.relatedDocumentId || !doc.introText?.trim())) {
+        throw new DocumentError(
+          'PRECONDITION_FAILED',
+          'A credit note needs the corrected invoice and a reason',
+        )
+      }
+      const vatOnNow = await vatOn(tx, orgId, profile, doc.type, doc.relatedDocumentId)
       const totals = totalsFor(lines as unknown as DraftInput['lines'], {
-        vatPayer: vatOn,
+        vatPayer: vatOnNow,
         currency: doc.currency,
         exchangeRate: doc.exchangeRate,
       })
@@ -471,7 +535,7 @@ export const documentsRepo = {
           .values({
             organizationId: orgId,
             documentType: doc.type,
-            name: doc.type === 'invoice' ? 'Faktury' : doc.type,
+            name: SERIES_NAMES[doc.type] ?? doc.type,
             pattern,
             reset: 'yearly',
           })
@@ -496,7 +560,7 @@ export const documentsRepo = {
         .update(document)
         .set({
           status: 'issued',
-          vatMode: vatOn ? 'standard' : 'none',
+          vatMode: vatOnNow ? 'standard' : 'none',
           ...totalColumns(totals, doc.currency),
           number,
           seriesId: series.id,
@@ -538,6 +602,13 @@ export const documentsRepo = {
             : null,
         })
         .where(scoped(orgId, id))
+      // A final invoice fully covered by the advance is settled on issue.
+      if (doc.type === 'invoice' && doc.relatedDocumentId && parseDecimal(totals.total).lte(0)) {
+        await tx
+          .update(document)
+          .set({ status: 'paid', paidAt: new Date() })
+          .where(scoped(orgId, id))
+      }
       await logActivity(tx, orgId, actorId, id, 'issued', { number })
     })
     return this.get(db, orgId, id)
@@ -567,6 +638,9 @@ export const documentsRepo = {
     if (doc.status === 'cancelled' || (opts.reminder && doc.status !== 'issued')) {
       throw new DocumentError('CONFLICT', 'This document cannot be sent')
     }
+    if (doc.type === 'credit_note' && opts.reminder) {
+      throw new DocumentError('CONFLICT', 'Reminders do not apply to credit notes')
+    }
     if (opts.reminder && (!doc.dueDate || doc.dueDate >= todayPrague())) {
       throw new DocumentError('CONFLICT', 'Reminders can only be sent for overdue invoices')
     }
@@ -581,7 +655,7 @@ export const documentsRepo = {
     ) {
       throw new MailError('EMAIL_NOT_CONFIGURED')
     }
-    const bytes = await services.renderPdf(doc, lines)
+    const bytes = await services.renderPdf(doc, lines, found.original)
     const supplier = doc.supplierSnapshot ?? {}
     await services.sendInvoice({
       to,
@@ -610,8 +684,11 @@ export const documentsRepo = {
   async duplicate(db: Db, orgId: string, actorId: string, id: string) {
     const src = await this.get(db, orgId, id)
     if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (src.type === 'credit_note') {
+      throw new DocumentError('CONFLICT', 'Credit notes cannot be duplicated')
+    }
     return this.createDraft(db, orgId, actorId, {
-      type: src.type as 'invoice' | 'proforma',
+      type: src.type as 'invoice' | 'proforma' | 'credit_note',
       contactId: src.contactId,
       bankAccountId: src.bankAccountId,
       currency: src.currency,
@@ -632,6 +709,128 @@ export const documentsRepo = {
         discountPercent: l.discountPercent,
       })),
     })
+  },
+
+  /**
+   * Final invoice for a fully paid proforma: copies its lines and deducts the advance as a negative line.
+   * VAT payers need a tax receipt for the advance first, which is not supported yet, so this is refused.
+   */
+  async createFinalInvoice(db: Db, orgId: string, actorId: string, id: string) {
+    const src = await this.get(db, orgId, id)
+    if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (src.type !== 'proforma' || src.status !== 'paid') {
+      throw new DocumentError('CONFLICT', 'A final invoice needs a fully paid proforma')
+    }
+    const profile = await loadProfile(db, orgId)
+    if (vatApplies(profile, 'invoice')) {
+      throw new DocumentError(
+        'CONFLICT',
+        'VAT payers need a tax receipt for the advance first; create the final invoice manually',
+      )
+    }
+    const advance = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
+    const draft = await db.transaction(async (txn) => {
+      const tx = txn as unknown as Db
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`final:${id}`}))`)
+      const [existing] = await tx
+        .select({ id: document.id })
+        .from(document)
+        .where(
+          and(
+            eq(document.organizationId, orgId),
+            eq(document.relatedDocumentId, id),
+            eq(document.type, 'invoice'),
+            isNull(document.deletedAt),
+            ne(document.status, 'cancelled'),
+          ),
+        )
+      if (existing) {
+        throw new DocumentError('CONFLICT', 'A final invoice already exists for this proforma')
+      }
+      return this.createDraft(
+        tx,
+        orgId,
+        actorId,
+        {
+          type: 'invoice',
+          contactId: src.contactId,
+          bankAccountId: src.bankAccountId,
+          currency: src.currency,
+          exchangeRate: src.exchangeRate,
+          language: src.language as 'cs' | 'sk' | 'en',
+          paymentMethod: src.paymentMethod,
+          introText: src.introText,
+          footerText: src.footerText,
+          lines: [
+            ...src.lines.map((l) => ({
+              description: l.description,
+              quantity: l.quantity,
+              unit: l.unit,
+              unitPrice: l.unitPrice,
+              vatRate: l.vatRate,
+              discountPercent: l.discountPercent,
+            })),
+            {
+              description: `Uhrazená záloha (zálohová faktura ${src.number})`,
+              quantity: '1',
+              unit: null,
+              unitPrice: advance.negated().toString(),
+              vatRate: '0',
+              discountPercent: '0',
+            },
+          ],
+        },
+        { relatedDocumentId: id },
+      )
+    })
+    if (!draft) throw new Error('final invoice draft missing')
+    await logActivity(db, orgId, actorId, id, 'final_invoice_created', { invoiceId: draft.id })
+    return draft
+  },
+
+  /**
+   * Opravný daňový doklad: a draft that reverses (all lines negated) an issued invoice. Edit the draft
+   * to correct only part of it, then issue it like any other document.
+   */
+  async createCreditNote(
+    db: Db,
+    orgId: string,
+    actorId: string,
+    id: string,
+    reason?: string | null,
+  ) {
+    const src = await this.get(db, orgId, id)
+    if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (src.type !== 'invoice' || (src.status !== 'issued' && src.status !== 'paid')) {
+      throw new DocumentError('CONFLICT', 'A credit note can only correct an issued invoice')
+    }
+    const draft = await this.createDraft(
+      db,
+      orgId,
+      actorId,
+      {
+        type: 'credit_note',
+        contactId: src.contactId,
+        bankAccountId: src.bankAccountId,
+        currency: src.currency,
+        exchangeRate: src.exchangeRate,
+        language: src.language as 'cs' | 'sk' | 'en',
+        paymentMethod: src.paymentMethod,
+        introText: reason?.trim() || `Oprava faktury ${src.number}`,
+        lines: src.lines.map((l) => ({
+          description: l.description,
+          quantity: parseDecimal(l.quantity).negated().toString(),
+          unit: l.unit,
+          unitPrice: l.unitPrice,
+          vatRate: l.vatRate,
+          discountPercent: l.discountPercent,
+        })),
+      },
+      { relatedDocumentId: id },
+    )
+    if (!draft) throw new Error('credit note draft missing')
+    await logActivity(db, orgId, actorId, id, 'credit_note_created', { creditNoteId: draft.id })
+    return this.get(db, orgId, draft.id)
   },
 
   async markPaid(
@@ -682,6 +881,32 @@ export const documentsRepo = {
       if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
       if (doc.status !== 'paid' && doc.status !== 'issued') {
         throw new DocumentError('CONFLICT', 'Only issued or paid documents can be marked unpaid')
+      }
+      if (doc.type === 'invoice' && doc.relatedDocumentId && parseDecimal(doc.total).lte(0)) {
+        throw new DocumentError(
+          'CONFLICT',
+          'This invoice is settled by the advance and cannot be reopened',
+        )
+      }
+      if (doc.type === 'proforma') {
+        const [dep] = await tx
+          .select({ id: document.id })
+          .from(document)
+          .where(
+            and(
+              eq(document.organizationId, orgId),
+              eq(document.relatedDocumentId, id),
+              eq(document.type, 'invoice'),
+              isNull(document.deletedAt),
+              ne(document.status, 'cancelled'),
+            ),
+          )
+        if (dep) {
+          throw new DocumentError(
+            'CONFLICT',
+            'A final invoice already uses this advance; cancel it first',
+          )
+        }
       }
       await tx
         .delete(payment)

@@ -1,6 +1,7 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { loadOriginal } from './documents'
 
 const { document, documentLine, payment, activity } = schema
 
@@ -32,7 +33,7 @@ export const publicDocumentsRepo = {
         ),
       )
       .orderBy(asc(documentLine.position))
-    return { doc, lines }
+    return { doc, lines, original: await loadOriginal(db, doc.organizationId, doc) }
   },
 
   /** Records the first view only (timeline "Zobrazena"); serialized per document so concurrent opens add one entry. */

@@ -1,4 +1,4 @@
-import { formatDateCs } from '@fakturky/domain/dates'
+import { formatDateCs, todayPrague } from '@fakturky/domain/dates'
 import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
@@ -137,6 +137,27 @@ function InvoiceDetail() {
       },
     }),
   )
+  const creditNote = useMutation(
+    orpc.documents.createCreditNote.mutationOptions({
+      onSuccess: async (n) => {
+        toast.success(t.creditNoteCreated)
+        await refresh()
+        navigate({ to: '/faktury/$id/upravit', params: { id: n.id } })
+      },
+      onError,
+    }),
+  )
+  const finalInvoice = useMutation(
+    orpc.documents.createFinalInvoice.mutationOptions({
+      onSuccess: async (n) => {
+        toast.success(t.finalInvoiceCreated)
+        await refresh()
+        navigate({ to: '/faktury/$id/upravit', params: { id: n.id } })
+      },
+      onError,
+    }),
+  )
+  const defaults = useQuery(orpc.documents.defaults.queryOptions({ input: {} }))
   const saveTemplate = useMutation(
     orpc.templates.createFromDocument.mutationOptions({
       onSuccess: async () => {
@@ -162,7 +183,7 @@ function InvoiceDetail() {
   if (!d) return <p className="text-muted-foreground">{cs.common.loading}</p>
 
   const isDraft = d.status === 'draft'
-  const open = d.status === 'issued'
+  const open = d.status === 'issued' && d.type !== 'credit_note'
   const bank = d.bankSnapshot as Record<string, string | null> | null
   const publicUrl = d.publicToken ? `${window.location.origin}/f/${d.publicToken}` : null
   const defaultTo = ((d.customerSnapshot?.emails as string[] | undefined) ?? [])[0]
@@ -178,6 +199,11 @@ function InvoiceDetail() {
           <h1 className="text-2xl font-semibold tabular-nums">
             {d.number ?? cs.invoices.draftNumber}
           </h1>
+          {d.type !== 'invoice' && (
+            <span className="text-muted-foreground text-sm">
+              {cs.invoices.type[d.type as keyof typeof cs.invoices.type]}
+            </span>
+          )}
           <InvoiceStatus status={d.displayStatus} />
           {d.importedFrom && (
             <span className="rounded-full border px-2 py-0.5 text-muted-foreground text-xs">
@@ -188,6 +214,9 @@ function InvoiceDetail() {
         <div className="hidden flex-wrap gap-2 sm:flex">
           <Actions />
         </div>
+      </div>
+      <div className="flex flex-wrap gap-2 sm:hidden">
+        <Actions part="secondary" />
       </div>
 
       <section className="space-y-5 rounded-xl border p-4 sm:p-6">
@@ -215,7 +244,7 @@ function InvoiceDetail() {
         </dl>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[34rem] text-sm">
             <thead className="text-muted-foreground text-left text-xs">
               <tr className="border-b">
                 <th className="py-2 font-medium">{cs.invoices.form.description}</th>
@@ -417,7 +446,7 @@ function InvoiceDetail() {
               <Check className="text-muted-foreground size-3.5" />
               <span>{t.timeline[a.action as keyof typeof t.timeline] ?? a.action}</span>
               <span className="text-muted-foreground">
-                {formatDateCs(a.createdAt.toISOString().slice(0, 10))}
+                {formatDateCs(todayPrague(a.createdAt))}
                 {(a.data as { amount?: string } | null)?.amount ? (
                   <>
                     {' · '}
@@ -432,84 +461,126 @@ function InvoiceDetail() {
         </ol>
       </section>
 
-      <div className="from-background fixed inset-x-0 bottom-0 z-10 flex flex-col gap-2 bg-gradient-to-t p-4 sm:hidden">
-        <Actions mobile />
+      {/* Sits above the mobile tab bar (h-16); only the primary action is pinned, the rest is in flow. */}
+      <div className="from-background fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex flex-col gap-2 bg-gradient-to-t p-4 sm:hidden">
+        <Actions mobile part="primary" />
       </div>
     </div>
   )
 
-  function Actions({ mobile }: { mobile?: boolean }) {
+  function Actions({
+    mobile,
+    part = 'all',
+  }: {
+    mobile?: boolean
+    part?: 'all' | 'primary' | 'secondary'
+  }) {
     const full = mobile ? 'w-full' : ''
+    const showSecondary = part !== 'primary'
+    const showPrimary = part !== 'secondary'
     if (isDraft) {
       return (
         <>
-          <Button
-            variant="outline"
-            className={full}
-            nativeButton={false}
-            render={<Link to="/faktury/$id/upravit" params={{ id }} />}
-          >
-            <Pencil /> {t.edit}
-          </Button>
-          <Button
-            variant="ghost"
-            className={full}
-            onClick={() => window.confirm(t.deleteConfirm) && remove.mutate({ id })}
-          >
-            <Trash2 /> {t.delete}
-          </Button>
-          <Button className={full} disabled={busy} onClick={() => issue.mutate({ id })}>
-            {t.issue}
-          </Button>
+          {showSecondary && (
+            <>
+              <Button
+                variant="outline"
+                className={full}
+                nativeButton={false}
+                render={<Link to="/faktury/$id/upravit" params={{ id }} />}
+              >
+                <Pencil /> {t.edit}
+              </Button>
+              <Button
+                variant="ghost"
+                className={full}
+                onClick={() => window.confirm(t.deleteConfirm) && remove.mutate({ id })}
+              >
+                <Trash2 /> {t.delete}
+              </Button>
+            </>
+          )}
+          {showPrimary && (
+            <Button className={full} disabled={busy} onClick={() => issue.mutate({ id })}>
+              {t.issue}
+            </Button>
+          )}
         </>
       )
     }
     return (
       <>
-        {!isDraft && (
-          <Button
-            variant="outline"
-            className={full}
-            nativeButton={false}
-            render={<a href={`/api/documents/${id}/pdf`} download />}
-          >
-            <Download /> {t.downloadPdf}
-          </Button>
+        {showSecondary && (
+          <>
+            {!isDraft && (
+              <Button
+                variant="outline"
+                className={full}
+                nativeButton={false}
+                render={<a href={`/api/documents/${id}/pdf`} download />}
+              >
+                <Download /> {t.downloadPdf}
+              </Button>
+            )}
+            {d?.status === 'cancelled' ? null : (
+              <Button
+                variant="ghost"
+                className={full}
+                disabled={busy}
+                onClick={() => window.confirm(t.cancelConfirm) && cancel.mutate({ id })}
+              >
+                {t.cancel}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              className={full}
+              onClick={() => {
+                const name = window.prompt(cs.templates.namePrompt, d?.customerName ?? '')
+                if (name?.trim()) saveTemplate.mutate({ documentId: id, name: name.trim() })
+              }}
+            >
+              {cs.templates.saveAs}
+            </Button>
+            {d?.type === 'proforma' && d.status === 'paid' && !defaults.data?.vatPayer && (
+              <Button
+                className={full}
+                disabled={finalInvoice.isPending}
+                onClick={() => finalInvoice.mutate({ id })}
+              >
+                {t.finalInvoice}
+              </Button>
+            )}
+            {d?.type === 'invoice' && (open || d.status === 'paid') && (
+              <Button
+                variant="outline"
+                className={full}
+                onClick={() => {
+                  const reason = window.prompt(t.creditNotePrompt, '')
+                  if (reason !== null) creditNote.mutate({ id, reason: reason.trim() || undefined })
+                }}
+              >
+                {t.creditNote}
+              </Button>
+            )}
+            <Button variant="outline" className={full} onClick={() => duplicate.mutate({ id })}>
+              {t.duplicate}
+            </Button>
+            {d?.status === 'paid' && !(d.type === 'invoice' && Number(d.total) <= 0) && (
+              <Button variant="outline" className={full} onClick={() => markUnpaid.mutate({ id })}>
+                {t.markUnpaid}
+              </Button>
+            )}
+            {(open ||
+              d?.status === 'paid' ||
+              (d?.type === 'credit_note' && d.status === 'issued')) && (
+              <Button variant="outline" className={full} onClick={() => setSending(true)}>
+                {d?.displayStatus === 'overdue' ? t.remind : t.send}
+              </Button>
+            )}
+          </>
         )}
-        {d?.status === 'cancelled' ? null : (
-          <Button
-            variant="ghost"
-            className={full}
-            disabled={busy}
-            onClick={() => window.confirm(t.cancelConfirm) && cancel.mutate({ id })}
-          >
-            {t.cancel}
-          </Button>
-        )}
-        <Button
-          variant="outline"
-          className={full}
-          onClick={() => {
-            const name = window.prompt(cs.templates.namePrompt, d?.customerName ?? '')
-            if (name?.trim()) saveTemplate.mutate({ documentId: id, name: name.trim() })
-          }}
-        >
-          {cs.templates.saveAs}
-        </Button>
-        <Button variant="outline" className={full} onClick={() => duplicate.mutate({ id })}>
-          {t.duplicate}
-        </Button>
-        {d?.status === 'paid' && (
-          <Button variant="outline" className={full} onClick={() => markUnpaid.mutate({ id })}>
-            {t.markUnpaid}
-          </Button>
-        )}
-        {(open || d?.status === 'paid') && (
-          <Button variant="outline" className={full} onClick={() => setSending(true)}>
-            {d?.displayStatus === 'overdue' ? t.remind : t.send}
-          </Button>
-        )}
-        {open && (
+        {showPrimary && open && (
           <Button className={full} onClick={() => setPaying(true)}>
             {t.markPaid}
           </Button>

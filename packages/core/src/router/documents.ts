@@ -31,6 +31,61 @@ async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
 }
 
 export const documentsRouter = {
+  createFinalInvoice: procedure({
+    mcp: {
+      name: 'create_final_invoice_from_proforma',
+      title: 'Create the final invoice for a paid proforma (advance deducted)',
+    },
+    openapi: {
+      method: 'POST',
+      path: '/documents/{id}/final-invoice',
+      summary:
+        'Draft invoice from a fully paid proforma: same lines plus a negative line for the paid advance. Edit, then issue.',
+      tags: tag,
+    },
+  })
+    .input(idInput)
+    .output(documentDetailSchema)
+    .handler(({ context, input }) =>
+      guard(() =>
+        documentsRepo.createFinalInvoice(
+          context.db,
+          context.principal.organizationId,
+          context.principal.userId,
+          input.id,
+        ),
+      ),
+    ),
+
+  createCreditNote: procedure({
+    mcp: {
+      name: 'create_credit_note',
+      title: 'Create a credit note (opravný doklad) draft correcting an issued invoice',
+    },
+    openapi: {
+      method: 'POST',
+      path: '/documents/{id}/credit-note',
+      summary:
+        'Create a draft credit note that reverses all lines of an issued invoice. Edit the draft for partial corrections, then issue it.',
+      tags: tag,
+    },
+  })
+    .input(
+      idInput.extend({ reason: z.string().max(1000).nullish().describe('Shown on the document') }),
+    )
+    .output(documentDetailSchema)
+    .handler(({ context, input }) =>
+      guard(() =>
+        documentsRepo.createCreditNote(
+          context.db,
+          context.principal.organizationId,
+          context.principal.userId,
+          input.id,
+          input.reason,
+        ),
+      ),
+    ),
+
   send: procedure({
     mcp: {
       name: 'send_invoice_email',
@@ -96,7 +151,7 @@ export const documentsRouter = {
         input.id,
       )
       if (!found) throw new ORPCError('NOT_FOUND', { message: 'Issued document not found' })
-      const bytes = await render(found.doc, found.lines)
+      const bytes = await render(found.doc, found.lines, found.original)
       return {
         filename: `${found.doc.number ?? 'faktura'}.pdf`,
         contentBase64: Buffer.from(bytes).toString('base64'),
@@ -127,7 +182,7 @@ export const documentsRouter = {
       if (!found) throw new ORPCError('NOT_FOUND', { message: 'Issued document not found' })
       return {
         filename: `${found.doc.number ?? 'faktura'}.isdoc`,
-        xml: generateIsdoc(toDocumentForExport(found.doc, found.lines)),
+        xml: generateIsdoc(toDocumentForExport(found.doc, found.lines, found.original)),
       }
     }),
 
@@ -210,6 +265,7 @@ export const documentsRouter = {
           context.principal.organizationId,
           context.principal.userId,
           input,
+          {},
           context.principal.via === 'assistant' ? 'assistant' : undefined,
         ),
       ),

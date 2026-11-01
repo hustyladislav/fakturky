@@ -11,7 +11,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { ApiKeys } from '@/components/api-keys'
 import { BankAccountsCard } from '@/components/bank-accounts-card'
 import { BusinessProfileForm } from '@/components/business-profile-form'
-import { ReminderSettings } from '@/components/reminder-settings'
+import { DataExport, ReminderSettings } from '@/components/reminder-settings'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 
@@ -32,6 +32,7 @@ function Settings() {
       </section>
       <BankAccountsCard />
       <ReminderSettings />
+      <DataExport />
       <Card>
         <CardHeader>
           <CardTitle>{cs.import.settingsCardTitle}</CardTitle>

@@ -101,7 +101,7 @@ function ShellInner({
 
       <div className={cn('md:pl-16 lg:pl-60', assistantOpen && 'lg:pr-[380px]')}>
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur md:px-8">
-          <Link to="/" className="md:hidden" aria-label={BRAND.name}>
+          <Link to="/prehled" className="md:hidden" aria-label={BRAND.name}>
             <LogoMark letter={BRAND.name.charAt(0)} className="size-7" />
           </Link>
           <button
@@ -162,7 +162,7 @@ function Sidebar({ user }: { user: { name: string; email: string } }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-16 flex-col border-r bg-sidebar text-sidebar-foreground md:flex lg:w-60">
       <div className="flex h-14 items-center px-4 max-lg:justify-center max-lg:px-0">
-        <Link to="/" aria-label={BRAND.name}>
+        <Link to="/prehled" aria-label={BRAND.name}>
           <Logo name={BRAND.name} className="max-lg:hidden" markClassName="size-7" />
           <LogoMark letter={BRAND.name.charAt(0)} className="size-8 lg:hidden" />
         </Link>
@@ -172,7 +172,7 @@ function Sidebar({ user }: { user: { name: string; email: string } }) {
           <Link
             key={item.to}
             to={item.to}
-            activeOptions={{ exact: item.to === '/' }}
+            activeOptions={{ exact: false }}
             className={navLink}
             title={item.label}
           >

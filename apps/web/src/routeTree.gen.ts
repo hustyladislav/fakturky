@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as McpRouteImport } from './routes/mcp'
@@ -19,10 +20,10 @@ import { Route as RegistraceRouteImport } from './routes/registrace'
 import { Route as SouhlasRouteImport } from './routes/souhlas'
 import { Route as SoukromiRouteImport } from './routes/soukromi'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
-import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
+import { Route as AppPrehledRouteImport } from './routes/_app/prehled'
 import { Route as AppSablonyRouteImport } from './routes/_app/sablony'
 import { Route as DocsApiRouteImport } from './routes/docs.api'
 import { Route as DocsMcpRouteImport } from './routes/docs.mcp'
@@ -40,6 +41,11 @@ import { Route as AppFakturyIdIndexRouteImport } from './routes/_app/faktury.$id
 import { Route as AppFakturyIdUpravitRouteImport } from './routes/_app/faktury.$id.upravit'
 import { Route as ApiDocumentsIdPdfRouteImport } from './routes/api/documents.$id.pdf'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -89,11 +95,6 @@ const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
   path: '/.well-known/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppFakturyRoute = AppFakturyRouteImport.update({
   id: '/faktury',
   path: '/faktury',
@@ -107,6 +108,11 @@ const AppKontaktyRoute = AppKontaktyRouteImport.update({
 const AppNastaveniRoute = AppNastaveniRouteImport.update({
   id: '/nastaveni',
   path: '/nastaveni',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrehledRoute = AppPrehledRouteImport.update({
+  id: '/prehled',
+  path: '/prehled',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSablonyRoute = AppSablonyRouteImport.update({
@@ -191,7 +197,7 @@ const ApiDocumentsIdPdfRoute = ApiDocumentsIdPdfRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
+  '/': typeof IndexRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/faktury': typeof AppFakturyRouteWithChildren
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
+  '/prehled': typeof AppPrehledRoute
   '/sablony': typeof AppSablonyRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/mcp': typeof DocsMcpRoute
@@ -222,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
@@ -233,11 +241,11 @@ export interface FileRoutesByTo {
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
+  '/prehled': typeof AppPrehledRoute
   '/sablony': typeof AppSablonyRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
-  '/': typeof AppIndexRoute
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
@@ -253,6 +261,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/llms.txt': typeof LlmsDottxtRoute
   '/mcp': typeof McpRoute
@@ -266,11 +275,11 @@ export interface FileRoutesById {
   '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/kontakty': typeof AppKontaktyRoute
   '/_app/nastaveni': typeof AppNastaveniRoute
+  '/_app/prehled': typeof AppPrehledRoute
   '/_app/sablony': typeof AppSablonyRoute
   '/docs/api': typeof DocsApiRoute
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
-  '/_app/': typeof AppIndexRoute
   '/_app/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
@@ -300,6 +309,7 @@ export interface FileRouteTypes {
     | '/faktury'
     | '/kontakty'
     | '/nastaveni'
+    | '/prehled'
     | '/sablony'
     | '/docs/api'
     | '/docs/mcp'
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/faktury/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/llms.txt'
     | '/mcp'
     | '/onboarding'
@@ -329,11 +340,11 @@ export interface FileRouteTypes {
     | '/.well-known/$'
     | '/kontakty'
     | '/nastaveni'
+    | '/prehled'
     | '/sablony'
     | '/docs/api'
     | '/docs/mcp'
     | '/f/$token'
-    | '/'
     | '/faktury/nova'
     | '/api/auth/$'
     | '/api/cron/recurring'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/faktury/$id'
   id:
     | '__root__'
+    | '/'
     | '/_app'
     | '/llms.txt'
     | '/mcp'
@@ -361,11 +373,11 @@ export interface FileRouteTypes {
     | '/_app/faktury'
     | '/_app/kontakty'
     | '/_app/nastaveni'
+    | '/_app/prehled'
     | '/_app/sablony'
     | '/docs/api'
     | '/docs/mcp'
     | '/f/$token'
-    | '/_app/'
     | '/_app/faktury/nova'
     | '/api/auth/$'
     | '/api/cron/recurring'
@@ -381,6 +393,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   McpRoute: typeof McpRoute
@@ -404,6 +417,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -474,13 +494,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotwellKnownSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/faktury': {
       id: '/_app/faktury'
       path: '/faktury'
@@ -500,6 +513,13 @@ declare module '@tanstack/react-router' {
       path: '/nastaveni'
       fullPath: '/nastaveni'
       preLoaderRoute: typeof AppNastaveniRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/prehled': {
+      id: '/_app/prehled'
+      path: '/prehled'
+      fullPath: '/prehled'
+      preLoaderRoute: typeof AppPrehledRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/sablony': {
@@ -639,16 +659,16 @@ interface AppRouteChildren {
   AppFakturyRoute: typeof AppFakturyRouteWithChildren
   AppKontaktyRoute: typeof AppKontaktyRoute
   AppNastaveniRoute: typeof AppNastaveniRoute
+  AppPrehledRoute: typeof AppPrehledRoute
   AppSablonyRoute: typeof AppSablonyRoute
-  AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppFakturyRoute: AppFakturyRouteWithChildren,
   AppKontaktyRoute: AppKontaktyRoute,
   AppNastaveniRoute: AppNastaveniRoute,
+  AppPrehledRoute: AppPrehledRoute,
   AppSablonyRoute: AppSablonyRoute,
-  AppIndexRoute: AppIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -667,6 +687,7 @@ const FTokenRouteWithChildren =
   FTokenRoute._addFileChildren(FTokenRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LlmsDottxtRoute: LlmsDottxtRoute,
   McpRoute: McpRoute,

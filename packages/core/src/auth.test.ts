@@ -70,8 +70,13 @@ test('API key authenticates as its organization and can be revoked', async () =>
     new Headers({ authorization: `Bearer ${created.key}` }),
   )
   expect(viaKey).toMatchObject({ via: 'apiKey', organizationId: principal.organizationId })
+  // An invalid key must not fall back to the ambient session cookie.
   expect(
-    await resolvePrincipal(auth, handle.db, new Headers({ authorization: 'Bearer fk_nope' })),
+    await resolvePrincipal(
+      auth,
+      handle.db,
+      new Headers({ cookie, authorization: 'Bearer fk_nope' }),
+    ),
   ).toBeNull()
 
   await auth.api.deleteApiKey({ headers, body: { keyId: created.id } })

@@ -16,6 +16,8 @@ const html = `<!doctype html>
     <script>
       Scalar.createApiReference('#app', {
         url: '/api/v1/openapi.json',
+        // Never send the session cookie: the entered API key must be what authenticates.
+        fetch: (input, init) => fetch(input, { ...init, credentials: 'omit' }),
         showDeveloperTools: 'never',
         agent: { disabled: true },
         authentication: { preferredSecurityScheme: 'apiKey' },

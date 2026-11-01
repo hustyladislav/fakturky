@@ -24,7 +24,7 @@ import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
 
-const queryKey = ['api-keys']
+const keysKey = (organizationId?: string) => ['api-keys', organizationId]
 
 const formatDate = (value: Date | string | null | undefined) =>
   value ? new Date(value).toLocaleDateString('cs-CZ') : cs.apiKeys.never
@@ -32,11 +32,12 @@ const formatDate = (value: Date | string | null | undefined) =>
 export function ApiKeys() {
   const queryClient = useQueryClient()
   // Mirrors the server: the session's active organization may be unset right after sign-up.
+  const { data: active } = authClient.useActiveOrganization()
   const { data: organizations } = authClient.useListOrganizations()
-  const organizationId = organizations?.[0]?.id
+  const organizationId = active?.id ?? organizations?.[0]?.id
 
   const list = useQuery({
-    queryKey,
+    queryKey: keysKey(organizationId),
     enabled: !!organizationId,
     queryFn: async () => {
       const res = await authClient.apiKey.list({ query: { organizationId } })
@@ -52,7 +53,7 @@ export function ApiKeys() {
     },
     onSuccess: async () => {
       toast.success(cs.apiKeys.revoked)
-      await queryClient.invalidateQueries({ queryKey })
+      await queryClient.invalidateQueries({ queryKey: keysKey(organizationId) })
     },
     onError: () => toast.error(cs.common.error),
   })
@@ -124,7 +125,7 @@ function NewKey({ organizationId }: { organizationId: string }) {
     },
     onSuccess: async (key) => {
       setSecret(key)
-      await queryClient.invalidateQueries({ queryKey })
+      await queryClient.invalidateQueries({ queryKey: keysKey(organizationId) })
     },
     onError: () => toast.error(cs.common.error),
   })

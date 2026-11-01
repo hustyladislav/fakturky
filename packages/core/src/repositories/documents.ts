@@ -553,7 +553,13 @@ export const documentsRepo = {
     actorId: string,
     id: string,
     services: Services | undefined,
-    opts: { to?: string; message?: string | null; reminder?: boolean } = {},
+    opts: {
+      to?: string
+      message?: string | null
+      reminder?: boolean
+      /** The caller already recorded the `reminded` activity (it claims the stage before sending). */
+      alreadyLogged?: boolean
+    } = {},
   ) {
     const found = await this.forExport(db, orgId, id)
     if (!found) throw new DocumentError('NOT_FOUND', 'Issued document not found')
@@ -594,7 +600,9 @@ export const documentsRepo = {
       if (!opts.reminder) {
         await tx.update(document).set({ sentAt: new Date() }).where(scoped(orgId, id))
       }
-      await logActivity(tx, orgId, actorId, id, opts.reminder ? 'reminded' : 'sent', { to })
+      if (!opts.alreadyLogged) {
+        await logActivity(tx, orgId, actorId, id, opts.reminder ? 'reminded' : 'sent', { to })
+      }
     })
     return this.get(db, orgId, id)
   },

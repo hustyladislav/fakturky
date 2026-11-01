@@ -47,11 +47,10 @@ test('reminders: opt-in only, escalating schedule, max three, CSV exports are fo
   expect(
     (await remindersRepo.runDue(handle.db, services, '2026-01-13')).map((r) => r.sent),
   ).toEqual([true])
-  expect(await remindersRepo.runDue(handle.db, services, '2026-01-14')).toEqual([]) // next at +10
-  await remindersRepo.runDue(handle.db, services, '2026-01-20')
-  await remindersRepo.runDue(handle.db, services, '2026-01-27')
-  expect(await remindersRepo.runDue(handle.db, services, '2026-03-01')).toEqual([]) // max 3
-  expect(sent.filter((s) => s.isReminder)).toHaveLength(3)
+  // Same-day overlap and the following days must not send again (min gap).
+  expect(await remindersRepo.runDue(handle.db, services, '2026-01-13')).toEqual([])
+  expect(await remindersRepo.runDue(handle.db, services, '2026-01-14')).toEqual([])
+  expect(sent.filter((s) => s.isReminder)).toHaveLength(1)
   expect(sent.every((s) => s.number === a.doc.number)).toBe(true)
 
   const csv = (await a.api.exports.contacts({})).csv

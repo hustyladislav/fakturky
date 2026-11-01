@@ -35,6 +35,7 @@ const services = { renderPdf: async () => new Uint8Array([1]) }
 const line = { description: SECRET, quantity: '1', unitPrice: '100', vatRate: '21' }
 
 const cases: Record<string, Case> = {
+  'account.whoami': { kind: 'scoped', run: (b) => b.account.whoami({}) },
   'bankAccounts.list': { kind: 'scoped', run: (b) => b.bankAccounts.list({}) },
   'bankAccounts.create': {
     kind: 'scoped',
@@ -71,6 +72,10 @@ const cases: Record<string, Case> = {
 
   'dashboard.summary': { kind: 'scoped', run: (b) => b.dashboard.summary({}) },
 
+  'documents.send': {
+    kind: 'foreign',
+    run: (b, a) => b.documents.send({ id: a.issuedId, to: 'attacker@example.com' }),
+  },
   'documents.pdf': { kind: 'foreign', run: (b, a) => b.documents.pdf({ id: a.issuedId }) },
   'documents.isdoc': { kind: 'foreign', run: (b, a) => b.documents.isdoc({ id: a.issuedId }) },
   'documents.defaults': { kind: 'scoped', run: (b) => b.documents.defaults({}) },

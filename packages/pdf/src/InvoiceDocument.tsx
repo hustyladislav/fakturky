@@ -328,14 +328,10 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
       <Page size="A4" style={s.page}>
         <View fixed style={s.footer}>
           <Text style={[s.footText, { flex: 1 }]}>
-            {[
-              [doc.supplier.name, doc.supplier.registerNote?.replace(/\.$/, '')]
-                .filter(Boolean)
-                .join(', '),
-              payer ? t.vatPayer : t.nonVatPayer,
-            ]
+            {[doc.supplier.name, doc.supplier.registerNote]
               .filter(Boolean)
-              .join('. ')}
+              .map((part) => String(part).replace(/\.+$/, ''))
+              .join(', ')}
             .
           </Text>
           <View style={{ alignItems: 'flex-end' }}>

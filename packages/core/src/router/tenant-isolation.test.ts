@@ -27,6 +27,8 @@ type Case =
   | { kind: 'external' }
 
 const SECRET = 'ORG-A-ONLY-SECRET'
+// PDF procedures check for the renderer before the lookup; give them one so the lookup is what is tested.
+const services = { renderPdf: async () => new Uint8Array([1]) }
 
 const line = { description: SECRET, quantity: '1', unitPrice: '100', vatRate: '21' }
 
@@ -67,6 +69,7 @@ const cases: Record<string, Case> = {
 
   'dashboard.summary': { kind: 'scoped', run: (b) => b.dashboard.summary({}) },
 
+  'documents.pdf': { kind: 'foreign', run: (b, a) => b.documents.pdf({ id: a.issuedId }) },
   'documents.isdoc': { kind: 'foreign', run: (b, a) => b.documents.isdoc({ id: a.issuedId }) },
   'documents.defaults': { kind: 'scoped', run: (b) => b.documents.defaults({}) },
   'documents.list': { kind: 'scoped', run: (b) => b.documents.list({ search: SECRET }) },
@@ -116,6 +119,7 @@ const cases: Record<string, Case> = {
 
   'public.invoice': { kind: 'external' },
   'public.isdoc': { kind: 'external' },
+  'public.pdf': { kind: 'external' },
 }
 
 function procedurePaths(node: object, prefix: string[] = []): string[] {
@@ -158,8 +162,8 @@ beforeAll(async () => {
       .insert(schema.businessProfile)
       .values({ organizationId: org, legalName: name, ico: '27082440' })
   }
-  aApi = clientFor(handle, principal(orgA))
-  bApi = clientFor(handle, principal(orgB))
+  aApi = clientFor(handle, principal(orgA), services)
+  bApi = clientFor(handle, principal(orgB), services)
 
   const contact = await aApi.contacts.create({ name: SECRET, emails: ['a-secret@example.com'] })
   const bank = await aApi.bankAccounts.create({ label: SECRET, account: '19-2000145399/0800' })
@@ -219,7 +223,7 @@ describe('tenant isolation', () => {
   })
 
   test('public endpoints accept only the unguessable token, never internal ids', async () => {
-    const anon = clientFor(handle, null)
+    const anon = clientFor(handle, null, services)
     const b = bApi
     for (const bogus of [
       a.issuedId,
@@ -233,6 +237,9 @@ describe('tenant isolation', () => {
         code: 'NOT_FOUND',
       })
       await expect(anon.public.isdoc({ token: bogus.padEnd(24, '0') })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      })
+      await expect(anon.public.pdf({ token: bogus.padEnd(24, '0') })).rejects.toMatchObject({
         code: 'NOT_FOUND',
       })
     }

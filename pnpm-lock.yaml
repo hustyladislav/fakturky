@@ -244,6 +244,9 @@ importers:
       '@fakturky/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@fakturky/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@fakturky/ui':
         specifier: workspace:*
         version: link:../../packages/ui

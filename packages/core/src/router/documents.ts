@@ -25,6 +25,33 @@ async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
 }
 
 export const documentsRouter = {
+  defaults: procedure({
+    mcp: {
+      name: 'get_invoice_defaults',
+      title: 'Defaults for a new invoice (VAT payer?, currency, due days, bank accounts)',
+      readOnly: true,
+    },
+    openapi: {
+      method: 'GET',
+      path: '/documents/defaults',
+      summary: 'Defaults used when creating a new document',
+      tags: tag,
+    },
+  })
+    .input(z.object({}))
+    .output(
+      z.object({
+        vatPayer: z.boolean(),
+        hasProfile: z.boolean(),
+        currency: z.string(),
+        dueDays: z.number(),
+        language: z.string(),
+        paymentMethod: z.string(),
+        footerText: z.string().nullable(),
+      }),
+    )
+    .handler(({ context }) => documentsRepo.defaults(context.db, context.principal.organizationId)),
+
   list: procedure({
     mcp: { name: 'list_documents', title: 'List invoices and proformas', readOnly: true },
     openapi: { method: 'GET', path: '/documents', summary: 'List documents', tags: tag },

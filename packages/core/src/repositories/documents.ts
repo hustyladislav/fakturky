@@ -162,6 +162,19 @@ function decorate(doc: DocRow, paid: Decimal, customerName: string | null) {
 }
 
 export const documentsRepo = {
+  async defaults(db: Db, orgId: string) {
+    const p = await loadProfile(db, orgId)
+    return {
+      vatPayer: p?.vatStatus === 'payer',
+      hasProfile: p !== null,
+      currency: p?.defaultCurrency ?? 'CZK',
+      dueDays: p?.defaultDueDays ?? 14,
+      language: p?.defaultLanguage ?? 'cs',
+      paymentMethod: p?.defaultPaymentMethod ?? 'bank_transfer',
+      footerText: p?.defaultFooter ?? null,
+    }
+  },
+
   async list(
     db: Db,
     orgId: string,

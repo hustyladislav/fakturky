@@ -38,3 +38,8 @@ minimumReleaseAgeExclude:
 allowBuilds:
   esbuild: true
   "@biomejs/biome": true
+
+# Security overrides (see docs/SECURITY_AUDIT.md). Remove once the parents release patched ranges.
+overrides:
+  ws: 8.22.1 # GHSA-96hv-2xvq-fx4p / GHSA-58qx-3vcg-4xpx via @orpc/server
+  minimatch: 11.0.3 # GHSA-g3hv-75wg-m249 via shadcn > ts-morph (CLI only)

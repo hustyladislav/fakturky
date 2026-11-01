@@ -1,0 +1,46 @@
+{
+  "name": "fakturky",
+  "version": "0.1.0",
+  "description": "Command-line client for Fakturky, the free Czech invoicing app. Commands are generated from the live OpenAPI spec.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "fakturky": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "fakturky",
+    "invoicing",
+    "faktury",
+    "cli",
+    "czech",
+    "mcp"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hustyladislav/fakturky.git",
+    "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.8.1",
+    "citty": "0.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsdown": "0.23.4"
+  }
+}

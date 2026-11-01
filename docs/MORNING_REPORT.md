@@ -10,8 +10,16 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 ## Needs you
 
 0. **Preview database** — previews share the production Neon DB (branching option is disabled for this
-   marketplace resource on the free plan). Migrations are being gated to production only. Proper fix: a Neon
+   marketplace resource on the free plan). Migrations are now gated to production only (`VERCEL_ENV`), and destructive scripts need `ALLOW_DESTRUCTIVE_DB=1`. Proper fix: a Neon
    branch for Preview — see `docs/SECURITY_AUDIT.md`. Also optional: Vercel Firewall rules (paths/limits in that doc).
+0b. **Neon branch for Preview (needs a key from you)** — create a Neon API key (Neon console → Account settings →
+   API keys; or the Vercel marketplace resource page → "Open in Neon"), then add it as `NEON_API_KEY` (Vercel env,
+   Preview + Production, sensitive). With `NEON_PROJECT_ID` (already set) a build step can
+   `POST https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches` (name `preview/$VERCEL_GIT_COMMIT_REF`,
+   parent = main branch, with a read-write endpoint), read the branch's connection URI and export it as
+   `DATABASE_URL`/`DATABASE_URL_UNPOOLED` for the build and the function (set via `vercel env add … preview <git-branch>`
+   per branch, or by having the app read the branch URL at runtime). Until then previews write to the production DB —
+   treat previews as production-adjacent and don't create junk data there.
 1. **Domain** — pick a name/domain from `docs/research/names.md` (shortlist; `fakturky.app` is free, $9.99) and
    buy it (or tell me to). Then: add it in Resend (your existing account, team "moravio") + DNS → switch
    `EMAIL_FROM` env so magic links/invoice emails reach everyone (today: Resend sandbox, delivers only to you).

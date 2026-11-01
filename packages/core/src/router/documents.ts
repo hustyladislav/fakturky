@@ -27,6 +27,39 @@ async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
 }
 
 export const documentsRouter = {
+  pdf: procedure({
+    mcp: {
+      name: 'export_document_pdf',
+      title: 'Render an issued document as PDF (base64)',
+      readOnly: true,
+    },
+    openapi: {
+      method: 'GET',
+      path: '/documents/{id}/pdf',
+      summary:
+        'PDF of an issued document as base64 (the web app also serves raw bytes at /api/documents/{id}/pdf)',
+      tags: tag,
+    },
+  })
+    .input(idInput)
+    .output(z.object({ filename: z.string(), contentBase64: z.string() }))
+    .handler(async ({ context, input }) => {
+      const render = context.services?.renderPdf
+      if (!render)
+        throw new ORPCError('NOT_IMPLEMENTED', { message: 'PDF rendering is not available' })
+      const found = await documentsRepo.forExport(
+        context.db,
+        context.principal.organizationId,
+        input.id,
+      )
+      if (!found) throw new ORPCError('NOT_FOUND', { message: 'Issued document not found' })
+      const bytes = await render(found.doc, found.lines)
+      return {
+        filename: `${found.doc.number ?? 'faktura'}.pdf`,
+        contentBase64: Buffer.from(bytes).toString('base64'),
+      }
+    }),
+
   isdoc: procedure({
     mcp: {
       name: 'export_document_isdoc',

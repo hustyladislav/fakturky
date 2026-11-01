@@ -11,6 +11,33 @@ beforeAll(async () => {
 })
 afterAll(() => handle.close())
 
+test('pdf procedures use the injected renderer', async () => {
+  const org = await seedOrg(handle, 'pub-pdf')
+  await handle.db.insert(schema.businessProfile).values({ organizationId: org, legalName: 'X' })
+  const principal = { userId: 'u', organizationId: org, via: 'session' as const }
+  const api = clientFor(handle, principal, {
+    renderPdf: async (doc) => new TextEncoder().encode(`pdf:${doc.number}`),
+  })
+  const c = await api.contacts.create({ name: 'O' })
+  const d = await api.documents.createDraft({
+    contactId: c.id,
+    lines: [{ description: 'x', quantity: '1', unitPrice: '10' }],
+  })
+  await expect(api.documents.pdf({ id: d.id })).rejects.toMatchObject({ code: 'NOT_FOUND' })
+  const issued = await api.documents.issue({ id: d.id })
+  const out = await api.documents.pdf({ id: issued.id })
+  expect(Buffer.from(out.contentBase64, 'base64').toString()).toBe(`pdf:${issued.number}`)
+  const anon = clientFor(handle, null, { renderPdf: async () => new Uint8Array([1]) })
+  expect((await anon.public.pdf({ token: issued.publicToken as string })).filename).toBe(
+    `${issued.number}.pdf`,
+  )
+  await expect(clientFor(handle, principal).documents.pdf({ id: issued.id })).rejects.toMatchObject(
+    {
+      code: 'NOT_IMPLEMENTED',
+    },
+  )
+})
+
 test('public invoice is token-gated, hides private data, records the first view', async () => {
   const org = await seedOrg(handle, 'pub-a')
   await handle.db

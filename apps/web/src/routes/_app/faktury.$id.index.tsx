@@ -5,7 +5,7 @@ import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Check, Copy, ExternalLink, Pencil, Trash2 } from 'lucide-react'
+import { Check, Copy, Download, ExternalLink, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
@@ -373,6 +373,16 @@ function InvoiceDetail() {
     }
     return (
       <>
+        {!isDraft && (
+          <Button
+            variant="outline"
+            className={full}
+            nativeButton={false}
+            render={<a href={`/api/documents/${id}/pdf`} download />}
+          >
+            <Download /> {t.downloadPdf}
+          </Button>
+        )}
         {d?.status === 'cancelled' ? null : (
           <Button
             variant="ghost"

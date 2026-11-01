@@ -88,7 +88,7 @@ const PAYMENT_MEANS_CODE: Record<ExportPaymentMethod, number> = {
   bank_transfer: 42,
   cash: 10,
   card: 48,
-  cash_on_delivery: 10,
+  cash_on_delivery: 50,
   other: 42,
 }
 
@@ -183,6 +183,8 @@ export function generateIsdoc(doc: DocumentForExport): string {
   const t = doc.totals
   const czk = (v: string | Decimal) => (foreign ? toFixed(round(parseDecimal(v).times(rate), 2)) : toFixed(v))
   const amount = (v: string | Decimal) => czk(v)
+  /** Unit prices keep 4 decimals (converted to CZK when foreign). */
+  const price = (v: Decimal) => toFixed(foreign ? v.times(rate) : v, 4)
 
   const x = new Xml()
   x.open('Invoice', `xmlns="${ISDOC_NAMESPACE}" version="${ISDOC_VERSION}"`)
@@ -222,11 +224,13 @@ export function generateIsdoc(doc: DocumentForExport): string {
     x.open('InvoiceLine')
     x.leaf('ID', i + 1)
     x.leaf('InvoicedQuantity', qty.toString(), line.unit ? `unitCode="${escapeXml(line.unit)}"` : '')
+    if (foreign) x.leaf('LineExtensionAmountCurr', toFixed(lt.base))
     x.leaf('LineExtensionAmount', amount(lt.base))
+    if (foreign) x.leaf('LineExtensionAmountTaxInclusiveCurr', toFixed(lt.total))
     x.leaf('LineExtensionAmountTaxInclusive', amount(lt.total))
     x.leaf('LineExtensionTaxAmount', amount(lt.vat))
-    x.leaf('UnitPrice', czk(round(unitNet, 4)))
-    x.leaf('UnitPriceTaxInclusive', czk(round(unitGross, 4)))
+    x.leaf('UnitPrice', price(unitNet))
+    x.leaf('UnitPriceTaxInclusive', price(unitGross))
     x.open('ClassifiedTaxCategory')
     x.leaf('Percent', lt.vatRate)
     x.leaf('VATCalculationMethod', doc.pricesIncludeVat ? 1 : 0)
@@ -245,8 +249,11 @@ export function generateIsdoc(doc: DocumentForExport): string {
     const rb = foreign ? ((r as { baseCzk?: string }).baseCzk ?? czk(r.base)) : r.base
     const rv = foreign ? ((r as { vatCzk?: string }).vatCzk ?? czk(r.vat)) : r.vat
     const rt = foreign ? ((r as { totalCzk?: string }).totalCzk ?? czk(r.total)) : r.total
+    if (foreign) x.leaf('TaxableAmountCurr', r.base)
     x.leaf('TaxableAmount', rb)
+    if (foreign) x.leaf('TaxAmountCurr', r.vat)
     x.leaf('TaxAmount', rv)
+    if (foreign) x.leaf('TaxInclusiveAmountCurr', r.total)
     x.leaf('TaxInclusiveAmount', rt)
     x.leaf('AlreadyClaimedTaxableAmount', '0.00')
     x.leaf('AlreadyClaimedTaxAmount', '0.00')
@@ -257,6 +264,7 @@ export function generateIsdoc(doc: DocumentForExport): string {
     x.open('TaxCategory').leaf('Percent', r.vatRate).leaf('TaxScheme', 'VAT').close('TaxCategory')
     x.close('TaxSubTotal')
   }
+  if (foreign) x.leaf('TaxAmountCurr', t.vatTotal)
   x.leaf('TaxAmount', t.vatTotalCzk)
   x.close('TaxTotal')
 
@@ -264,33 +272,44 @@ export function generateIsdoc(doc: DocumentForExport): string {
   const payable = toFixed(parseDecimal(t.totalCzk).minus(czk(deposits)))
   x.open('LegalMonetaryTotal')
   x.leaf('TaxExclusiveAmount', t.subtotalCzk)
+  if (foreign) x.leaf('TaxExclusiveAmountCurr', t.subtotal)
   x.leaf('TaxInclusiveAmount', toFixed(parseDecimal(t.subtotalCzk).plus(t.vatTotalCzk)))
+  if (foreign) x.leaf('TaxInclusiveAmountCurr', t.totalBeforeRounding)
   x.leaf('AlreadyClaimedTaxExclusiveAmount', '0.00')
   x.leaf('AlreadyClaimedTaxInclusiveAmount', '0.00')
   x.leaf('DifferenceTaxExclusiveAmount', t.subtotalCzk)
+  if (foreign) x.leaf('DifferenceTaxExclusiveAmountCurr', t.subtotal)
   x.leaf('DifferenceTaxInclusiveAmount', toFixed(parseDecimal(t.subtotalCzk).plus(t.vatTotalCzk)))
+  if (foreign) x.leaf('DifferenceTaxInclusiveAmountCurr', t.totalBeforeRounding)
   x.leaf('PayableRoundingAmount', czk(t.rounding))
+  if (foreign) x.leaf('PayableRoundingAmountCurr', t.rounding)
   x.leaf('PaidDepositsAmount', czk(deposits))
+  if (foreign) x.leaf('PaidDepositsAmountCurr', deposits)
   x.leaf('PayableAmount', payable)
+  if (foreign) x.leaf('PayableAmountCurr', toFixed(parseDecimal(t.total).minus(deposits)))
   x.close('LegalMonetaryTotal')
 
   const p = doc.payment
-  if (p && p.bankAccount && (p.method === 'bank_transfer' || p.method === 'other')) {
-    const b = p.bankAccount
+  if (p) {
     x.open('PaymentMeans').open('Payment')
     x.leaf('PaidAmount', payable)
     x.leaf('PaymentMeansCode', PAYMENT_MEANS_CODE[p.method])
-    x.open('Details')
-    x.leaf('PaymentDueDate', p.dueDate)
-    x.leaf('ID', b.accountNumber ?? '')
-    x.leaf('BankCode', b.bankCode ?? '')
-    x.leaf('Name', b.bankName ?? '')
-    x.leaf('IBAN', b.iban.replace(/\s/g, ''))
-    x.leaf('BIC', b.bic ?? '')
-    if (p.variableSymbol) x.leaf('VariableSymbol', p.variableSymbol)
-    if (p.constantSymbol) x.leaf('ConstantSymbol', p.constantSymbol)
-    if (p.specificSymbol) x.leaf('SpecificSymbol', p.specificSymbol)
-    x.close('Details').close('Payment').close('PaymentMeans')
+    const b = p.bankAccount
+    // ISDOC requires the full bank account group inside Details, so non-bank methods omit Details.
+    if (b && (p.method === 'bank_transfer' || p.method === 'other')) {
+      x.open('Details')
+      x.leaf('PaymentDueDate', p.dueDate)
+      x.leaf('ID', b.accountNumber ?? '')
+      x.leaf('BankCode', b.bankCode ?? '')
+      x.leaf('Name', b.bankName ?? '')
+      x.leaf('IBAN', b.iban.replace(/\s/g, ''))
+      x.leaf('BIC', b.bic ?? '')
+      if (p.variableSymbol) x.leaf('VariableSymbol', p.variableSymbol)
+      if (p.constantSymbol) x.leaf('ConstantSymbol', p.constantSymbol)
+      if (p.specificSymbol) x.leaf('SpecificSymbol', p.specificSymbol)
+      x.close('Details')
+    }
+    x.close('Payment').close('PaymentMeans')
   }
 
   x.close('Invoice')

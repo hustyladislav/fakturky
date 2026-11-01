@@ -94,6 +94,24 @@ describe('generateIsdoc', () => {
     validate(generateIsdoc(sample()))
   })
 
+  it('keeps unit price precision and exports foreign amounts', () => {
+    const l = [{ description: 'x', quantity: '1000', unitPrice: '0.1234', vatRate: '21' }]
+    const totals = computeDocumentTotals(l, { currency: 'EUR', exchangeRate: '25' })
+    const xml = generateIsdoc(sample({ lines: l, totals, currency: 'EUR', exchangeRate: '25' }))
+    expect(xml).toContain('<UnitPrice>3.0850</UnitPrice>')
+    expect(xml).toContain('<LineExtensionAmountCurr>123.40</LineExtensionAmountCurr>')
+    expect(xml).toContain('<PayableAmountCurr>149.31</PayableAmountCurr>')
+    if (hasXmllint()) validate(xml)
+  })
+
+  it('serializes cash and cash-on-delivery payments without bank details', () => {
+    const cash = generateIsdoc(sample({ payment: { method: 'cash', dueDate: '2026-11-15' } }))
+    expect(cash).toContain('<PaymentMeansCode>10</PaymentMeansCode>')
+    expect(cash).not.toContain('<Details>')
+    expect(generateIsdoc(sample({ payment: { method: 'cash_on_delivery', dueDate: '2026-11-15' } }))).toContain('<PaymentMeansCode>50</PaymentMeansCode>')
+    if (hasXmllint()) validate(cash)
+  })
+
   it.skipIf(!hasXmllint())('validates a non-payer, foreign-currency credit note and cash invoice', () => {
     const np = computeDocumentTotals(lines, { vatPayer: false })
     validate(generateIsdoc(sample({ vatPayer: false, totals: np, payment: null })))

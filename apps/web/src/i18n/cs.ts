@@ -471,6 +471,17 @@ export const cs = {
     notFound: 'Tento odkaz na fakturu neplatí nebo byl zrušen.',
     issuedIn: (brand: string) => `Vystaveno ve ${brand}`,
   },
+  numberSeries: {
+    title: 'Číslování dokladů',
+    description:
+      'Vzor čísla: {YYYY} rok, {YY} rok dvoumístně, {MM} měsíc a právě jedno pořadové číslo, např. {NNNN}. Každý rok se číslování začíná od jedničky. Vydaná čísla se nikdy nepoužijí znovu.',
+    pattern: 'Vzor čísla',
+    nextNumber: 'Další číslo',
+    continueFrom: 'Pokračovat od čísla (jen výš)',
+    set: 'Nastavit',
+    saved: 'Číslování bylo uloženo.',
+    types: { invoice: 'Faktury', proforma: 'Zálohové faktury', credit_note: 'Opravné doklady' },
+  },
   templates: {
     title: 'Šablony',
     empty: 'Zatím nemáte žádné šablony. Otevřete fakturu a zvolte „Uložit jako šablonu“.',

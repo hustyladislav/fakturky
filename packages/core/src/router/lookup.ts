@@ -2,8 +2,12 @@ import { getRate, IntegrationError, lookupByIco, normalizeIco, todayPrague } fro
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
+import { cached, enforceRateLimit } from '../upstream-guard'
 
 const tag = ['Lookup']
+
+/** Per organization; the cache absorbs repeats, this bounds distinct lookups. */
+const LOOKUPS_PER_MINUTE = 30
 
 function wrap(e: unknown): never {
   if (e instanceof IntegrationError) {
@@ -45,9 +49,11 @@ export const lookupRouter = {
         })
         .nullable(),
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ context, input }) => {
+      enforceRateLimit(`ares:${context.principal.organizationId}`, LOOKUPS_PER_MINUTE)
       try {
-        return await lookupByIco(normalizeIco(input.ico))
+        const ico = normalizeIco(input.ico)
+        return await cached(`ares:${ico}`, 60 * 60_000, () => lookupByIco(ico))
       } catch (e) {
         return wrap(e)
       }
@@ -72,9 +78,13 @@ export const lookupRouter = {
       }),
     )
     .output(z.object({ currency: z.string(), rate: z.string(), date: z.string() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ context, input }) => {
+      enforceRateLimit(`rate:${context.principal.organizationId}`, LOOKUPS_PER_MINUTE)
       try {
-        return await getRate(input.currency, input.date ?? todayPrague())
+        const date = input.date ?? todayPrague()
+        return await cached(`cnb:${input.currency.toUpperCase()}:${date}`, 6 * 60 * 60_000, () =>
+          getRate(input.currency, date),
+        )
       } catch (e) {
         return wrap(e)
       }

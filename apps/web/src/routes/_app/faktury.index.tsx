@@ -44,7 +44,6 @@ function InvoiceList() {
         <h1 className="text-2xl font-semibold">{t.title}</h1>
         <Button
           nativeButton={false}
-          nativeButton={false}
           render={<Link to="/faktury/nova" />}
           className="hidden sm:inline-flex"
         >
@@ -132,7 +131,6 @@ function InvoiceList() {
 
       <div className="from-background fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t p-4 sm:hidden">
         <Button
-          nativeButton={false}
           nativeButton={false}
           render={<Link to="/faktury/nova" />}
           size="lg"

@@ -77,6 +77,7 @@ test('the public payload is an explicit allow-list (new fields must be added her
       'issueDate',
       'lines',
       'number',
+      'original',
       'overdue',
       'recap',
       'remaining',

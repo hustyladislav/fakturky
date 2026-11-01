@@ -41,7 +41,11 @@ const METHODS: ExportPaymentMethod[] = [
 ]
 
 /** Maps an issued document (snapshots + lines) to the shape shared by PDF and ISDOC export. Never includes private notes. */
-export function toDocumentForExport(doc: DocRow, lines: LineRow[]): DocumentForExport {
+export function toDocumentForExport(
+  doc: DocRow,
+  lines: LineRow[],
+  original?: { number: string; issueDate: string; uuid: string } | null,
+): DocumentForExport {
   const vatPayer = doc.vatMode !== 'none'
   const exchangeRate = doc.currency === 'CZK' ? 1 : (doc.exchangeRate ?? 1)
   const totals = computeDocumentTotals(
@@ -58,7 +62,9 @@ export function toDocumentForExport(doc: DocRow, lines: LineRow[]): DocumentForE
     ? (doc.paymentMethod as ExportPaymentMethod)
     : 'other'
   return {
-    type: doc.type === 'proforma' ? 'proforma' : 'invoice',
+    type:
+      doc.type === 'proforma' ? 'proforma' : doc.type === 'credit_note' ? 'credit_note' : 'invoice',
+    originalDocument: original ?? null,
     number: doc.number ?? '',
     uuid: doc.id,
     issueDate: doc.issueDate ?? '',

@@ -33,7 +33,7 @@ export const dashboardRepo = {
         and(
           eq(document.organizationId, orgId),
           isNull(document.deletedAt),
-          eq(document.type, 'invoice'),
+          inArray(document.type, ['invoice', 'credit_note']),
           or(
             eq(document.status, 'issued'),
             and(
@@ -87,7 +87,8 @@ export const dashboardRepo = {
         if (key === month) monthTurnover = monthTurnover.plus(net)
         if (issue.startsWith(year)) yearTurnover = yearTurnover.plus(net)
       }
-      if (d.status === 'issued') {
+      // Credit notes net the turnover above but are never "open" receivables.
+      if (d.status === 'issued' && d.type === 'invoice') {
         const left = czk(d, parseDecimal(d.total).minus(paid.get(d.id) ?? 0))
         if (left.gt(0)) {
           unpaid = unpaid.plus(left)

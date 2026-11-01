@@ -6,6 +6,7 @@ import { contactsRouter } from './contacts'
 import { dashboardRouter } from './dashboard'
 import { documentsRouter } from './documents'
 import { exportsRouter } from './exports'
+import { importRouter } from './import'
 import { lookupRouter } from './lookup'
 import { publicRouter } from './public'
 import { recurringRouter, templatesRouter } from './templates'
@@ -18,6 +19,7 @@ export const router = {
   dashboard: dashboardRouter,
   documents: documentsRouter,
   exports: exportsRouter,
+  import: importRouter,
   lookup: lookupRouter,
   public: publicRouter,
   recurring: recurringRouter,

@@ -1,0 +1,36 @@
+[
+  {
+    "id": 16,
+    "custom_id": null,
+    "type": "customer",
+    "name": "Apple Czech s.r.o.",
+    "full_name": null,
+    "email": "pokus@test.cz",
+    "email_copy": null,
+    "phone": null,
+    "street": "Klimentská 1216/46",
+    "city": "Praha",
+    "zip": "11000",
+    "country": "CZ",
+    "registration_no": "28897501",
+    "vat_no": "CZ28897501",
+    "local_vat_no": null,
+    "private_note": null
+  },
+  {
+    "id": 17,
+    "type": "customer",
+    "name": "Nová Firma GmbH",
+    "email": "office@nova.example",
+    "email_copy": "billing@nova.example",
+    "phone": "+49 30 1234",
+    "street": "Hauptstr. 1",
+    "city": "Berlin",
+    "zip": "10115",
+    "country": "DE",
+    "registration_no": null,
+    "vat_no": "DE123456789",
+    "local_vat_no": null,
+    "private_note": "Platí vždy pozdě"
+  }
+]

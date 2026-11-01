@@ -97,3 +97,34 @@ export const DEFAULT_NUMBER_PATTERNS = {
   payment_receipt: 'P{YYYY}-{NNNN}',
   estimate: 'N{YYYY}-{NNNN}',
 } as const
+
+/**
+ * Inverse of {@link formatNumber}: extracts the counter (and year/month when the pattern has them)
+ * from a document number, or null when the number does not follow the pattern.
+ */
+export function parseNumber(
+  pattern: string,
+  number: string,
+): { counter: number; year?: number; month?: number } | null {
+  const tokens = parseNumberPattern(pattern)
+  const source = tokens
+    .map((t) => {
+      switch (t.type) {
+        case 'literal':
+          return (t.value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        case 'year4':
+          return '(?<y4>\\d{4})'
+        case 'year2':
+          return '(?<y2>\\d{2})'
+        case 'month':
+          return '(?<m>\\d{2})'
+        case 'counter':
+          return '(?<n>\\d+)'
+      }
+    })
+    .join('')
+  const g = new RegExp(`^${source}$`).exec(number)?.groups
+  if (!g?.n) return null
+  const year = g.y4 ? Number(g.y4) : g.y2 ? 2000 + Number(g.y2) : undefined
+  return { counter: Number(g.n), year, month: g.m ? Number(g.m) : undefined }
+}

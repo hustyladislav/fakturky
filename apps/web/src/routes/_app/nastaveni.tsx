@@ -1,5 +1,13 @@
+import { Button } from '@fakturky/ui/components/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@fakturky/ui/components/card'
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { ApiKeys } from '@/components/api-keys'
 import { BankAccountsCard } from '@/components/bank-accounts-card'
 import { BusinessProfileForm } from '@/components/business-profile-form'
@@ -24,6 +32,15 @@ function Settings() {
       </section>
       <BankAccountsCard />
       <ReminderSettings />
+      <Card>
+        <CardHeader>
+          <CardTitle>{cs.import.settingsCardTitle}</CardTitle>
+          <CardDescription>{cs.import.settingsCardDescription}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button render={<Link to="/import" />}>{cs.import.open}</Button>
+        </CardContent>
+      </Card>
       <ApiKeys />
     </div>
   )

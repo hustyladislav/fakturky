@@ -72,6 +72,8 @@ test('operations are derived from operationIds; public endpoints are skipped', (
 test('value coercion', () => {
   expect(coerce('number', '5', 'limit')).toBe(5)
   expect(() => coerce('number', 'x', 'limit')).toThrow('--limit must be a number')
+  expect(coerce('boolean', '', 'showQr')).toBe(true)
+  expect(coerce('boolean', 'false', 'showQr')).toBe(false)
   expect(coerce('json', '["a"]', 'emails')).toEqual(['a'])
   expect(() => coerce('json', '{', 'emails')).toThrow('valid JSON')
   expect(kindOf({ type: ['string', 'null'] })).toBe('string')

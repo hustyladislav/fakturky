@@ -1,4 +1,5 @@
 import * as p from '@clack/prompts'
+import { BRAND } from '@fakturky/core/brand'
 import { defineCommand, runMain } from 'citty'
 import { ApiError, loadOperations, request } from './api'
 import { buildGroupCommands, guard, output } from './commands'
@@ -8,7 +9,7 @@ import { render } from './format'
 const credentials = async () => {
   const creds = await resolveCredentials()
   if (!creds.apiKey) {
-    throw new ApiError(401, 'Not logged in. Run `fakturky login` or set FAKTURKY_API_KEY.')
+    throw new ApiError(401, `Not logged in. Run \`${BRAND.slug} login\` or set FAKTURKY_API_KEY.`)
   }
   return creds
 }
@@ -28,7 +29,7 @@ const login = defineCommand({
       )
       let apiKey = args.key
       if (!apiKey) {
-        p.intro('Fakturky')
+        p.intro(BRAND.name)
         const answer = await p.password({
           message: 'Vložte API klíč (fk_…)',
           validate: (v) => (v?.startsWith('fk_') ? undefined : 'Klíč musí začínat fk_'),
@@ -66,9 +67,9 @@ async function main() {
 
   const root = defineCommand({
     meta: {
-      name: 'fakturky',
+      name: BRAND.slug,
       version: '0.1.0',
-      description: 'Fakturky CLI — every command is generated from the server OpenAPI spec',
+      description: `${BRAND.name} CLI — every command is generated from the server OpenAPI spec`,
     },
     subCommands: { login, logout, whoami, ...buildGroupCommands(operations, credentials) },
   })

@@ -1,5 +1,6 @@
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import { BRAND } from '@fakturky/core/brand'
 import { configDir, specCacheFile } from './config'
 import { type Operation, parseSpec } from './spec'
 
@@ -28,7 +29,7 @@ export async function request(
     method,
     headers: {
       accept: 'application/json',
-      'user-agent': 'fakturky-cli',
+      'user-agent': `${BRAND.slug}-cli`,
       ...(creds.apiKey ? { authorization: `Bearer ${creds.apiKey}` } : {}),
       ...(options.body !== undefined ? { 'content-type': 'application/json' } : {}),
     },

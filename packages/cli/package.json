@@ -40,6 +40,7 @@
     "citty": "0.2.2"
   },
   "devDependencies": {
+    "@fakturky/core": "workspace:*",
     "@types/node": "catalog:",
     "tsdown": "0.23.4"
   }

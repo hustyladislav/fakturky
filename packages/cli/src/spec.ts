@@ -106,7 +106,8 @@ export function groupOperations(operations: Operation[]): Map<string, Operation[
 
 export function coerce(kind: ArgKind, value: unknown, name: string): unknown {
   if (kind === 'string') return String(value)
-  if (kind === 'boolean') return value === true || value === 'true'
+  // A bare `--flag` arrives as '' and means true; `--flag false` stays false.
+  if (kind === 'boolean') return value === true || value === '' || value === 'true'
   if (kind === 'number') {
     const n = Number(value)
     if (Number.isNaN(n)) throw new Error(`--${name} must be a number`)

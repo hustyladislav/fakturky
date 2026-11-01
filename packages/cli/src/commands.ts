@@ -47,14 +47,14 @@ export function buildOperationCommand(
   }
   for (const p of op.queryParams) {
     args[p.name] = {
-      type: p.kind === 'boolean' ? 'boolean' : 'string',
-      description: p.description,
+      type: 'string',
+      description: p.kind === 'boolean' ? `${p.description ?? p.name} (true|false)` : p.description,
       required: p.required,
     }
   }
   for (const p of op.bodyProps) {
     args[p.name] = {
-      type: p.kind === 'boolean' ? 'boolean' : 'string',
+      type: 'string',
       description: p.kind === 'json' ? `${p.description ?? p.name} (JSON)` : p.description,
     }
   }
@@ -76,7 +76,7 @@ export function buildOperationCommand(
         const query: Record<string, unknown> = {}
         for (const p of op.queryParams) {
           const v = values[p.name]
-          if (v === undefined || (p.kind === 'boolean' && v === false)) continue
+          if (v === undefined) continue
           query[p.name] = coerce(p.kind, v, p.name)
         }
 
@@ -85,7 +85,7 @@ export function buildOperationCommand(
           body = typeof values.data === 'string' ? await readData(values.data) : {}
           for (const p of op.bodyProps) {
             const v = values[p.name]
-            if (v === undefined || (p.kind === 'boolean' && v === false)) continue
+            if (v === undefined) continue
             body[p.name] = coerce(p.kind, v, p.name)
           }
         }

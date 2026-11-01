@@ -1,15 +1,16 @@
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
+import { BRAND } from '@fakturky/core/brand'
 
 export const DEFAULT_URL = 'https://fakturky.vercel.app'
 
 export type Config = { apiKey?: string; url?: string }
 
 export function configDir(env = process.env, platform = process.platform): string {
-  if (env.XDG_CONFIG_HOME) return join(env.XDG_CONFIG_HOME, 'fakturky')
-  if (platform === 'win32' && env.APPDATA) return join(env.APPDATA, 'fakturky')
-  return join(homedir(), '.config', 'fakturky')
+  if (env.XDG_CONFIG_HOME) return join(env.XDG_CONFIG_HOME, BRAND.slug)
+  if (platform === 'win32' && env.APPDATA) return join(env.APPDATA, BRAND.slug)
+  return join(homedir(), '.config', BRAND.slug)
 }
 
 export const configFile = () => join(configDir(), 'config.json')

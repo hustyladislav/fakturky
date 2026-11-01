@@ -61,6 +61,10 @@ export interface Labels {
   note: string
   taxNote: string
   taxableDateDefault: string
+  treatments: Record<
+    'exempt' | 'reverse_charge' | 'eu_reverse_charge' | 'export' | 'outside_scope',
+    string
+  >
 }
 
 export const LABELS: Record<DocumentLanguage, Labels> = {
@@ -131,6 +135,13 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     note: 'Poznámka',
     taxNote: 'Poznámka k DPH',
     taxableDateDefault: 'DUZP',
+    treatments: {
+      exempt: 'Osvobozeno',
+      reverse_charge: 'PDP',
+      eu_reverse_charge: 'PDP',
+      export: 'Vývoz',
+      outside_scope: 'Mimo DPH',
+    },
   },
   sk: {
     invoice: 'Faktúra',
@@ -199,6 +210,13 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     note: 'Poznámka',
     taxNote: 'Poznámka k DPH',
     taxableDateDefault: 'Dátum dodania',
+    treatments: {
+      exempt: 'Oslobodené',
+      reverse_charge: 'PDP',
+      eu_reverse_charge: 'PDP',
+      export: 'Vývoz',
+      outside_scope: 'Mimo DPH',
+    },
   },
   en: {
     invoice: 'Invoice',
@@ -267,5 +285,12 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     note: 'Note',
     taxNote: 'VAT note',
     taxableDateDefault: 'Taxable supply',
+    treatments: {
+      exempt: 'Exempt',
+      reverse_charge: 'Reverse ch.',
+      eu_reverse_charge: 'Reverse ch.',
+      export: 'Export',
+      outside_scope: 'Out of scope',
+    },
   },
 }

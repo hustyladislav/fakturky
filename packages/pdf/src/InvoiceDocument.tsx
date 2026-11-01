@@ -1,6 +1,8 @@
 import {
   type ExportParty,
+  type MoneyInput,
   parseDecimal,
+  round,
   type VatTreatment,
   vatTreatmentText,
 } from '@fakturky/domain'
@@ -172,6 +174,17 @@ const s = StyleSheet.create({
     textAlign: 'center',
   },
 })
+
+/** Tax documents state the unit price without VAT; derive it from the line base when prices were entered gross. */
+function unitPriceNet(
+  qty: MoneyInput,
+  entered: MoneyInput,
+  base: string | undefined,
+  gross?: boolean,
+) {
+  const q = parseDecimal(qty)
+  return gross && base && !q.isZero() ? round(parseDecimal(base).div(q), 2) : entered
+}
 
 function titleFor(doc: InvoicePdfInput, t: Labels): string {
   switch (doc.type) {
@@ -426,15 +439,18 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
               </View>
               <Text style={s.cQty}>{quantity(line.quantity, lang)}</Text>
               <Text style={s.cUnit}>{line.unit ?? ''}</Text>
-              <Text style={s.cPrice}>{amount(line.unitPrice, lang)}</Text>
+              <Text style={s.cPrice}>
+                {amount(
+                  unitPriceNet(line.quantity, line.unitPrice, lt?.base, doc.pricesIncludeVat),
+                  lang,
+                )}
+              </Text>
               {showVatCols ? (
                 <Text style={s.cVat}>
                   {lt && lt.vatTreatment === 'standard' ? percent(lt.vatRate) : '–'}
                 </Text>
               ) : null}
-              <Text style={[s.cTotal, s.bold]}>
-                {lt ? amount(doc.pricesIncludeVat ? lt.total : lt.base, lang) : ''}
-              </Text>
+              <Text style={[s.cTotal, s.bold]}>{lt ? amount(lt.base, lang) : ''}</Text>
             </View>
           )
         })}
@@ -510,15 +526,17 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
                   <Text style={[s.th, { flex: 1 }]}>{`${t.vatRecap} (${cl})`}</Text>
                 </View>
                 <View style={[s.row, { paddingBottom: 4 }]}>
-                  <Text style={[s.th, { width: 40 }]}>{t.rate}</Text>
+                  <Text style={[s.th, { width: 58 }]}>{t.rate}</Text>
                   <Text style={[s.th, { flex: 1, textAlign: 'right' }]}>{t.base}</Text>
                   <Text style={[s.th, { width: 62, textAlign: 'right' }]}>{t.vat}</Text>
                   <Text style={[s.th, { width: 68, textAlign: 'right' }]}>{t.total}</Text>
                 </View>
                 {doc.totals.recap.map((r) => (
                   <View key={`${r.vatTreatment}-${r.vatRate}`} style={s.recapRow}>
-                    <Text style={{ width: 40 }}>
-                      {r.vatTreatment === 'standard' ? percent(r.vatRate) : '0 %'}
+                    <Text style={{ width: 58 }}>
+                      {r.vatTreatment === 'standard'
+                        ? percent(r.vatRate)
+                        : t.treatments[r.vatTreatment]}
                     </Text>
                     <Text style={{ flex: 1, textAlign: 'right' }}>{amount(r.base, lang)}</Text>
                     <Text style={{ width: 62, textAlign: 'right' }}>{amount(r.vat, lang)}</Text>
@@ -531,7 +549,7 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
                     { borderTopColor: INK, borderTopWidth: 0.6, fontWeight: 600 },
                   ]}
                 >
-                  <Text style={[s.bold, { width: 40 }]}>{t.sum}</Text>
+                  <Text style={[s.bold, { width: 58 }]}>{t.sum}</Text>
                   <Text style={[s.bold, { flex: 1, textAlign: 'right' }]}>
                     {amount(doc.totals.subtotal, lang)}
                   </Text>
@@ -559,8 +577,10 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
                 <Text style={[s.th, { paddingBottom: 4 }]}>{`${t.recapCzk} (Kč)`}</Text>
                 {doc.totals.recap.map((r) => (
                   <View key={`czk-${r.vatTreatment}-${r.vatRate}`} style={s.recapRow}>
-                    <Text style={{ width: 40 }}>
-                      {r.vatTreatment === 'standard' ? percent(r.vatRate) : '0 %'}
+                    <Text style={{ width: 58 }}>
+                      {r.vatTreatment === 'standard'
+                        ? percent(r.vatRate)
+                        : t.treatments[r.vatTreatment]}
                     </Text>
                     <Text style={{ flex: 1, textAlign: 'right' }}>
                       {amount(r.baseCzk ?? '0', lang)}

@@ -1,0 +1,604 @@
+import { randomBytes } from 'node:crypto'
+import type { Db } from '@fakturky/db'
+import { schema } from '@fakturky/db'
+import {
+  addDays,
+  computeDocumentTotals,
+  DEFAULT_NUMBER_PATTERNS,
+  Decimal,
+  formatDocumentNumber,
+  parseDecimal,
+  periodKey,
+  todayPrague,
+  toFixed,
+  variableSymbolFromNumber,
+} from '@fakturky/domain'
+import { and, asc, desc, eq, ilike, isNull, lt, or, sql } from 'drizzle-orm'
+import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
+import { bankAccountsRepo } from './bank-accounts'
+
+const { document, documentLine, payment, activity, businessProfile, contact, numberSeries } = schema
+
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
+type DocRow = typeof document.$inferSelect
+
+/** Domain-level failure; the router maps `code` onto an oRPC error. */
+export class DocumentError extends Error {
+  constructor(
+    readonly code: 'NOT_FOUND' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'BAD_REQUEST',
+    message: string,
+  ) {
+    super(message)
+  }
+}
+
+const scoped = (orgId: string, id: string) =>
+  and(eq(document.organizationId, orgId), eq(document.id, id), isNull(document.deletedAt))
+
+export function deriveStatus(
+  doc: Pick<DocRow, 'status' | 'dueDate'>,
+  paid: Decimal,
+  today = todayPrague(),
+): DisplayStatus {
+  switch (doc.status) {
+    case 'draft':
+      return 'draft'
+    case 'paid':
+      return 'paid'
+    case 'cancelled':
+      return 'cancelled'
+    default:
+      if (doc.dueDate && doc.dueDate < today) return 'overdue'
+      return paid.gt(0) ? 'partially_paid' : 'issued'
+  }
+}
+
+async function logActivity(
+  tx: Db | Tx,
+  orgId: string,
+  actorId: string | null,
+  entityId: string,
+  action: string,
+  data?: Record<string, unknown>,
+) {
+  await tx
+    .insert(activity)
+    .values({ organizationId: orgId, actorId, entityType: 'document', entityId, action, data })
+}
+
+async function loadProfile(db: Db | Tx, orgId: string) {
+  const [p] = await db
+    .select()
+    .from(businessProfile)
+    .where(eq(businessProfile.organizationId, orgId))
+  return p ?? null
+}
+
+function totalsFor(
+  lines: DraftInput['lines'],
+  opts: { vatPayer: boolean; currency: string; exchangeRate?: string | null },
+) {
+  return computeDocumentTotals(
+    lines.map((l) => ({
+      quantity: l.quantity,
+      unitPrice: l.unitPrice,
+      vatRate: l.vatRate,
+      discountPercent: l.discountPercent,
+    })),
+    {
+      vatPayer: opts.vatPayer,
+      currency: opts.currency,
+      exchangeRate: opts.currency === 'CZK' ? 1 : (opts.exchangeRate ?? 1),
+    },
+  )
+}
+
+async function writeLines(
+  tx: Tx,
+  orgId: string,
+  documentId: string,
+  lines: DraftInput['lines'],
+  totals: ReturnType<typeof computeDocumentTotals>,
+) {
+  await tx.delete(documentLine).where(eq(documentLine.documentId, documentId))
+  if (lines.length === 0) return
+  await tx.insert(documentLine).values(
+    lines.map((l, i) => ({
+      organizationId: orgId,
+      documentId,
+      position: i,
+      description: l.description,
+      quantity: l.quantity,
+      unit: l.unit ?? null,
+      unitPrice: l.unitPrice,
+      vatRate: totals.lines[i]?.vatRate ?? '0',
+      discountPercent: l.discountPercent,
+      lineSubtotal: totals.lines[i]?.base ?? '0',
+      lineVat: totals.lines[i]?.vat ?? '0',
+      lineTotal: totals.lines[i]?.total ?? '0',
+    })),
+  )
+}
+
+function totalColumns(totals: ReturnType<typeof computeDocumentTotals>, currency: string) {
+  return {
+    subtotal: totals.subtotal,
+    vatTotal: totals.vatTotal,
+    total: totals.total,
+    totalCzk: currency === 'CZK' ? totals.total : totals.totalCzk,
+    rounding: totals.rounding,
+  }
+}
+
+async function paidSums(db: Db | Tx, orgId: string, ids: string[]) {
+  const map = new Map<string, Decimal>()
+  if (ids.length === 0) return map
+  const rows = await db
+    .select({ documentId: payment.documentId, amount: payment.amount })
+    .from(payment)
+    .where(and(eq(payment.organizationId, orgId), sql`${payment.documentId} in ${ids}`))
+  for (const r of rows) {
+    map.set(r.documentId, (map.get(r.documentId) ?? new Decimal(0)).plus(parseDecimal(r.amount)))
+  }
+  return map
+}
+
+function decorate(doc: DocRow, paid: Decimal, customerName: string | null) {
+  const diff = parseDecimal(doc.total).minus(paid)
+  const remaining = diff.isNegative() ? new Decimal(0) : diff
+  return {
+    ...doc,
+    displayStatus: deriveStatus(doc, paid),
+    customerName,
+    paidAmount: toFixed(paid, 2),
+    remaining: toFixed(remaining, 2),
+  }
+}
+
+export const documentsRepo = {
+  async list(
+    db: Db,
+    orgId: string,
+    opts: {
+      filter: 'all' | 'draft' | 'unpaid' | 'overdue' | 'paid' | 'cancelled'
+      search?: string
+      limit: number
+      offset: number
+    },
+  ) {
+    const today = todayPrague()
+    const term = opts.search?.trim()
+    const statusWhere = {
+      all: undefined,
+      draft: eq(document.status, 'draft'),
+      unpaid: eq(document.status, 'issued'),
+      overdue: and(eq(document.status, 'issued'), lt(document.dueDate, today)),
+      paid: eq(document.status, 'paid'),
+      cancelled: eq(document.status, 'cancelled'),
+    }[opts.filter]
+    const rows = await db
+      .select({ doc: document, contactName: contact.name })
+      .from(document)
+      .leftJoin(contact, eq(contact.id, document.contactId))
+      .where(
+        and(
+          eq(document.organizationId, orgId),
+          isNull(document.deletedAt),
+          statusWhere,
+          term
+            ? or(
+                ilike(sql`coalesce(${document.number}, '')`, `%${term}%`),
+                ilike(sql`coalesce(${document.variableSymbol}, '')`, `%${term}%`),
+                ilike(sql`coalesce(${document.customerSnapshot}->>'name', '')`, `%${term}%`),
+                ilike(sql`coalesce(${contact.name}, '')`, `%${term}%`),
+              )
+            : undefined,
+        ),
+      )
+      .orderBy(desc(document.createdAt), desc(document.id))
+      .limit(opts.limit)
+      .offset(opts.offset)
+    const sums = await paidSums(
+      db,
+      orgId,
+      rows.map((r) => r.doc.id),
+    )
+    return rows.map(({ doc, contactName }) =>
+      decorate(
+        doc,
+        sums.get(doc.id) ?? new Decimal(0),
+        (doc.customerSnapshot?.name as string | undefined) ?? contactName,
+      ),
+    )
+  },
+
+  async get(db: Db | Tx, orgId: string, id: string) {
+    const [doc] = await db.select().from(document).where(scoped(orgId, id))
+    if (!doc) return null
+    const [lines, payments, acts, [c]] = await Promise.all([
+      db
+        .select()
+        .from(documentLine)
+        .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, id)))
+        .orderBy(asc(documentLine.position)),
+      db
+        .select()
+        .from(payment)
+        .where(and(eq(payment.organizationId, orgId), eq(payment.documentId, id)))
+        .orderBy(asc(payment.paidOn), asc(payment.createdAt)),
+      db
+        .select()
+        .from(activity)
+        .where(
+          and(
+            eq(activity.organizationId, orgId),
+            eq(activity.entityType, 'document'),
+            eq(activity.entityId, id),
+          ),
+        )
+        .orderBy(asc(activity.createdAt)),
+      doc.contactId
+        ? db
+            .select({ name: contact.name })
+            .from(contact)
+            .where(and(eq(contact.organizationId, orgId), eq(contact.id, doc.contactId)))
+        : Promise.resolve([] as { name: string }[]),
+    ])
+    const paid = payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
+    const profile = doc.status === 'draft' ? await loadProfile(db, orgId) : null
+    const totals = totalsFor(lines.map((l) => ({ ...l, unit: l.unit })) as DraftInput['lines'], {
+      vatPayer: doc.status === 'draft' ? profile?.vatStatus === 'payer' : doc.vatMode !== 'none',
+      currency: doc.currency,
+      exchangeRate: doc.exchangeRate,
+    })
+    return {
+      ...decorate(doc, paid, (doc.customerSnapshot?.name as string | undefined) ?? c?.name ?? null),
+      lines,
+      payments,
+      vatRecap: totals.recap.map((r) => ({
+        vatRate: r.vatRate,
+        base: r.base,
+        vat: r.vat,
+        total: r.total,
+      })),
+      activity: acts,
+    }
+  },
+
+  async createDraft(db: Db, orgId: string, actorId: string, input: DraftInput) {
+    const id = await db.transaction(async (tx) => {
+      const profile = await loadProfile(tx, orgId)
+      const issueDate = input.issueDate ?? todayPrague()
+      let dueDays = profile?.defaultDueDays ?? 14
+      if (input.contactId) {
+        const [c] = await tx
+          .select()
+          .from(contact)
+          .where(and(eq(contact.organizationId, orgId), eq(contact.id, input.contactId)))
+        if (!c) throw new DocumentError('NOT_FOUND', 'Contact not found')
+        dueDays = c.defaultDueDays ?? dueDays
+      }
+      const currency = input.currency ?? profile?.defaultCurrency ?? 'CZK'
+      const vatPayer = profile?.vatStatus === 'payer'
+      const totals = totalsFor(input.lines, {
+        vatPayer,
+        currency,
+        exchangeRate: input.exchangeRate,
+      })
+      const bank = input.bankAccountId
+        ? await bankAccountsRepo.get(tx, orgId, input.bankAccountId)
+        : await bankAccountsRepo.defaultFor(tx, orgId, currency)
+      if (input.bankAccountId && !bank)
+        throw new DocumentError('NOT_FOUND', 'Bank account not found')
+      const [row] = await tx
+        .insert(document)
+        .values({
+          organizationId: orgId,
+          type: input.type,
+          contactId: input.contactId ?? null,
+          bankAccountId: bank?.id ?? null,
+          issueDate,
+          taxableDate: input.taxableDate ?? issueDate,
+          dueDate: input.dueDate ?? addDays(issueDate, dueDays),
+          currency,
+          exchangeRate: input.exchangeRate ?? null,
+          language: input.language ?? profile?.defaultLanguage ?? 'cs',
+          paymentMethod: input.paymentMethod ?? profile?.defaultPaymentMethod ?? 'bank_transfer',
+          constantSymbol: input.constantSymbol ?? null,
+          orderNumber: input.orderNumber ?? null,
+          introText: input.introText ?? null,
+          footerText: input.footerText ?? profile?.defaultFooter ?? null,
+          privateNote: input.privateNote ?? null,
+          vatMode: vatPayer ? 'standard' : 'none',
+          ...totalColumns(totals, currency),
+        })
+        .returning({ id: document.id })
+      if (!row) throw new Error('insert returned no row')
+      await writeLines(tx, orgId, row.id, input.lines, totals)
+      await logActivity(tx, orgId, actorId, row.id, 'created')
+      return row.id
+    })
+    return this.get(db, orgId, id)
+  },
+
+  async updateDraft(db: Db, orgId: string, actorId: string, id: string, patch: DraftPatch) {
+    await db.transaction(async (tx) => {
+      const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
+      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (doc.status !== 'draft') {
+        throw new DocumentError(
+          'CONFLICT',
+          'Only drafts can be edited; issued documents are immutable',
+        )
+      }
+      const { lines, ...rest } = patch
+      if (rest.contactId) {
+        const [c] = await tx
+          .select({ id: contact.id })
+          .from(contact)
+          .where(and(eq(contact.organizationId, orgId), eq(contact.id, rest.contactId)))
+        if (!c) throw new DocumentError('NOT_FOUND', 'Contact not found')
+      }
+      if (rest.bankAccountId && !(await bankAccountsRepo.get(tx, orgId, rest.bankAccountId))) {
+        throw new DocumentError('NOT_FOUND', 'Bank account not found')
+      }
+      const profile = await loadProfile(tx, orgId)
+      const currency = rest.currency ?? doc.currency
+      const exchangeRate = rest.exchangeRate === undefined ? doc.exchangeRate : rest.exchangeRate
+      const existingLines = lines
+        ? null
+        : await tx.select().from(documentLine).where(eq(documentLine.documentId, id))
+      const effective = (lines ?? existingLines ?? []) as DraftInput['lines']
+      const totals = totalsFor(effective, {
+        vatPayer: profile?.vatStatus === 'payer',
+        currency,
+        exchangeRate,
+      })
+      await tx
+        .update(document)
+        .set({ ...rest, currency, exchangeRate, ...totalColumns(totals, currency) })
+        .where(scoped(orgId, id))
+      if (lines) await writeLines(tx, orgId, id, lines, totals)
+      await logActivity(tx, orgId, actorId, id, 'updated')
+    })
+    return this.get(db, orgId, id)
+  },
+
+  async issue(db: Db, orgId: string, actorId: string, id: string) {
+    await db.transaction(async (tx) => {
+      const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
+      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (doc.status !== 'draft') throw new DocumentError('CONFLICT', 'Document is already issued')
+      const profile = await loadProfile(tx, orgId)
+      if (!profile) {
+        throw new DocumentError(
+          'PRECONDITION_FAILED',
+          'Fill in your business profile before issuing',
+        )
+      }
+      if (!doc.contactId) throw new DocumentError('PRECONDITION_FAILED', 'Choose a customer first')
+      const lines = await tx.select().from(documentLine).where(eq(documentLine.documentId, id))
+      if (lines.length === 0)
+        throw new DocumentError('PRECONDITION_FAILED', 'Add at least one line')
+      if (doc.currency !== 'CZK' && !doc.exchangeRate) {
+        throw new DocumentError(
+          'PRECONDITION_FAILED',
+          'Exchange rate is required for foreign currency',
+        )
+      }
+      const [customer] = await tx
+        .select()
+        .from(contact)
+        .where(and(eq(contact.organizationId, orgId), eq(contact.id, doc.contactId)))
+      if (!customer) throw new DocumentError('NOT_FOUND', 'Contact not found')
+      const bank = doc.bankAccountId
+        ? await bankAccountsRepo.get(tx, orgId, doc.bankAccountId)
+        : await bankAccountsRepo.defaultFor(tx, orgId, doc.currency)
+
+      // Number allocation: lazily created default series + atomic counter bump.
+      let [series] = await tx
+        .select()
+        .from(numberSeries)
+        .where(
+          and(
+            eq(numberSeries.organizationId, orgId),
+            eq(numberSeries.documentType, doc.type),
+            eq(numberSeries.isDefault, true),
+          ),
+        )
+        .orderBy(asc(numberSeries.createdAt))
+      if (!series) {
+        const pattern = DEFAULT_NUMBER_PATTERNS[doc.type as keyof typeof DEFAULT_NUMBER_PATTERNS]
+        ;[series] = await tx
+          .insert(numberSeries)
+          .values({
+            organizationId: orgId,
+            documentType: doc.type,
+            name: doc.type === 'invoice' ? 'Faktury' : doc.type,
+            pattern,
+            reset: 'yearly',
+          })
+          .returning()
+      }
+      if (!series) throw new Error('series missing')
+      const issueDate = doc.issueDate ?? todayPrague()
+      const date = { year: Number(issueDate.slice(0, 4)), month: Number(issueDate.slice(5, 7)) }
+      const period = periodKey(series.reset, date)
+      const [counter] = await tx
+        .insert(schema.numberSeriesCounter)
+        .values({ organizationId: orgId, seriesId: series.id, period, nextValue: 2 })
+        .onConflictDoUpdate({
+          target: [schema.numberSeriesCounter.seriesId, schema.numberSeriesCounter.period],
+          set: { nextValue: sql`${schema.numberSeriesCounter.nextValue} + 1` },
+        })
+        .returning({ nextValue: schema.numberSeriesCounter.nextValue })
+      if (!counter) throw new Error('counter missing')
+      const number = formatDocumentNumber(series.pattern, counter.nextValue - 1, date)
+
+      await tx
+        .update(document)
+        .set({
+          status: 'issued',
+          number,
+          seriesId: series.id,
+          variableSymbol: variableSymbolFromNumber(number),
+          bankAccountId: bank?.id ?? null,
+          issueDate,
+          publicToken: randomBytes(24).toString('base64url'),
+          supplierSnapshot: {
+            name: profile.legalName,
+            ico: profile.ico,
+            dic: profile.dic,
+            address: profile.address,
+            vatStatus: profile.vatStatus,
+            registryNote: profile.registryNote,
+            email: profile.email,
+            phone: profile.phone,
+            website: profile.website,
+          },
+          customerSnapshot: {
+            name: customer.name,
+            ico: customer.ico,
+            dic: customer.dic,
+            icDph: customer.icDph,
+            address: customer.address,
+            country: customer.country,
+            emails: customer.emails,
+            phone: customer.phone,
+          },
+          bankSnapshot: bank
+            ? {
+                label: bank.label,
+                currency: bank.currency,
+                iban: bank.iban,
+                accountNumber: bank.accountNumber,
+                bankCode: bank.bankCode,
+                bic: bank.bic,
+                showQr: bank.showQr,
+              }
+            : null,
+        })
+        .where(scoped(orgId, id))
+      await logActivity(tx, orgId, actorId, id, 'issued', { number })
+    })
+    return this.get(db, orgId, id)
+  },
+
+  async duplicate(db: Db, orgId: string, actorId: string, id: string) {
+    const src = await this.get(db, orgId, id)
+    if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    return this.createDraft(db, orgId, actorId, {
+      type: src.type as 'invoice' | 'proforma',
+      contactId: src.contactId,
+      bankAccountId: src.bankAccountId,
+      currency: src.currency,
+      exchangeRate: src.exchangeRate,
+      language: src.language as 'cs' | 'sk' | 'en',
+      paymentMethod: src.paymentMethod,
+      constantSymbol: src.constantSymbol,
+      orderNumber: src.orderNumber,
+      introText: src.introText,
+      footerText: src.footerText,
+      privateNote: src.privateNote,
+      lines: src.lines.map((l) => ({
+        description: l.description,
+        quantity: l.quantity,
+        unit: l.unit,
+        unitPrice: l.unitPrice,
+        vatRate: l.vatRate,
+        discountPercent: l.discountPercent,
+      })),
+    })
+  },
+
+  async markPaid(
+    db: Db,
+    orgId: string,
+    actorId: string,
+    id: string,
+    input: { amount?: string | null; paidOn?: string; method?: string; note?: string | null },
+  ) {
+    await db.transaction(async (tx) => {
+      const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
+      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (doc.status !== 'issued') {
+        throw new DocumentError('CONFLICT', 'Only issued, unpaid documents can be marked as paid')
+      }
+      const already = (await paidSums(tx, orgId, [id])).get(id) ?? new Decimal(0)
+      const remaining = parseDecimal(doc.total).minus(already)
+      const amount = input.amount ? parseDecimal(input.amount) : remaining
+      if (amount.lte(0)) throw new DocumentError('BAD_REQUEST', 'Amount must be positive')
+      const paidOn = input.paidOn ?? todayPrague()
+      await tx.insert(payment).values({
+        organizationId: orgId,
+        documentId: id,
+        paidOn,
+        amount: toFixed(amount, 2),
+        currency: doc.currency,
+        method: input.method ?? doc.paymentMethod,
+        note: input.note ?? null,
+      })
+      const full = already.plus(amount).gte(parseDecimal(doc.total))
+      if (full) {
+        await tx
+          .update(document)
+          .set({ status: 'paid', paidAt: new Date() })
+          .where(scoped(orgId, id))
+      }
+      await logActivity(tx, orgId, actorId, id, full ? 'paid' : 'partially_paid', {
+        amount: toFixed(amount, 2),
+        paidOn,
+      })
+    })
+    return this.get(db, orgId, id)
+  },
+
+  async markUnpaid(db: Db, orgId: string, actorId: string, id: string) {
+    await db.transaction(async (tx) => {
+      const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
+      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (doc.status !== 'paid' && doc.status !== 'issued') {
+        throw new DocumentError('CONFLICT', 'Only issued or paid documents can be marked unpaid')
+      }
+      await tx
+        .delete(payment)
+        .where(and(eq(payment.organizationId, orgId), eq(payment.documentId, id)))
+      await tx.update(document).set({ status: 'issued', paidAt: null }).where(scoped(orgId, id))
+      await logActivity(tx, orgId, actorId, id, 'unpaid')
+    })
+    return this.get(db, orgId, id)
+  },
+
+  async cancel(db: Db, orgId: string, actorId: string, id: string) {
+    await db.transaction(async (tx) => {
+      const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
+      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (doc.status !== 'issued' && doc.status !== 'paid') {
+        throw new DocumentError('CONFLICT', 'Only issued documents can be cancelled')
+      }
+      await tx
+        .update(document)
+        .set({ status: 'cancelled', cancelledAt: new Date() })
+        .where(scoped(orgId, id))
+      await logActivity(tx, orgId, actorId, id, 'cancelled')
+    })
+    return this.get(db, orgId, id)
+  },
+
+  /** Drafts only: issued numbers are never reused, so issued documents are cancelled instead. */
+  async deleteDraft(db: Db, orgId: string, actorId: string, id: string) {
+    return db.transaction(async (tx) => {
+      const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
+      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (doc.status !== 'draft') {
+        throw new DocumentError(
+          'CONFLICT',
+          'Only drafts can be deleted; cancel issued documents instead',
+        )
+      }
+      await tx.update(document).set({ deletedAt: new Date() }).where(scoped(orgId, id))
+      await logActivity(tx, orgId, actorId, id, 'deleted')
+      return { id }
+    })
+  },
+}

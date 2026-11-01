@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PrihlaseniRouteImport } from './routes/prihlaseni'
 import { Route as RegistraceRouteImport } from './routes/registrace'
@@ -33,6 +34,11 @@ import { Route as ApiDocumentsIdPdfRouteImport } from './routes/api/documents.$i
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -138,6 +144,7 @@ const ApiDocumentsIdPdfRoute = ApiDocumentsIdPdfRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/onboarding': typeof OnboardingRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesByTo {
+  '/llms.txt': typeof LlmsDottxtRoute
   '/onboarding': typeof OnboardingRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
@@ -182,6 +190,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/llms.txt': typeof LlmsDottxtRoute
   '/onboarding': typeof OnboardingRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/llms.txt'
     | '/onboarding'
     | '/prihlaseni'
     | '/registrace'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/faktury/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/llms.txt'
     | '/onboarding'
     | '/prihlaseni'
     | '/registrace'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/llms.txt'
     | '/onboarding'
     | '/prihlaseni'
     | '/registrace'
@@ -274,6 +286,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   OnboardingRoute: typeof OnboardingRoute
   PrihlaseniRoute: typeof PrihlaseniRoute
   RegistraceRoute: typeof RegistraceRoute
@@ -293,6 +306,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -487,6 +507,7 @@ const FTokenRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   OnboardingRoute: OnboardingRoute,
   PrihlaseniRoute: PrihlaseniRoute,
   RegistraceRoute: RegistraceRoute,

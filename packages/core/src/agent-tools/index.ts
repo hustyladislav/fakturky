@@ -60,13 +60,16 @@ function describe(def: Def, path: string[]): Omit<AgentTool, 'execute'> | null {
   if (!mcp) return null
 
   const input = def.inputSchema ? toJsonSchema(def.inputSchema, 'input') : undefined
+  if (input && !isObjectSchema(input)) {
+    throw new Error(`Tool ${mcp.name}: procedure input must be an object schema`)
+  }
   const output = def.outputSchema ? toJsonSchema(def.outputSchema, 'output') : undefined
 
   return {
     name: mcp.name,
     title: mcp.title,
     description: mcp.description ?? def.meta?.openapi?.summary ?? mcp.title,
-    inputSchema: input && isObjectSchema(input) ? input : { type: 'object', properties: {} },
+    inputSchema: input ?? { type: 'object', properties: {} },
     outputSchema: output
       ? isObjectSchema(output)
         ? output

@@ -2,7 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
 import { contactsRepo } from '../repositories/contacts'
-import { contactInputSchema, contactSchema } from '../schemas/contact'
+import { contactInputSchema, contactPatchSchema, contactSchema } from '../schemas/contact'
 
 const idInput = z.object({ id: z.string().min(1) })
 
@@ -16,9 +16,11 @@ export const contactsRouter = {
     .input(
       z.object({
         search: z.string().optional(),
-        includeArchived: z.boolean().default(false),
-        limit: z.number().int().min(1).max(200).default(50),
-        offset: z.number().int().min(0).default(0),
+        includeArchived: z
+          .union([z.boolean(), z.enum(['true', 'false']).transform((v) => v === 'true')])
+          .default(false),
+        limit: z.coerce.number().int().min(1).max(200).default(50),
+        offset: z.coerce.number().int().min(0).default(0),
       }),
     )
     .output(z.array(contactSchema))
@@ -62,14 +64,14 @@ export const contactsRouter = {
       tags: ['Contacts'],
     },
   })
-    .input(idInput.extend({ patch: contactInputSchema.partial() }))
+    .input(idInput.extend({ patch: contactPatchSchema }))
     .output(contactSchema)
     .handler(async ({ context, input }) => {
       const row = await contactsRepo.update(
         context.db,
         context.principal.organizationId,
         input.id,
-        input.patch as never,
+        input.patch,
       )
       if (!row) throw notFound()
       return row

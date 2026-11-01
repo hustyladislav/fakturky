@@ -1,7 +1,7 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
 import { and, asc, eq, ilike, isNull, or, sql } from 'drizzle-orm'
-import type { ContactInput } from '../schemas/contact'
+import type { ContactInput, ContactPatch } from '../schemas/contact'
 
 const { contact } = schema
 
@@ -49,7 +49,7 @@ export const contactsRepo = {
     return row
   },
 
-  async update(db: Db, orgId: string, id: string, input: Partial<ContactInput>) {
+  async update(db: Db, orgId: string, id: string, input: ContactPatch) {
     const [row] = await db
       .update(contact)
       .set(input)

@@ -13,6 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@fakturky/ui/components/sidebar'
+import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/react-router'
 import { FileText, Heart, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react'
 import { cs } from '@/i18n/cs'
@@ -38,6 +39,7 @@ const nav = [
 function AppShell() {
   const { user } = Route.useRouteContext()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   return (
     <SidebarProvider>
@@ -80,6 +82,7 @@ function AppShell() {
               aria-label={cs.common.signOut}
               onClick={async () => {
                 await authClient.signOut()
+                queryClient.clear()
                 await navigate({ to: '/prihlaseni' })
               }}
             >

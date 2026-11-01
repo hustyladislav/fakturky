@@ -95,16 +95,15 @@ export async function resolvePrincipal(
 ): Promise<Principal | null> {
   const session = await auth.api.getSession({ headers })
   if (session) {
-    // The sign-up session is created before the organization hook finishes, so fall back to membership.
+    // Never trust the session's stored organization alone: membership may have been revoked since.
+    const memberships = await db
+      .select({ organizationId: schema.member.organizationId })
+      .from(schema.member)
+      .where(eq(schema.member.userId, session.user.id))
+    const active = session.session.activeOrganizationId
     const organizationId =
-      session.session.activeOrganizationId ??
-      (
-        await db
-          .select({ organizationId: schema.member.organizationId })
-          .from(schema.member)
-          .where(eq(schema.member.userId, session.user.id))
-          .limit(1)
-      )[0]?.organizationId
+      memberships.find((m) => m.organizationId === active)?.organizationId ??
+      memberships[0]?.organizationId
     if (organizationId) return { userId: session.user.id, organizationId, via: 'session' }
   }
 

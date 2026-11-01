@@ -9,6 +9,7 @@ import {
 } from '@fakturky/ui/components/card'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { cs } from '@/i18n/cs'
@@ -16,6 +17,7 @@ import { authClient } from '@/lib/auth-client'
 
 export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   const signUp = mode === 'sign-up'
@@ -47,6 +49,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
                 setError(signUp ? cs.auth.signUpFailed : cs.auth.invalidCredentials)
                 return
               }
+              queryClient.clear()
               await navigate({ to: '/' })
             }}
           >
@@ -88,7 +91,10 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
               onClick={async () => {
                 const result = await authClient.signIn.passkey()
                 if (result?.error) setError(cs.auth.invalidCredentials)
-                else await navigate({ to: '/' })
+                else {
+                  queryClient.clear()
+                  await navigate({ to: '/' })
+                }
               }}
             >
               {cs.auth.passkeyAction}

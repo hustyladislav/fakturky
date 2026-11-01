@@ -57,4 +57,22 @@ describe('contacts', () => {
     expect(still.name).toBe('Secret client')
     expect(still.archivedAt).toBeNull()
   })
+
+  test('partial update leaves omitted fields untouched', async () => {
+    const api = clientFor(handle, principal(orgA))
+    const c = await api.contacts.create({
+      name: 'Keep',
+      country: 'SK',
+      emails: ['a@example.com'],
+      address: { city: 'Brno' },
+    })
+    const u = await api.contacts.update({ id: c.id, patch: { name: 'Keep 2' } })
+    expect(u).toMatchObject({ country: 'SK', emails: ['a@example.com'], address: { city: 'Brno' } })
+  })
+
+  test('list input accepts query-string values', async () => {
+    const api = clientFor(handle, principal(orgA))
+    const rows = await api.contacts.list({ limit: '1' as never, includeArchived: 'true' as never })
+    expect(rows).toHaveLength(1)
+  })
 })

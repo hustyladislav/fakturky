@@ -34,4 +34,8 @@ test('sign-up creates org + business profile; session resolves to a principal', 
     .from(schema.member)
     .where(eq(schema.member.role, 'owner'))
   expect(members).toHaveLength(1)
+
+  // Removing the membership must revoke access even though the session still names the org.
+  await handle.db.delete(schema.member)
+  expect(await resolvePrincipal(auth, handle.db, new Headers({ cookie }))).toBeNull()
 })

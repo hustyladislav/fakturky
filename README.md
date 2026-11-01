@@ -6,6 +6,9 @@ Web app, MCP server and CLI — everything you can do in the UI, an agent can do
 > Status: early development.
 
 ☕ Support the project: https://buymeacoffee.com/ladislavhusty
+- **CLI** — `packages/cli` (`fakturky` binary, commands generated from the OpenAPI spec):
+  `fakturky login`, `fakturky whoami`, `fakturky contacts list --json`, `fakturky documents issue <id>`.
+  See [packages/cli/README.md](packages/cli/README.md).
 
 ## For agents: REST, MCP, CLI
 

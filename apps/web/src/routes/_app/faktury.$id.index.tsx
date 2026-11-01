@@ -5,7 +5,7 @@ import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Check, Copy, Download, ExternalLink, Pencil, Trash2 } from 'lucide-react'
+import { Check, Copy, Download, ExternalLink, Pencil, RefreshCw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
@@ -97,6 +97,15 @@ function InvoiceDetail() {
     orpc.documents.cancel.mutationOptions({
       onSuccess: async () => {
         toast.success(t.cancelled)
+        await refresh()
+      },
+      onError,
+    }),
+  )
+  const rotateLink = useMutation(
+    orpc.documents.rotateLink.mutationOptions({
+      onSuccess: async () => {
+        toast.success(t.linkRotated)
         await refresh()
       },
       onError,
@@ -372,6 +381,14 @@ function InvoiceDetail() {
               }}
             >
               <Copy /> {t.copyLink}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={rotateLink.isPending}
+              onClick={() => window.confirm(t.rotateLinkConfirm) && rotateLink.mutate({ id })}
+            >
+              <RefreshCw /> {t.rotateLink}
             </Button>
             <Button
               variant="ghost"

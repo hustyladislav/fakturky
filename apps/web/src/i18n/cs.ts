@@ -1,4 +1,5 @@
 import { BRAND } from '@fakturky/core/brand'
+import { privacySections, termsSections } from './legal'
 
 /** All user-facing copy lives here. Natural Czech, correct diacritics. */
 export const cs = {
@@ -82,6 +83,24 @@ export const cs = {
     partial: 'Částečně uhrazená',
     paid: 'Zaplacená',
     cancelled: 'Stornovaná',
+  },
+  legal: {
+    termsSections,
+    privacySections,
+    terms: 'Podmínky používání',
+    privacy: 'Zásady ochrany osobních údajů',
+    updated: (date: string) => `Poslední aktualizace: ${date}`,
+    draftNotice:
+      'Koncept: tento text připravil provozovatel jako výchozí návrh a čeká na právní kontrolu. Do té doby berte znění jako informativní.',
+  },
+  authPanel: {
+    title: 'Faktury, které se píšou samy. A zdarma.',
+    points: [
+      'Neomezený počet faktur a kontaktů',
+      'QR platba a údaje z ARES doplněné za vás',
+      'Správně vypočtená DPH a export do ISDOC',
+    ],
+    note: 'Provozuje jediný člověk, bez reklam a bez upsellu. Kód je otevřený na GitHubu.',
   },
   auth: {
     google: 'Pokračovat přes Google',
@@ -320,6 +339,34 @@ export const cs = {
     notFound: 'Tento odkaz na fakturu neplatí nebo byl zrušen.',
     issuedIn: (brand: string) => `Vystaveno ve ${brand}`,
   },
+  templates: {
+    title: 'Šablony',
+    empty: 'Zatím nemáte žádné šablony. Otevřete fakturu a zvolte „Uložit jako šablonu“.',
+    use: 'Použít',
+    used: 'Vytvořili jsme nový koncept ze šablony.',
+    delete: 'Smazat',
+    deleted: 'Šablona byla smazána.',
+    repeat: 'Opakovat',
+    saveAs: 'Uložit jako šablonu',
+    saved: 'Šablona byla uložena.',
+    namePrompt: 'Název šablony',
+    recurringTitle: 'Opakované faktury',
+    recurringEmpty: 'Žádná faktura se zatím neopakuje.',
+    frequency: { monthly: 'Měsíčně', quarterly: 'Čtvrtletně', yearly: 'Ročně' },
+    day: 'Den v měsíci',
+    startOn: 'První vystavení od',
+    autoIssue: 'Rovnou vystavit (jinak vznikne koncept)',
+    autoSend: 'Po vystavení poslat e-mailem',
+    nextRun: 'Příští běh',
+    pause: 'Pozastavit',
+    resume: 'Obnovit',
+    createRule: 'Nastavit opakování',
+    ruleCreated: 'Opakování bylo nastaveno.',
+    ruleDeleted: 'Opakování bylo zrušeno.',
+    lines: (n: number) => (n === 1 ? '1 položka' : n < 5 ? `${n} položky` : `${n} položek`),
+    active: 'Aktivní',
+    paused: 'Pozastaveno',
+  },
   contacts: {
     title: 'Kontakty',
     new: 'Nový kontakt',
@@ -387,11 +434,47 @@ export const cs = {
     updated: 'Výchozí účet byl změněn.',
     invalid: 'Číslo účtu nebo IBAN není platné. Zkontrolujte ho prosím.',
   },
+  docsMcp: {
+    title: 'Připojení přes MCP',
+    intro:
+      'Fakturky mají vzdálený MCP server. Díky němu může AI asistent (Claude, ChatGPT, Cursor…) vystavovat faktury, hledat kontakty a zapisovat platby za vás – stejně jako vy v aplikaci.',
+    urlLabel: 'Adresa MCP serveru',
+    authTitle: 'Přihlášení',
+    authBody:
+      'Klient se při prvním připojení otevře přihlášení a požádá vás o souhlas (OAuth 2.1). Pokud klient OAuth nepodporuje, použijte API klíč z Nastavení a pošlete ho v hlavičce Authorization: Bearer fk_….',
+    claudeTitle: 'Claude (claude.ai a aplikace)',
+    claudeBody:
+      'Nastavení → Konektory → Přidat vlastní konektor, vložte adresu serveru výše a potvrďte přihlášení.',
+    claudeCodeTitle: 'Claude Code',
+    chatgptTitle: 'ChatGPT',
+    chatgptBody:
+      'Nastavení → Konektory → Pokročilé → Vývojářský režim, poté vytvořte konektor s adresou serveru výše a autentizací OAuth.',
+    cursorTitle: 'Cursor a další klienti (soubor mcp.json)',
+    toolsTitle: 'Co asistent umí',
+    toolsBody:
+      'Všechny akce, které jsou v aplikaci: kontakty, bankovní účty, firemní profil, koncepty a vystavení faktur, platby, storno, export ISDOC. Nevratné akce jsou označené jako destruktivní, takže klient se před nimi zeptá na potvrzení.',
+    apiLink: 'Dokumentace REST API',
+    keysLink: 'Správa API klíčů',
+  },
+  consent: {
+    title: 'Povolit přístup',
+    description: (client: string) =>
+      `Aplikace ${client} žádá o přístup k vašim fakturám a kontaktům.`,
+    unknownClient: 'neznámá aplikace',
+    scopeTitle: 'Aplikace bude moci:',
+    scopeTools:
+      'číst a upravovat vaše kontakty, faktury a bankovní účty (včetně vystavování faktur)',
+    allow: 'Povolit',
+    deny: 'Zamítnout',
+    invalid: 'Neplatná žádost o autorizaci. Zkuste ji spustit znovu z aplikace.',
+    footer: 'Přístup můžete kdykoli odebrat zrušením propojení v nastavení.',
+  },
   apiKeys: {
     title: 'API klíče',
     description:
       'Klíče umožňují přístup k vašim datům přes REST API, MCP server (Claude, ChatGPT, Cursor) a příkazový řádek. Zacházejte s nimi jako s heslem.',
     docsLink: 'Dokumentace API',
+    mcpLink: 'Připojení přes MCP',
     new: 'Nový klíč',
     name: 'Název',
     namePlaceholder: 'např. Claude Desktop',

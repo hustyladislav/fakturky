@@ -1,17 +1,10 @@
-import { BRAND } from '@fakturky/core/brand'
 import { Button } from '@fakturky/ui/components/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@fakturky/ui/components/card'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { AuthLayout } from '@/components/auth-layout'
 import { Divider, GoogleButton, MagicLinkButton } from '@/components/social-sign-in'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
@@ -24,15 +17,17 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const signUp = mode === 'sign-up'
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>{signUp ? cs.auth.signUpTitle : cs.auth.signInTitle}</CardTitle>
-          <CardDescription>
+    <AuthLayout>
+      <div className="space-y-6">
+        <div className="space-y-1.5">
+          <h1 className="text-3xl leading-tight font-medium">
+            {signUp ? cs.auth.signUpTitle : cs.auth.signInTitle}
+          </h1>
+          <p className="text-sm text-muted-foreground">
             {signUp ? cs.auth.signUpDescription : cs.auth.signInDescription}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </p>
+        </div>
+        <div className="space-y-4">
           <GoogleButton />
           <Divider />
           <form
@@ -53,6 +48,12 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
                 return
               }
               queryClient.clear()
+              // Signing in as part of an OAuth (MCP) authorization: continue to the consent step.
+              const next = (result.data as { redirect?: boolean; url?: string } | null)?.url
+              if ((result.data as { redirect?: boolean } | null)?.redirect && next) {
+                window.location.href = next
+                return
+              }
               await navigate({ to: '/' })
             }}
           >
@@ -114,9 +115,8 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
               {signUp ? cs.auth.signInAction : cs.auth.signUpAction}
             </Link>
           </p>
-          <p className="text-center text-xs text-muted-foreground">{BRAND.name}</p>
-        </CardContent>
-      </Card>
-    </main>
+        </div>
+      </div>
+    </AuthLayout>
   )
 }

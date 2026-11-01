@@ -68,6 +68,10 @@ export function ApiKeys() {
             <a className="underline" href="/docs/api">
               {cs.apiKeys.docsLink}
             </a>
+            {' · '}
+            <a className="underline" href="/docs/mcp">
+              {cs.apiKeys.mcpLink}
+            </a>
           </p>
         </div>
         {organizationId && <NewKey organizationId={organizationId} />}

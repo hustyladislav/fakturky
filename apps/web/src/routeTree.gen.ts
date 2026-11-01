@@ -17,10 +17,14 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
+import { Route as AppFakturyIndexRouteImport } from './routes/_app/faktury.index'
+import { Route as AppFakturyNovaRouteImport } from './routes/_app/faktury.nova'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
+import { Route as AppFakturyIdIndexRouteImport } from './routes/_app/faktury.$id.index'
+import { Route as AppFakturyIdUpravitRouteImport } from './routes/_app/faktury.$id.upravit'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -61,6 +65,16 @@ const AppNastaveniRoute = AppNastaveniRouteImport.update({
   path: '/nastaveni',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFakturyIndexRoute = AppFakturyIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppFakturyRoute,
+} as any)
+const AppFakturyNovaRoute = AppFakturyNovaRouteImport.update({
+  id: '/nova',
+  path: '/nova',
+  getParentRoute: () => AppFakturyRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -81,32 +95,49 @@ const ApiV1OpenapiDotjsonRoute = ApiV1OpenapiDotjsonRouteImport.update({
   path: '/api/v1/openapi.json',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppFakturyIdIndexRoute = AppFakturyIdIndexRouteImport.update({
+  id: '/$id/',
+  path: '/$id/',
+  getParentRoute: () => AppFakturyRoute,
+} as any)
+const AppFakturyIdUpravitRoute = AppFakturyIdUpravitRouteImport.update({
+  id: '/$id/upravit',
+  path: '/$id/upravit',
+  getParentRoute: () => AppFakturyRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/onboarding': typeof OnboardingRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
-  '/faktury': typeof AppFakturyRoute
+  '/faktury': typeof AppFakturyRouteWithChildren
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
+  '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/faktury/': typeof AppFakturyIndexRoute
+  '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
+  '/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
-  '/faktury': typeof AppFakturyRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
   '/': typeof AppIndexRoute
+  '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/faktury': typeof AppFakturyIndexRoute
+  '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
+  '/faktury/$id': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -114,14 +145,18 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
-  '/_app/faktury': typeof AppFakturyRoute
+  '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/kontakty': typeof AppKontaktyRoute
   '/_app/nastaveni': typeof AppNastaveniRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/_app/faktury/': typeof AppFakturyIndexRoute
+  '/_app/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
+  '/_app/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,23 +168,30 @@ export interface FileRouteTypes {
     | '/faktury'
     | '/kontakty'
     | '/nastaveni'
+    | '/faktury/nova'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
+    | '/faktury/'
+    | '/faktury/$id/upravit'
+    | '/faktury/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/onboarding'
     | '/prihlaseni'
     | '/registrace'
-    | '/faktury'
     | '/kontakty'
     | '/nastaveni'
     | '/'
+    | '/faktury/nova'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
+    | '/faktury'
+    | '/faktury/$id/upravit'
+    | '/faktury/$id'
   id:
     | '__root__'
     | '/_app'
@@ -160,10 +202,14 @@ export interface FileRouteTypes {
     | '/_app/kontakty'
     | '/_app/nastaveni'
     | '/_app/'
+    | '/_app/faktury/nova'
     | '/api/auth/$'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
+    | '/_app/faktury/'
+    | '/_app/faktury/$id/upravit'
+    | '/_app/faktury/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -235,6 +281,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNastaveniRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/faktury/': {
+      id: '/_app/faktury/'
+      path: '/'
+      fullPath: '/faktury/'
+      preLoaderRoute: typeof AppFakturyIndexRouteImport
+      parentRoute: typeof AppFakturyRoute
+    }
+    '/_app/faktury/nova': {
+      id: '/_app/faktury/nova'
+      path: '/nova'
+      fullPath: '/faktury/nova'
+      preLoaderRoute: typeof AppFakturyNovaRouteImport
+      parentRoute: typeof AppFakturyRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -263,18 +323,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1OpenapiDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/faktury/$id/': {
+      id: '/_app/faktury/$id/'
+      path: '/$id'
+      fullPath: '/faktury/$id/'
+      preLoaderRoute: typeof AppFakturyIdIndexRouteImport
+      parentRoute: typeof AppFakturyRoute
+    }
+    '/_app/faktury/$id/upravit': {
+      id: '/_app/faktury/$id/upravit'
+      path: '/$id/upravit'
+      fullPath: '/faktury/$id/upravit'
+      preLoaderRoute: typeof AppFakturyIdUpravitRouteImport
+      parentRoute: typeof AppFakturyRoute
+    }
   }
 }
 
+interface AppFakturyRouteChildren {
+  AppFakturyNovaRoute: typeof AppFakturyNovaRoute
+  AppFakturyIndexRoute: typeof AppFakturyIndexRoute
+  AppFakturyIdUpravitRoute: typeof AppFakturyIdUpravitRoute
+  AppFakturyIdIndexRoute: typeof AppFakturyIdIndexRoute
+}
+
+const AppFakturyRouteChildren: AppFakturyRouteChildren = {
+  AppFakturyNovaRoute: AppFakturyNovaRoute,
+  AppFakturyIndexRoute: AppFakturyIndexRoute,
+  AppFakturyIdUpravitRoute: AppFakturyIdUpravitRoute,
+  AppFakturyIdIndexRoute: AppFakturyIdIndexRoute,
+}
+
+const AppFakturyRouteWithChildren = AppFakturyRoute._addFileChildren(
+  AppFakturyRouteChildren,
+)
+
 interface AppRouteChildren {
-  AppFakturyRoute: typeof AppFakturyRoute
+  AppFakturyRoute: typeof AppFakturyRouteWithChildren
   AppKontaktyRoute: typeof AppKontaktyRoute
   AppNastaveniRoute: typeof AppNastaveniRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppFakturyRoute: AppFakturyRoute,
+  AppFakturyRoute: AppFakturyRouteWithChildren,
   AppKontaktyRoute: AppKontaktyRoute,
   AppNastaveniRoute: AppNastaveniRoute,
   AppIndexRoute: AppIndexRoute,

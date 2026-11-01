@@ -14,6 +14,7 @@
   "dependencies": {
     "@fakturky/core": "workspace:*",
     "@fakturky/db": "workspace:*",
+    "@fakturky/domain": "workspace:*",
     "@fakturky/ui": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",

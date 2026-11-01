@@ -3,12 +3,14 @@ import { bankAccountsRouter } from './bank-accounts'
 import { businessProfileRouter } from './business-profile'
 import { contactsRouter } from './contacts'
 import { documentsRouter } from './documents'
+import { lookupRouter } from './lookup'
 
 export const router = {
   bankAccounts: bankAccountsRouter,
   businessProfile: businessProfileRouter,
   contacts: contactsRouter,
   documents: documentsRouter,
+  lookup: lookupRouter,
 }
 
 export type Router = typeof router

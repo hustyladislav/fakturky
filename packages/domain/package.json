@@ -19,7 +19,9 @@
     "./dates": "./src/dates.ts",
     "./integrations/ares": "./src/integrations/ares.ts",
     "./bank-codes": "./src/bank-codes.ts",
-    "./integrations/cnb": "./src/integrations/cnb.ts"
+    "./integrations/cnb": "./src/integrations/cnb.ts",
+    "./integrations/vies": "./src/integrations/vies.ts",
+    "./dic": "./src/dic.ts"
   },
   "scripts": {
     "test": "vitest run",

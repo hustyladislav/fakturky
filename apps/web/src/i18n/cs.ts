@@ -291,6 +291,9 @@ export const cs = {
     },
     form: {
       titleNew: 'Nová faktura',
+      documentType: 'Typ dokladu',
+      proformaHint:
+        'Zálohová faktura není daňový doklad. Po zaplacení z ní vytvoříte konečnou fakturu.',
       titleEdit: 'Upravit koncept',
       customer: 'Odběratel',
       customerSearch: 'Hledat podle názvu nebo IČO…',
@@ -393,6 +396,7 @@ export const cs = {
       history: 'Průběh',
       timeline: {
         created: 'Vytvořena',
+        final_invoice_created: 'Vytvořena konečná faktura',
         credit_note_created: 'Vytvořen opravný doklad',
         sent: 'Odeslána',
         reminded: 'Upomínka odeslána',
@@ -407,6 +411,8 @@ export const cs = {
         link_rotated: 'Veřejný odkaz nahrazen novým',
       },
       notFound: 'Faktura nebyla nalezena.',
+      finalInvoice: 'Vystavit konečnou fakturu',
+      finalInvoiceCreated: 'Vytvořili jsme koncept konečné faktury s odečtenou zálohou.',
       creditNote: 'Vytvořit opravný doklad',
       creditNotePrompt: 'Důvod opravy (zobrazí se na dokladu)',
       creditNoteCreated: 'Vytvořili jsme koncept opravného dokladu. Upravte ho a vystavte.',

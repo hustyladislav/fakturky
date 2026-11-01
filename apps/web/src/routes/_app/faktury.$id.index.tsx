@@ -147,6 +147,17 @@ function InvoiceDetail() {
       onError,
     }),
   )
+  const finalInvoice = useMutation(
+    orpc.documents.createFinalInvoice.mutationOptions({
+      onSuccess: async (n) => {
+        toast.success(t.finalInvoiceCreated)
+        await refresh()
+        navigate({ to: '/faktury/$id/upravit', params: { id: n.id } })
+      },
+      onError,
+    }),
+  )
+  const defaults = useQuery(orpc.documents.defaults.queryOptions({ input: {} }))
   const saveTemplate = useMutation(
     orpc.templates.createFromDocument.mutationOptions({
       onSuccess: async () => {
@@ -506,6 +517,15 @@ function InvoiceDetail() {
         >
           {cs.templates.saveAs}
         </Button>
+        {d?.type === 'proforma' && d.status === 'paid' && !defaults.data?.vatPayer && (
+          <Button
+            className={full}
+            disabled={finalInvoice.isPending}
+            onClick={() => finalInvoice.mutate({ id })}
+          >
+            {t.finalInvoice}
+          </Button>
+        )}
         {d?.type === 'invoice' && (open || d.status === 'paid') && (
           <Button
             variant="outline"
@@ -521,7 +541,7 @@ function InvoiceDetail() {
         <Button variant="outline" className={full} onClick={() => duplicate.mutate({ id })}>
           {t.duplicate}
         </Button>
-        {d?.status === 'paid' && (
+        {d?.status === 'paid' && !(d.type === 'invoice' && Number(d.total) <= 0) && (
           <Button variant="outline" className={full} onClick={() => markUnpaid.mutate({ id })}>
             {t.markUnpaid}
           </Button>

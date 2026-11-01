@@ -127,3 +127,62 @@ test('credit note reverses an invoice, numbered in its own series, exported with
   const dash = await api.dashboard.summary({})
   expect(dash.monthTurnover).toBe('0.00')
 })
+
+test('proforma → paid → final invoice with the advance deducted; settled on issue', async () => {
+  const org = await seedOrg(handle, 'pf-a')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Neplátce' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({ name: 'Klient' })
+  const pf = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        type: 'proforma',
+        contactId: c.id,
+        lines: [{ description: 'Záloha na projekt', quantity: '1', unitPrice: '5000' }],
+      })
+    ).id,
+  })
+  expect(pf.number).toMatch(/^Z\d{4}-0001$/)
+  await expect(api.documents.createFinalInvoice({ id: pf.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+  await api.documents.markPaid({ id: pf.id })
+  const draft = await api.documents.createFinalInvoice({ id: pf.id })
+  expect(draft.type).toBe('invoice')
+  expect(draft.total).toBe('0.0000') // lines 5000 − advance 5000
+  expect(draft.lines.at(-1)?.unitPrice).toBe('-5000.0000')
+  await expect(api.documents.createFinalInvoice({ id: pf.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+  await expect(api.documents.markUnpaid({ id: pf.id })).rejects.toMatchObject({ code: 'CONFLICT' })
+  const issued = await api.documents.issue({ id: draft.id })
+  expect(issued.status).toBe('paid')
+  await expect(api.documents.markUnpaid({ id: issued.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+  expect((await api.documents.get({ id: pf.id })).activity.map((a) => a.action)).toContain(
+    'final_invoice_created',
+  )
+
+  const payer = await seedOrg(handle, 'pf-b')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: payer, legalName: 'Plátce', vatStatus: 'payer' })
+  const p = clientFor(handle, { userId: 'u', organizationId: payer, via: 'session' })
+  const pc = await p.contacts.create({ name: 'K' })
+  const ppf = await p.documents.issue({
+    id: (
+      await p.documents.createDraft({
+        type: 'proforma',
+        contactId: pc.id,
+        lines: [{ description: 'x', quantity: '1', unitPrice: '100' }],
+      })
+    ).id,
+  })
+  await p.documents.markPaid({ id: ppf.id })
+  await expect(p.documents.createFinalInvoice({ id: ppf.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+})

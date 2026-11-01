@@ -31,6 +31,32 @@ async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
 }
 
 export const documentsRouter = {
+  createFinalInvoice: procedure({
+    mcp: {
+      name: 'create_final_invoice_from_proforma',
+      title: 'Create the final invoice for a paid proforma (advance deducted)',
+    },
+    openapi: {
+      method: 'POST',
+      path: '/documents/{id}/final-invoice',
+      summary:
+        'Draft invoice from a fully paid proforma: same lines plus a negative line for the paid advance. Edit, then issue.',
+      tags: tag,
+    },
+  })
+    .input(idInput)
+    .output(documentDetailSchema)
+    .handler(({ context, input }) =>
+      guard(() =>
+        documentsRepo.createFinalInvoice(
+          context.db,
+          context.principal.organizationId,
+          context.principal.userId,
+          input.id,
+        ),
+      ),
+    ),
+
   createCreditNote: procedure({
     mcp: {
       name: 'create_credit_note',

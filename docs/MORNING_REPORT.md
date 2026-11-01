@@ -23,6 +23,12 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Shipped overnight
 
+- Agent surfaces: API keys + `/docs/api` #17, remote MCP server `/mcp` (OAuth 2.1 + CIMD, API keys) #35,
+  `fakturky` CLI #39, `/llms.txt` #40. Landing page + dashboard at `/prehled` #41.
+- Invoice e-mail sending #44, overdue reminders + CSV export #48, security: nonce CSP/HSTS #42, auth hardening #50,
+  lookup proxy rate limits + revocable public links #51.
+- Fixed: production was being deployed from session worktrees via CLI (stale branches); Vercel Git integration now
+  connected — production deploys only from `main`.
 - Invoices end-to-end: documents core (drafts, issue with atomic numbering, payments, cancel) #20, invoice UI
   (list, form, detail) #25, PDF rendering #26, public invoice page `/f/:token` + ISDOC #29, dashboard #28.
 - Onboarding with ARES autofill #19; Google sign-in + magic link (Resend sandbox) #23/#24; DB joins #27.

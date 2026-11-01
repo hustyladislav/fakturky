@@ -26,6 +26,12 @@ Production deploys **only** from `main` via the Vercel Git integration; PRs get 
 Never run `vercel deploy --prod` (or `vercel --prod`) from a worktree — it would ship an unmerged branch.
 To verify a change on production, merge it and wait for the Git deployment of `main`.
 
+## Database safety
+
+- Previews share the production Neon database (no branching on the free plan). Only `VERCEL_ENV=production`
+  builds run `db:migrate`. Any script that deletes/overwrites data must call `assertDestructiveAllowed()` from
+  `@fakturky/db`, which requires `ALLOW_DESTRUCTIVE_DB=1`. Never point local tooling at the Neon URL casually.
+
 ## Commands
 
 ```bash

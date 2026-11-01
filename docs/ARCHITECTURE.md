@@ -22,21 +22,21 @@ Everything a user can do in the web UI is also available through the REST API, t
 
 ## Stack (pin exact versions; see `package.json`)
 
-| Area    | Choice                                                                                                                  |
-| ------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Runtime | Node 24, pnpm workspaces                                                                                                |
-| App     | TanStack Start (React 19, Vite 8, Nitro → Vercel), TanStack Router / Query / Form / Table                               |
-| UI      | Tailwind CSS v4, shadcn/ui (Base UI), lucide-react, sonner, cmdk-style command palette                                  |
-| API     | oRPC (`@orpc/server`, `@orpc/openapi`, `@orpc/tanstack-query`) + Zod 4                                                  |
-| DB      | Postgres on Neon (Vercel Marketplace), Drizzle ORM + drizzle-kit migrations; PGlite for tests                           |
-| Auth    | Better Auth: email+password, passkeys, magic link (when email is configured), organizations, API keys, MCP OAuth (CIMD) |
-| MCP     | `mcp-handler` v2 + `@modelcontextprotocol/server` v2, Streamable HTTP at `/mcp`                                         |
-| CLI     | `packages/cli` — citty + @clack/prompts, talks to `/api/v1` with an API key, published to npm                           |
-| PDF     | `@react-pdf/renderer` with bundled static TTF fonts (Czech diacritics), SPAYD QR via `spayd` + `qrcode`                 |
-| Email   | Resend + react-email (feature-flagged on `RESEND_API_KEY`)                                                              |
-| Jobs    | Vercel Cron (daily): recurring invoices, overdue reminders, ČNB rates                                                   |
-| Storage | Vercel Blob (private) for logos, signatures, cached PDFs                                                                |
-| Quality | Biome, Vitest, Playwright, GitHub Actions, CodeQL, gitleaks, OSV-Scanner, Dependabot, Codex PR review                   |
+| Area | Choice |
+|---|---|
+| Runtime | Node 24, pnpm workspaces |
+| App | TanStack Start (React 19, Vite 8, Nitro → Vercel), TanStack Router / Query / Form / Table |
+| UI | Tailwind CSS v4, shadcn/ui (Base UI), lucide-react, sonner, cmdk-style command palette |
+| API | oRPC (`@orpc/server`, `@orpc/openapi`, `@orpc/tanstack-query`) + Zod 4 |
+| DB | Postgres on Neon (Vercel Marketplace), Drizzle ORM + drizzle-kit migrations; PGlite for tests |
+| Auth | Clerk (Vercel Marketplace, `@clerk/tanstack-react-start`): Google + email sign-in, passkeys, Organizations = tenants, API keys / machine auth, OAuth for MCP clients |
+| MCP | `mcp-handler` v2 + `@modelcontextprotocol/server` v2, Streamable HTTP at `/mcp` |
+| CLI | `packages/cli` — citty + @clack/prompts, talks to `/api/v1` with an API key, published to npm |
+| PDF | `@react-pdf/renderer` with bundled static TTF fonts (Czech diacritics), SPAYD QR via `spayd` + `qrcode` |
+| Email | Resend + react-email (feature-flagged on `RESEND_API_KEY`) |
+| Jobs | Vercel Cron (daily): recurring invoices, overdue reminders, ČNB rates |
+| Storage | Vercel Blob (private) for logos, signatures, cached PDFs |
+| Quality | Biome, Vitest, Playwright, GitHub Actions, CodeQL, gitleaks, OSV-Scanner, Dependabot, Codex PR review |
 
 ## Repository layout
 
@@ -60,7 +60,7 @@ design/             explorations and the chosen design system
 
 All tables: `id` (uuid v7, text), `organization_id`, `created_at`, `updated_at`. Soft delete via `deleted_at` where noted.
 
-- **organization / member / invitation** — Better Auth organization plugin. One user can run several businesses
+- **organization** — mirrors the Clerk Organization (id = Clerk org id); members/invitations live in Clerk. One user can run several businesses
   (e.g. OSVČ + s.r.o.) and invite an accountant later.
 - **business_profile** (1:1 organization) — legal name, IČO, DIČ, address, `vat_status`
   (`non_payer` | `payer` | `identified_person`), registry note (živnostenský rejstřík / spisová značka), contact
@@ -106,11 +106,20 @@ The MCP adapter iterates the router and registers one tool per procedure with th
 
 ## Auth
 
-- Web: Better Auth session cookie. Sign-up with email+password or passkey; magic link once Resend is configured.
-- API/CLI: Better Auth API keys (`Authorization: Bearer fk_…`), scoped to one organization.
-- MCP: OAuth 2.1 via `@better-auth/mcp` + CIMD (spec 2026-07-28), protected-resource metadata at
-  `/.well-known/oauth-protected-resource`; API keys also accepted as bearer tokens.
-- Bot protection (BotID) on sign-up / sign-in.
+- Web: Clerk (`@clerk/tanstack-react-start`), hosted sign-in/sign-up with Czech localization (`@clerk/localizations`
+  `csCZ`), Google + email code + passkeys. Provisioned via Vercel Marketplace (`fakturky-auth`); env
+  `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (map to the Vite client var).
+- Tenancy: a Clerk Organization is a business; our `organization_id` = Clerk org id. Personal accounts get an
+  organization created on onboarding. Members/roles (e.g. accountant read-only) come from Clerk.
+- API/CLI: Clerk API keys (machine auth) as `Authorization: Bearer …`, scoped to the organization.
+- MCP: Clerk as the OAuth authorization server for MCP clients (protected-resource metadata at
+  `/.well-known/oauth-protected-resource`); API keys accepted as bearer tokens too.
+- Bot protection: Clerk's built-in + BotID.
+
+## Email
+
+Resend via Vercel Marketplace (terms accepted). Needs an owned domain: provision with
+`vercel integration add resend --metadata domain=<mail.domain> --metadata region=eu-west-1` once the domain exists.
 
 ## Security
 

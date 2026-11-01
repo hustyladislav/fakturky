@@ -72,6 +72,8 @@ const cases: Record<string, Case> = {
 
   'dashboard.summary': { kind: 'scoped', run: (b) => b.dashboard.summary({}) },
 
+  'exports.documents': { kind: 'scoped', run: (b) => b.exports.documents({}) },
+  'exports.contacts': { kind: 'scoped', run: (b) => b.exports.contacts({}) },
   'documents.send': {
     kind: 'foreign',
     run: (b, a) => b.documents.send({ id: a.issuedId, to: 'attacker@example.com' }),

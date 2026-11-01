@@ -18,6 +18,7 @@ const fields = {
   defaultLanguage: z.enum(['cs', 'sk', 'en']),
   defaultFooter: z.string().max(2000).nullish(),
   defaultNote: z.string().max(2000).nullish(),
+  autoRemind: z.boolean(),
 }
 
 /** Only the keys present are updated. */

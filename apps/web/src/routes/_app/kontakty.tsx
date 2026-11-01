@@ -21,6 +21,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { CsvDownload } from '@/components/csv-download'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 
@@ -48,7 +49,10 @@ function Contacts() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{cs.contacts.title}</h1>
-        <NewContact />
+        <div className="flex gap-2">
+          <CsvDownload kind="contacts" />
+          <NewContact />
+        </div>
       </div>
       {list.data?.length === 0 ? (
         <p className="text-muted-foreground">{cs.contacts.empty}</p>

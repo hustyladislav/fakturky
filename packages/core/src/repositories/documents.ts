@@ -729,41 +729,60 @@ export const documentsRepo = {
       )
     }
     const advance = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
-    const draft = await this.createDraft(
-      db,
-      orgId,
-      actorId,
-      {
-        type: 'invoice',
-        contactId: src.contactId,
-        bankAccountId: src.bankAccountId,
-        currency: src.currency,
-        exchangeRate: src.exchangeRate,
-        language: src.language as 'cs' | 'sk' | 'en',
-        paymentMethod: src.paymentMethod,
-        introText: src.introText,
-        footerText: src.footerText,
-        lines: [
-          ...src.lines.map((l) => ({
-            description: l.description,
-            quantity: l.quantity,
-            unit: l.unit,
-            unitPrice: l.unitPrice,
-            vatRate: l.vatRate,
-            discountPercent: l.discountPercent,
-          })),
-          {
-            description: `Uhrazená záloha (zálohová faktura ${src.number})`,
-            quantity: '1',
-            unit: null,
-            unitPrice: advance.negated().toString(),
-            vatRate: '0',
-            discountPercent: '0',
-          },
-        ],
-      },
-      { relatedDocumentId: id },
-    )
+    const draft = await db.transaction(async (txn) => {
+      const tx = txn as unknown as Db
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`final:${id}`}))`)
+      const [existing] = await tx
+        .select({ id: document.id })
+        .from(document)
+        .where(
+          and(
+            eq(document.organizationId, orgId),
+            eq(document.relatedDocumentId, id),
+            eq(document.type, 'invoice'),
+            isNull(document.deletedAt),
+            ne(document.status, 'cancelled'),
+          ),
+        )
+      if (existing) {
+        throw new DocumentError('CONFLICT', 'A final invoice already exists for this proforma')
+      }
+      return this.createDraft(
+        tx,
+        orgId,
+        actorId,
+        {
+          type: 'invoice',
+          contactId: src.contactId,
+          bankAccountId: src.bankAccountId,
+          currency: src.currency,
+          exchangeRate: src.exchangeRate,
+          language: src.language as 'cs' | 'sk' | 'en',
+          paymentMethod: src.paymentMethod,
+          introText: src.introText,
+          footerText: src.footerText,
+          lines: [
+            ...src.lines.map((l) => ({
+              description: l.description,
+              quantity: l.quantity,
+              unit: l.unit,
+              unitPrice: l.unitPrice,
+              vatRate: l.vatRate,
+              discountPercent: l.discountPercent,
+            })),
+            {
+              description: `Uhrazená záloha (zálohová faktura ${src.number})`,
+              quantity: '1',
+              unit: null,
+              unitPrice: advance.negated().toString(),
+              vatRate: '0',
+              discountPercent: '0',
+            },
+          ],
+        },
+        { relatedDocumentId: id },
+      )
+    })
     if (!draft) throw new Error('final invoice draft missing')
     await logActivity(db, orgId, actorId, id, 'final_invoice_created', { invoiceId: draft.id })
     return draft
@@ -862,6 +881,32 @@ export const documentsRepo = {
       if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
       if (doc.status !== 'paid' && doc.status !== 'issued') {
         throw new DocumentError('CONFLICT', 'Only issued or paid documents can be marked unpaid')
+      }
+      if (doc.type === 'invoice' && doc.relatedDocumentId && parseDecimal(doc.total).lte(0)) {
+        throw new DocumentError(
+          'CONFLICT',
+          'This invoice is settled by the advance and cannot be reopened',
+        )
+      }
+      if (doc.type === 'proforma') {
+        const [dep] = await tx
+          .select({ id: document.id })
+          .from(document)
+          .where(
+            and(
+              eq(document.organizationId, orgId),
+              eq(document.relatedDocumentId, id),
+              eq(document.type, 'invoice'),
+              isNull(document.deletedAt),
+              ne(document.status, 'cancelled'),
+            ),
+          )
+        if (dep) {
+          throw new DocumentError(
+            'CONFLICT',
+            'A final invoice already uses this advance; cancel it first',
+          )
+        }
       }
       await tx
         .delete(payment)

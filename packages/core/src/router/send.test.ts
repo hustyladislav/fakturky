@@ -153,8 +153,15 @@ test('proforma → paid → final invoice with the advance deducted; settled on 
   expect(draft.type).toBe('invoice')
   expect(draft.total).toBe('0.0000') // lines 5000 − advance 5000
   expect(draft.lines.at(-1)?.unitPrice).toBe('-5000.0000')
+  await expect(api.documents.createFinalInvoice({ id: pf.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+  await expect(api.documents.markUnpaid({ id: pf.id })).rejects.toMatchObject({ code: 'CONFLICT' })
   const issued = await api.documents.issue({ id: draft.id })
   expect(issued.status).toBe('paid')
+  await expect(api.documents.markUnpaid({ id: issued.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
   expect((await api.documents.get({ id: pf.id })).activity.map((a) => a.action)).toContain(
     'final_invoice_created',
   )

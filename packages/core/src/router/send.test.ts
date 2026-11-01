@@ -76,3 +76,40 @@ test('send e-mails the PDF + public link, records history, maps delivery failure
     code: 'CONFLICT',
   })
 })
+
+test('credit note reverses an invoice, numbered in its own series, exported with the original', async () => {
+  const org = await seedOrg(handle, 'cn-a')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({ name: 'Odběratel' })
+  const inv = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        contactId: c.id,
+        lines: [{ description: 'Práce', quantity: '2', unitPrice: '1000', vatRate: '21' }],
+      })
+    ).id,
+  })
+  const draft = await api.documents.createCreditNote({ id: inv.id, reason: 'Chybná cena' })
+  expect(draft.type).toBe('credit_note')
+  expect(draft.total).toBe('-2420.0000')
+  expect(draft.introText).toBe('Chybná cena')
+  const cn = await api.documents.issue({ id: draft.id })
+  expect(cn.number).toMatch(/^D\d{4}-0001$/)
+  expect((await api.documents.isdoc({ id: cn.id })).xml).toContain(inv.number as string)
+  expect((await api.documents.get({ id: inv.id })).activity.map((a) => a.action)).toContain(
+    'credit_note_created',
+  )
+  await expect(api.documents.createCreditNote({ id: cn.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+  await expect(api.documents.createCreditNote({ id: draft.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+  const unpaid = await api.documents.list({ filter: 'unpaid' })
+  expect(unpaid.some((d) => d.id === cn.id)).toBe(false)
+  const dash = await api.dashboard.summary({})
+  expect(dash.monthTurnover).toBe('0.00')
+})

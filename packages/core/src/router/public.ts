@@ -68,7 +68,7 @@ export const publicRouter = {
       if (!found) throw new ORPCError('NOT_FOUND', { message: 'Document not found' })
       const { doc, lines } = found
       await publicDocumentsRepo.markViewed(context.db, doc)
-      const x = toDocumentForExport(doc, lines)
+      const x = toDocumentForExport(doc, lines, found.original)
       const paid = (await publicDocumentsRepo.paidAmount(context.db, doc)).reduce(
         (s, a) => s.plus(parseDecimal(a)),
         new Decimal(0),
@@ -145,7 +145,7 @@ export const publicRouter = {
       if (!found) throw new ORPCError('NOT_FOUND', { message: 'Document not found' })
       return {
         filename: `${found.doc.number ?? 'faktura'}.isdoc`,
-        xml: generateIsdoc(toDocumentForExport(found.doc, found.lines)),
+        xml: generateIsdoc(toDocumentForExport(found.doc, found.lines, found.original)),
       }
     }),
 
@@ -158,7 +158,7 @@ export const publicRouter = {
         throw new ORPCError('NOT_IMPLEMENTED', { message: 'PDF rendering is not available' })
       const found = await publicDocumentsRepo.getByToken(context.db, input.token)
       if (!found) throw new ORPCError('NOT_FOUND', { message: 'Document not found' })
-      const bytes = await render(found.doc, found.lines)
+      const bytes = await render(found.doc, found.lines, found.original)
       return {
         filename: `${found.doc.number ?? 'faktura'}.pdf`,
         contentBase64: Buffer.from(bytes).toString('base64'),

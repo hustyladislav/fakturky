@@ -15,7 +15,7 @@ import {
   toFixed,
   variableSymbolFromNumber,
 } from '@fakturky/domain'
-import { and, asc, desc, eq, ilike, inArray, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm'
 import { MailError, type Services } from '../context'
 import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
 import { bankAccountsRepo } from './bank-accounts'
@@ -78,8 +78,14 @@ async function loadProfile(db: Db | Tx, orgId: string) {
 }
 
 /** VAT applies only to tax documents issued by a VAT payer; proformas never carry VAT. */
+const SERIES_NAMES: Record<string, string> = {
+  invoice: 'Faktury',
+  proforma: 'Zálohové faktury',
+  credit_note: 'Opravné doklady',
+}
+
 const vatApplies = (profile: { vatStatus: string } | null, type: string) =>
-  profile?.vatStatus === 'payer' && type === 'invoice'
+  profile?.vatStatus === 'payer' && (type === 'invoice' || type === 'credit_note')
 
 function totalsFor(
   lines: DraftInput['lines'],
@@ -164,6 +170,16 @@ function decorate(doc: DocRow, paid: Decimal, customerName: string | null) {
   }
 }
 
+/** The corrected document of a credit note (same organization), or null. */
+export async function loadOriginal(db: Db | Tx, orgId: string, doc: DocRow) {
+  if (doc.type !== 'credit_note' || !doc.relatedDocumentId) return null
+  const [o] = await db
+    .select({ id: document.id, number: document.number, issueDate: document.issueDate })
+    .from(document)
+    .where(and(eq(document.organizationId, orgId), eq(document.id, doc.relatedDocumentId)))
+  return o?.number && o.issueDate ? { number: o.number, issueDate: o.issueDate, uuid: o.id } : null
+}
+
 export const documentsRepo = {
   /** Issued (numbered) documents only; drafts have no legal content to export. */
   async forExport(db: Db, orgId: string, id: string) {
@@ -174,7 +190,7 @@ export const documentsRepo = {
       .from(documentLine)
       .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, id)))
       .orderBy(asc(documentLine.position))
-    return { doc, lines }
+    return { doc, lines, original: await loadOriginal(db, orgId, doc) }
   },
 
   async defaults(db: Db, orgId: string) {
@@ -205,8 +221,12 @@ export const documentsRepo = {
     const statusWhere = {
       all: undefined,
       draft: eq(document.status, 'draft'),
-      unpaid: eq(document.status, 'issued'),
-      overdue: and(eq(document.status, 'issued'), lt(document.dueDate, today)),
+      unpaid: and(eq(document.status, 'issued'), ne(document.type, 'credit_note')),
+      overdue: and(
+        eq(document.status, 'issued'),
+        ne(document.type, 'credit_note'),
+        lt(document.dueDate, today),
+      ),
       paid: eq(document.status, 'paid'),
       cancelled: eq(document.status, 'cancelled'),
     }[opts.filter]
@@ -471,7 +491,7 @@ export const documentsRepo = {
           .values({
             organizationId: orgId,
             documentType: doc.type,
-            name: doc.type === 'invoice' ? 'Faktury' : doc.type,
+            name: SERIES_NAMES[doc.type] ?? doc.type,
             pattern,
             reset: 'yearly',
           })
@@ -581,7 +601,7 @@ export const documentsRepo = {
     ) {
       throw new MailError('EMAIL_NOT_CONFIGURED')
     }
-    const bytes = await services.renderPdf(doc, lines)
+    const bytes = await services.renderPdf(doc, lines, found.original)
     const supplier = doc.supplierSnapshot ?? {}
     await services.sendInvoice({
       to,
@@ -611,7 +631,7 @@ export const documentsRepo = {
     const src = await this.get(db, orgId, id)
     if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
     return this.createDraft(db, orgId, actorId, {
-      type: src.type as 'invoice' | 'proforma',
+      type: src.type as 'invoice' | 'proforma' | 'credit_note',
       contactId: src.contactId,
       bankAccountId: src.bankAccountId,
       currency: src.currency,
@@ -632,6 +652,49 @@ export const documentsRepo = {
         discountPercent: l.discountPercent,
       })),
     })
+  },
+
+  /**
+   * Opravný daňový doklad: a draft that reverses (all lines negated) an issued invoice. Edit the draft
+   * to correct only part of it, then issue it like any other document.
+   */
+  async createCreditNote(
+    db: Db,
+    orgId: string,
+    actorId: string,
+    id: string,
+    reason?: string | null,
+  ) {
+    const src = await this.get(db, orgId, id)
+    if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (src.type !== 'invoice' || (src.status !== 'issued' && src.status !== 'paid')) {
+      throw new DocumentError('CONFLICT', 'A credit note can only correct an issued invoice')
+    }
+    const draft = await this.createDraft(db, orgId, actorId, {
+      type: 'credit_note',
+      contactId: src.contactId,
+      bankAccountId: src.bankAccountId,
+      currency: src.currency,
+      exchangeRate: src.exchangeRate,
+      language: src.language as 'cs' | 'sk' | 'en',
+      paymentMethod: src.paymentMethod,
+      introText: reason ?? null,
+      lines: src.lines.map((l) => ({
+        description: l.description,
+        quantity: parseDecimal(l.quantity).negated().toString(),
+        unit: l.unit,
+        unitPrice: l.unitPrice,
+        vatRate: l.vatRate,
+        discountPercent: l.discountPercent,
+      })),
+    })
+    if (!draft) throw new Error('credit note draft missing')
+    await db
+      .update(document)
+      .set({ relatedDocumentId: id })
+      .where(and(eq(document.organizationId, orgId), eq(document.id, draft.id)))
+    await logActivity(db, orgId, actorId, id, 'credit_note_created', { creditNoteId: draft.id })
+    return this.get(db, orgId, draft.id)
   },
 
   async markPaid(

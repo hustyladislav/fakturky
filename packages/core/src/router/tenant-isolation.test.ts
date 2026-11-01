@@ -74,6 +74,10 @@ const cases: Record<string, Case> = {
 
   'exports.documents': { kind: 'scoped', run: (b) => b.exports.documents({}) },
   'exports.contacts': { kind: 'scoped', run: (b) => b.exports.contacts({}) },
+  'documents.createCreditNote': {
+    kind: 'foreign',
+    run: (b, a) => b.documents.createCreditNote({ id: a.issuedId }),
+  },
   'documents.send': {
     kind: 'foreign',
     run: (b, a) => b.documents.send({ id: a.issuedId, to: 'attacker@example.com' }),

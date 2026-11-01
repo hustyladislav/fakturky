@@ -284,7 +284,11 @@ export const cs = {
       status: 'Stav',
     },
     draftNumber: 'Koncept',
-    type: { invoice: 'Faktura', proforma: 'Zálohová faktura' },
+    type: {
+      invoice: 'Faktura',
+      proforma: 'Zálohová faktura',
+      credit_note: 'Opravný daňový doklad',
+    },
     form: {
       titleNew: 'Nová faktura',
       titleEdit: 'Upravit koncept',
@@ -385,6 +389,7 @@ export const cs = {
       history: 'Průběh',
       timeline: {
         created: 'Vytvořena',
+        credit_note_created: 'Vytvořen opravný doklad',
         sent: 'Odeslána',
         reminded: 'Upomínka odeslána',
         updated: 'Upravena',
@@ -397,6 +402,9 @@ export const cs = {
         deleted: 'Smazána',
       },
       notFound: 'Faktura nebyla nalezena.',
+      creditNote: 'Vytvořit opravný doklad',
+      creditNotePrompt: 'Důvod opravy (zobrazí se na dokladu)',
+      creditNoteCreated: 'Vytvořili jsme koncept opravného dokladu. Upravte ho a vystavte.',
       send: 'Odeslat e-mailem',
       sendTitle: 'Odeslat fakturu',
       sendTo: 'Příjemce',

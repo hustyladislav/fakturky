@@ -38,8 +38,15 @@ export type Services = {
   /** Delivers an invoice/reminder; throws `MailError`. */
   sendInvoice?: (args: SendInvoiceArgs) => Promise<void>
   /** Renders an issued document to PDF bytes. */
-  renderPdf?: (doc: IssuedDocument, lines: IssuedLine[]) => Promise<Uint8Array>
+  renderPdf?: (
+    doc: IssuedDocument,
+    lines: IssuedLine[],
+    original?: OriginalDocument | null,
+  ) => Promise<Uint8Array>
 }
+
+/** The corrected document of a credit note. */
+export type OriginalDocument = { number: string; issueDate: string; uuid: string }
 
 export type IssuedDocument = typeof schema.document.$inferSelect
 export type IssuedLine = typeof schema.documentLine.$inferSelect

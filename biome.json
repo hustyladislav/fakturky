@@ -12,7 +12,9 @@
       "!**/migrations",
       "!**/components/ui",
       "!pnpm-lock.yaml",
-      "!**/.output/**"
+      "!**/.output/**",
+      "!packages/domain",
+      "!design"
     ]
   },
   "formatter": {

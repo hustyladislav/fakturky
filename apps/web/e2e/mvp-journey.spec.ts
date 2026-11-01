@@ -120,7 +120,7 @@ for (const v of variants) {
       expect(href).toMatch(/\/f\/[\w-]+$/)
       const anon = await browser.newContext({ locale: 'cs-CZ' })
       const pub = await anon.newPage()
-      await pub.goto(new URL(href as string).pathname)
+      await pub.goto(href as string) // absolute URL: this context has no baseURL
       await expect(pub.getByText(v.supplierName).first()).toBeVisible()
       await expect(pub.getByText(customerName).first()).toBeVisible()
       await expect(

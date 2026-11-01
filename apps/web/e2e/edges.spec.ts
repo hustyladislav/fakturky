@@ -88,4 +88,17 @@ test('issued invoice can be duplicated into a draft and cancelled (number stays 
   page.once('dialog', (d) => d.accept())
   await page.getByRole('button', { name: 'Stornovat' }).first().click()
   await expect(page.getByText('Stornovaná', { exact: true }).first()).toBeVisible()
+
+  // The cancelled number stays taken: the next invoice must get -0002, not reuse -0001.
+  await page.goto('/faktury/nova')
+  await page.getByLabel('Odběratel', { exact: true }).fill('Životní')
+  await page.getByRole('button', { name: /Životní cyklus/ }).click()
+  await page
+    .getByLabel('Popis', { exact: true })
+    .locator('visible=true')
+    .first()
+    .fill('Další práce')
+  await page.getByLabel('Cena za MJ', { exact: true }).locator('visible=true').first().fill('50')
+  await page.getByRole('button', { name: 'Vystavit', exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^\d{4}-0002$/)
 })

@@ -13,6 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@fakturky/ui/components/sidebar'
+import { ThemeToggle } from '@fakturky/ui/components/theme'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/react-router'
 import { FileText, Heart, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react'
@@ -94,6 +95,9 @@ function AppShell() {
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4">
           <SidebarTrigger />
+          <div className="ml-auto">
+            <ThemeToggle labels={cs.theme} />
+          </div>
         </header>
         <div className="p-6">
           <Outlet />

@@ -21,6 +21,19 @@ export const cs = {
     signOut: 'Odhlásit se',
     support: 'Podpořit projekt',
   },
+  theme: {
+    system: 'Podle systému',
+    light: 'Světlý motiv',
+    dark: 'Tmavý motiv',
+  },
+  status: {
+    draft: 'Koncept',
+    issued: 'Vystavená',
+    overdue: 'Po splatnosti',
+    partial: 'Částečně uhrazená',
+    paid: 'Zaplacená',
+    cancelled: 'Stornovaná',
+  },
   auth: {
     signInTitle: 'Přihlášení',
     signInDescription: 'Vítejte zpět. Přihlaste se ke svému účtu.',

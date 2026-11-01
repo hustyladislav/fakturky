@@ -1,4 +1,5 @@
 import { Toaster } from '@fakturky/ui/components/sonner'
+import { themeInitScript } from '@fakturky/ui/components/theme'
 import appCss from '@fakturky/ui/globals.css?url'
 import type { QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
@@ -25,8 +26,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="cs">
+    <html lang="cs" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
       </head>
       <body>

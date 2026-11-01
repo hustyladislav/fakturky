@@ -27,6 +27,7 @@
     "@tanstack/react-router-ssr-query": "1.167.3",
     "@tanstack/react-start": "1.169.4",
     "better-auth": "catalog:",
+    "@better-auth/api-key": "catalog:",
     "@better-auth/passkey": "catalog:",
     "lucide-react": "1.66.0",
     "nitro": "3.0.261029-rc",

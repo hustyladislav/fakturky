@@ -104,7 +104,12 @@ export function createAuth(options: CreateAuthOptions) {
     plugins: [
       organization(),
       passkey({ rpID: url.hostname, rpName: BRAND.name, origin: url.origin }),
-      apiKey({ references: 'organization', defaultPrefix: BRAND.apiKeyPrefix }),
+      apiKey({
+        references: 'organization',
+        defaultPrefix: BRAND.apiKeyPrefix,
+        // Generous per-key limit (the plugin default is 10 requests per day).
+        rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 600 },
+      }),
       dash(),
       ...(options.sendMagicLink
         ? [
@@ -133,6 +138,18 @@ export async function resolvePrincipal(
   db: Db,
   headers: Headers,
 ): Promise<Principal | null> {
+  // An explicit API key wins over ambient session cookies (e.g. API docs opened while signed in);
+  // an invalid key never falls back to the session.
+  const bearer = headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1]
+  const key = headers.get('x-api-key') ?? bearer
+  if (key?.startsWith(BRAND.apiKeyPrefix)) {
+    const result = await auth.api.verifyApiKey({ body: { key } })
+    const k = result.valid ? result.key : null
+    return k?.referenceId
+      ? { userId: k.referenceId, organizationId: k.referenceId, via: 'apiKey' }
+      : null
+  }
+
   const session = await auth.api.getSession({ headers })
   if (session) {
     // Never trust the session's stored organization alone: membership may have been revoked since.
@@ -147,14 +164,5 @@ export async function resolvePrincipal(
     if (organizationId) return { userId: session.user.id, organizationId, via: 'session' }
   }
 
-  const bearer = headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1]
-  const key = headers.get('x-api-key') ?? bearer
-  if (key?.startsWith(BRAND.apiKeyPrefix)) {
-    const result = await auth.api.verifyApiKey({ body: { key } })
-    const k = result.valid ? result.key : null
-    if (k?.referenceId) {
-      return { userId: k.referenceId, organizationId: k.referenceId, via: 'apiKey' }
-    }
-  }
   return null
 }

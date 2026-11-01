@@ -4,7 +4,7 @@ import type { Db } from '@fakturky/db'
 export type Principal = {
   userId: string
   organizationId: string
-  via: 'session' | 'apiKey'
+  via: 'session' | 'apiKey' | 'oauth'
 }
 
 export type BaseContext = {

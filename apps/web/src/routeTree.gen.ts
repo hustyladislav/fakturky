@@ -10,14 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PrihlaseniRouteImport } from './routes/prihlaseni'
 import { Route as RegistraceRouteImport } from './routes/registrace'
+import { Route as SouhlasRouteImport } from './routes/souhlas'
+import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
 import { Route as DocsApiRouteImport } from './routes/docs.api'
+import { Route as DocsMcpRouteImport } from './routes/docs.mcp'
 import { Route as FTokenRouteImport } from './routes/f.$token'
 import { Route as AppFakturyIndexRouteImport } from './routes/_app/faktury.index'
 import { Route as AppFakturyNovaRouteImport } from './routes/_app/faktury.nova'
@@ -33,6 +37,11 @@ const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -46,6 +55,16 @@ const PrihlaseniRoute = PrihlaseniRouteImport.update({
 const RegistraceRoute = RegistraceRouteImport.update({
   id: '/registrace',
   path: '/registrace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SouhlasRoute = SouhlasRouteImport.update({
+  id: '/souhlas',
+  path: '/souhlas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
+  id: '/.well-known/$',
+  path: '/.well-known/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -71,6 +90,11 @@ const AppNastaveniRoute = AppNastaveniRouteImport.update({
 const DocsApiRoute = DocsApiRouteImport.update({
   id: '/docs/api',
   path: '/docs/api',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsMcpRoute = DocsMcpRouteImport.update({
+  id: '/docs/mcp',
+  path: '/docs/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FTokenRoute = FTokenRouteImport.update({
@@ -126,13 +150,17 @@ const AppFakturyIdUpravitRoute = AppFakturyIdUpravitRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
+  '/souhlas': typeof SouhlasRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
   '/faktury': typeof AppFakturyRouteWithChildren
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
   '/docs/api': typeof DocsApiRoute
+  '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -145,12 +173,16 @@ export interface FileRoutesByFullPath {
   '/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesByTo {
+  '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
+  '/souhlas': typeof SouhlasRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
   '/docs/api': typeof DocsApiRoute
+  '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
   '/': typeof AppIndexRoute
   '/faktury/nova': typeof AppFakturyNovaRoute
@@ -166,13 +198,17 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
   '/prihlaseni': typeof PrihlaseniRoute
   '/registrace': typeof RegistraceRoute
+  '/souhlas': typeof SouhlasRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
   '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/kontakty': typeof AppKontaktyRoute
   '/_app/nastaveni': typeof AppNastaveniRoute
   '/docs/api': typeof DocsApiRoute
+  '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
   '/_app/': typeof AppIndexRoute
   '/_app/faktury/nova': typeof AppFakturyNovaRoute
@@ -189,13 +225,17 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/mcp'
     | '/onboarding'
     | '/prihlaseni'
     | '/registrace'
+    | '/souhlas'
+    | '/.well-known/$'
     | '/faktury'
     | '/kontakty'
     | '/nastaveni'
     | '/docs/api'
+    | '/docs/mcp'
     | '/f/$token'
     | '/faktury/nova'
     | '/api/auth/$'
@@ -208,12 +248,16 @@ export interface FileRouteTypes {
     | '/faktury/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/mcp'
     | '/onboarding'
     | '/prihlaseni'
     | '/registrace'
+    | '/souhlas'
+    | '/.well-known/$'
     | '/kontakty'
     | '/nastaveni'
     | '/docs/api'
+    | '/docs/mcp'
     | '/f/$token'
     | '/'
     | '/faktury/nova'
@@ -228,13 +272,17 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/mcp'
     | '/onboarding'
     | '/prihlaseni'
     | '/registrace'
+    | '/souhlas'
+    | '/.well-known/$'
     | '/_app/faktury'
     | '/_app/kontakty'
     | '/_app/nastaveni'
     | '/docs/api'
+    | '/docs/mcp'
     | '/f/$token'
     | '/_app/'
     | '/_app/faktury/nova'
@@ -250,10 +298,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  McpRoute: typeof McpRoute
   OnboardingRoute: typeof OnboardingRoute
   PrihlaseniRoute: typeof PrihlaseniRoute
   RegistraceRoute: typeof RegistraceRoute
+  SouhlasRoute: typeof SouhlasRoute
+  DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
   DocsApiRoute: typeof DocsApiRoute
+  DocsMcpRoute: typeof DocsMcpRoute
   FTokenRoute: typeof FTokenRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
@@ -268,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -289,6 +348,20 @@ declare module '@tanstack/react-router' {
       path: '/registrace'
       fullPath: '/registrace'
       preLoaderRoute: typeof RegistraceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/souhlas': {
+      id: '/souhlas'
+      path: '/souhlas'
+      fullPath: '/souhlas'
+      preLoaderRoute: typeof SouhlasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/$': {
+      id: '/.well-known/$'
+      path: '/.well-known/$'
+      fullPath: '/.well-known/$'
+      preLoaderRoute: typeof DotwellKnownSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -324,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/docs/api'
       fullPath: '/docs/api'
       preLoaderRoute: typeof DocsApiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/mcp': {
+      id: '/docs/mcp'
+      path: '/docs/mcp'
+      fullPath: '/docs/mcp'
+      preLoaderRoute: typeof DocsMcpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/f/$token': {
@@ -446,10 +526,14 @@ const FTokenRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  McpRoute: McpRoute,
   OnboardingRoute: OnboardingRoute,
   PrihlaseniRoute: PrihlaseniRoute,
   RegistraceRoute: RegistraceRoute,
+  SouhlasRoute: SouhlasRoute,
+  DotwellKnownSplatRoute: DotwellKnownSplatRoute,
   DocsApiRoute: DocsApiRoute,
+  DocsMcpRoute: DocsMcpRoute,
   FTokenRoute: FTokenRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,

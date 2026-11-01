@@ -1,10 +1,13 @@
 import { apiKey } from '@better-auth/api-key'
+import { cimd } from '@better-auth/cimd'
+import { fetchClientMetadataResource } from '@better-auth/cimd/node'
 import { dash } from '@better-auth/infra'
+import { mcp } from '@better-auth/mcp'
 import { passkey } from '@better-auth/passkey'
 import { type Db, newId, schema } from '@fakturky/db'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { magicLink, oAuthProxy, organization } from 'better-auth/plugins'
+import { jwt, magicLink, oAuthProxy, organization } from 'better-auth/plugins'
 import { eq } from 'drizzle-orm'
 import { BRAND } from './brand'
 import type { Principal } from './context'
@@ -37,6 +40,12 @@ function slugify(input: string): string {
   return `${base || 'firma'}-${newId().slice(-8)}`
 }
 
+/** OAuth scope an MCP client must hold to call tools. */
+export const MCP_SCOPE = 'mcp:tools'
+
+/** Canonical MCP resource URL for a deployment: the OAuth audience of access tokens. */
+export const mcpResource = (baseURL: string) => `${new URL(baseURL).origin}/mcp`
+
 export function createAuth(options: CreateAuthOptions) {
   const { db } = options
   const url = new URL(options.baseURL)
@@ -62,6 +71,8 @@ export function createAuth(options: CreateAuthOptions) {
           },
         }
       : {},
+    // OAuth provider mode: the plugin's own /token and set-auth-jwt header must be off.
+    disabledPaths: ['/token'],
     emailAndPassword: { enabled: true, minPasswordLength: 8 },
     databaseHooks: {
       user: {
@@ -111,6 +122,14 @@ export function createAuth(options: CreateAuthOptions) {
         rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 600 },
       }),
       dash(),
+      jwt({ disableSettingJwtHeader: true }),
+      mcp({
+        loginPage: '/prihlaseni',
+        consentPage: '/souhlas',
+        resource: mcpResource(options.baseURL),
+        scopes: ['openid', 'profile', 'email', 'offline_access', MCP_SCOPE],
+      }),
+      cimd({ fetchClientMetadataResource, metadataProfile: 'mcp-2026-07-28' }),
       ...(options.sendMagicLink
         ? [
             magicLink({
@@ -133,6 +152,24 @@ export type Auth = ReturnType<typeof createAuth>
  * Resolve the caller from a request: session cookie first, then an API key
  * (`Authorization: Bearer fk_…` or `x-api-key`). Returns null when anonymous.
  */
+/** Organization a user acts on: the preferred one if they are still a member, else their first. */
+export async function principalForUser(
+  db: Db,
+  userId: string,
+  via: Principal['via'],
+  preferredOrganizationId?: string | null,
+): Promise<Principal | null> {
+  // Never trust a stored organization alone: membership may have been revoked since.
+  const memberships = await db
+    .select({ organizationId: schema.member.organizationId })
+    .from(schema.member)
+    .where(eq(schema.member.userId, userId))
+  const organizationId =
+    memberships.find((m) => m.organizationId === preferredOrganizationId)?.organizationId ??
+    memberships[0]?.organizationId
+  return organizationId ? { userId, organizationId, via } : null
+}
+
 export async function resolvePrincipal(
   auth: Auth,
   db: Db,
@@ -152,16 +189,7 @@ export async function resolvePrincipal(
 
   const session = await auth.api.getSession({ headers })
   if (session) {
-    // Never trust the session's stored organization alone: membership may have been revoked since.
-    const memberships = await db
-      .select({ organizationId: schema.member.organizationId })
-      .from(schema.member)
-      .where(eq(schema.member.userId, session.user.id))
-    const active = session.session.activeOrganizationId
-    const organizationId =
-      memberships.find((m) => m.organizationId === active)?.organizationId ??
-      memberships[0]?.organizationId
-    if (organizationId) return { userId: session.user.id, organizationId, via: 'session' }
+    return principalForUser(db, session.user.id, 'session', session.session.activeOrganizationId)
   }
 
   return null

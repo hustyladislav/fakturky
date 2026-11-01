@@ -1,4 +1,5 @@
 import { type DbHandle, schema } from '@fakturky/db'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { MailError, type SendInvoiceArgs } from '../context'
 import { clientFor, createTestDb, seedOrg } from '../testing'
@@ -96,7 +97,20 @@ test('credit note reverses an invoice, numbered in its own series, exported with
   expect(draft.type).toBe('credit_note')
   expect(draft.total).toBe('-2420.0000')
   expect(draft.introText).toBe('Chybná cena')
+  // The generic path cannot create credit notes; duplicating one is refused too.
+  await expect(
+    api.documents.createDraft({ type: 'credit_note', contactId: c.id, lines: [] }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  // VAT treatment follows the corrected invoice even if the supplier is no longer a payer.
+  await handle.db
+    .update(schema.businessProfile)
+    .set({ vatStatus: 'non_payer' })
+    .where(eq(schema.businessProfile.organizationId, org))
   const cn = await api.documents.issue({ id: draft.id })
+  expect(cn.vatMode).not.toBe('none')
+  expect(cn.total).toBe('-2420.0000')
+  await expect(api.documents.duplicate({ id: cn.id })).rejects.toMatchObject({ code: 'CONFLICT' })
+  expect((await api.documents.get({ id: cn.id })).displayStatus).toBe('issued')
   expect(cn.number).toMatch(/^D\d{4}-0001$/)
   expect((await api.documents.isdoc({ id: cn.id })).xml).toContain(inv.number as string)
   expect((await api.documents.get({ id: inv.id })).activity.map((a) => a.action)).toContain(

@@ -163,7 +163,7 @@ function InvoiceDetail() {
   if (!d) return <p className="text-muted-foreground">{cs.common.loading}</p>
 
   const isDraft = d.status === 'draft'
-  const open = d.status === 'issued'
+  const open = d.status === 'issued' && d.type !== 'credit_note'
   const bank = d.bankSnapshot as Record<string, string | null> | null
   const publicUrl = d.publicToken ? `${window.location.origin}/f/${d.publicToken}` : null
   const defaultTo = ((d.customerSnapshot?.emails as string[] | undefined) ?? [])[0]
@@ -509,7 +509,7 @@ function InvoiceDetail() {
             {t.markUnpaid}
           </Button>
         )}
-        {(open || d?.status === 'paid') && (
+        {(open || d?.status === 'paid' || (d?.type === 'credit_note' && d.status === 'issued')) && (
           <Button variant="outline" className={full} onClick={() => setSending(true)}>
             {d?.displayStatus === 'overdue' ? t.remind : t.send}
           </Button>

@@ -23,6 +23,7 @@ export const publicRouter = {
       z.object({
         number: z.string(),
         type: z.string(),
+        original: z.object({ number: z.string(), issueDate: z.string() }).nullable(),
         status: z.enum(['issued', 'paid', 'cancelled']),
         overdue: z.boolean(),
         issueDate: z.string(),
@@ -88,6 +89,9 @@ export const publicRouter = {
       return {
         number: x.number,
         type: x.type,
+        original: found.original
+          ? { number: found.original.number, issueDate: found.original.issueDate }
+          : null,
         status: doc.status as 'issued' | 'paid' | 'cancelled',
         overdue: doc.status === 'issued' && !!doc.dueDate && doc.dueDate < today,
         issueDate: x.issueDate,

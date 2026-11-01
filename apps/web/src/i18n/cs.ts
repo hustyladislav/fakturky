@@ -476,7 +476,9 @@ export const cs = {
   },
   templates: {
     title: 'Šablony',
-    empty: 'Zatím nemáte žádné šablony. Otevřete fakturu a zvolte „Uložit jako šablonu“.',
+    emptyTitle: 'Zatím žádné šablony',
+    empty:
+      'Otevřete vystavenou fakturu a zvolte „Uložit jako šablonu“. Příště ji vytvoříte jedním klikem.',
     use: 'Použít',
     used: 'Vytvořili jsme nový koncept ze šablony.',
     delete: 'Smazat',
@@ -505,7 +507,9 @@ export const cs = {
   contacts: {
     title: 'Kontakty',
     new: 'Nový kontakt',
-    empty: 'Zatím nemáte žádné kontakty.',
+    emptyTitle: 'Zatím žádní odběratelé',
+    empty:
+      'Kontakt se vám uloží i při vytvoření faktury. Můžete ho ale přidat i předem, třeba z ARES.',
     name: 'Název nebo jméno',
     ico: 'IČO',
     dic: 'DIČ',

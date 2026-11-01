@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@fakturky/ui/components/dialog'
+import { EmptyState } from '@fakturky/ui/components/empty-state'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import {
@@ -19,6 +20,7 @@ import {
 } from '@fakturky/ui/components/table'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { CsvDownload } from '@/components/csv-download'
@@ -47,40 +49,59 @@ function Contacts() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{cs.contacts.title}</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <CsvDownload kind="contacts" />
           <NewContact />
         </div>
       </div>
       {list.data?.length === 0 ? (
-        <p className="text-muted-foreground">{cs.contacts.empty}</p>
+        <EmptyState icon={Users} title={cs.contacts.emptyTitle}>
+          {cs.contacts.empty}
+        </EmptyState>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{cs.contacts.name}</TableHead>
-              <TableHead>{cs.contacts.ico}</TableHead>
-              <TableHead>{cs.contacts.email}</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <>
+          <ul className="divide-y overflow-hidden rounded-xl border sm:hidden">
             {list.data?.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell className="font-medium">{c.name}</TableCell>
-                <TableCell>{c.ico}</TableCell>
-                <TableCell>{c.emails[0]}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" onClick={() => archive.mutate({ id: c.id })}>
-                    {cs.common.archive}
-                  </Button>
-                </TableCell>
-              </TableRow>
+              <li key={c.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium">{c.name}</div>
+                  <div className="truncate text-sm text-muted-foreground">
+                    {[c.ico && `IČO ${c.ico}`, c.emails[0]].filter(Boolean).join(' · ') || '—'}
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => archive.mutate({ id: c.id })}>
+                  {cs.common.archive}
+                </Button>
+              </li>
             ))}
-          </TableBody>
-        </Table>
+          </ul>
+          <Table className="hidden sm:table">
+            <TableHeader>
+              <TableRow>
+                <TableHead>{cs.contacts.name}</TableHead>
+                <TableHead>{cs.contacts.ico}</TableHead>
+                <TableHead>{cs.contacts.email}</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {list.data?.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">{c.name}</TableCell>
+                  <TableCell>{c.ico}</TableCell>
+                  <TableCell>{c.emails[0]}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => archive.mutate({ id: c.id })}>
+                      {cs.common.archive}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </>
       )}
     </div>
   )

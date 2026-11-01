@@ -40,6 +40,15 @@ export const cs = {
     cancelled: 'Stornovaná',
   },
   auth: {
+    google: 'Pokračovat přes Google',
+    orDivider: 'nebo',
+    magicLinkAction: 'Poslat přihlašovací odkaz e-mailem',
+    magicLinkSent: 'Odkaz jsme poslali na váš e-mail. Platí 5 minut.',
+    magicLinkUnavailable: 'Odkaz e-mailem zatím není dostupný, použijte Google nebo heslo.',
+    magicLinkRestricted:
+      'Přihlašovací odkaz e-mailem zatím umíme poslat jen omezeně — použijte prosím Google nebo heslo.',
+    magicLinkFailed: 'Odkaz se nepodařilo odeslat. Zkuste to prosím znovu.',
+    magicLinkNeedsEmail: 'Nejdřív zadejte e-mail.',
     signInTitle: 'Přihlášení',
     signInDescription: 'Vítejte zpět. Přihlaste se ke svému účtu.',
     signUpTitle: 'Vytvořit účet',

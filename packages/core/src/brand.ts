@@ -7,6 +7,7 @@ export const BRAND = {
   repoUrl: 'https://github.com/hustyladislav/fakturky',
   docsUrl: 'https://github.com/hustyladislav/fakturky/tree/main/docs',
   issuesUrl: 'https://github.com/hustyladislav/fakturky/issues',
+  productionUrl: 'https://fakturky.vercel.app',
   apiKeyPrefix: 'fk_',
 } as const
 

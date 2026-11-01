@@ -39,3 +39,34 @@ test('sign-up creates org + business profile; session resolves to a principal', 
   await handle.db.delete(schema.member)
   expect(await resolvePrincipal(auth, handle.db, new Headers({ cookie }))).toBeNull()
 })
+
+test('magic link sign-up: link is delivered, verifying creates user + org + business profile', async () => {
+  const sent: { email: string; url: string }[] = []
+  const auth = createAuth({
+    db: handle.db,
+    secret: 'test-secret-test-secret-test-secret-123',
+    baseURL: 'http://localhost:3000',
+    sendMagicLink: async (m) => {
+      sent.push(m)
+    },
+  })
+  await auth.api.signInMagicLink({
+    body: { email: 'eva@example.com', callbackURL: '/' },
+    headers: new Headers(),
+  })
+  expect(sent).toHaveLength(1)
+
+  const res = await auth.handler(new Request(sent[0]?.url ?? '', { redirect: 'manual' }))
+  expect(res.status).toBeLessThan(400)
+
+  const [user] = await handle.db
+    .select()
+    .from(schema.user)
+    .where(eq(schema.user.email, 'eva@example.com'))
+  expect(user).toMatchObject({ email: 'eva@example.com', name: 'eva' })
+  const [profile] = await handle.db
+    .select()
+    .from(schema.businessProfile)
+    .where(eq(schema.businessProfile.legalName, 'eva'))
+  expect(profile).toBeDefined()
+})

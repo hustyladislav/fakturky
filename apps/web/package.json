@@ -35,7 +35,8 @@
     "react-dom": "19.3.1",
     "tailwindcss": "4.3.3",
     "zod": "catalog:",
-    "@better-auth/infra": "0.4.25"
+    "@better-auth/infra": "0.4.25",
+    "@fakturky/email": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

@@ -1,6 +1,6 @@
 # Domain rules (Czech invoicing)
 
-Source of truth for `packages/core/src/domain`. Researched 2026-11-01; law = zákon 235/2004 Sb. (DPH),
+Source of truth for `packages/domain`. Researched 2026-11-01; law = zákon 235/2004 Sb. (DPH),
 563/1991 Sb. (účetnictví), občanský zákoník §435. Items marked (verify) need a re-check before relying on them.
 
 ## Who issues what

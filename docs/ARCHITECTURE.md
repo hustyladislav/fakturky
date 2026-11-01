@@ -42,9 +42,10 @@ Everything a user can do in the web UI is also available through the REST API, t
 
 ```
 apps/web            TanStack Start app: routes, server routes (/api/rpc, /api/v1, /api/auth, /mcp, /.well-known, /f/:token)
-packages/core       Domain logic + Zod schemas + oRPC router (THE source of truth for operations)
-  src/domain/       money, vat, numbering, iban, czech-account, spayd, isdoc, dates
-  src/integrations/ ares, cnb-rates, vies
+packages/domain     Pure, dependency-light Czech invoicing logic (no DB, no IO except integrations)
+  src/              money, vat, numbering, iban, czech-account, bank-codes, spayd, epc-qr, isdoc, dates, ico
+  src/integrations/ ares, cnb-rates, vies (fetch-based, injectable fetch for tests)
+packages/core       Zod schemas + oRPC router (THE source of truth for operations), repositories, services
   src/router/       oRPC procedures grouped by resource (contacts, documents, payments, bank-accounts, ...)
   src/brand.ts      product name, URLs, support links
 packages/db         Drizzle schema, migrations, client factory (Neon in prod, PGlite in tests)

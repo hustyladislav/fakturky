@@ -34,6 +34,7 @@ export async function createDb(options: CreateDbOptions = {}): Promise<DbHandle>
     import('@electric-sql/pglite'),
     import('drizzle-orm/pglite'),
   ])
+  if (options.pgliteDir) (await import('node:fs')).mkdirSync(options.pgliteDir, { recursive: true })
   const client = new PGlite(options.pgliteDir)
   return {
     db: drizzle(client, { schema }) as unknown as Db,

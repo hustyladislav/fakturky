@@ -32,6 +32,8 @@ minimumReleaseAgeExclude:
   - "@better-auth/prisma-adapter@1.7.15"
   - "@better-auth/telemetry@1.7.15"
   - better-auth@1.7.15
+  - "@tanstack/query-core@5.105.1"
+  - "@tanstack/react-query@5.105.1"
 
 allowBuilds:
   esbuild: true

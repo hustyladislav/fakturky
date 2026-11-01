@@ -48,7 +48,7 @@ export function createAuth(options: CreateAuthOptions) {
     trustedOrigins: options.trustedOrigins,
     database: drizzleAdapter(db, { provider: 'pg', schema }),
     advanced: {
-      database: { generateId: () => newId() },
+      database: { generateId: () => newId(), joins: true },
       // Vercel sets both headers at the edge; they cannot be spoofed by the client.
       ipAddress: { ipAddressHeaders: ['x-real-ip', 'x-forwarded-for'] },
     },

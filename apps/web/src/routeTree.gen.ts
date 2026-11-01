@@ -25,8 +25,10 @@ import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
 import { Route as FTokenIsdocRouteImport } from './routes/f.$token.isdoc'
+import { Route as FTokenPdfRouteImport } from './routes/f.$token.pdf'
 import { Route as AppFakturyIdIndexRouteImport } from './routes/_app/faktury.$id.index'
 import { Route as AppFakturyIdUpravitRouteImport } from './routes/_app/faktury.$id.upravit'
+import { Route as ApiDocumentsIdPdfRouteImport } from './routes/api/documents.$id.pdf'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -107,6 +109,11 @@ const FTokenIsdocRoute = FTokenIsdocRouteImport.update({
   path: '/isdoc',
   getParentRoute: () => FTokenRoute,
 } as any)
+const FTokenPdfRoute = FTokenPdfRouteImport.update({
+  id: '/pdf',
+  path: '/pdf',
+  getParentRoute: () => FTokenRoute,
+} as any)
 const AppFakturyIdIndexRoute = AppFakturyIdIndexRouteImport.update({
   id: '/$id/',
   path: '/$id/',
@@ -116,6 +123,11 @@ const AppFakturyIdUpravitRoute = AppFakturyIdUpravitRouteImport.update({
   id: '/$id/upravit',
   path: '/$id/upravit',
   getParentRoute: () => AppFakturyRoute,
+} as any)
+const ApiDocumentsIdPdfRoute = ApiDocumentsIdPdfRouteImport.update({
+  id: '/api/documents/$id/pdf',
+  path: '/api/documents/$id/pdf',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -133,8 +145,10 @@ export interface FileRoutesByFullPath {
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/f/$token/isdoc': typeof FTokenIsdocRoute
+  '/f/$token/pdf': typeof FTokenPdfRoute
   '/faktury/': typeof AppFakturyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
+  '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
   '/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -151,8 +165,10 @@ export interface FileRoutesByTo {
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/f/$token/isdoc': typeof FTokenIsdocRoute
+  '/f/$token/pdf': typeof FTokenPdfRoute
   '/faktury': typeof AppFakturyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
+  '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
   '/faktury/$id': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesById {
@@ -172,8 +188,10 @@ export interface FileRoutesById {
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/f/$token/isdoc': typeof FTokenIsdocRoute
+  '/f/$token/pdf': typeof FTokenPdfRoute
   '/_app/faktury/': typeof AppFakturyIndexRoute
   '/_app/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
+  '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
   '/_app/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -193,8 +211,10 @@ export interface FileRouteTypes {
     | '/api/v1/$'
     | '/api/v1/openapi.json'
     | '/f/$token/isdoc'
+    | '/f/$token/pdf'
     | '/faktury/'
     | '/faktury/$id/upravit'
+    | '/api/documents/$id/pdf'
     | '/faktury/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -211,8 +231,10 @@ export interface FileRouteTypes {
     | '/api/v1/$'
     | '/api/v1/openapi.json'
     | '/f/$token/isdoc'
+    | '/f/$token/pdf'
     | '/faktury'
     | '/faktury/$id/upravit'
+    | '/api/documents/$id/pdf'
     | '/faktury/$id'
   id:
     | '__root__'
@@ -231,8 +253,10 @@ export interface FileRouteTypes {
     | '/api/v1/$'
     | '/api/v1/openapi.json'
     | '/f/$token/isdoc'
+    | '/f/$token/pdf'
     | '/_app/faktury/'
     | '/_app/faktury/$id/upravit'
+    | '/api/documents/$id/pdf'
     | '/_app/faktury/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -246,6 +270,7 @@ export interface RootRouteChildren {
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
+  ApiDocumentsIdPdfRoute: typeof ApiDocumentsIdPdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -362,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FTokenIsdocRouteImport
       parentRoute: typeof FTokenRoute
     }
+    '/f/$token/pdf': {
+      id: '/f/$token/pdf'
+      path: '/pdf'
+      fullPath: '/f/$token/pdf'
+      preLoaderRoute: typeof FTokenPdfRouteImport
+      parentRoute: typeof FTokenRoute
+    }
     '/_app/faktury/$id/': {
       id: '/_app/faktury/$id/'
       path: '/$id'
@@ -375,6 +407,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/faktury/$id/upravit'
       preLoaderRoute: typeof AppFakturyIdUpravitRouteImport
       parentRoute: typeof AppFakturyRoute
+    }
+    '/api/documents/$id/pdf': {
+      id: '/api/documents/$id/pdf'
+      path: '/api/documents/$id/pdf'
+      fullPath: '/api/documents/$id/pdf'
+      preLoaderRoute: typeof ApiDocumentsIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -415,10 +454,12 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface FTokenRouteChildren {
   FTokenIsdocRoute: typeof FTokenIsdocRoute
+  FTokenPdfRoute: typeof FTokenPdfRoute
 }
 
 const FTokenRouteChildren: FTokenRouteChildren = {
   FTokenIsdocRoute: FTokenIsdocRoute,
+  FTokenPdfRoute: FTokenPdfRoute,
 }
 
 const FTokenRouteWithChildren =
@@ -434,6 +475,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
+  ApiDocumentsIdPdfRoute: ApiDocumentsIdPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

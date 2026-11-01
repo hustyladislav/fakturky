@@ -3,12 +3,23 @@ import { fileURLToPath } from 'node:url'
 import { Font } from '@react-pdf/renderer'
 
 const dataUrls = new Map<string, string>()
+const provided = new Map<string, Uint8Array>()
+
+/**
+ * Supplies font files by name (e.g. `Inter-Regular.ttf`) for bundled deployments where the package's
+ * `fonts/` directory is not on disk next to the compiled code. Falls back to reading from disk.
+ */
+export function provideFontFiles(files: Record<string, Uint8Array>): void {
+  for (const [name, bytes] of Object.entries(files)) provided.set(name, bytes)
+}
 
 function file(name: string): string {
   let url = dataUrls.get(name)
   if (!url) {
-    const bytes = readFileSync(fileURLToPath(new URL(`../fonts/${name}`, import.meta.url)))
-    url = `data:font/ttf;base64,${bytes.toString('base64')}`
+    const bytes =
+      provided.get(name) ??
+      readFileSync(fileURLToPath(new URL(`../fonts/${name}`, import.meta.url)))
+    url = `data:font/ttf;base64,${Buffer.from(bytes).toString('base64')}`
     dataUrls.set(name, url)
   }
   return url

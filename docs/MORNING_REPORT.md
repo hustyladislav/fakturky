@@ -9,6 +9,9 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Needs you
 
+0. **Preview database** — previews share the production Neon DB (branching option is disabled for this
+   marketplace resource on the free plan). Migrations are being gated to production only. Proper fix: a Neon
+   branch for Preview — see `docs/SECURITY_AUDIT.md`. Also optional: Vercel Firewall rules (paths/limits in that doc).
 1. **Domain** — pick a name/domain from `docs/research/names.md` (shortlist; `fakturky.app` is free, $9.99) and
    buy it (or tell me to). Then: add it in Resend (your existing account, team "moravio") + DNS → switch
    `EMAIL_FROM` env so magic links/invoice emails reach everyone (today: Resend sandbox, delivers only to you).
@@ -23,6 +26,9 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Shipped overnight
 
+- Security audit done (`docs/SECURITY_AUDIT.md`): tenant-isolation suite over every procedure, CSRF/origin checks,
+  CodeQL + gitleaks + OSV + dependency review in CI, `SECURITY.md`, Dependabot alerts on. Set `CRON_SECRET`
+  (prod+preview) so recurring invoices/reminders run; branch protection on `main` (required `check` + `gitleaks`).
 - Agent surfaces: API keys + `/docs/api` #17, remote MCP server `/mcp` (OAuth 2.1 + CIMD, API keys) #35,
   `fakturky` CLI #39, `/llms.txt` #40. Landing page + dashboard at `/prehled` #41.
 - Invoice e-mail sending #44, overdue reminders + CSV export #48, security: nonce CSP/HSTS #42, auth hardening #50,

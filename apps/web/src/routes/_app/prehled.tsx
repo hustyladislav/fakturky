@@ -6,7 +6,7 @@ import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 
-export const Route = createFileRoute('/_app/')({
+export const Route = createFileRoute('/_app/prehled')({
   component: Overview,
 })
 

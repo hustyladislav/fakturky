@@ -1,0 +1,38 @@
+{
+  "name": "@fakturky/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure Czech invoicing domain logic: money, VAT, numbering, bank accounts, QR payments, ISDOC, ARES/ČNB/VIES clients.",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./money": "./src/money.ts",
+    "./vat": "./src/vat.ts",
+    "./numbering": "./src/numbering.ts",
+    "./ico": "./src/ico.ts",
+    "./iban": "./src/iban.ts",
+    "./czech-account": "./src/czech-account.ts",
+    "./qr/spayd": "./src/qr/spayd.ts",
+    "./qr/render": "./src/qr/render.ts",
+    "./dates": "./src/dates.ts",
+    "./integrations/ares": "./src/integrations/ares.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "decimal.js-light": "2.5.1",
+    "qrcode": "1.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/qrcode": "1.5.6",
+    "@vitest/coverage-v8": "5.0.5",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}

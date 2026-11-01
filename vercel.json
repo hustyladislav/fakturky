@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm db:migrate && pnpm build",
+  "buildCommand": "pnpm db:migrate && pnpm build && rm -rf .vercel/output && cp -R apps/web/.vercel/output .vercel/output",
   "regions": ["fra1"]
 }

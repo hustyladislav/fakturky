@@ -540,7 +540,7 @@ export function InvoiceForm({ id }: { id?: string }) {
         </div>
       </Card>
 
-      <div className="from-background bg-gradient-to-t fixed inset-x-0 bottom-0 z-10 flex gap-2 p-4 sm:static sm:justify-end sm:p-0">
+      <div className="from-background bg-gradient-to-t fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex gap-2 p-4 sm:static sm:justify-end sm:p-0">
         <Button
           type="button"
           variant="outline"

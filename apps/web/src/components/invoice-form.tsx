@@ -35,6 +35,8 @@ const emptyLine = (vatRate = '21'): Line => ({
   vatRate,
 })
 const num = (v: string) => (v.trim() === '' ? '0' : v.trim().replace(',', '.'))
+/** Strips trailing fraction zeros from a decimal string without going through floating point. */
+const trimDecimal = (v: string) => (v.includes('.') ? v.replace(/\.?0+$/, '') : v)
 const validNum = (v: string) => /^-?\d+(\.\d+)?$/.test(num(v))
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
@@ -69,12 +71,12 @@ export function InvoiceForm({ id }: { id?: string }) {
   const [footerText, setFooterText] = useState('')
   const [privateNote, setPrivateNote] = useState('')
   const [lines, setLines] = useState<Line[]>([emptyLine()])
-  const [ready, setReady] = useState(!id)
+  const [ready, setReady] = useState(false)
   const [dueTouched, setDueTouched] = useState(false)
 
   // Seed from defaults (new) or from the stored draft (edit), once.
   useEffect(() => {
-    if (ready || !defaults.data) return
+    if (id || ready || !defaults.data) return
     const d = defaults.data
     setDueDate(addDays(today, d.dueDays))
     setCurrency(d.currency)
@@ -82,16 +84,16 @@ export function InvoiceForm({ id }: { id?: string }) {
     setFooterText(d.footerText ?? '')
     setLines([emptyLine(d.vatPayer ? '21' : '0')])
     setReady(true)
-  }, [defaults.data, ready, today])
+  }, [defaults.data, ready, today, id])
   useEffect(() => {
     const d = existing.data
-    if (!id || !d || ready) return
+    if (!id || !d || ready || !defaults.data) return
     setCustomer(d.contactId ? { id: d.contactId, name: d.customerName ?? '' } : null)
     setIssueDate(d.issueDate ?? today)
     setDueDate(d.dueDate ?? today)
     setTaxableDate(d.taxableDate ?? d.issueDate ?? today)
     setCurrency(d.currency)
-    setExchangeRate(d.exchangeRate ? String(Number(d.exchangeRate)) : '')
+    setExchangeRate(d.exchangeRate ? trimDecimal(d.exchangeRate) : '')
     setBankAccountId(d.bankAccountId ?? '')
     setPaymentMethod(d.paymentMethod)
     setIntroText(d.introText ?? '')
@@ -103,15 +105,15 @@ export function InvoiceForm({ id }: { id?: string }) {
         ? d.lines.map((l) => ({
             key: lineKey++,
             description: l.description,
-            quantity: String(Number(l.quantity)),
+            quantity: trimDecimal(l.quantity),
             unit: l.unit ?? '',
-            unitPrice: String(Number(l.unitPrice)),
-            vatRate: String(Number(l.vatRate)),
+            unitPrice: trimDecimal(l.unitPrice),
+            vatRate: trimDecimal(l.vatRate),
           }))
         : [emptyLine()],
     )
     setReady(true)
-  }, [existing.data, id, ready, today])
+  }, [existing.data, defaults.data, id, ready, today])
 
   const vatPayer = defaults.data?.vatPayer ?? false
   const foreign = currency !== 'CZK'
@@ -183,7 +185,14 @@ export function InvoiceForm({ id }: { id?: string }) {
         ? await client.documents.updateDraft({ id, patch: body })
         : await client.documents.createDraft(body)
       if (!andIssue) return doc
-      return client.documents.issue({ id: doc.id })
+      try {
+        return await client.documents.issue({ id: doc.id })
+      } catch (e) {
+        // Keep the saved draft: continue on its edit page so a retry does not create a second one.
+        await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
+        if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+        throw e
+      }
     },
     onSuccess: async (doc, andIssue) => {
       await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })

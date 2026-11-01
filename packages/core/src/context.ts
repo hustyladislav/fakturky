@@ -19,6 +19,7 @@ export type SendInvoiceArgs = {
   publicUrl: string
   message: string | null
   isReminder: boolean
+  language: 'cs' | 'sk' | 'en'
   pdf: { filename: string; bytes: Uint8Array }
 }
 

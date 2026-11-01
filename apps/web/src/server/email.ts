@@ -51,7 +51,7 @@ export async function deliverInvoice(args: SendInvoiceArgs): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     if (process.env.NODE_ENV !== 'production') {
-      console.info(`[invoice-email] to ${args.to}: ${args.number} ${args.publicUrl}`)
+      console.info(`[invoice-email] would send ${args.number} (RESEND_API_KEY not set)`)
       return
     }
     throw new MailError('EMAIL_NOT_CONFIGURED')

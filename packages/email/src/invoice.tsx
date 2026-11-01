@@ -8,7 +8,57 @@ const green = '#1F4D3C'
 const serif = 'Georgia, "Times New Roman", serif'
 const sans = '-apple-system, "Segoe UI", Helvetica, Arial, sans-serif'
 
+type Lang = 'cs' | 'sk' | 'en'
+
+const COPY: Record<
+  Lang,
+  {
+    hello: string
+    invoice: (n: string, total: string, due: string) => string
+    reminder: (n: string, total: string, due: string) => string
+    attached: string
+    button: string
+    sentVia: string
+    subject: (n: string, who: string) => string
+    subjectReminder: (n: string) => string
+  }
+> = {
+  cs: {
+    hello: 'Dobrý den,',
+    invoice: (n, t, d) => `posíláme vám fakturu ${n} na částku ${t} se splatností ${d}.`,
+    reminder: (n, t, d) =>
+      `dovolujeme si vás upozornit, že faktura ${n} na částku ${t} je po splatnosti (splatnost ${d}).`,
+    attached: 'PDF najdete v příloze, fakturu si můžete také otevřít online.',
+    button: 'Zobrazit fakturu',
+    sentVia: 'Odesláno přes',
+    subject: (n, who) => `Faktura ${n} od ${who}`,
+    subjectReminder: (n) => `Připomenutí platby: faktura ${n}`,
+  },
+  sk: {
+    hello: 'Dobrý deň,',
+    invoice: (n, t, d) => `posielame vám faktúru ${n} na sumu ${t} so splatnosťou ${d}.`,
+    reminder: (n, t, d) =>
+      `dovoľujeme si vás upozorniť, že faktúra ${n} na sumu ${t} je po splatnosti (splatnosť ${d}).`,
+    attached: 'PDF nájdete v prílohe, faktúru si môžete otvoriť aj online.',
+    button: 'Zobraziť faktúru',
+    sentVia: 'Odoslané cez',
+    subject: (n, who) => `Faktúra ${n} od ${who}`,
+    subjectReminder: (n) => `Pripomenutie platby: faktúra ${n}`,
+  },
+  en: {
+    hello: 'Hello,',
+    invoice: (n, t, d) => `please find invoice ${n} for ${t}, due on ${d}.`,
+    reminder: (n, t, d) => `this is a reminder that invoice ${n} for ${t} is overdue (due ${d}).`,
+    attached: 'The PDF is attached; you can also open the invoice online.',
+    button: 'View invoice',
+    sentVia: 'Sent with',
+    subject: (n, who) => `Invoice ${n} from ${who}`,
+    subjectReminder: (n) => `Payment reminder: invoice ${n}`,
+  },
+}
+
 export type InvoiceEmailProps = {
+  language?: Lang
   supplierName: string
   number: string
   /** Pre-formatted, e.g. "12 100,00 Kč". */
@@ -29,8 +79,10 @@ export function invoiceEmailSubject(
 }
 
 export function InvoiceEmail(p: InvoiceEmailProps) {
+  const lang = p.language ?? 'cs'
+  const c = COPY[lang]
   return (
-    <Html lang="cs">
+    <Html lang={lang}>
       <Head />
       <Preview>{invoiceEmailSubject(p)}</Preview>
       <Body style={{ backgroundColor: paper, margin: 0, padding: '32px 0', fontFamily: sans }}>
@@ -47,12 +99,12 @@ export function InvoiceEmail(p: InvoiceEmailProps) {
             {p.supplierName}
           </Text>
           <Text style={{ fontSize: 16, color: ink, lineHeight: '24px' }}>
-            Dobrý den,
+            {c.hello}
             <br />
             {p.isReminder
-              ? `dovolujeme si vás upozornit, že faktura ${p.number} na částku ${p.total} je po splatnosti (splatnost ${p.dueDate}).`
-              : `posíláme vám fakturu ${p.number} na částku ${p.total} se splatností ${p.dueDate}.`}{' '}
-            PDF najdete v příloze, fakturu si můžete také otevřít online.
+              ? c.reminder(p.number, p.total, p.dueDate)
+              : c.invoice(p.number, p.total, p.dueDate)}{' '}
+            {c.attached}
           </Text>
           {p.message ? (
             <Text style={{ fontSize: 15, color: ink, lineHeight: '22px', whiteSpace: 'pre-line' }}>
@@ -70,10 +122,10 @@ export function InvoiceEmail(p: InvoiceEmailProps) {
               textDecoration: 'none',
             }}
           >
-            Zobrazit fakturu
+            {c.button}
           </Button>
           <Text style={{ fontSize: 12, color: muted, marginTop: 24 }}>
-            Odesláno přes {BRAND.name}.
+            {c.sentVia} {BRAND.name}.
           </Text>
         </Container>
       </Body>

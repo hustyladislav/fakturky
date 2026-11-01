@@ -35,6 +35,7 @@ export const documentsRouter = {
     mcp: {
       name: 'send_invoice_email',
       title: 'E-mail an issued invoice (PDF attached + public link) to the customer',
+      destructive: true,
     },
     openapi: {
       method: 'POST',

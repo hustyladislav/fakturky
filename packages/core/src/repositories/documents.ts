@@ -561,6 +561,9 @@ export const documentsRepo = {
     if (doc.status === 'cancelled' || (opts.reminder && doc.status !== 'issued')) {
       throw new DocumentError('CONFLICT', 'This document cannot be sent')
     }
+    if (opts.reminder && (!doc.dueDate || doc.dueDate >= todayPrague())) {
+      throw new DocumentError('CONFLICT', 'Reminders can only be sent for overdue invoices')
+    }
     const customerEmails = (doc.customerSnapshot?.emails as string[] | undefined) ?? []
     const to = opts.to ?? customerEmails[0]
     if (!to) throw new DocumentError('PRECONDITION_FAILED', 'The customer has no e-mail address')
@@ -584,6 +587,7 @@ export const documentsRepo = {
       publicUrl: `${services.publicBaseUrl}/f/${doc.publicToken}`,
       message: opts.message ?? null,
       isReminder: opts.reminder ?? false,
+      language: doc.language as 'cs' | 'sk' | 'en',
       pdf: { filename: `${doc.number}.pdf`, bytes },
     })
     await db.transaction(async (tx) => {

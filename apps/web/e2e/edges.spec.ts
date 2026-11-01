@@ -42,6 +42,8 @@ test('unknown IČO and invalid bank account are rejected with helpful copy', asy
   await expect(page.getByRole('heading', { name: 'Dobrý den' })).toBeVisible()
 
   await page.goto('/nastaveni')
+
+  await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Přidat účet' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('Název účtu').fill('Špatný účet')
@@ -65,12 +67,16 @@ test('issued invoice can be duplicated into a draft and cancelled (number stays 
   await addBankAccount(page)
 
   await page.goto('/kontakty')
+
+  await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Nový kontakt' }).click()
   await page.getByRole('dialog').getByLabel('Název nebo jméno').fill('Životní cyklus s.r.o.')
   await page.getByRole('dialog').getByRole('button', { name: 'Vytvořit' }).click()
   await expect(page.getByRole('cell', { name: 'Životní cyklus s.r.o.' })).toBeVisible()
 
   await page.goto('/faktury/nova')
+
+  await page.waitForLoadState('networkidle')
   await page.getByLabel('Odběratel', { exact: true }).fill('Životní')
   await page.getByRole('button', { name: /Životní cyklus/ }).click()
   await page.getByLabel('Popis', { exact: true }).locator('visible=true').first().fill('Práce')
@@ -91,6 +97,7 @@ test('issued invoice can be duplicated into a draft and cancelled (number stays 
 
   // The cancelled number stays taken: the next invoice must get -0002, not reuse -0001.
   await page.goto('/faktury/nova')
+  await page.waitForLoadState('networkidle')
   await page.getByLabel('Odběratel', { exact: true }).fill('Životní')
   await page.getByRole('button', { name: /Životní cyklus/ }).click()
   await page

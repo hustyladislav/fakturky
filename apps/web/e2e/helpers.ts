@@ -42,6 +42,7 @@ export async function onboardByIco(page: Page, ico: string, expectedName: string
 
 export async function addBankAccount(page: Page) {
   await page.goto('/nastaveni')
+  await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Přidat účet' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('Název účtu').fill('Provozní účet')
@@ -53,6 +54,7 @@ export async function addBankAccount(page: Page) {
 
 export async function createContact(page: Page, name: string) {
   await page.goto('/kontakty')
+  await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Nový kontakt' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('Název nebo jméno').fill(name)

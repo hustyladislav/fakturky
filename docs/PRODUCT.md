@@ -3,6 +3,12 @@
 Free forever, no limits on invoices, contacts, bank accounts, currencies, recurring invoices or API calls.
 Funded by donations (Buy Me a Coffee). Czech UI. Target: OSVČ and small s.r.o., later Slovakia.
 
+## MVP (ship first, then iterate)
+
+Sign up → business profile (IČO via ARES) → bank account (CZ number → IBAN, or any IBAN) → contact (ARES) →
+invoice with lines (non-payer and VAT payer) → issue (number allocated) → PDF with QR Platba → public link →
+mark paid. Deployed to production. Everything else below lands in small follow-up PRs.
+
 ## v1 (must ship)
 
 1. **Onboarding** — sign up (email+password / passkey), create business by IČO (ARES autofill), choose VAT status,

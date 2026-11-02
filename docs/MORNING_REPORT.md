@@ -61,6 +61,10 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Shipped overnight
 
+- **Bank import + automatic payment pairing** (/banka) #122/#124/#128/#130/#131: Fio/Revolut/Raiffeisen/ČSOB/KB
+  CSV (+ manual column mapping), ABO/GPC, CAMT.053; Fio API daily sync (token AES-encrypted, `ENCRYPTION_KEY` set);
+  exact VS+amount auto-match, fuzzy suggestions, partial/overpayments, undo. **Please test with a real Raiffeisen
+  CSV export** (parsers were built from docs + synthetic fixtures). Goes live with the next production deploy.
 - **QA round 2** (issues #103–#114) fixed: invoices to consumers without IČO/DIČ #105, proforma VAT preview + PDF
   label #107, payment/date validation #111, contact country + VIES + EU reverse-charge check #116, credit-note
   PDF/balance #117, split-rate receipts #118, unique variable symbols + CLI `pdf -o` #119, related-document links +

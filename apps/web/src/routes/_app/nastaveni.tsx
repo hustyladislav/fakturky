@@ -88,10 +88,8 @@ function SettingsNav({ active, onPick }: { active: SectionId; onPick: (id: Secti
       <ul className="flex gap-1 py-2 lg:flex-col lg:py-0">
         {SECTIONS.map((s) => (
           <li key={s.id} className="shrink-0">
-            <Link
-              to="/nastaveni"
-              hash={s.id}
-              replace
+            <a
+              href={`#${s.id}`}
               aria-current={active === s.id ? 'location' : undefined}
               onClick={() => onPick(s.id)}
               className={cn(
@@ -100,7 +98,7 @@ function SettingsNav({ active, onPick }: { active: SectionId; onPick: (id: Secti
               )}
             >
               {s.label}
-            </Link>
+            </a>
           </li>
         ))}
       </ul>

@@ -49,9 +49,15 @@ test('unknown IČO and invalid bank account are rejected with helpful copy', asy
   await page.getByRole('button', { name: 'Pokračovat' }).click()
   await expect(page.getByRole('heading', { name: 'Dobrý den' })).toBeVisible()
 
-  await page.goto('/nastaveni')
-
+  // Sections are deep-linkable and the sub-navigation follows the anchor.
+  await page.goto('/nastaveni#banka')
   await page.waitForLoadState('networkidle')
+  const subnav = page.getByRole('navigation', { name: 'Sekce nastavení' })
+  await expect(subnav.getByRole('link', { name: 'Bankovní účty' })).toHaveAttribute(
+    'aria-current',
+    'location',
+  )
+  await expect(page.getByRole('heading', { name: 'Bankovní účty' })).toBeInViewport()
   await page.getByRole('button', { name: 'Přidat účet' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('Název účtu').fill('Špatný účet')

@@ -7,6 +7,22 @@ const SCALAR_URL = `https://cdn.jsdelivr.net/npm/@scalar/api-reference@${SCALAR_
 // Regenerate on a version bump: curl -sL <SCALAR_URL> | openssl dgst -sha384 -binary | openssl base64 -A
 const SCALAR_SRI = 'sha384-hwB9WroDTpZaI38gr+u9CXA6ksz5gUYgD2GxXazKl/agT1L2GWUiRFWGJYNiFu4Q'
 
+const CSS = `
+.light-mode, .dark-mode { --scalar-font: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif; }
+.light-mode {
+  --scalar-background-1: #fffefb; --scalar-background-2: #f2ede3; --scalar-background-3: #e9e2d3;
+  --scalar-background-accent: #1f4d3c14; --scalar-color-1: #1b1a17; --scalar-color-2: #4f4a40;
+  --scalar-color-3: #6b665b; --scalar-color-accent: #1f4d3c; --scalar-border-color: #d6cdba;
+  --scalar-button-1: #1f4d3c; --scalar-button-1-color: #fffefb; --scalar-button-1-hover: #2a6350;
+}
+.dark-mode {
+  --scalar-background-1: #1a1b17; --scalar-background-2: #0f100d; --scalar-background-3: #26271f;
+  --scalar-background-accent: #8cc4a41f; --scalar-color-1: #ece6d6; --scalar-color-2: #b9b3a1;
+  --scalar-color-3: #8d8777; --scalar-color-accent: #8cc4a4; --scalar-border-color: #34352b;
+  --scalar-button-1: #8cc4a4; --scalar-button-1-color: #0f100d; --scalar-button-1-hover: #a3d2b8;
+}
+`
+
 const INLINE = `
       Scalar.createApiReference('#app', {
         url: '/api/v1/openapi.json',
@@ -15,6 +31,7 @@ const INLINE = `
         showDeveloperTools: 'never',
         agent: { disabled: true },
         withDefaultFonts: false,
+        customCss: ${JSON.stringify(CSS)},
         authentication: { preferredSecurityScheme: 'apiKey' },
       })
 `

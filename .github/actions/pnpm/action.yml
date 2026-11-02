@@ -1,0 +1,19 @@
+name: pnpm
+description: Install the pnpm pinned in package.json#packageManager as its standalone binary.
+# pnpm/action-setup takes 5–11 s (npm-installs a bootstrap pnpm 11, then self-updates); this takes 1–2 s
+# and needs no system Node. Corepack would also be fast, but Node 25+ no longer ships it.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        v=$(jq -r '.packageManager | ltrimstr("pnpm@") | split("+")[0]' package.json)
+        asset=pnpm-linux-x64.tar.gz
+        [ "$RUNNER_OS-$RUNNER_ARCH" = Linux-X64 ] || { echo "::error::no pnpm asset mapped for $RUNNER_OS-$RUNNER_ARCH"; exit 1; }
+        sha=$(gh release view "v$v" -R pnpm/pnpm --json assets --jq ".assets[] | select(.name==\"$asset\") | .digest | ltrimstr(\"sha256:\")")
+        curl -fsSL "https://github.com/pnpm/pnpm/releases/download/v$v/$asset" -o "$RUNNER_TEMP/$asset"
+        echo "$sha  $RUNNER_TEMP/$asset" | sha256sum -c --strict -
+        mkdir -p "$RUNNER_TEMP/pnpm" && tar -xzf "$RUNNER_TEMP/$asset" -C "$RUNNER_TEMP/pnpm"
+        echo "$RUNNER_TEMP/pnpm" >> "$GITHUB_PATH"

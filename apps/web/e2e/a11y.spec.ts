@@ -46,6 +46,21 @@ for (const theme of ['light', 'dark'] as const) {
   })
 }
 
+test('the lazy command palette opens on the very first Ctrl+K of a fresh page', async ({
+  page,
+}) => {
+  await signUp(page, testEmail('kbd'))
+  await onboardByIco(page, ICO.payerSupplier, 'E2E Plátce s.r.o.')
+  await page.goto('/prehled')
+  await page.waitForLoadState('networkidle')
+  // No button interaction first: the palette chunk has not been requested yet.
+  await page.keyboard.press('Control+k')
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Shift+/')
+  await expect(page.getByRole('dialog')).toBeVisible()
+})
+
 test('a11y: signed-in pages, dialogs and the public invoice', async ({ page }) => {
   await signUp(page, testEmail('a11y'))
   await onboardByIco(page, ICO.payerSupplier, 'E2E Plátce s.r.o.')

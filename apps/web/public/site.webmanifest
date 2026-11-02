@@ -2,7 +2,11 @@
   "name": "Fakturky",
   "short_name": "Fakturky",
   "lang": "cs",
-  "start_url": "/",
+  "id": "/",
+  "start_url": "/prehled",
+  "scope": "/",
+  "categories": ["business", "finance", "productivity"],
+  "description": "Svobodné fakturační řešení pro české živnostníky a firmy",
   "display": "standalone",
   "background_color": "#F6F2EA",
   "theme_color": "#1F4D3C",
@@ -10,12 +14,42 @@
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nová faktura",
+      "url": "/faktury/nova",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Faktury",
+      "url": "/faktury",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

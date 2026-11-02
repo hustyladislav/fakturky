@@ -17,6 +17,8 @@ export default defineConfig({
       routeRules: {
         '/**': { headers: STATIC_SECURITY_HEADERS },
         '/f/**': { headers: TOKEN_PATH_HEADERS },
+        // The worker script itself must always be revalidated so updates reach installed apps.
+        '/sw.js': { headers: { ...STATIC_SECURITY_HEADERS, 'cache-control': 'no-cache' } },
       },
       // The PDF fonts are read at runtime; bundle them as server assets so they exist on serverless hosts.
       serverAssets: [

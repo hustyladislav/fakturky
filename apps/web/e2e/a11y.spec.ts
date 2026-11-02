@@ -58,6 +58,7 @@ test('a11y: signed-in pages, dialogs and the public invoice', async ({ page }) =
     zip: '11000',
   })
   await page.goto('/faktury/nova')
+  await page.waitForLoadState('networkidle')
   await pickCustomer(page, 'A11y Odběratel s.r.o.')
   await fillLines(page, [{ description: 'Práce', quantity: '1', unitPrice: '1000', vatRate: '21' }])
   await page.getByRole('button', { name: 'Vystavit', exact: true }).click()

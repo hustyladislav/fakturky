@@ -1,6 +1,6 @@
 // Generates favicon / app icons / OG image from BRAND.name. Run: pnpm --filter @fakturky/web gen:brand
 
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
@@ -49,6 +49,17 @@ await shot(mark(32), 32, 32, 'favicon-32.png')
 await shot(mark(180), 180, 180, 'apple-touch-icon.png')
 await shot(mark(192), 192, 192, 'icon-192.png')
 await shot(mark(512), 512, 512, 'icon-512.png')
+// Maskable: full-bleed brand colour, glyph inside the 80 % safe zone (platforms crop to circles/squircles).
+await shot(
+  `<div style="width:512px;height:512px;background:#1F4D3C;position:relative;overflow:hidden">
+    <span style="position:absolute;left:150px;top:70px;font:600 330px/1 F;font-variation-settings:'opsz' 48;color:#F6F2EA">${letter}</span>
+    <i style="position:absolute;left:348px;top:300px;width:46px;height:46px;border-radius:50%;background:rgba(246,242,234,.55)"></i>
+  </div>`,
+  512,
+  512,
+  'icon-maskable-512.png',
+  false,
+)
 await shot(
   `<div style="width:1200px;height:630px;background:#F6F2EA;position:relative;font-family:Inter9;color:#1B1A17">
     <div style="position:absolute;left:96px;top:96px;display:flex;align-items:center;gap:22px">${mark(88)}<span style="font:600 56px F;font-variation-settings:'opsz' 48">${BRAND.name}</span></div>
@@ -74,16 +85,60 @@ writeFileSync(
       name: BRAND.name,
       short_name: BRAND.name,
       lang: 'cs',
-      start_url: '/',
+      id: '/',
+      start_url: '/prehled',
+      scope: '/',
+      categories: ['business', 'finance', 'productivity'],
+      description: BRAND.tagline,
       display: 'standalone',
       background_color: '#F6F2EA',
       theme_color: '#1F4D3C',
       icons: [
-        { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-        { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
+      shortcuts: [
+        {
+          name: 'Nová faktura',
+          url: '/faktury/nova',
+          icons: [{ src: '/icon-192.png', sizes: '192x192' }],
+        },
+        { name: 'Faktury', url: '/faktury', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
       ],
     },
     null,
     2,
   )}\n`,
+)
+
+// Offline fallback page (served by the service worker): copy comes from the i18n catalog.
+const offline = JSON.parse(readFileSync(resolve(here, '../src/i18n/offline.json'), 'utf8'))
+writeFileSync(
+  resolve(pub, 'offline.html'),
+  `<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>${offline.title}</title>
+    <style>
+      body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 24px; text-align: center;
+        font: 16px/1.5 system-ui, sans-serif; background: #f6f2ea; color: #1b1a17; }
+      @media (prefers-color-scheme: dark) { body { background: #121310; color: #eee9dd; } button { color: #8cc4a4; } p { color: #9c978a; } }
+      h1 { font: 500 28px/1.2 Georgia, serif; margin: 0 0 8px; }
+      p { margin: 0 0 16px; color: #6b665b; }
+      button { font: inherit; padding: 10px 18px; border-radius: 8px; border: 1px solid currentColor; background: none; color: #1f4d3c; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>${offline.title}</h1>
+      <p>${offline.text}</p>
+      <button type="button" onclick="location.reload()">${offline.retry}</button>
+    </main>
+  </body>
+</html>
+`,
 )

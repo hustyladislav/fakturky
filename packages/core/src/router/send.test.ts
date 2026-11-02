@@ -200,3 +200,91 @@ test('proforma → paid → final invoice with the advance deducted; settled on 
     code: 'CONFLICT',
   })
 })
+
+test('VAT payers use regimes instead of 0 %; regime legal text reaches the public view', async () => {
+  const org = await seedOrg(handle, 'vat-regime')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'Odběratel',
+    ico: '12345678',
+    address: { street: 'Hlavní 1', city: 'Praha', zip: '11000' },
+  })
+  await expect(
+    api.documents.createDraft({
+      contactId: c.id,
+      lines: [{ description: 'x', quantity: '1', unitPrice: '100', vatRate: '0' }],
+    }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST', data: { fields: ['line.vatRate'] } })
+  const draft = await api.documents.createDraft({
+    contactId: c.id,
+    lines: [
+      { description: 'Služba 21', quantity: '1', unitPrice: '1000', vatRate: '21' },
+      {
+        description: 'Služba osvobozená',
+        quantity: '1',
+        unitPrice: '500',
+        vatTreatment: 'exempt',
+        vatNote: '§ 51 odst. 1 zákona o DPH',
+      },
+    ],
+  })
+  expect(draft.total).toBe('1710.0000') // 1000 + 210 VAT + 500 exempt
+  expect(draft.vatRecap.map((r) => r.vatTreatment).sort()).toEqual(['exempt', 'standard'])
+  const issued = await api.documents.issue({ id: draft.id })
+  const view = await clientFor(handle, null).public.invoice({ token: issued.publicToken as string })
+  expect(view.recap.find((r) => r.vatTreatment === 'exempt')?.note).toBe('Osvobozeno od DPH')
+  const dup = await api.documents.duplicate({ id: issued.id })
+  expect(dup.lines.map((l) => l.vatTreatment).sort()).toEqual(['exempt', 'standard'])
+})
+
+test('exempt lines need a legal basis; EU reverse charge needs the customer VAT ID', async () => {
+  const org = await seedOrg(handle, 'vat-basis')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'CZ klient',
+    ico: '12345678',
+    address: { street: 'A 1', city: 'Praha', zip: '11000' },
+  })
+  const exempt = await api.documents.createDraft({
+    contactId: c.id,
+    lines: [{ description: 'Pojištění', quantity: '1', unitPrice: '100', vatTreatment: 'exempt' }],
+  })
+  await expect(api.documents.issue({ id: exempt.id })).rejects.toMatchObject({
+    data: { fields: ['line.vatNote'] },
+  })
+  await api.documents.updateDraft({
+    id: exempt.id,
+    patch: {
+      lines: [
+        {
+          description: 'Pojištění',
+          quantity: '1',
+          unitPrice: '100',
+          vatTreatment: 'exempt',
+          vatNote: '§ 55 zákona o DPH',
+          vatRate: '0',
+          discountPercent: '0',
+        },
+      ],
+    },
+  })
+  expect((await api.documents.issue({ id: exempt.id })).lines[0]?.vatNote).toBe('§ 55 zákona o DPH')
+
+  const eu = await api.documents.createDraft({
+    contactId: c.id,
+    lines: [
+      { description: 'Služba', quantity: '1', unitPrice: '100', vatTreatment: 'eu_reverse_charge' },
+    ],
+  })
+  await expect(api.documents.issue({ id: eu.id })).rejects.toMatchObject({
+    data: { fields: ['customer.vatId'] },
+  })
+  await api.contacts.update({ id: c.id, patch: { icDph: 'DE123456789' } })
+  expect((await api.documents.issue({ id: eu.id })).status).toBe('issued')
+})

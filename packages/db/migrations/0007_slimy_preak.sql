@@ -1,0 +1,1 @@
+ALTER TABLE "document_line" ADD COLUMN "vat_note" text;

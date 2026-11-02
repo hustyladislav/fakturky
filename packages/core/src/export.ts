@@ -4,6 +4,7 @@ import {
   type DocumentForExport,
   type ExportParty,
   type ExportPaymentMethod,
+  type VatTreatment,
 } from '@fakturky/domain'
 
 type DocRow = typeof schema.document.$inferSelect
@@ -53,6 +54,7 @@ export function toDocumentForExport(
       quantity: l.quantity,
       unitPrice: l.unitPrice,
       vatRate: l.vatRate,
+      vatTreatment: l.vatTreatment as VatTreatment,
       discountPercent: l.discountPercent,
     })),
     { vatPayer, currency: doc.currency, exchangeRate },
@@ -73,11 +75,13 @@ export function toDocumentForExport(
     supplier: party(doc.supplierSnapshot),
     customer: party(doc.customerSnapshot),
     lines: lines.map((l) => ({
+      vatNote: l.vatNote,
       description: l.description,
       quantity: l.quantity,
       unit: l.unit,
       unitPrice: l.unitPrice,
       vatRate: l.vatRate,
+      vatTreatment: l.vatTreatment as VatTreatment,
     })),
     totals,
     currency: doc.currency,

@@ -178,6 +178,7 @@ function PublicInvoice() {
                 >
                   <td className="py-2">
                     {l.description}
+                    {l.vatNote && <div className="text-xs text-neutral-500">{l.vatNote}</div>}
                     {Number(l.discountPercent) > 0 && (
                       <div className="text-xs text-neutral-500">
                         {t.discount} {Number(l.discountPercent)} %
@@ -191,7 +192,9 @@ function PublicInvoice() {
                     <Money amount={l.unitPrice} currency={d.currency} />
                   </td>
                   {d.vatPayer && (
-                    <td className="py-2 text-right tabular-nums">{Number(l.vatRate)} %</td>
+                    <td className="py-2 text-right tabular-nums">
+                      {l.vatTreatment === 'standard' ? `${Number(l.vatRate)} %` : t.regime}
+                    </td>
                   )}
                   <td className="py-2 text-right">
                     <Money amount={l.total} currency={d.currency} />
@@ -216,8 +219,13 @@ function PublicInvoice() {
               </thead>
               <tbody>
                 {d.recap.map((r) => (
-                  <tr key={r.vatRate} className="border-b border-neutral-200">
-                    <td className="py-1 tabular-nums">{Number(r.vatRate)} %</td>
+                  <tr
+                    key={`${r.vatTreatment}-${r.vatRate}`}
+                    className="border-b border-neutral-200"
+                  >
+                    <td className="py-1 tabular-nums">
+                      {r.vatTreatment === 'standard' ? `${Number(r.vatRate)} %` : t.regime}
+                    </td>
                     <td className="py-1 text-right">
                       <Money amount={r.base} currency={d.currency} />
                     </td>
@@ -233,6 +241,14 @@ function PublicInvoice() {
             </table>
           </div>
         )}
+
+        {d.recap
+          .filter((r) => r.note)
+          .map((r) => (
+            <p key={`${r.vatTreatment}-note`} className="text-sm text-neutral-700">
+              {r.note}
+            </p>
+          ))}
 
         <div className="ml-auto max-w-xs space-y-1 text-sm">
           {d.exchangeRate && (

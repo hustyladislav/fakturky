@@ -285,6 +285,14 @@ export const cs = {
       status: 'Stav',
     },
     draftNumber: 'Koncept',
+    vatTreatment: {
+      standard: 'Základní sazba',
+      exempt: 'Osvobozeno od DPH',
+      reverse_charge: 'Přenesená daňová povinnost (tuzemsko)',
+      eu_reverse_charge: 'Přenesená daň. povinnost (EU)',
+      export: 'Vývoz (osvobozeno)',
+      outside_scope: 'Mimo předmět daně',
+    },
     type: {
       invoice: 'Faktura',
       proforma: 'Zálohová faktura',
@@ -350,10 +358,16 @@ export const cs = {
       weekendHint: (day: string) =>
         `Splatnost vychází na ${day}. Platba dorazí nejdřív v pracovní den.`,
       weekdays: ['neděli', 'pondělí', 'úterý', 'středu', 'čtvrtek', 'pátek', 'sobotu'],
+      vatNote: 'Právní důvod osvobození',
+      vatNotePlaceholder: 'Právní důvod osvobození, např. § 51 odst. 1 zákona o DPH',
       missingFields: {
+        'line.vatNote': 'právní důvod osvobození u osvobozených položek (§ zákona o DPH)',
+        'line.vatRate': 'sazbu DPH 21 / 12 % nebo režim DPH u každé položky',
+        'customer.vatId': 'DIČ / IČ DPH (nutné pro přenesení daňové povinnosti v rámci EU)',
         'customer.address': 'adresu (ulice, město, PSČ)',
         'customer.taxId': 'IČO nebo DIČ',
       },
+      missingLines: (names: string[]) => `U položek doplňte: ${names.join(', ')}.`,
       missingCustomer: (names: string[]) =>
         `Daňový doklad vyžaduje údaje odběratele. Doplňte u kontaktu: ${names.join(', ')}.`,
       registryNoteMissing:
@@ -471,6 +485,7 @@ export const cs = {
     vat: 'DPH',
     total: 'Celkem',
     rate: 'Sazba',
+    regime: 'Režim DPH',
     paymentMethod: 'Forma úhrady',
     methods: { bank_transfer: 'Převodem', cash: 'Hotově', card: 'Kartou' },
     qrPlatba: 'QR Platba',

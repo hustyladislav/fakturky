@@ -266,6 +266,7 @@ const cases: Record<string, Case> = {
   'public.invoice': { kind: 'external' },
   'public.isdoc': { kind: 'external' },
   'public.pdf': { kind: 'external' },
+  'public.qrPng': { kind: 'external' },
 }
 
 async function makePayer(org: string) {
@@ -425,6 +426,9 @@ describe('tenant isolation', () => {
         code: 'NOT_FOUND',
       })
       await expect(anon.public.pdf({ token: bogus.padEnd(24, '0') })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      })
+      await expect(anon.public.qrPng({ token: bogus.padEnd(24, '0') })).rejects.toMatchObject({
         code: 'NOT_FOUND',
       })
     }

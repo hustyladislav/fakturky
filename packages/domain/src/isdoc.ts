@@ -47,6 +47,8 @@ export interface ExportPayment {
     bankName?: string
     iban: string
     bic?: string
+    /** The account's "show QR payment on the invoice" setting; absent = shown. */
+    showQr?: boolean
   } | null
 }
 

@@ -3,6 +3,7 @@ import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
 import {
   addDays,
+  buildPaymentQrPayload,
   computeDocumentTotals,
   DEFAULT_NUMBER_PATTERNS,
   Decimal,
@@ -12,6 +13,7 @@ import {
   getRate,
   parseDecimal,
   periodKey,
+  renderPaymentQr,
   todayPrague,
   toFixed,
   VAT_RATES,
@@ -20,6 +22,7 @@ import {
 } from '@fakturky/domain'
 import { and, asc, desc, eq, ilike, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm'
 import { MailError, type Services } from '../context'
+import { paymentQrInput } from '../payment-qr'
 import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
 import { bankAccountsRepo } from './bank-accounts'
 
@@ -443,6 +446,8 @@ export const documentsRepo = {
         total: r.total,
       })),
       activity: acts,
+      paymentQr:
+        doc.status === 'draft' ? null : await renderPaymentQr(paymentQrInput(doc, lines, paid)),
       /** The document this one corrects or was created from (proforma, invoice), if any. */
       parent: doc.relatedDocumentId
         ? ((
@@ -927,6 +932,8 @@ export const documentsRepo = {
       throw new MailError('EMAIL_NOT_CONFIGURED')
     }
     const bytes = await services.renderPdf(doc, lines, found.original)
+    const paid = (await paidSums(db, orgId, [id])).get(id) ?? new Decimal(0)
+    const hasQr = buildPaymentQrPayload(paymentQrInput(doc, lines, paid)) !== null
     const supplier = doc.supplierSnapshot ?? {}
     await services.sendInvoice({
       to,
@@ -936,6 +943,7 @@ export const documentsRepo = {
       total: formatMoney(doc.total, doc.currency),
       dueDate: doc.dueDate ? formatDateCs(doc.dueDate) : '',
       publicUrl: `${services.publicBaseUrl}/f/${doc.publicToken}`,
+      qrUrl: hasQr ? `${services.publicBaseUrl}/f/${doc.publicToken}/qr.png` : null,
       message: opts.message ?? null,
       isReminder: opts.reminder ?? false,
       language: doc.language as 'cs' | 'sk' | 'en',

@@ -116,6 +116,7 @@ export function toDocumentForExport(
                   bankCode: str(bank?.bankCode) ?? undefined,
                   iban: str(bank?.iban) as string,
                   bic: str(bank?.bic) ?? undefined,
+                  showQr: bank?.showQr !== false,
                 }
               : null,
           },

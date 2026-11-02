@@ -3,6 +3,7 @@ import { Button } from '@fakturky/ui/components/button'
 import { Money } from '@fakturky/ui/components/money'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { Download, Printer } from 'lucide-react'
+import { PaymentQr } from '@/components/payment-qr'
 import { cs } from '@/i18n/cs'
 import { client } from '@/lib/orpc'
 
@@ -306,18 +307,13 @@ function PublicInvoice() {
               )}
             </div>
             {d.qr && (
-              <figure className="space-y-1 text-center">
-                <svg
-                  role="img"
-                  aria-label={d.qr.kind === 'spayd' ? t.qrPlatba : t.qrEpc}
-                  viewBox={`0 0 ${d.qr.viewBox} ${d.qr.viewBox}`}
-                  className="size-32 bg-white"
-                  shapeRendering="crispEdges"
-                >
-                  <path d={d.qr.path} stroke="#000" fill="none" />
-                </svg>
-                <figcaption className="text-xs text-neutral-500">
-                  {d.qr.kind === 'spayd' ? t.qrPlatba : t.qrEpc}
+              <figure className="mx-auto space-y-1.5 text-center sm:mx-0" data-testid="public-qr">
+                <PaymentQr qr={d.qr} className="mx-auto sm:size-48" />
+                <figcaption className="text-xs">
+                  <div className="font-medium text-neutral-800">
+                    {d.qr.kind === 'spayd' ? cs.paymentQr.platba : cs.paymentQr.epc}
+                  </div>
+                  <div className="text-neutral-500">{cs.paymentQr.hint}</div>
                 </figcaption>
               </figure>
             )}

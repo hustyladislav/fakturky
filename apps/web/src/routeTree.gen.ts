@@ -28,6 +28,7 @@ import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
 import { Route as AppPrehledRouteImport } from './routes/_app/prehled'
 import { Route as AppSablonyRouteImport } from './routes/_app/sablony'
+import { Route as DevSheetRouteImport } from './routes/[_]dev.sheet'
 import { Route as DevUiRouteImport } from './routes/[_]dev.ui'
 import { Route as ApiAgentRouteImport } from './routes/api/agent'
 import { Route as DocsApiRouteImport } from './routes/docs.api'
@@ -143,6 +144,11 @@ const AppSablonyRoute = AppSablonyRouteImport.update({
   id: '/sablony',
   path: '/sablony',
   getParentRoute: () => AppRoute,
+} as any)
+const DevSheetRoute = DevSheetRouteImport.update({
+  id: '/_dev/sheet',
+  path: '/_dev/sheet',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DevUiRoute = DevUiRouteImport.update({
   id: '/_dev/ui',
@@ -269,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/nastaveni': typeof AppNastaveniRoute
   '/prehled': typeof AppPrehledRoute
   '/sablony': typeof AppSablonyRoute
+  '/_dev/sheet': typeof DevSheetRoute
   '/_dev/ui': typeof DevUiRoute
   '/api/agent': typeof ApiAgentRoute
   '/docs/api': typeof DocsApiRoute
@@ -309,6 +316,7 @@ export interface FileRoutesByTo {
   '/nastaveni': typeof AppNastaveniRoute
   '/prehled': typeof AppPrehledRoute
   '/sablony': typeof AppSablonyRoute
+  '/_dev/sheet': typeof DevSheetRoute
   '/_dev/ui': typeof DevUiRoute
   '/api/agent': typeof ApiAgentRoute
   '/docs/api': typeof DocsApiRoute
@@ -352,6 +360,7 @@ export interface FileRoutesById {
   '/_app/nastaveni': typeof AppNastaveniRoute
   '/_app/prehled': typeof AppPrehledRoute
   '/_app/sablony': typeof AppSablonyRoute
+  '/_dev/sheet': typeof DevSheetRoute
   '/_dev/ui': typeof DevUiRoute
   '/api/agent': typeof ApiAgentRoute
   '/docs/api': typeof DocsApiRoute
@@ -395,6 +404,7 @@ export interface FileRouteTypes {
     | '/nastaveni'
     | '/prehled'
     | '/sablony'
+    | '/_dev/sheet'
     | '/_dev/ui'
     | '/api/agent'
     | '/docs/api'
@@ -435,6 +445,7 @@ export interface FileRouteTypes {
     | '/nastaveni'
     | '/prehled'
     | '/sablony'
+    | '/_dev/sheet'
     | '/_dev/ui'
     | '/api/agent'
     | '/docs/api'
@@ -477,6 +488,7 @@ export interface FileRouteTypes {
     | '/_app/nastaveni'
     | '/_app/prehled'
     | '/_app/sablony'
+    | '/_dev/sheet'
     | '/_dev/ui'
     | '/api/agent'
     | '/docs/api'
@@ -512,6 +524,7 @@ export interface RootRouteChildren {
   SouhlasRoute: typeof SouhlasRoute
   SoukromiRoute: typeof SoukromiRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
+  DevSheetRoute: typeof DevSheetRoute
   DevUiRoute: typeof DevUiRoute
   ApiAgentRoute: typeof ApiAgentRoute
   DocsApiRoute: typeof DocsApiRoute
@@ -662,6 +675,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sablony'
       preLoaderRoute: typeof AppSablonyRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_dev/sheet': {
+      id: '/_dev/sheet'
+      path: '/_dev/sheet'
+      fullPath: '/_dev/sheet'
+      preLoaderRoute: typeof DevSheetRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_dev/ui': {
       id: '/_dev/ui'
@@ -882,6 +902,7 @@ const rootRouteChildren: RootRouteChildren = {
   SouhlasRoute: SouhlasRoute,
   SoukromiRoute: SoukromiRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
+  DevSheetRoute: DevSheetRoute,
   DevUiRoute: DevUiRoute,
   ApiAgentRoute: ApiAgentRoute,
   DocsApiRoute: DocsApiRoute,

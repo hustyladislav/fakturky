@@ -25,6 +25,7 @@ type Line = {
   unitPrice: string
   vatRate: string
   vatTreatment: VatTreatment
+  vatNote: string
 }
 
 const VAT_RATES = ['21', '12']
@@ -44,6 +45,7 @@ const emptyLine = (vatRate = '21'): Line => ({
   unitPrice: '',
   vatRate,
   vatTreatment: 'standard',
+  vatNote: '',
 })
 /** Czech input: "1 500,5" (space or NBSP thousands, comma decimal) -> "1500.5". */
 const num = (v: string) => {
@@ -112,6 +114,7 @@ export function InvoiceForm({ id }: { id?: string }) {
                 ? '21'
                 : (l.vatRate ?? '0'),
             vatTreatment: 'standard',
+            vatNote: '',
           })),
         )
       }
@@ -173,13 +176,18 @@ export function InvoiceForm({ id }: { id?: string }) {
             unitPrice: trimDecimal(l.unitPrice),
             vatRate: trimDecimal(l.vatRate),
             vatTreatment: (l.vatTreatment as VatTreatment) ?? 'standard',
+            vatNote: l.vatNote ?? '',
           }))
         : [emptyLine()],
     )
     setReady(true)
   }, [existing.data, defaults.data, id, ready, today])
 
-  const vatPayer = defaults.data?.vatPayer ?? false
+  // A credit note keeps the VAT treatment of the invoice it corrects, whatever the profile says now.
+  const vatPayer =
+    existing.data?.type === 'credit_note'
+      ? existing.data.vatMode !== 'none'
+      : (defaults.data?.vatPayer ?? false)
   const foreign = currency !== 'CZK'
 
   const currencyAccounts = (accounts.data ?? []).filter((a) => a.currency === currency)
@@ -239,6 +247,7 @@ export function InvoiceForm({ id }: { id?: string }) {
         unitPrice: num(l.unitPrice),
         vatRate: vatPayer && l.vatTreatment === 'standard' ? num(l.vatRate) : '0',
         vatTreatment: vatPayer ? l.vatTreatment : ('standard' as const),
+        vatNote: vatPayer && l.vatTreatment === 'exempt' ? l.vatNote.trim() || null : null,
       })),
   })
 
@@ -505,6 +514,14 @@ export function InvoiceForm({ id }: { id?: string }) {
                   onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
                 />
               </div>
+              {vatPayer && l.vatTreatment === 'exempt' && (
+                <Input
+                  aria-label={t.vatNote}
+                  placeholder={t.vatNotePlaceholder}
+                  value={l.vatNote}
+                  onChange={(e) => setLine(l.key, { vatNote: e.target.value })}
+                />
+              )}
               {/* mobile: stacked */}
               <div className="space-y-2 sm:hidden">
                 <Input

@@ -75,6 +75,7 @@ export function toDocumentForExport(
     supplier: party(doc.supplierSnapshot),
     customer: party(doc.customerSnapshot),
     lines: lines.map((l) => ({
+      vatNote: l.vatNote,
       description: l.description,
       quantity: l.quantity,
       unit: l.unit,

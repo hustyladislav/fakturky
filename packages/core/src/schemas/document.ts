@@ -21,6 +21,14 @@ export const lineInputSchema = z.object({
     .describe(
       'standard = the VAT rate applies; otherwise a regime: exempt, reverse_charge, eu_reverse_charge, export, outside_scope (VAT payers only; there is no 0 % rate)',
     ),
+  vatNote: z
+    .string()
+    .trim()
+    .max(300)
+    .nullish()
+    .describe(
+      'Statutory basis of an exempt line, e.g. "§ 51 odst. 1 zákona o DPH"; required to issue exempt lines',
+    ),
   vatRate: decimal
     .default('0')
     .describe('VAT rate in percent (21, 12, 0). Ignored for VAT non-payers.'),
@@ -74,6 +82,7 @@ export const lineSchema = z.object({
   unitPrice: z.string(),
   vatRate: z.string(),
   vatTreatment: z.string(),
+  vatNote: z.string().nullable(),
   discountPercent: z.string(),
   lineSubtotal: z.string(),
   lineVat: z.string(),

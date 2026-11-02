@@ -96,6 +96,8 @@ export const documentLine = pgTable(
     vatRate: numeric('vat_rate', { precision: 5, scale: 2 }).notNull().default('0'),
     /** `standard` (rate applies) or a VAT regime: exempt, reverse_charge, eu_reverse_charge, export, outside_scope. */
     vatTreatment: text('vat_treatment').notNull().default('standard'),
+    /** Statutory basis printed under an exempt line (e.g. "§ 51 odst. 1 zákona o DPH"). */
+    vatNote: text('vat_note'),
     discountPercent: numeric('discount_percent', { precision: 5, scale: 2 }).notNull().default('0'),
     lineSubtotal: money('line_subtotal').notNull().default('0'),
     lineVat: money('line_vat').notNull().default('0'),
@@ -137,6 +139,7 @@ export type TemplateBody = {
     unitPrice: string
     vatRate: string
     vatTreatment?: string
+    vatNote?: string | null
     discountPercent?: string
   }>
 }

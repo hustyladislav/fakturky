@@ -1,5 +1,5 @@
 {
-  "id": "c4b15d82-b1b6-4601-abf8-88c990018bd3",
+  "id": "ce846fb6-bd69-46f0-a49e-5d5b8ddd29bb",
   "prevId": "8af630a3-fc1d-48a3-95a9-417659bbc150",
   "version": "7",
   "dialect": "postgresql",
@@ -2714,12 +2714,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "external_id": {
-          "name": "external_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "ares_synced_at": {
           "name": "ares_synced_at",
           "type": "timestamp with time zone",
@@ -3444,18 +3438,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "imported_from": {
-          "name": "imported_from",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "external_id": {
-          "name": "external_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "public_token": {
           "name": "public_token",
           "type": "text",
@@ -3540,33 +3522,6 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "document_org_external_idx": {
-          "name": "document_org_external_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "imported_from",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "external_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -3796,6 +3751,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'standard'"
+        },
+        "vat_note": {
+          "name": "vat_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "discount_percent": {
           "name": "discount_percent",

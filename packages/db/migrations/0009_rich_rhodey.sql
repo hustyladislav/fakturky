@@ -1,1 +1,0 @@
-ALTER TABLE "document" ADD COLUMN "prices_include_vat" boolean DEFAULT false NOT NULL;

@@ -11,6 +11,7 @@ import {
   documentSchema,
   draftInputSchema,
   draftPatchSchema,
+  isoDate,
   listFilterSchema,
 } from '../schemas/document'
 
@@ -419,11 +420,7 @@ export const documentsRouter = {
     .input(
       idInput.extend({
         amount: z.string().nullish().describe('Decimal string; default = remaining balance'),
-        paidOn: z
-          .string()
-          .regex(/^\d{4}-\d{2}-\d{2}$/)
-          .optional()
-          .describe('YYYY-MM-DD, default today (Prague)'),
+        paidOn: isoDate.optional().describe('YYYY-MM-DD, default today (Prague)'),
         method: z.string().max(40).optional(),
         note: z.string().max(500).nullish(),
       }),

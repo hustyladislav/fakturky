@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { procedure } from '../orpc'
 import { DocumentError, documentsRepo } from '../repositories/documents'
 import { recurringRepo, templatesRepo } from '../repositories/templates'
-import { documentDetailSchema } from '../schemas/document'
+import { documentDetailSchema, isoDate } from '../schemas/document'
 
 const idInput = z.object({ id: z.string().min(1) })
 const tag = ['Templates']
@@ -167,11 +167,7 @@ export const recurringRouter = {
         templateId: z.string().min(1),
         frequency: z.enum(['monthly', 'quarterly', 'yearly']).default('monthly'),
         dayOfMonth: z.number().int().min(1).max(31).default(1),
-        startOn: z
-          .string()
-          .regex(/^\d{4}-\d{2}-\d{2}$/)
-          .optional()
-          .describe('First run on or after this date (default today)'),
+        startOn: isoDate.optional().describe('First run on or after this date (default today)'),
         autoIssue: z
           .boolean()
           .default(false)

@@ -268,6 +268,7 @@ function listWhere(
     filter: 'all' | 'draft' | 'unpaid' | 'overdue' | 'paid' | 'cancelled'
     search?: string
     type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt'
+    contactId?: string
   },
 ) {
   const today = todayPrague()
@@ -289,6 +290,7 @@ function listWhere(
     isNull(document.deletedAt),
     statusWhere,
     opts.type ? eq(document.type, opts.type) : undefined,
+    opts.contactId ? eq(document.contactId, opts.contactId) : undefined,
     term
       ? or(
           ilike(sql`coalesce(${document.number}, '')`, `%${term}%`),
@@ -356,6 +358,7 @@ export const documentsRepo = {
       filter: 'all' | 'draft' | 'unpaid' | 'overdue' | 'paid' | 'cancelled'
       search?: string
       type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt'
+      contactId?: string
       sort?: ListSort
       dir?: 'asc' | 'desc'
       limit: number

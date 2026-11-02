@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@fakturky/ui/components/card'
+import { PageHeader } from '@fakturky/ui/components/page-header'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -13,7 +14,8 @@ import { useEffect, useState } from 'react'
 import { ApiKeys } from '@/components/api-keys'
 import { AppearanceCard } from '@/components/appearance-card'
 import { BankAccountsCard } from '@/components/bank-accounts-card'
-import { BusinessProfileForm } from '@/components/business-profile-form'
+import { BusinessCard } from '@/components/business-card'
+import { BusinessProfileForm, type ProfileValues } from '@/components/business-profile-form'
 import { NumberSeriesCard } from '@/components/number-series-card'
 import { DataExport, ReminderSettings } from '@/components/reminder-settings'
 import { cs } from '@/i18n/cs'
@@ -93,8 +95,9 @@ function SettingsNav({ active, onPick }: { active: SectionId; onPick: (id: Secti
               aria-current={active === s.id ? 'location' : undefined}
               onClick={() => onPick(s.id)}
               className={cn(
-                'flex h-9 items-center whitespace-nowrap rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
-                active === s.id && 'bg-accent text-accent-foreground hover:bg-accent',
+                'relative flex h-9 items-center whitespace-nowrap rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground',
+                active === s.id &&
+                  'sheet !rounded-lg text-foreground before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary max-lg:before:hidden',
               )}
             >
               {s.label}
@@ -131,25 +134,48 @@ function Settings() {
     }
   }, [picked])
   const active = picked ?? observed
+  const appearance = useQuery(orpc.appearance.get.queryOptions({ input: {} }))
+  const [preview, setPreview] = useState<ProfileValues | null>(null)
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
-      <h1 className="text-2xl font-semibold">{cs.settings.title}</h1>
+    <div className="mx-auto max-w-[1180px]">
+      <PageHeader
+        title={cs.settings.title}
+        subtitle={
+          profile ? cs.settings.subtitle(profile.legalName, profile.ico ?? null) : undefined
+        }
+      />
       <div className="grid gap-4 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10">
         <SettingsNav active={active} onPick={setPicked} />
-        <div className="min-w-0 max-w-3xl space-y-6">
+        <div className="min-w-0 max-w-[60rem] space-y-6 [&_[data-slot=label]]:label-caps">
           <Section id="firma">
-            <Card>
-              <CardHeader>
-                <CardTitle role="heading" aria-level={2}>
-                  {cs.settings.profileTitle}
-                </CardTitle>
-                <CardDescription>{cs.settings.profileDescription}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {profile && <BusinessProfileForm profile={profile} submitLabel={cs.common.save} />}
-              </CardContent>
-            </Card>
+            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]">
+              <Card>
+                <CardHeader>
+                  <CardTitle role="heading" aria-level={2}>
+                    {cs.settings.profileTitle}
+                  </CardTitle>
+                  <CardDescription>{cs.settings.profileDescription}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {profile && (
+                    <BusinessProfileForm
+                      profile={profile}
+                      submitLabel={cs.common.save}
+                      onValuesChange={setPreview}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+              {preview && (
+                <BusinessCard
+                  values={preview}
+                  logo={appearance.data?.logo ?? null}
+                  accent={appearance.data?.accentColor ?? null}
+                  className="order-first xl:sticky xl:top-20 xl:order-last"
+                />
+              )}
+            </div>
           </Section>
           <Section id="banka">
             <BankAccountsCard />

@@ -118,10 +118,11 @@ for (const v of variants) {
         // Wait for hydration: an early click on the server-rendered button does nothing.
         await page.waitForLoadState('networkidle')
         await page
-          .getByRole('button', { name: 'Upravit', exact: true })
+          .getByRole('button', { name: 'Další akce' })
           .locator('visible=true')
           .first()
           .click()
+        await page.getByRole('menuitem', { name: 'Upravit' }).click()
         const dialog = page.getByRole('dialog')
         await expect(dialog).toBeVisible()
         await dialog.getByLabel('DIČ').fill('CZ12345024')

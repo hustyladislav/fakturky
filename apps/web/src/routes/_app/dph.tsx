@@ -1,5 +1,6 @@
 import type { RouterOutputs } from '@fakturky/core/router'
 import { formatDateCs, todayPrague } from '@fakturky/domain/dates'
+import { Amount } from '@fakturky/ui/components/amount'
 import { Badge } from '@fakturky/ui/components/badge'
 import { Button } from '@fakturky/ui/components/button'
 import { EmptyState } from '@fakturky/ui/components/empty-state'
@@ -7,10 +8,12 @@ import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
+import { PageHeader } from '@fakturky/ui/components/page-header'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
+import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Download, ExternalLink, Receipt, TriangleAlert } from 'lucide-react'
+import { Download, ExternalLink, Info, Receipt, TriangleAlert } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { ErrorState } from '@/components/error-state'
@@ -75,7 +78,7 @@ function VatPage() {
   if (profile.isError) {
     return (
       <div className="mx-auto max-w-[1200px] space-y-6">
-        <h1 className="text-2xl font-semibold">{t.title}</h1>
+        <PageHeader title={t.title} />
         <ErrorState onRetry={() => profile.refetch()} />
       </div>
     )
@@ -83,7 +86,7 @@ function VatPage() {
   if (profile.data?.vatStatus !== 'payer') {
     return (
       <div className="mx-auto max-w-[1200px] space-y-6">
-        <h1 className="text-2xl font-semibold">{t.title}</h1>
+        <PageHeader title={t.title} />
         <EmptyState icon={Receipt} title={t.notPayerTitle}>
           {t.notPayerText}
         </EmptyState>
@@ -135,6 +138,9 @@ function PayerPage({ profile }: { profile: Profile }) {
   const report = useQuery(orpc.vat.report.queryOptions({ input }))
   const r = report.data
 
+  const periodLabel =
+    kind === 'month' ? `${t.months[idx - 1]} ${year}` : `${t.quarter(idx)} ${year}`
+
   const switchKind = (next: PeriodKind) => {
     setKind(next)
     setPeriod(previousPeriod(next, today))
@@ -143,32 +149,55 @@ function PayerPage({ profile }: { profile: Profile }) {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
-      <h1 className="text-2xl font-semibold">{t.title}</h1>
+      <PageHeader
+        title={t.title}
+        subtitle={r ? t.subtitle(periodLabel, formatDateCs(r.deadline)) : undefined}
+        actions={
+          <div
+            role="radiogroup"
+            aria-label={t.period}
+            className="inline-flex rounded-lg bg-muted p-0.5"
+          >
+            {(['month', 'quarter'] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={kind === k}
+                onClick={() => switchKind(k)}
+                className={cn(
+                  'h-8 rounded-md px-3.5 text-sm font-medium transition-all outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+                  kind === k
+                    ? 'bg-card text-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.06)]'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {k === 'month' ? t.monthly : t.quarterly}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       <div
         role="note"
-        className="rounded-xl border border-primary/30 bg-accent p-4 text-accent-foreground"
+        className="flex items-start gap-3 rounded-xl bg-info/10 px-4 py-3 text-sm text-foreground"
       >
-        <p className="font-semibold">{t.disclaimer}</p>
-        <p className="mt-1 text-sm">{t.disclaimerText}</p>
+        <Info className="mt-0.5 size-4 shrink-0 text-info" aria-hidden />
+        <p>
+          <span className="font-semibold">{t.disclaimer}</span>{' '}
+          <span className="text-muted-foreground">{t.disclaimerText}</span>
+        </p>
       </div>
 
-      <section className="grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-2">
-          <Label htmlFor="vat-kind">{t.period}</Label>
-          <NativeSelect
-            id="vat-kind"
-            value={kind}
-            onChange={(e) => switchKind(e.target.value as PeriodKind)}
-          >
-            <option value="month">{t.monthly}</option>
-            <option value="quarter">{t.quarterly}</option>
-          </NativeSelect>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="vat-year">{t.year}</Label>
+      <section className="sheet flex flex-wrap items-end gap-x-5 gap-y-3 p-4 sm:px-6">
+        <div className="space-y-1.5">
+          <Label htmlFor="vat-year" className="label-caps">
+            {t.year}
+          </Label>
           <NativeSelect
             id="vat-year"
+            className="w-28"
             value={year}
             onChange={(e) => setPeriod({ year: Number(e.target.value), idx })}
           >
@@ -179,10 +208,13 @@ function PayerPage({ profile }: { profile: Profile }) {
             ))}
           </NativeSelect>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="vat-idx">{kind === 'month' ? t.monthly : t.quarterly}</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="vat-idx" className="label-caps">
+            {kind === 'month' ? t.monthly : t.quarterly}
+          </Label>
           <NativeSelect
             id="vat-idx"
+            className="w-44"
             value={idx}
             onChange={(e) => setPeriod({ year, idx: Number(e.target.value) })}
           >
@@ -199,44 +231,48 @@ function PayerPage({ profile }: { profile: Profile }) {
                 ))}
           </NativeSelect>
         </div>
-        <div className="space-y-1">
-          <div className="text-sm font-medium">{t.deadline}</div>
-          <div className="text-lg font-semibold">{r ? formatDateCs(r.deadline) : '…'}</div>
+        <div className="ml-auto text-right">
+          <div className="label-caps">{t.deadline}</div>
+          <div className="font-serif text-2xl leading-8 font-medium tabular-nums">
+            {r ? formatDateCs(r.deadline) : '…'}
+          </div>
           <div className="text-xs text-muted-foreground">{t.deadlineHint}</div>
+        </div>
+        <div className="hairline grid w-full gap-4 pt-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="eu-kind" className="label-caps">
+              {t.options.euKind}
+            </Label>
+            <NativeSelect
+              id="eu-kind"
+              value={euSupplyKind}
+              onChange={(e) => setEuSupplyKind(e.target.value as 'services' | 'goods')}
+            >
+              <option value="services">{t.options.euServices}</option>
+              <option value="goods">{t.options.euGoods}</option>
+            </NativeSelect>
+            <p className="text-xs text-muted-foreground">{t.options.euHint}</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="rc-code" className="label-caps">
+              {t.options.rcCode}
+            </Label>
+            <NativeSelect
+              id="rc-code"
+              value={reverseChargeCode}
+              onChange={(e) => setRcCode(e.target.value)}
+            >
+              {Object.entries(t.options.rcCodes).map(([code, label]) => (
+                <option key={code} value={code}>
+                  {label}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
         </div>
       </section>
 
       <FilingCard profile={profile} />
-
-      <section className="grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2">
-        <h2 className="font-semibold sm:col-span-2">{t.options.title}</h2>
-        <div className="space-y-2">
-          <Label htmlFor="eu-kind">{t.options.euKind}</Label>
-          <NativeSelect
-            id="eu-kind"
-            value={euSupplyKind}
-            onChange={(e) => setEuSupplyKind(e.target.value as 'services' | 'goods')}
-          >
-            <option value="services">{t.options.euServices}</option>
-            <option value="goods">{t.options.euGoods}</option>
-          </NativeSelect>
-          <p className="text-xs text-muted-foreground">{t.options.euHint}</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="rc-code">{t.options.rcCode}</Label>
-          <NativeSelect
-            id="rc-code"
-            value={reverseChargeCode}
-            onChange={(e) => setRcCode(e.target.value)}
-          >
-            {Object.entries(t.options.rcCodes).map(([code, label]) => (
-              <option key={code} value={code}>
-                {label}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-      </section>
 
       {report.isError && <ErrorState onRetry={() => report.refetch()} />}
       {report.isPending && <Skeleton className="h-64 rounded-xl" aria-busy="true" />}
@@ -244,7 +280,8 @@ function PayerPage({ profile }: { profile: Profile }) {
       {r && (
         <>
           {r.advisories.map((a) => (
-            <p key={a} className="rounded-lg border p-3 text-sm">
+            <p key={a} className="flex items-start gap-3 rounded-xl bg-info/10 px-4 py-3 text-sm">
+              <Info className="mt-0.5 size-4 shrink-0 text-info" aria-hidden />
               {t.advisories[a] ?? a}
             </p>
           ))}
@@ -291,7 +328,7 @@ function FilingCard({ profile }: { profile: Profile }) {
   const show = editing || !complete
 
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
+    <section className="space-y-3 sheet p-5 sm:p-7">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold">{t.filing.title}</h2>
         {complete && !editing && (
@@ -407,19 +444,38 @@ function DocLink({ report, id }: { report: Report; id: string }) {
 function Warnings({ report }: { report: Report }) {
   if (report.warnings.length === 0) return null
   return (
-    <section className="space-y-2 rounded-xl border border-destructive/40 bg-card p-4">
-      <h2 className="flex items-center gap-2 font-semibold">
-        <TriangleAlert className="size-4" aria-hidden />
+    <section className="space-y-2" aria-label={t.warnings.title}>
+      <h2 className="label-caps flex items-center gap-2 text-foreground">
+        <TriangleAlert className="size-3.5" aria-hidden />
         {t.warnings.title}
       </h2>
       <ul className="space-y-2 text-sm">
         {report.warnings.map((w) => (
-          <li key={`${w.code}-${w.documentId}`} className="flex flex-wrap items-baseline gap-2">
-            <Badge variant={w.blocking ? 'destructive' : 'secondary'}>
-              {w.blocking ? t.warnings.blocking : t.warnings.info}
-            </Badge>
-            <DocLink report={report} id={w.documentId} />
-            <span>{t.warnings.codes[w.code] ?? w.code}</span>
+          <li
+            key={`${w.code}-${w.documentId}`}
+            className={cn(
+              'flex items-start gap-3 rounded-xl px-4 py-3',
+              w.blocking ? 'bg-destructive/10' : 'bg-warning/12',
+            )}
+          >
+            <TriangleAlert
+              className={cn(
+                'mt-0.5 size-4 shrink-0',
+                w.blocking ? 'text-destructive' : 'text-warning',
+              )}
+              aria-hidden
+            />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={w.blocking ? 'destructive' : 'secondary'}>
+                  {w.blocking ? t.warnings.blocking : t.warnings.info}
+                </Badge>
+                <span className="font-serif font-medium tabular-nums">
+                  <DocLink report={report} id={w.documentId} />
+                </span>
+              </div>
+              <p className="mt-1">{t.warnings.codes[w.code] ?? w.code}</p>
+            </div>
           </li>
         ))}
       </ul>
@@ -431,8 +487,8 @@ function Warnings({ report }: { report: Report }) {
 function Drill({ report, rowKey }: { report: Report; rowKey: string }) {
   const rows = report.contributions.filter((c) => c.rowKey === rowKey)
   return (
-    <div className="rounded-lg bg-muted/40 p-3">
-      <div className="mb-2 text-xs font-medium text-muted-foreground">{t.drill.title}</div>
+    <div className="rounded-xl bg-muted/60 p-3.5">
+      <div className="label-caps mb-2">{t.drill.title}</div>
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t.kh.none}</p>
       ) : (
@@ -548,16 +604,16 @@ function DphSection({
   )
 
   return (
-    <section className="space-y-4 rounded-xl border bg-card p-4">
+    <section className="space-y-4 sheet p-5 sm:p-7">
       <div>
-        <h2 className="text-lg font-semibold">{t.dph.title}</h2>
+        <h2 className="font-serif text-xl font-medium">{t.dph.title}</h2>
         <p className="text-sm text-muted-foreground">{t.dph.description}</p>
       </div>
       <ul className="divide-y border-y sm:hidden">
         {rows.map((row) => (
           <li key={row.key} className="space-y-1.5 py-3">
             <div className="flex items-baseline gap-2">
-              <span className="font-medium">
+              <span className="label-caps">
                 {t.dph.row} {row.key}
               </span>
               <span className="text-muted-foreground text-sm">{t.dph.rows[row.key]}</span>
@@ -588,19 +644,23 @@ function DphSection({
       <div className="-mx-4 hidden overflow-x-auto px-4 sm:block">
         <table className="w-full min-w-[34rem] text-sm">
           <thead>
-            <tr className="border-b text-left text-muted-foreground">
-              <th className="py-2 pr-3 font-medium">{t.dph.row}</th>
-              <th className="py-2 pr-3 font-medium" />
-              <th className="py-2 pr-3 text-right font-medium">{t.dph.base}</th>
-              <th className="py-2 pr-3 text-right font-medium">{t.dph.vat}</th>
-              <th className="py-2 font-medium">{t.dph.docs}</th>
+            <tr className="hairline-b text-left">
+              <th className="label-caps py-2 pr-3">{t.dph.row}</th>
+              <th className="py-2 pr-3" />
+              <th className="label-caps py-2 pr-3 text-right">{t.dph.base}</th>
+              <th className="label-caps py-2 pr-3 text-right">{t.dph.vat}</th>
+              <th className="label-caps py-2">{t.dph.docs}</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <Fragment key={row.key}>
                 <tr className="border-b">
-                  <td className="py-2 pr-3 font-medium">{row.key}</td>
+                  <td className="py-2.5 pr-3">
+                    <span className="inline-flex h-6 min-w-8 items-center justify-center rounded-md bg-muted px-1.5 text-xs font-semibold text-muted-foreground tabular-nums">
+                      {row.key}
+                    </span>
+                  </td>
                   <td className="py-2 pr-3">{t.dph.rows[row.key]}</td>
                   <td className="py-2 pr-3 text-right">
                     <Money amount={row.whole} />
@@ -636,19 +696,19 @@ function DphSection({
       {open?.startsWith('dp3.') && <Drill report={report} rowKey={open} />}
       <p className="text-xs text-muted-foreground">{t.dph.rounding}</p>
 
-      <div className="space-y-3 rounded-lg border p-3">
-        <h3 className="font-medium">{t.dph.inputTitle}</h3>
+      <div className="space-y-3 rounded-xl border border-dashed p-4">
+        <h3 className="label-caps text-foreground">{t.dph.inputTitle}</h3>
         <p className="text-sm text-muted-foreground">{t.dph.inputText}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">{t.dph.r40}</legend>
+            <legend className="mb-1 text-sm font-medium">{t.dph.r40}</legend>
             <div className="grid grid-cols-2 gap-2">
               {field('r40Base', t.dph.inputBase)}
               {field('r40Deduction', t.dph.inputDeduction)}
             </div>
           </fieldset>
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">{t.dph.r41}</legend>
+            <legend className="mb-1 text-sm font-medium">{t.dph.r41}</legend>
             <div className="grid grid-cols-2 gap-2">
               {field('r41Base', t.dph.inputBase)}
               {field('r41Deduction', t.dph.inputDeduction)}
@@ -657,17 +717,20 @@ function DphSection({
         </div>
       </div>
 
-      <dl className="grid gap-3 sm:grid-cols-4">
+      <dl className="grid overflow-hidden rounded-xl bg-muted/60 sm:grid-cols-4 sm:divide-x">
         {[
-          [t.dph.summaryOut, f.r62],
-          [t.dph.summaryDeduction, f.r63],
-          [t.dph.summaryPay, f.r64],
-          [t.dph.summaryRefund, f.r65],
-        ].map(([label, amount]) => (
-          <div key={label} className="rounded-lg border p-3">
-            <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="mt-1 text-lg font-semibold">
-              <Money amount={amount as string} />
+          [t.dph.summaryOut, f.r62, false],
+          [t.dph.summaryDeduction, f.r63, false],
+          [t.dph.summaryPay, f.r64, true],
+          [t.dph.summaryRefund, f.r65, false],
+        ].map(([label, amount, key]) => (
+          <div
+            key={label as string}
+            className={cn('p-4 max-sm:border-b last:border-0', key && 'bg-card')}
+          >
+            <dt className="label-caps">{label}</dt>
+            <dd className="mt-1.5">
+              <Amount value={amount as string} size="lg" />
             </dd>
           </div>
         ))}
@@ -691,26 +754,26 @@ function KhSection({
     (k) => Number(a5[k as keyof typeof a5]) === 0,
   )
   return (
-    <section className="space-y-4 rounded-xl border bg-card p-4">
+    <section className="space-y-4 sheet p-5 sm:p-7">
       <div>
-        <h2 className="text-lg font-semibold">{t.kh.title}</h2>
+        <h2 className="font-serif text-xl font-medium">{t.kh.title}</h2>
         <p className="text-sm text-muted-foreground">{t.kh.description}</p>
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-medium">{t.kh.a1}</h3>
+        <h3 className="label-caps text-foreground">{t.kh.a1}</h3>
         {a1.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t.kh.none}</p>
         ) : (
           <div className="-mx-4 overflow-x-auto px-4">
             <table className="w-full min-w-[30rem] text-sm">
               <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 pr-3 font-medium">{t.kh.document}</th>
-                  <th className="py-2 pr-3 font-medium">{t.kh.dic}</th>
-                  <th className="py-2 pr-3 font-medium">{t.kh.date}</th>
-                  <th className="py-2 pr-3 font-medium">{t.kh.code}</th>
-                  <th className="py-2 text-right font-medium">{t.dph.base}</th>
+                <tr className="hairline-b text-left">
+                  <th className="label-caps py-2 pr-3">{t.kh.document}</th>
+                  <th className="label-caps py-2 pr-3">{t.kh.dic}</th>
+                  <th className="label-caps py-2 pr-3">{t.kh.date}</th>
+                  <th className="label-caps py-2 pr-3">{t.kh.code}</th>
+                  <th className="label-caps py-2 text-right">{t.dph.base}</th>
                 </tr>
               </thead>
               <tbody>
@@ -734,19 +797,19 @@ function KhSection({
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-medium">{t.kh.a4}</h3>
+        <h3 className="label-caps text-foreground">{t.kh.a4}</h3>
         {a4.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t.kh.none}</p>
         ) : (
           <div className="-mx-4 overflow-x-auto px-4">
             <table className="w-full min-w-[44rem] text-sm">
               <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 pr-3 font-medium">{t.kh.document}</th>
-                  <th className="py-2 pr-3 font-medium">{t.kh.dic}</th>
-                  <th className="py-2 pr-3 font-medium">{t.kh.date}</th>
-                  <th className="py-2 pr-3 text-right font-medium">{t.kh.rate21}</th>
-                  <th className="py-2 text-right font-medium">{t.kh.rate12}</th>
+                <tr className="hairline-b text-left">
+                  <th className="label-caps py-2 pr-3">{t.kh.document}</th>
+                  <th className="label-caps py-2 pr-3">{t.kh.dic}</th>
+                  <th className="label-caps py-2 pr-3">{t.kh.date}</th>
+                  <th className="label-caps py-2 pr-3 text-right">{t.kh.rate21}</th>
+                  <th className="label-caps py-2 text-right">{t.kh.rate12}</th>
                 </tr>
               </thead>
               <tbody>
@@ -773,21 +836,21 @@ function KhSection({
 
       <div className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-medium">{t.kh.a5}</h3>
+          <h3 className="label-caps text-foreground">{t.kh.a5}</h3>
           <DrillButton rowKey="kh.A5" open={open} setOpen={setOpen} count={a5Count} />
         </div>
         {a5Empty ? (
           <p className="text-sm text-muted-foreground">{t.kh.none}</p>
         ) : (
           <dl className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border p-3">
-              <dt className="text-xs text-muted-foreground">{t.kh.rate21}</dt>
+            <div className="rounded-xl bg-muted/60 p-3.5">
+              <dt className="label-caps">{t.kh.rate21}</dt>
               <dd>
                 <Money amount={a5.base21} /> / <Money amount={a5.vat21} />
               </dd>
             </div>
-            <div className="rounded-lg border p-3">
-              <dt className="text-xs text-muted-foreground">{t.kh.rate12}</dt>
+            <div className="rounded-xl bg-muted/60 p-3.5">
+              <dt className="label-caps">{t.kh.rate12}</dt>
               <dd>
                 <Money amount={a5.base12} /> / <Money amount={a5.vat12} />
               </dd>
@@ -803,9 +866,9 @@ function KhSection({
 
 function ShSection({ report }: { report: Report }) {
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
+    <section className="space-y-3 sheet p-5 sm:p-7">
       <div>
-        <h2 className="text-lg font-semibold">{t.sh.title}</h2>
+        <h2 className="font-serif text-xl font-medium">{t.sh.title}</h2>
         <p className="text-sm text-muted-foreground">{t.sh.description}</p>
       </div>
       {report.sh.length === 0 ? (
@@ -814,12 +877,12 @@ function ShSection({ report }: { report: Report }) {
         <div className="-mx-4 overflow-x-auto px-4">
           <table className="w-full min-w-[26rem] text-sm">
             <thead>
-              <tr className="border-b text-left text-muted-foreground">
-                <th className="py-2 pr-3 font-medium">{t.sh.country}</th>
-                <th className="py-2 pr-3 font-medium">{t.sh.vatId}</th>
-                <th className="py-2 pr-3 font-medium">{t.sh.code}</th>
-                <th className="py-2 pr-3 text-right font-medium">{t.sh.count}</th>
-                <th className="py-2 text-right font-medium">{t.sh.value}</th>
+              <tr className="hairline-b text-left">
+                <th className="label-caps py-2 pr-3">{t.sh.country}</th>
+                <th className="label-caps py-2 pr-3">{t.sh.vatId}</th>
+                <th className="label-caps py-2 pr-3">{t.sh.code}</th>
+                <th className="label-caps py-2 pr-3 text-right">{t.sh.count}</th>
+                <th className="label-caps py-2 text-right">{t.sh.value}</th>
               </tr>
             </thead>
             <tbody>
@@ -861,9 +924,9 @@ function Downloads({
     }
   }
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
+    <section className="space-y-3 sheet p-5 sm:p-7">
       <div>
-        <h2 className="text-lg font-semibold">{t.downloads.title}</h2>
+        <h2 className="font-serif text-xl font-medium">{t.downloads.title}</h2>
         <p className="text-sm text-muted-foreground">{t.downloads.description}</p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -887,8 +950,8 @@ function Downloads({
 
 function Guide() {
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
-      <h2 className="text-lg font-semibold">{t.guide.title}</h2>
+    <section className="space-y-3 sheet p-5 sm:p-7">
+      <h2 className="font-serif text-xl font-medium">{t.guide.title}</h2>
       <ol className="list-decimal space-y-1 pl-5 text-sm">
         {t.guide.steps.map((s) => (
           <li key={s}>{s}</li>

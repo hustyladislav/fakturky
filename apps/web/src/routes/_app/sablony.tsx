@@ -1,4 +1,4 @@
-import { formatDateCs } from '@fakturky/domain/dates'
+import { firstOccurrence, formatDateCs, todayPrague } from '@fakturky/domain/dates'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Badge } from '@fakturky/ui/components/badge'
 import { Button } from '@fakturky/ui/components/button'
@@ -14,7 +14,7 @@ import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { CalendarClock, Pause, Play, Repeat, Trash2, Zap } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
@@ -22,6 +22,10 @@ import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/sablony')({
   head: pageHead(cs.templates.title),
+  // Plain validation (no zod): keeps the schema library out of the client bundle.
+  validateSearch: (search: Record<string, unknown>): { opakovat?: string } => ({
+    opakovat: typeof search.opakovat === 'string' && search.opakovat ? search.opakovat : undefined,
+  }),
   component: Templates,
 })
 
@@ -32,8 +36,14 @@ function Templates() {
   const navigate = useNavigate()
   const templates = useQuery(orpc.templates.list.queryOptions({ input: {} }))
   const rules = useQuery(orpc.recurring.list.queryOptions({ input: {} }))
-  const [repeatFor, setRepeatFor] = useState<string | null>(null)
-  const [startOn, setStartOn] = useState('')
+  const { opakovat } = Route.useSearch()
+  const [repeatFor, setRepeatFor] = useState<string | null>(opakovat ?? null)
+  // Arriving from "Šablona byla uložena · Nastavit opakování": open that template's form and bring it into view.
+  useEffect(() => {
+    if (!opakovat || !templates.data?.some((x) => x.id === opakovat)) return
+    setRepeatFor(opakovat)
+    document.getElementById(`tpl-${opakovat}`)?.scrollIntoView({ block: 'center' })
+  }, [opakovat, templates.data])
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: orpc.templates.key() })
     await queryClient.invalidateQueries({ queryKey: orpc.recurring.key() })
@@ -61,8 +71,8 @@ function Templates() {
   )
   const create = useMutation(
     orpc.recurring.create.mutationOptions({
-      onSuccess: async () => {
-        toast.success(t.ruleCreated)
+      onSuccess: async (rule) => {
+        toast.success(t.ruleCreatedOn(formatDateCs(rule.nextRunOn)))
         setRepeatFor(null)
         await refresh()
       },
@@ -113,7 +123,11 @@ function Templates() {
           )
           const showForm = repeatFor === tpl.id
           return (
-            <article key={tpl.id} className="sheet flex flex-col overflow-hidden">
+            <article
+              id={`tpl-${tpl.id}`}
+              key={tpl.id}
+              className="sheet flex flex-col overflow-hidden"
+            >
               <MiniPaper lines={tpl.body.lines} currency={currency} net={net} />
               <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
                 <div>
@@ -159,10 +173,7 @@ function Templates() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => {
-                      setStartOn('')
-                      setRepeatFor(showForm ? null : tpl.id)
-                    }}
+                    onClick={() => setRepeatFor(showForm ? null : tpl.id)}
                   >
                     {t.repeat}
                   </Button>
@@ -178,81 +189,12 @@ function Templates() {
                 </div>
 
                 {showForm && (
-                  <form
-                    className="grid gap-3 border-t pt-4"
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      const f = new FormData(e.currentTarget)
-                      create.mutate({
-                        templateId: tpl.id,
-                        frequency: f.get('frequency') as 'monthly' | 'quarterly' | 'yearly',
-                        dayOfMonth: Number(f.get('day')),
-                        startOn: startOn || undefined,
-                        autoIssue: f.get('autoIssue') === 'on',
-                        autoSend: f.get('autoSend') === 'on',
-                      })
-                    }}
-                  >
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor={`fr-${tpl.id}`} className="label-caps">
-                          {t.repeat}
-                        </Label>
-                        <NativeSelect id={`fr-${tpl.id}`} name="frequency">
-                          {Object.entries(t.frequency).map(([k, v]) => (
-                            <option key={k} value={k}>
-                              {v}
-                            </option>
-                          ))}
-                        </NativeSelect>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor={`d-${tpl.id}`} className="label-caps">
-                          {t.day}
-                        </Label>
-                        <Input
-                          id={`d-${tpl.id}`}
-                          name="day"
-                          type="number"
-                          min={1}
-                          max={31}
-                          defaultValue={1}
-                          className="text-right tabular-nums"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor={`s-${tpl.id}`} className="label-caps">
-                        {t.startOn}
-                      </Label>
-                      <DatePicker
-                        id={`s-${tpl.id}`}
-                        value={startOn}
-                        onChange={setStartOn}
-                        placeholder={t.today}
-                        aria-label={t.startOn}
-                      />
-                    </div>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" name="autoIssue" /> {t.autoIssue}
-                    </label>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" name="autoSend" /> {t.autoSend}
-                    </label>
-                    <div className="flex gap-2">
-                      <Button type="submit" size="sm" disabled={create.isPending}>
-                        {t.createRule}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setRepeatFor(null)}
-                      >
-                        {cs.common.cancel}
-                      </Button>
-                    </div>
-                  </form>
+                  <RepeatForm
+                    templateId={tpl.id}
+                    pending={create.isPending}
+                    onCancel={() => setRepeatFor(null)}
+                    onSubmit={(v) => create.mutate({ templateId: tpl.id, ...v })}
+                  />
                 )}
               </div>
             </article>
@@ -320,6 +262,133 @@ function Templates() {
         )}
       </section>
     </div>
+  )
+}
+
+type RuleValues = {
+  frequency: 'monthly' | 'quarterly' | 'yearly'
+  dayOfMonth: number
+  startOn: string | undefined
+  autoIssue: boolean
+  autoSend: boolean
+}
+
+/** Recurrence form that spells out when the first automatic invoice appears and whether it is sent. */
+function RepeatForm({
+  templateId,
+  pending,
+  onCancel,
+  onSubmit,
+}: {
+  templateId: string
+  pending: boolean
+  onCancel: () => void
+  onSubmit: (v: RuleValues) => void
+}) {
+  const [frequency, setFrequency] = useState<RuleValues['frequency']>('monthly')
+  const [day, setDay] = useState('1')
+  const [startOn, setStartOn] = useState('')
+  const [autoIssue, setAutoIssue] = useState(false)
+  const [autoSend, setAutoSend] = useState(false)
+  const dayOfMonth = Math.min(31, Math.max(1, Number(day) || 1))
+  const today = todayPrague()
+  const first = firstOccurrence(startOn || today, dayOfMonth)
+  return (
+    <form
+      className="grid gap-3 border-t pt-4"
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSubmit({
+          frequency,
+          dayOfMonth,
+          startOn: startOn || undefined,
+          autoIssue,
+          autoSend: autoIssue && autoSend,
+        })
+      }}
+    >
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor={`fr-${templateId}`} className="label-caps">
+            {t.repeat}
+          </Label>
+          <NativeSelect
+            id={`fr-${templateId}`}
+            name="frequency"
+            value={frequency}
+            onChange={(e) => setFrequency(e.target.value as RuleValues['frequency'])}
+          >
+            {Object.entries(t.frequency).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor={`d-${templateId}`} className="label-caps">
+            {t.day}
+          </Label>
+          <Input
+            id={`d-${templateId}`}
+            name="day"
+            type="number"
+            min={1}
+            max={31}
+            value={day}
+            onChange={(e) => setDay(e.target.value)}
+            className="text-right tabular-nums"
+          />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor={`s-${templateId}`} className="label-caps">
+          {t.startOn}
+        </Label>
+        <DatePicker
+          id={`s-${templateId}`}
+          value={startOn}
+          onChange={setStartOn}
+          placeholder={t.today}
+          aria-label={t.startOn}
+        />
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={autoIssue}
+          onChange={(e) => setAutoIssue(e.target.checked)}
+        />{' '}
+        {t.autoIssue}
+      </label>
+      <label
+        className={cn('flex items-center gap-2 text-sm', !autoIssue && 'text-muted-foreground')}
+      >
+        <input
+          type="checkbox"
+          checked={autoIssue && autoSend}
+          disabled={!autoIssue}
+          onChange={(e) => setAutoSend(e.target.checked)}
+        />{' '}
+        {t.autoSend}
+      </label>
+      <p
+        className="rounded-lg bg-muted px-3 py-2 text-[13px] leading-5"
+        aria-live="polite"
+        data-testid="repeat-summary"
+      >
+        {first > today ? t.firstRunOn(formatDateCs(first)) : t.firstRunNext}{' '}
+        {autoIssue ? (autoSend ? t.runIssueSend : t.runIssueOnly) : t.runDraftOnly}
+      </p>
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={pending}>
+          {t.createRule}
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
+          {cs.common.cancel}
+        </Button>
+      </div>
+    </form>
   )
 }
 

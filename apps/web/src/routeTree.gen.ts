@@ -52,6 +52,7 @@ import { Route as FTokenQrDotpngRouteImport } from './routes/f.$token.qr[.]png'
 import { Route as AppFakturyIdIndexRouteImport } from './routes/_app/faktury.$id.index'
 import { Route as AppFakturyIdUpravitRouteImport } from './routes/_app/faktury.$id.upravit'
 import { Route as ApiDocumentsIdPdfRouteImport } from './routes/api/documents.$id.pdf'
+import { Route as ApiPublicAresIcoRouteImport } from './routes/api/public.ares.$ico'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -267,6 +268,11 @@ const ApiDocumentsIdPdfRoute = ApiDocumentsIdPdfRouteImport.update({
   path: '/api/documents/$id/pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAresIcoRoute = ApiPublicAresIcoRouteImport.update({
+  id: '/api/public/ares/$ico',
+  path: '/api/public/ares/$ico',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -310,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/kontakty/': typeof AppKontaktyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
+  '/api/public/ares/$ico': typeof ApiPublicAresIcoRoute
   '/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -352,6 +359,7 @@ export interface FileRoutesByTo {
   '/kontakty': typeof AppKontaktyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
+  '/api/public/ares/$ico': typeof ApiPublicAresIcoRoute
   '/faktury/$id': typeof AppFakturyIdIndexRoute
 }
 export interface FileRoutesById {
@@ -398,6 +406,7 @@ export interface FileRoutesById {
   '/_app/kontakty/': typeof AppKontaktyIndexRoute
   '/_app/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
+  '/api/public/ares/$ico': typeof ApiPublicAresIcoRoute
   '/_app/faktury/$id/': typeof AppFakturyIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -444,6 +453,7 @@ export interface FileRouteTypes {
     | '/kontakty/'
     | '/faktury/$id/upravit'
     | '/api/documents/$id/pdf'
+    | '/api/public/ares/$ico'
     | '/faktury/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -486,6 +496,7 @@ export interface FileRouteTypes {
     | '/kontakty'
     | '/faktury/$id/upravit'
     | '/api/documents/$id/pdf'
+    | '/api/public/ares/$ico'
     | '/faktury/$id'
   id:
     | '__root__'
@@ -531,6 +542,7 @@ export interface FileRouteTypes {
     | '/_app/kontakty/'
     | '/_app/faktury/$id/upravit'
     | '/api/documents/$id/pdf'
+    | '/api/public/ares/$ico'
     | '/_app/faktury/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -561,6 +573,7 @@ export interface RootRouteChildren {
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
   ApiDocumentsIdPdfRoute: typeof ApiDocumentsIdPdfRoute
+  ApiPublicAresIcoRoute: typeof ApiPublicAresIcoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -866,6 +879,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDocumentsIdPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ares/$ico': {
+      id: '/api/public/ares/$ico'
+      path: '/api/public/ares/$ico'
+      fullPath: '/api/public/ares/$ico'
+      preLoaderRoute: typeof ApiPublicAresIcoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -967,6 +987,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
   ApiDocumentsIdPdfRoute: ApiDocumentsIdPdfRoute,
+  ApiPublicAresIcoRoute: ApiPublicAresIcoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

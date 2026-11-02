@@ -18,7 +18,9 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { cs } from '@/i18n/cs'
+import { Comparison } from './comparison'
 import { HeroComposition } from './hero-composition'
+import { IcoDemo } from './ico-demo'
 
 function Github({ className, ...props }: React.ComponentProps<'svg'> & { 'data-icon'?: string }) {
   return (
@@ -43,7 +45,9 @@ export function Landing() {
       <SiteHeader />
       <main>
         <Hero />
+        <IcoDemo />
         <Features />
+        <Comparison />
         <Why />
         <ForAssistants />
         <Faq />
@@ -67,6 +71,9 @@ function SiteHeader() {
         >
           <a href="#funkce" className="hover:text-foreground">
             {t.nav.features}
+          </a>
+          <a href="#srovnani" className="hover:text-foreground">
+            {t.nav.compare}
           </a>
           <a href="#proc-zdarma" className="hover:text-foreground">
             {t.nav.why}

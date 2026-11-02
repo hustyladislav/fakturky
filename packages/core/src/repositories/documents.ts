@@ -232,6 +232,9 @@ function totalColumns(totals: ReturnType<typeof computeDocumentTotals>, currency
   }
 }
 
+/** `payment.method` of the settlement a credit note makes on its invoice (the note holds the credit note number). */
+export const CREDIT_NOTE_METHOD = 'credit_note'
+
 async function paidSums(db: Db | Tx, orgId: string, ids: string[]) {
   const map = new Map<string, Decimal>()
   if (ids.length === 0) return map
@@ -813,6 +816,39 @@ export const documentsRepo = {
           .set({ status: 'paid', paidAt: new Date() })
           .where(scoped(orgId, id))
       }
+      // A credit note settles the corrected invoice's open balance (never beyond it: a refund of money
+      // already received is a separate payment out).
+      if (doc.type === 'credit_note' && doc.relatedDocumentId) {
+        const [orig] = await tx
+          .select()
+          .from(document)
+          .where(scoped(orgId, doc.relatedDocumentId))
+          .for('update')
+        if (orig && orig.status === 'issued') {
+          const open = parseDecimal(orig.total).minus(
+            (await paidSums(tx, orgId, [orig.id])).get(orig.id) ?? new Decimal(0),
+          )
+          const creditTotal = parseDecimal(totals.total).abs()
+          const credit = creditTotal.lt(open) ? creditTotal : open
+          if (credit.gt(0)) {
+            await tx.insert(payment).values({
+              organizationId: orgId,
+              documentId: orig.id,
+              paidOn: doc.issueDate ?? todayPrague(),
+              amount: toFixed(credit, 2),
+              currency: orig.currency,
+              method: CREDIT_NOTE_METHOD,
+              note: number,
+            })
+            if (credit.gte(open)) {
+              await tx
+                .update(document)
+                .set({ status: 'paid', paidAt: new Date() })
+                .where(scoped(orgId, orig.id))
+            }
+          }
+        }
+      }
       await logActivity(tx, orgId, actorId, id, 'issued', { number })
     })
     return this.get(db, orgId, id)
@@ -1309,6 +1345,36 @@ export const documentsRepo = {
         .update(document)
         .set({ status: 'cancelled', cancelledAt: new Date() })
         .where(scoped(orgId, id))
+      // Cancelling a credit note takes back the settlement it made on the corrected invoice.
+      if (doc.type === 'credit_note' && doc.relatedDocumentId && doc.number) {
+        const removed = await tx
+          .delete(payment)
+          .where(
+            and(
+              eq(payment.organizationId, orgId),
+              eq(payment.documentId, doc.relatedDocumentId),
+              eq(payment.method, CREDIT_NOTE_METHOD),
+              eq(payment.note, doc.number),
+            ),
+          )
+          .returning({ id: payment.id })
+        if (removed.length > 0) {
+          const [orig] = await tx
+            .select()
+            .from(document)
+            .where(scoped(orgId, doc.relatedDocumentId))
+            .for('update')
+          if (orig?.status === 'paid') {
+            const paid = (await paidSums(tx, orgId, [orig.id])).get(orig.id) ?? new Decimal(0)
+            if (paid.lt(parseDecimal(orig.total))) {
+              await tx
+                .update(document)
+                .set({ status: 'issued', paidAt: null })
+                .where(scoped(orgId, orig.id))
+            }
+          }
+        }
+      }
       await logActivity(tx, orgId, actorId, id, 'cancelled')
     })
     return this.get(db, orgId, id)

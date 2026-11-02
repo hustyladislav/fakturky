@@ -28,6 +28,7 @@ export interface Labels {
   constantSymbol: string
   specificSymbol: string
   amountDue: string
+  creditTotal: string
   qrSpayd: string
   qrEpc: string
   description: string
@@ -102,6 +103,7 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     constantSymbol: 'Konstantní symbol',
     specificSymbol: 'Specifický symbol',
     amountDue: 'K úhradě',
+    creditTotal: 'Dobropisováno celkem',
     qrSpayd: 'QR Platba',
     qrEpc: 'SEPA QR',
     description: 'Popis',
@@ -177,6 +179,7 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     constantSymbol: 'Konštantný symbol',
     specificSymbol: 'Špecifický symbol',
     amountDue: 'Na úhradu',
+    creditTotal: 'Dobropisované spolu',
     qrSpayd: 'QR platba',
     qrEpc: 'SEPA QR',
     description: 'Popis',
@@ -252,6 +255,7 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     constantSymbol: 'Constant symbol',
     specificSymbol: 'Specific symbol',
     amountDue: 'Amount due',
+    creditTotal: 'Total credited',
     qrSpayd: 'QR payment',
     qrEpc: 'SEPA QR',
     description: 'Description',

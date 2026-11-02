@@ -346,6 +346,44 @@ export const cs = {
     emptyFiltered: 'Nic neodpovídá zvolenému filtru.',
     emptyCta: 'Vystavit první fakturu',
     search: 'Hledat podle čísla, odběratele nebo VS…',
+    subtitle: (count: number, unpaid: string | null) =>
+      `${count} ${count === 1 ? 'doklad' : count < 5 && count > 0 ? 'doklady' : 'dokladů'}${unpaid ? ` · ${unpaid} neuhrazeno` : ''}`,
+    monthTotal: (count: number, sum: string | null) =>
+      `${count} ${count === 1 ? 'doklad' : count < 5 ? 'doklady' : 'dokladů'}${sum ? ` · ${sum}` : ''}`,
+    typeShort: {
+      invoice: 'Faktura',
+      proforma: 'Zálohová',
+      credit_note: 'Dobropis',
+      payment_receipt: 'Doklad k platbě',
+    },
+    noMonth: 'Bez data',
+    noNumber: 'Bez čísla',
+    resetFilter: 'Zrušit filtr',
+    loadMore: 'Načíst další',
+    sortBy: (column: string) => `Seřadit podle: ${column}`,
+    keyboardHint: 'J / K pohyb · Enter otevřít · X vybrat',
+    rowActions: {
+      pdf: 'Stáhnout PDF',
+      markPaid: 'Označit jako zaplacenou',
+      duplicate: 'Duplikovat',
+      markedPaid: 'Faktura je označená jako zaplacená.',
+      undo: 'Vrátit',
+    },
+    bulk: {
+      selected: (n: number) => `Vybráno: ${n}`,
+      selectAll: 'Vybrat všechny',
+      selectRow: (name: string) => `Vybrat doklad: ${name}`,
+      exportCsv: 'Exportovat CSV',
+      markPaid: 'Označit jako zaplacené',
+      remind: 'Poslat upomínky',
+      clear: 'Zrušit výběr',
+      paidDone: (n: number) =>
+        `Označeno jako zaplacené: ${n} ${n === 1 ? 'faktura' : n < 5 ? 'faktury' : 'faktur'}.`,
+      remindDone: (ok: number, failed: number) =>
+        failed === 0
+          ? `Upomínky odeslány: ${ok}.`
+          : `Upomínky odeslány: ${ok}, nepodařilo se: ${failed} (chybí e-mail odběratele?).`,
+    },
     filters: {
       all: 'Vše',
       unpaid: 'Neuhrazené',
@@ -1260,6 +1298,7 @@ export const cs = {
       cancel_document: 'Stornuji doklad',
       delete_document_draft: 'Mažu koncept',
       get_dashboard_summary: 'Načítám přehled',
+      get_document_stats: 'Počítám doklady podle stavu',
       get_business_profile: 'Načítám profil firmy',
       update_business_profile: 'Upravuji profil firmy',
       list_bank_accounts: 'Načítám bankovní účty',

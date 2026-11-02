@@ -259,6 +259,47 @@ export async function paidSums(db: Db | Tx, orgId: string, ids: string[]) {
   return map
 }
 
+export type ListSort = 'issueDate' | 'dueDate' | 'number' | 'customer' | 'total'
+
+/** WHERE for list/stats: tenant scope, filter chip, type and free-text search (joins `contact`). */
+function listWhere(
+  orgId: string,
+  opts: {
+    filter: 'all' | 'draft' | 'unpaid' | 'overdue' | 'paid' | 'cancelled'
+    search?: string
+    type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt'
+  },
+) {
+  const today = todayPrague()
+  const term = opts.search?.trim()
+  const statusWhere = {
+    all: undefined,
+    draft: eq(document.status, 'draft'),
+    unpaid: and(eq(document.status, 'issued'), ne(document.type, 'credit_note')),
+    overdue: and(
+      eq(document.status, 'issued'),
+      ne(document.type, 'credit_note'),
+      lt(document.dueDate, today),
+    ),
+    paid: eq(document.status, 'paid'),
+    cancelled: eq(document.status, 'cancelled'),
+  }[opts.filter]
+  return and(
+    eq(document.organizationId, orgId),
+    isNull(document.deletedAt),
+    statusWhere,
+    opts.type ? eq(document.type, opts.type) : undefined,
+    term
+      ? or(
+          ilike(sql`coalesce(${document.number}, '')`, `%${term}%`),
+          ilike(sql`coalesce(${document.variableSymbol}, '')`, `%${term}%`),
+          ilike(sql`coalesce(${document.customerSnapshot}->>'name', '')`, `%${term}%`),
+          ilike(sql`coalesce(${contact.name}, '')`, `%${term}%`),
+        )
+      : undefined,
+  )
+}
+
 function decorate(doc: DocRow, paid: Decimal, customerName: string | null) {
   const diff = parseDecimal(doc.total).minus(paid)
   const remaining = diff.isNegative() ? new Decimal(0) : diff
@@ -315,45 +356,31 @@ export const documentsRepo = {
       filter: 'all' | 'draft' | 'unpaid' | 'overdue' | 'paid' | 'cancelled'
       search?: string
       type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt'
+      sort?: ListSort
+      dir?: 'asc' | 'desc'
       limit: number
       offset: number
     },
   ) {
-    const today = todayPrague()
-    const term = opts.search?.trim()
-    const statusWhere = {
-      all: undefined,
-      draft: eq(document.status, 'draft'),
-      unpaid: and(eq(document.status, 'issued'), ne(document.type, 'credit_note')),
-      overdue: and(
-        eq(document.status, 'issued'),
-        ne(document.type, 'credit_note'),
-        lt(document.dueDate, today),
-      ),
-      paid: eq(document.status, 'paid'),
-      cancelled: eq(document.status, 'cancelled'),
-    }[opts.filter]
+    const dir = opts.dir === 'asc' ? asc : desc
+    const customerName = sql`lower(coalesce(${document.customerSnapshot}->>'name', ${contact.name}, ''))`
+    const orderBy = {
+      issueDate: [dir(document.issueDate), dir(document.createdAt), dir(document.id)],
+      dueDate: [dir(document.dueDate), desc(document.createdAt), desc(document.id)],
+      number: [dir(document.number), desc(document.createdAt), desc(document.id)],
+      customer: [dir(customerName), desc(document.createdAt), desc(document.id)],
+      total: [
+        dir(sql`coalesce(${document.totalCzk}, ${document.total})`),
+        desc(document.createdAt),
+        desc(document.id),
+      ],
+    }[opts.sort ?? 'issueDate']
     const rows = await db
       .select({ doc: document, contactName: contact.name })
       .from(document)
       .leftJoin(contact, and(eq(contact.id, document.contactId), eq(contact.organizationId, orgId)))
-      .where(
-        and(
-          eq(document.organizationId, orgId),
-          isNull(document.deletedAt),
-          statusWhere,
-          opts.type ? eq(document.type, opts.type) : undefined,
-          term
-            ? or(
-                ilike(sql`coalesce(${document.number}, '')`, `%${term}%`),
-                ilike(sql`coalesce(${document.variableSymbol}, '')`, `%${term}%`),
-                ilike(sql`coalesce(${document.customerSnapshot}->>'name', '')`, `%${term}%`),
-                ilike(sql`coalesce(${contact.name}, '')`, `%${term}%`),
-              )
-            : undefined,
-        ),
-      )
-      .orderBy(desc(document.createdAt), desc(document.id))
+      .where(listWhere(orgId, opts))
+      .orderBy(...orderBy)
       .limit(opts.limit)
       .offset(opts.offset)
     const sums = await paidSums(
@@ -388,6 +415,79 @@ export const documentsRepo = {
       ),
       viaAssistant: viaAssistant.has(doc.id),
     }))
+  },
+
+  /**
+   * Counts and CZK sums for the list's filter chips. Unpaid/overdue sum what is still owed;
+   * the other buckets sum the document totals (credit notes net). Respects `search` and `type`.
+   */
+  async stats(
+    db: Db,
+    orgId: string,
+    opts: { search?: string; type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt' },
+  ) {
+    const today = todayPrague()
+    const rows = await db
+      .select({
+        id: document.id,
+        status: document.status,
+        type: document.type,
+        dueDate: document.dueDate,
+        total: document.total,
+        totalCzk: document.totalCzk,
+        currency: document.currency,
+      })
+      .from(document)
+      .leftJoin(contact, and(eq(contact.id, document.contactId), eq(contact.organizationId, orgId)))
+      .where(listWhere(orgId, { filter: 'all', ...opts }))
+    const sums = await paidSums(
+      db,
+      orgId,
+      rows.filter((r) => r.status === 'issued').map((r) => r.id),
+    )
+    const bucket = () => ({ count: 0, sum: new Decimal(0) })
+    const out = {
+      all: bucket(),
+      draft: bucket(),
+      unpaid: bucket(),
+      overdue: bucket(),
+      paid: bucket(),
+    }
+    for (const r of rows) {
+      const total = parseDecimal(r.total)
+      const czk = (amount: Decimal) =>
+        r.currency === 'CZK' || total.isZero() || !r.totalCzk
+          ? amount
+          : amount.times(parseDecimal(r.totalCzk)).div(total)
+      out.all.count++
+      if (r.status === 'draft') {
+        out.draft.count++
+        out.draft.sum = out.draft.sum.plus(czk(total))
+        continue
+      }
+      if (r.status === 'cancelled') continue
+      out.all.sum = out.all.sum.plus(czk(total))
+      if (r.status === 'paid') {
+        out.paid.count++
+        out.paid.sum = out.paid.sum.plus(czk(total))
+      } else if (r.status === 'issued' && r.type !== 'credit_note') {
+        const left = total.minus(sums.get(r.id) ?? 0)
+        out.unpaid.count++
+        out.unpaid.sum = out.unpaid.sum.plus(czk(left.isNegative() ? new Decimal(0) : left))
+        if (r.dueDate && r.dueDate < today) {
+          out.overdue.count++
+          out.overdue.sum = out.overdue.sum.plus(czk(left.isNegative() ? new Decimal(0) : left))
+        }
+      }
+    }
+    const fmt = (b: ReturnType<typeof bucket>) => ({ count: b.count, sum: toFixed(b.sum, 2) })
+    return {
+      all: fmt(out.all),
+      draft: fmt(out.draft),
+      unpaid: fmt(out.unpaid),
+      overdue: fmt(out.overdue),
+      paid: fmt(out.paid),
+    }
   },
 
   async get(db: Db | Tx, orgId: string, id: string) {

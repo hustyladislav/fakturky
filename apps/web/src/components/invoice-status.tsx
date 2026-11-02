@@ -17,9 +17,12 @@ const map: Record<Display, DocumentStatus> = {
 export function InvoiceStatus({
   status,
   viaAssistant,
+  overdueDays,
 }: {
   status: Display
   viaAssistant?: boolean
+  /** Overdue only: the badge then reads "14 dní po splatnosti". */
+  overdueDays?: number
 }) {
   // Drafts the assistant proposed say so: the user still has to review and issue them.
   if (status === 'draft' && viaAssistant) {
@@ -29,5 +32,9 @@ export function InvoiceStatus({
       </StatusBadge>
     )
   }
-  return <StatusBadge status={map[status]}>{cs.invoices.status[status]}</StatusBadge>
+  return (
+    <StatusBadge status={map[status]} {...(overdueDays ? { overdueDays } : {})}>
+      {cs.invoices.status[status]}
+    </StatusBadge>
+  )
 }

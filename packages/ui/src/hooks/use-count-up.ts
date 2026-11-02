@@ -15,7 +15,9 @@ export function useCountUp(target: number, { duration = 700, enabled = true } = 
     const start = performance.now()
     setValue(0)
     const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration)
+      // The first frame's timestamp can precede `start` (rAF time is the frame start): never go below 0,
+      // or the count briefly turns negative (and a negative amount then renders as "--123").
+      const t = Math.max(0, Math.min(1, (now - start) / duration))
       setValue(target * (1 - (1 - t) ** 3))
       if (t < 1) raf = requestAnimationFrame(tick)
       else setValue(target)

@@ -457,6 +457,7 @@ export const documentsRepo = {
                 type: document.type,
                 number: document.number,
                 status: document.status,
+                issueDate: document.issueDate,
               })
               .from(document)
               .where(

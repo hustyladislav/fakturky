@@ -95,3 +95,21 @@ export async function pickCustomer(page: Page, name: string) {
   await page.getByLabel('Odběratel', { exact: true }).fill(name)
   await page.getByRole('button', { name }).first().click()
 }
+
+/** Creates and issues a one-line invoice for an existing contact (non-VAT-payer supplier); returns its document id. */
+export async function issueInvoice(page: Page, customerName: string, unitPrice = '1000') {
+  await page.goto('/faktury/nova')
+  await page.waitForLoadState('networkidle')
+  await pickCustomer(page, customerName)
+  await fillLines(page, [{ description: 'Služba', quantity: '1', unitPrice }])
+  await page.getByRole('button', { name: 'Vystavit', exact: true }).click()
+  await page.waitForURL(
+    (u) => /^\/faktury\/[^/]+$/.test(u.pathname) && u.pathname !== '/faktury/nova',
+  )
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^\d{4}-\d{4}$/)
+  return new URL(page.url()).pathname.split('/').pop() as string
+}
+
+/** Today in Europe/Prague as YYYY-MM-DD (the date the app uses for "today"). */
+export const todayPrague = () =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Prague' }).format(new Date())

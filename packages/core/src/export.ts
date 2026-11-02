@@ -14,7 +14,8 @@ type Snapshot = Record<string, unknown> | null
 
 const str = (v: unknown) => (typeof v === 'string' && v ? v : null)
 
-function party(s: Snapshot): ExportParty {
+/** Party block of a document from its stored snapshot (also used by the web app's HTML sheet). */
+export function partyFromSnapshot(s: Snapshot): ExportParty {
   const a = ((s?.address as Record<string, string | undefined>) ?? {}) as Record<
     string,
     string | undefined
@@ -86,8 +87,8 @@ export function toDocumentForExport(
     taxableDate: vatPayer ? doc.taxableDate : null,
     vatPayer,
     supplierVatPayer: (doc.supplierSnapshot as Snapshot)?.vatStatus === 'payer' || vatPayer,
-    supplier: party(doc.supplierSnapshot),
-    customer: party(doc.customerSnapshot),
+    supplier: partyFromSnapshot(doc.supplierSnapshot),
+    customer: partyFromSnapshot(doc.customerSnapshot),
     lines: lines.map((l) => ({
       vatNote: l.vatNote,
       description: l.description,

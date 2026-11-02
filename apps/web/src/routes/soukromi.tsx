@@ -6,7 +6,7 @@ import { cs } from '@/i18n/cs'
 export const Route = createFileRoute('/soukromi')({
   head: () => ({ meta: [{ title: `${cs.legal.privacy} — ${BRAND.name}` }] }),
   component: () => (
-    <LegalPage title={cs.legal.privacy} updated="1. 11. 2026">
+    <LegalPage title={cs.legal.privacy} updated="1. 11. 2026" sections={cs.legal.privacySections}>
       <LegalSections sections={cs.legal.privacySections} />
     </LegalPage>
   ),

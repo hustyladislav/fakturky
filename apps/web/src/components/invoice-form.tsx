@@ -106,7 +106,12 @@ export function InvoiceForm({ id }: { id?: string }) {
             quantity: l.quantity || '1',
             unit: 'ks',
             unitPrice: l.unitPrice,
-            vatRate: l.vatRate ?? (vatPayerDefault ? '21' : '0'),
+            // A VAT payer has no 0 % rate: unspecified/zero falls back to the base rate.
+            vatRate:
+              vatPayerDefault && (!l.vatRate || Number(l.vatRate) === 0)
+                ? '21'
+                : (l.vatRate ?? '0'),
+            vatTreatment: 'standard',
           })),
         )
       }

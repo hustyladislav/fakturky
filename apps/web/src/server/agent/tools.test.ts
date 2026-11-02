@@ -37,6 +37,8 @@ test('destructive and financially significant tools need approval; reads and dra
     'create_recurring_invoice',
     'update_recurring_invoice',
     'rotate_document_public_link',
+    'update_number_series',
+    'set_next_document_number',
   ]) {
     expect(byName(name).needsApproval, name).toBe(true)
   }

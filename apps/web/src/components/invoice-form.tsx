@@ -816,7 +816,12 @@ export function InvoiceForm({ id }: { id?: string }) {
           <div className="min-w-0 flex-1">
             <div className="label-caps max-sm:sr-only">{t.totalShort}</div>
             <div className="flex items-baseline gap-3">
-              <Amount value={totalValue} currency={currency} size="md" className="max-sm:text-lg [&>.opacity-60]:opacity-80" />
+              <Amount
+                value={totalValue}
+                currency={currency}
+                size="md"
+                className="max-sm:text-lg [&>.opacity-60]:opacity-80"
+              />
               <span
                 className={cn(
                   'hidden items-center gap-1.5 text-xs sm:flex',

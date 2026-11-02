@@ -1,4 +1,6 @@
 name: CI
+
+# PRs + main only, deliberately.
 on:
   push:
     branches: [main]
@@ -6,52 +8,94 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   check:
+    name: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+        with:
+          fetch-depth: 2 # a PR checks out its merge commit; HEAD^1 is the base tip
+      - name: Scope
+        id: scope
+        # Markdown, .claude/** and .agents/** feed no build or runtime path: report the required check as a pass.
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] \
+            && files=$(git diff --name-only HEAD^1 HEAD) \
+            && [ -n "$files" ] && ! grep -qvE '(\.md$|^\.claude/|^\.agents/)' <<< "$files"; then
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "Docs-only change — nothing to run." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: ./.github/actions/pnpm
+        if: steps.scope.outputs.code == 'true'
       - uses: actions/setup-node@v7
+        if: steps.scope.outputs.code == 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm build
+      - if: steps.scope.outputs.code == 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.scope.outputs.code == 'true'
+        run: pnpm lint
+      - if: steps.scope.outputs.code == 'true'
+        run: pnpm typecheck
+      - if: steps.scope.outputs.code == 'true'
+        run: pnpm test
+      - if: steps.scope.outputs.code == 'true'
+        run: pnpm build
 
   e2e:
+    name: e2e
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+        with:
+          fetch-depth: 2
+      - name: Scope
+        id: scope
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] \
+            && files=$(git diff --name-only HEAD^1 HEAD) \
+            && [ -n "$files" ] && ! grep -qvE '(\.md$|^\.claude/|^\.agents/)' <<< "$files"; then
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "Docs-only change — nothing to run." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: ./.github/actions/pnpm
+        if: steps.scope.outputs.code == 'true'
       - uses: actions/setup-node@v7
+        if: steps.scope.outputs.code == 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - if: steps.scope.outputs.code == 'true'
+        run: pnpm install --frozen-lockfile
       - name: Resolve Playwright version
         id: pw
+        if: steps.scope.outputs.code == 'true'
         run: echo "version=$(pnpm --filter @fakturky/web exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
         id: pw-cache
+        if: steps.scope.outputs.code == 'true'
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
       - name: Install Chromium (with system deps)
-        if: steps.pw-cache.outputs.cache-hit != 'true'
+        if: steps.scope.outputs.code == 'true' && steps.pw-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @fakturky/web exec playwright install --with-deps chromium
       - name: Install system deps only (browser cached)
-        if: steps.pw-cache.outputs.cache-hit == 'true'
+        if: steps.scope.outputs.code == 'true' && steps.pw-cache.outputs.cache-hit == 'true'
         run: pnpm --filter @fakturky/web exec playwright install-deps chromium
       # Local dev server + embedded PGlite database + mock ARES: no secrets, no production data.
-      - run: pnpm e2e
+      - if: steps.scope.outputs.code == 'true'
+        run: pnpm e2e
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

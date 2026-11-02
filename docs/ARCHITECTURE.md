@@ -135,8 +135,8 @@ Resend via Vercel Marketplace (terms accepted). Needs an owned domain: provision
 
 ## Deployment
 
-- GitHub `main` → Vercel production; PRs → preview deployments (Neon preview branches).
-- Build command runs `pnpm db:migrate` (drizzle-kit, `DATABASE_URL_UNPOOLED`) before `pnpm build`.
+- GitHub `main` → Vercel production; no PR previews (Hobby deploy quota, shared database — see `docs/decisions/0005`).
+- Build command runs `pnpm db:migrate` (drizzle-kit, `DATABASE_URL_UNPOOLED`; no-op unless `VERCEL_ENV=production`, see `docs/decisions/0006`) before `pnpm build`.
 - Region: `fra1` functions, Neon `aws-eu-central-1` (Frankfurt) — close to Czech users, EU data residency.
 
 ## In-app agent ("Asistent")

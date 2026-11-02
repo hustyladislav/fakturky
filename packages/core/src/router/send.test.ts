@@ -197,7 +197,7 @@ test('proforma → paid → final invoice with the advance deducted; settled on 
   })
   await p.documents.markPaid({ id: ppf.id })
   await expect(p.documents.createFinalInvoice({ id: ppf.id })).rejects.toMatchObject({
-    code: 'CONFLICT',
+    code: 'PRECONDITION_FAILED',
   })
 })
 
@@ -356,4 +356,49 @@ test('appearance: accent colour, private logo/signature validated by content, in
   const exported = JSON.parse((await api.exports.organization({})).json)
   expect(exported.images[0]).toMatchObject({ kind: 'logo', contentType: 'image/png' })
   expect((await api.appearance.deleteAsset({ kind: 'logo' })).logo).toBeNull()
+})
+
+test('VAT payer advance: proforma → paid → tax receipt → final invoice deducting base and VAT', async () => {
+  const org = await seedOrg(handle, 'advance-payer')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'K',
+    ico: '12345678',
+    address: { street: 'A 1', city: 'Praha', zip: '11000' },
+  })
+  const pf = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        type: 'proforma',
+        contactId: c.id,
+        lines: [{ description: 'Projekt', quantity: '1', unitPrice: '10000', vatRate: '21' }],
+      })
+    ).id,
+  })
+  await api.documents.markPaid({ id: pf.id })
+  // The final invoice needs the receipt first.
+  await expect(api.documents.createFinalInvoice({ id: pf.id })).rejects.toMatchObject({
+    code: 'PRECONDITION_FAILED',
+  })
+  const rDraft = await api.documents.createPaymentReceipt({ id: pf.id, vatRate: '21' })
+  expect(rDraft.type).toBe('payment_receipt')
+  expect(rDraft.total).toBe('10000.0000') // the advance is VAT-inclusive
+  expect(rDraft.vatTotal).toBe('1735.5400') // 10 000 × 21 / 121
+  await expect(api.documents.createPaymentReceipt({ id: pf.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+  const receipt = await api.documents.issue({ id: rDraft.id })
+  expect(receipt.number).toMatch(/^P\d{4}-0001$/)
+  expect(receipt.status).toBe('paid') // documents a payment already received
+  await expect(api.documents.markUnpaid({ id: pf.id })).rejects.toMatchObject({ code: 'CONFLICT' })
+
+  const fin = await api.documents.createFinalInvoice({ id: pf.id })
+  // Work (gross 12 100 for the full 10 000 net) minus the receipt (8 264,46 net + 1 735,54 VAT).
+  expect(fin.lines.map((l) => l.vatRate)).toEqual(['21.00', '21.00'])
+  const issued = await api.documents.issue({ id: fin.id })
+  expect(issued.status).toBe('issued')
+  expect(Number(issued.total)).toBeCloseTo(2100, 2) // 12 100 − 10 000: the VAT-exclusive remainder is billed
 })

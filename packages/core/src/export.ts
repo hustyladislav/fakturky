@@ -65,7 +65,13 @@ export function toDocumentForExport(
     : 'other'
   return {
     type:
-      doc.type === 'proforma' ? 'proforma' : doc.type === 'credit_note' ? 'credit_note' : 'invoice',
+      doc.type === 'proforma'
+        ? 'proforma'
+        : doc.type === 'credit_note'
+          ? 'credit_note'
+          : doc.type === 'payment_receipt'
+            ? 'payment_receipt'
+            : 'invoice',
     originalDocument: original ?? null,
     number: doc.number ?? '',
     uuid: doc.id,

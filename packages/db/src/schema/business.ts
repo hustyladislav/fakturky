@@ -106,6 +106,8 @@ export const contact = pgTable(
     defaultCurrency: text('default_currency'),
     defaultLanguage: documentLanguage('default_language'),
     note: text('note'),
+    /** Id in the system this contact was imported from (e.g. Fakturoid subject id). */
+    externalId: text('external_id'),
     aresSyncedAt: timestamp('ares_synced_at', { withTimezone: true }),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     ...timestamps(),

@@ -84,6 +84,8 @@ export function InvoiceForm({ id }: { id?: string }) {
   const [taxableTouched, setTaxableTouched] = useState(false)
   const [currency, setCurrency] = useState('CZK')
   const [exchangeRate, setExchangeRate] = useState('')
+  const [rateTouched, setRateTouched] = useState(false)
+  const [roundTotal, setRoundTotal] = useState(false)
   const [bankAccountId, setBankAccountId] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer')
   const [introText, setIntroText] = useState('')
@@ -159,6 +161,8 @@ export function InvoiceForm({ id }: { id?: string }) {
     setTaxableDate(d.taxableDate ?? d.issueDate ?? today)
     setCurrency(d.currency)
     setExchangeRate(d.exchangeRate ? trimDecimal(d.exchangeRate) : '')
+    setRateTouched(!!d.exchangeRate)
+    setRoundTotal(d.roundTotal)
     setBankAccountId(d.bankAccountId ?? '')
     setPaymentMethod(d.paymentMethod)
     setIntroText(d.introText ?? '')
@@ -196,6 +200,13 @@ export function InvoiceForm({ id }: { id?: string }) {
       ? bankAccountId
       : (currencyAccounts.find((a) => a.defaultForCurrency)?.id ?? currencyAccounts[0]?.id ?? '')
 
+  // The ČNB rate follows the tax point (DUZP; the issue date for non-payers) until the user edits it.
+  const rateDate = vatPayer ? taxableDate : issueDate
+  useEffect(() => {
+    if (!ready || currency === 'CZK' || rateTouched) return
+    void loadRate(currency, rateDate)
+  }, [ready, currency, rateDate, rateTouched])
+
   async function loadRate(cur = currency, date = taxableDate) {
     if (cur === 'CZK' || cur.length !== 3) return
     try {
@@ -217,6 +228,7 @@ export function InvoiceForm({ id }: { id?: string }) {
         })),
         {
           vatPayer,
+          roundTotal,
           currency,
           exchangeRate: foreign && validNum(exchangeRate) ? num(exchangeRate) : 1,
         },
@@ -224,7 +236,7 @@ export function InvoiceForm({ id }: { id?: string }) {
     } catch {
       return null
     }
-  }, [lines, vatPayer, currency, exchangeRate, foreign])
+  }, [lines, vatPayer, currency, exchangeRate, foreign, roundTotal])
 
   const payload = () => ({
     contactId: customer?.id ?? null,
@@ -234,6 +246,7 @@ export function InvoiceForm({ id }: { id?: string }) {
     dueDate,
     currency,
     exchangeRate: foreign && exchangeRate ? num(exchangeRate) : null,
+    roundTotal,
     paymentMethod,
     introText: introText || null,
     footerText: footerText || null,
@@ -464,9 +477,19 @@ export function InvoiceForm({ id }: { id?: string }) {
                   id="rate"
                   inputMode="decimal"
                   value={exchangeRate}
-                  onChange={(e) => setExchangeRate(e.target.value)}
+                  onChange={(e) => {
+                    setRateTouched(true)
+                    setExchangeRate(e.target.value)
+                  }}
                 />
-                <Button type="button" variant="outline" onClick={() => loadRate()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setRateTouched(false)
+                    void loadRate()
+                  }}
+                >
                   {t.exchangeRateLoad}
                 </Button>
               </div>
@@ -590,6 +613,12 @@ export function InvoiceForm({ id }: { id?: string }) {
                 ))}
               </>
             )}
+            {Number(totals.rounding) !== 0 && (
+              <Row label={t.rounding} amount={totals.rounding} currency={currency} muted />
+            )}
+            {vatPayer && foreign && (
+              <Row label={t.vatInCzk} amount={totals.vatTotalCzk} currency="CZK" muted />
+            )}
             <div className="flex items-baseline justify-between pt-1 text-base font-semibold">
               <span>{t.total}</span>
               <Money amount={totals.total} currency={currency} />
@@ -600,6 +629,14 @@ export function InvoiceForm({ id }: { id?: string }) {
       </Card>
 
       <Card title={t.payment}>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={roundTotal}
+            onChange={(e) => setRoundTotal(e.target.checked)}
+          />
+          {t.roundTotal}
+        </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="bank">{t.bankAccount}</Label>

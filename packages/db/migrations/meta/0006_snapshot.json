@@ -1,5 +1,5 @@
 {
-  "id": "3f2a7fdd-b045-4465-a3ba-fb11cbdd2890",
+  "id": "8af630a3-fc1d-48a3-95a9-417659bbc150",
   "prevId": "a64fbc1a-92c1-4814-9bf5-107682466b57",
   "version": "7",
   "dialect": "postgresql",
@@ -2714,12 +2714,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "external_id": {
-          "name": "external_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "ares_synced_at": {
           "name": "ares_synced_at",
           "type": "timestamp with time zone",
@@ -3444,18 +3438,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "imported_from": {
-          "name": "imported_from",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "external_id": {
-          "name": "external_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "public_token": {
           "name": "public_token",
           "type": "text",
@@ -3540,33 +3522,6 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "document_org_external_idx": {
-          "name": "document_org_external_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "imported_from",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "external_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -3789,6 +3744,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'0'"
+        },
+        "vat_treatment": {
+          "name": "vat_treatment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'standard'"
         },
         "discount_percent": {
           "name": "discount_percent",

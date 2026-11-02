@@ -1,4 +1,11 @@
-import { Decimal, generateIsdoc, parseDecimal, todayPrague, toFixed } from '@fakturky/domain'
+import {
+  Decimal,
+  generateIsdoc,
+  parseDecimal,
+  todayPrague,
+  toFixed,
+  vatTreatmentText,
+} from '@fakturky/domain'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { toDocumentForExport } from '../export'
@@ -55,11 +62,20 @@ export const publicRouter = {
             unitPrice: z.string(),
             vatRate: z.string(),
             discountPercent: z.string(),
+            vatTreatment: z.string(),
             total: z.string(),
           }),
         ),
         recap: z.array(
-          z.object({ vatRate: z.string(), base: z.string(), vat: z.string(), total: z.string() }),
+          z.object({
+            vatRate: z.string(),
+            vatTreatment: z.string(),
+            /** Legal text of the regime in the document language; empty for standard-rated lines. */
+            note: z.string(),
+            base: z.string(),
+            vat: z.string(),
+            total: z.string(),
+          }),
         ),
         subtotal: z.string(),
         vatTotal: z.string(),
@@ -127,11 +143,14 @@ export const publicRouter = {
           unit: l.unit,
           unitPrice: l.unitPrice,
           vatRate: l.vatRate,
+          vatTreatment: l.vatTreatment,
           discountPercent: l.discountPercent,
           total: l.lineTotal,
         })),
         recap: x.totals.recap.map((r) => ({
           vatRate: r.vatRate,
+          vatTreatment: r.vatTreatment,
+          note: vatTreatmentText(r.vatTreatment, doc.language as 'cs' | 'sk' | 'en'),
           base: r.base,
           vat: r.vat,
           total: r.total,

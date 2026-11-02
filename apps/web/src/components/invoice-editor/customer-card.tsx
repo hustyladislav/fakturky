@@ -4,7 +4,7 @@ import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2, Plus, X } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage } from '@/lib/errors'
@@ -39,8 +39,19 @@ export function CustomerCard({
   const [term, setTerm] = useState('')
   const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
+  const searchRef = useRef<HTMLInputElement>(null)
   const q = term.trim()
   const isIco = /^\d{8}$/.test(q.replace(/\s/g, ''))
+
+  // The server-rendered input is typeable before React hydrates, and hydration resets a controlled input
+  // to its state ('') - the text typed in that window vanished. Adopt it instead.
+  useEffect(() => {
+    const typed = searchRef.current?.value
+    if (typed) {
+      setTerm(typed)
+      setOpen(true)
+    }
+  }, [])
 
   const contacts = useQuery(
     orpc.contacts.list.queryOptions({ input: { search: q || undefined, limit: 8 } }),
@@ -132,6 +143,7 @@ export function CustomerCard({
     <div className="space-y-3">
       <div className="relative">
         <Input
+          ref={searchRef}
           value={term}
           onChange={(e) => {
             setTerm(e.target.value)

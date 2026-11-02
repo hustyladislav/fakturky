@@ -92,8 +92,16 @@ export async function fillLines(page: Page, lines: Line[]) {
 
 /** Selects an existing contact in the customer picker by name. */
 export async function pickCustomer(page: Page, name: string) {
-  await page.getByLabel('Odběratel', { exact: true }).fill(name)
-  await page.getByRole('button', { name }).first().click()
+  const search = page.getByLabel('Odběratel', { exact: true })
+  const match = page.getByRole('button', { name }).first()
+  await page.waitForLoadState('networkidle')
+  // The server-rendered input accepts text before hydration, which then resets it; re-type until the
+  // suggestion list reacts so the helper never depends on hydration timing.
+  await expect(async () => {
+    await search.fill(name)
+    await expect(match).toBeVisible({ timeout: 3_000 })
+  }).toPass({ timeout: 20_000 })
+  await match.click()
 }
 
 /** Creates and issues a one-line invoice for an existing contact (non-VAT-payer supplier); returns its document id. */

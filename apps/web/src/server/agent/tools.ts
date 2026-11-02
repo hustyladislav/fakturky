@@ -3,13 +3,18 @@ import { buildAgentTools } from '@fakturky/core/agent-tools'
 import type { AuthedContext } from '@fakturky/core/context'
 import { type AnyServerTool, type JSONSchema, toolDefinition } from '@tanstack/ai'
 
-/** Procedures that are pointless or too heavy for the model (large XML payloads). */
+/**
+ * Procedures that are pointless or too heavy for the model (large XML payloads), or that take
+ * third-party credentials / whole files, which belong in the Import page rather than a chat.
+ */
 const EXCLUDED = new Set([
   'export_document_isdoc',
   'export_document_pdf',
   'export_contacts_csv',
   'export_documents_csv',
   'export_organization_json',
+  'import_from_fakturoid',
+  'import_from_file',
 ])
 
 /** Cap one tool result so a big list cannot blow up the context (and the bill). */

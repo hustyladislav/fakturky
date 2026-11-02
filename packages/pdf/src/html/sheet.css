@@ -19,11 +19,17 @@
   --fk-muted: #6b665b;
   --fk-rule: #d6cdba;
   --fk-accent: #1f4d3c;
+  --fk-paper: #fff;
   --fk-zoom: 1;
   display: block;
   width: 100%;
   min-width: 0;
   color-scheme: light;
+}
+
+/* Dark UI: a slightly dimmed paper so it does not glare; text and QR plate stay as they are, the PDF stays white. */
+.dark .fk-sheet-wrap {
+  --fk-paper: #f4f1ea;
 }
 
 /* Until the width is measured the sheet would flash at 100% scale. */
@@ -47,7 +53,7 @@
   margin: 0 auto;
   padding: 40px 44px 0;
   zoom: var(--fk-zoom);
-  background: #fff;
+  background: var(--fk-paper);
   color: var(--fk-ink);
   font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 8.6px;

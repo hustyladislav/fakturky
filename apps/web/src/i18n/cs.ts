@@ -749,7 +749,8 @@ export const cs = {
   },
   appearance: {
     title: 'Vzhled dokladů',
-    description: 'Barva, logo a podpis se objeví na PDF i na veřejném odkazu faktury.',
+    description:
+      'Barva, logo a podpis se objeví na PDF i na veřejném odkazu faktury. Platí pro nově vystavené doklady.',
     accent: 'Barva akcentu',
     resetColor: 'Výchozí barva',
     logo: 'Logo',
@@ -759,6 +760,14 @@ export const cs = {
     hint: 'PNG nebo JPEG, nejvýše 300 KB. Obrázky jsou uložené soukromě a zobrazí se jen na vašich dokladech.',
     showBrand: 'Zobrazit na dokladu řádek „Vystaveno v aplikaci …“',
     saved: 'Vzhled byl uložen.',
+    savedInline: 'Uloženo',
+    saving: 'Ukládám…',
+    autoSaves: 'Změny se ukládají samy.',
+    preview: 'Náhled dokladu',
+    sampleCustomer: 'Ukázkový odběratel s.r.o.',
+    sampleLine1: 'Webový vývoj',
+    sampleLine2: 'Konzultace',
+    issuedKeep: 'Už vystavené doklady si zachovají původní vzhled.',
     errors: {
       'image.size': 'Obrázek je příliš velký. Nahrajte soubor do 300 KB.',
       'image.type': 'Podporujeme jen obrázky PNG a JPEG.',

@@ -57,7 +57,13 @@ export function toDocumentForExport(
       vatTreatment: l.vatTreatment as VatTreatment,
       discountPercent: l.discountPercent,
     })),
-    { vatPayer, currency: doc.currency, exchangeRate },
+    {
+      vatPayer,
+      currency: doc.currency,
+      exchangeRate,
+      roundTotal: doc.roundTotal,
+      pricesIncludeVat: doc.pricesIncludeVat,
+    },
   )
   const bank = doc.bankSnapshot as Snapshot
   const method = METHODS.includes(doc.paymentMethod as ExportPaymentMethod)
@@ -65,13 +71,21 @@ export function toDocumentForExport(
     : 'other'
   return {
     type:
-      doc.type === 'proforma' ? 'proforma' : doc.type === 'credit_note' ? 'credit_note' : 'invoice',
+      doc.type === 'proforma'
+        ? 'proforma'
+        : doc.type === 'credit_note'
+          ? 'credit_note'
+          : doc.type === 'payment_receipt'
+            ? 'payment_receipt'
+            : 'invoice',
     originalDocument: original ?? null,
+    pricesIncludeVat: doc.pricesIncludeVat,
     number: doc.number ?? '',
     uuid: doc.id,
     issueDate: doc.issueDate ?? '',
     taxableDate: vatPayer ? doc.taxableDate : null,
     vatPayer,
+    supplierVatPayer: (doc.supplierSnapshot as Snapshot)?.vatStatus === 'payer' || vatPayer,
     supplier: party(doc.supplierSnapshot),
     customer: party(doc.customerSnapshot),
     lines: lines.map((l) => ({
@@ -87,19 +101,23 @@ export function toDocumentForExport(
     currency: doc.currency,
     exchangeRate,
     note: [doc.introText, doc.footerText].filter(Boolean).join('\n') || null,
-    payment: {
-      method,
-      dueDate: doc.dueDate ?? doc.issueDate ?? '',
-      variableSymbol: doc.variableSymbol,
-      constantSymbol: doc.constantSymbol,
-      bankAccount: str(bank?.iban)
-        ? {
-            accountNumber: str(bank?.accountNumber) ?? undefined,
-            bankCode: str(bank?.bankCode) ?? undefined,
-            iban: str(bank?.iban) as string,
-            bic: str(bank?.bic) ?? undefined,
-          }
-        : null,
-    },
+    // A receipt documents money already received and a credit note reverses a claim: neither asks for payment.
+    payment:
+      doc.type === 'payment_receipt' || doc.type === 'credit_note'
+        ? null
+        : {
+            method,
+            dueDate: doc.dueDate ?? doc.issueDate ?? '',
+            variableSymbol: doc.variableSymbol,
+            constantSymbol: doc.constantSymbol,
+            bankAccount: str(bank?.iban)
+              ? {
+                  accountNumber: str(bank?.accountNumber) ?? undefined,
+                  bankCode: str(bank?.bankCode) ?? undefined,
+                  iban: str(bank?.iban) as string,
+                  bic: str(bank?.bic) ?? undefined,
+                }
+              : null,
+          },
   }
 }

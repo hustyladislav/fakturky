@@ -1,9 +1,19 @@
 import { BRAND } from '@fakturky/core/brand'
 import { privacySections, termsSections } from './legal'
+import offline from './offline.json'
 
 /** All user-facing copy lives here. Natural Czech, correct diacritics. */
 export const cs = {
   brand: BRAND.name,
+  offline,
+  pwa: {
+    title: 'Přidejte si aplikaci na plochu',
+    android: 'Otevře se rychleji a bez adresního řádku, jako běžná aplikace.',
+    install: 'Přidat na plochu',
+    ios: 'V Safari klepněte na',
+    iosEnd: 'Sdílet a zvolte „Přidat na plochu“.',
+    dismiss: 'Skrýt',
+  },
   meta: {
     title: 'Fakturace zdarma pro živnostníky a firmy',
     description:
@@ -297,6 +307,7 @@ export const cs = {
       invoice: 'Faktura',
       proforma: 'Zálohová faktura',
       credit_note: 'Opravný daňový doklad',
+      payment_receipt: 'Daňový doklad k přijaté platbě',
     },
     form: {
       titleNew: 'Nová faktura',
@@ -350,6 +361,8 @@ export const cs = {
       vatRecap: 'Rekapitulace DPH',
       vatRecapRow: (rate: string) => `Sazba ${rate} %`,
       nonPayer: 'Nejste plátcem DPH, faktura bude bez DPH.',
+      proformaNoVat:
+        'Zálohová faktura je bez DPH: zadejte částku, kterou má odběratel zaplatit (u plátců včetně DPH). DPH se vyúčtuje dokladem k přijaté platbě.',
       saveDraft: 'Uložit koncept',
       issue: 'Vystavit',
       saved: 'Koncept byl uložen.',
@@ -358,6 +371,9 @@ export const cs = {
       weekendHint: (day: string) =>
         `Splatnost vychází na ${day}. Platba dorazí nejdřív v pracovní den.`,
       weekdays: ['neděli', 'pondělí', 'úterý', 'středu', 'čtvrtek', 'pátek', 'sobotu'],
+      roundTotal: 'Zaokrouhlit celkovou částku na celé koruny / jednotky',
+      rounding: 'Zaokrouhlení',
+      vatInCzk: 'DPH v Kč (kurz ČNB)',
       vatNote: 'Právní důvod osvobození',
       vatNotePlaceholder: 'Právní důvod osvobození, např. § 51 odst. 1 zákona o DPH',
       missingFields: {
@@ -365,7 +381,6 @@ export const cs = {
         'line.vatRate': 'sazbu DPH 21 / 12 % nebo režim DPH u každé položky',
         'customer.vatId': 'DIČ / IČ DPH (nutné pro přenesení daňové povinnosti v rámci EU)',
         'customer.address': 'adresu (ulice, město, PSČ)',
-        'customer.taxId': 'IČO nebo DIČ',
       },
       missingLines: (names: string[]) => `U položek doplňte: ${names.join(', ')}.`,
       missingCustomer: (names: string[]) =>
@@ -416,6 +431,7 @@ export const cs = {
       iban: 'IBAN',
       account: 'Účet',
       paidSoFar: 'Uhrazeno',
+      creditedBy: (number: string) => `Z toho dobropisem ${number}`,
       remaining: 'Zbývá uhradit',
       history: 'Průběh',
       timeline: {
@@ -435,6 +451,10 @@ export const cs = {
         link_rotated: 'Veřejný odkaz nahrazen novým',
       },
       notFound: 'Faktura nebyla nalezena.',
+      receipt: 'Vystavit doklad k přijaté platbě',
+      receiptRatePrompt: 'Sazba DPH přijaté zálohy (21 nebo 12):',
+      receiptCreated:
+        'Vytvořili jsme koncept dokladu k přijaté platbě. Zkontrolujte ho a vystavte.',
       finalInvoice: 'Vystavit konečnou fakturu',
       finalInvoiceCreated: 'Vytvořili jsme koncept konečné faktury s odečtenou zálohou.',
       creditNote: 'Vytvořit opravný doklad',
@@ -462,6 +482,7 @@ export const cs = {
     titleInvoice: 'Faktura',
     titleTaxInvoice: 'Faktura – daňový doklad',
     titleProforma: 'Zálohová faktura',
+    titleReceipt: 'Daňový doklad k přijaté platbě',
     titleCreditNote: 'Opravný doklad',
     titleCreditNoteTax: 'Opravný daňový doklad',
     corrects: (n: string, d: string) => `Oprava faktury ${n} ze dne ${d}`,
@@ -492,6 +513,7 @@ export const cs = {
     qrEpc: 'QR platba (EPC)',
     vatRecap: 'Rekapitulace DPH',
     exchangeRate: 'Kurz ČNB',
+    rounding: 'Zaokrouhlení',
     notPayer: 'Neplátce DPH',
     payer: 'Plátce DPH',
     paid: 'Zaplaceno',
@@ -503,6 +525,24 @@ export const cs = {
     print: 'Vytisknout',
     notFound: 'Tento odkaz na fakturu neplatí nebo byl zrušen.',
     issuedIn: (brand: string) => `Vystaveno ve ${brand}`,
+  },
+  appearance: {
+    title: 'Vzhled dokladů',
+    description: 'Barva, logo a podpis se objeví na PDF i na veřejném odkazu faktury.',
+    accent: 'Barva akcentu',
+    resetColor: 'Výchozí barva',
+    logo: 'Logo',
+    signature: 'Podpis nebo razítko',
+    none: 'Nenahráno',
+    remove: 'Odebrat',
+    hint: 'PNG nebo JPEG, nejvýše 300 KB. Obrázky jsou uložené soukromě a zobrazí se jen na vašich dokladech.',
+    showBrand: 'Zobrazit na dokladu řádek „Vystaveno ve …“',
+    saved: 'Vzhled byl uložen.',
+    errors: {
+      'image.size': 'Obrázek je příliš velký. Nahrajte soubor do 300 KB.',
+      'image.type': 'Podporujeme jen obrázky PNG a JPEG.',
+      'image.corrupt': 'Soubor je poškozený nebo neúplný. Zkuste ho exportovat znovu.',
+    },
   },
   numberSeries: {
     title: 'Číslování dokladů',
@@ -561,9 +601,51 @@ export const cs = {
     zip: 'PSČ',
     edit: 'Upravit kontakt',
     updated: 'Kontakt byl uložen.',
-    taxDocHint: 'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a jeho IČO nebo DIČ.',
+    taxDocHint:
+      'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a – je-li plátcem DPH – i jeho DIČ.',
     created: 'Kontakt byl vytvořen.',
     archived: 'Kontakt byl archivován.',
+  },
+  import: {
+    title: 'Import dat',
+    settingsCardTitle: 'Import z Fakturoidu a dalších',
+    settingsCardDescription:
+      'Převeďte kontakty a faktury z Fakturoidu nebo ze souboru CSV / ISDOC. Faktury si zachovají původní čísla.',
+    open: 'Otevřít import',
+    back: 'Zpět do nastavení',
+    intro:
+      'Faktury se importují jako vystavené doklady s původními čísly a označením „importováno“. Číselné řady se upraví tak, aby další vystavená faktura navázala. Import je bezpečné spustit opakovaně – už přenesené záznamy se přeskočí.',
+    fakturoidTitle: 'Fakturoid',
+    fakturoidDescription:
+      'Použijte vlastní API přístup: ve Fakturoidu otevřete Nastavení → Uživatelský účet a zkopírujte Client ID a Client Secret. Údaje se použijí jednorázově a nikam se neukládají.',
+    accountSlug: 'Identifikátor účtu (část adresy za app.fakturoid.cz/)',
+    clientId: 'Client ID',
+    clientSecret: 'Client Secret',
+    fileTitle: 'Soubor (CSV nebo ISDOC)',
+    fileDescription:
+      'CSV s kontakty (sloupce název, IČO, DIČ, e-mail, telefon, ulice, město, PSČ, země), CSV s fakturami (jeden řádek na položku, řádky se stejným číslem tvoří jednu fakturu) nebo jeden soubor ISDOC.',
+    fileKind: 'Co soubor obsahuje',
+    kindContacts: 'Kontakty (CSV)',
+    kindInvoices: 'Faktury (CSV)',
+    kindIsdoc: 'Faktura (ISDOC)',
+    chooseFile: 'Soubor',
+    preview: 'Náhled (nic se neuloží)',
+    run: 'Importovat',
+    running: 'Importuji…',
+    failed: 'Import se nepodařil. Zkontrolujte údaje a zkuste to znovu.',
+    resultPreview: 'Náhled importu',
+    resultDone: 'Import dokončen',
+    contacts: 'Kontakty',
+    documents: 'Doklady',
+    created: 'nových',
+    skipped: 'přeskočeno',
+    failedCount: 'chyb',
+    numbering: 'Upravené číselné řady',
+    issues: 'Poznámky',
+    levelSkipped: 'přeskočeno',
+    levelFailed: 'chyba',
+    levelWarning: 'upozornění',
+    imported: 'importováno',
   },
   settings: {
     exportTitle: 'Export dat',
@@ -752,6 +834,11 @@ export const cs = {
       set_default_bank_account: 'Nastavuji výchozí účet',
       delete_bank_account: 'Mažu bankovní účet',
       create_credit_note: 'Vytvářím dobropis',
+      get_document_appearance: 'Načítám vzhled dokladů',
+      update_document_appearance: 'Upravuji vzhled dokladů',
+      upload_logo_or_signature: 'Nahrávám logo nebo podpis',
+      delete_logo_or_signature: 'Odebírám logo nebo podpis',
+      create_payment_receipt: 'Vytvářím doklad k přijaté platbě',
       create_final_invoice_from_proforma: 'Vytvářím fakturu ze zálohové',
       create_invoice_from_template: 'Vytvářím fakturu ze šablony',
       save_invoice_as_template: 'Ukládám fakturu jako šablonu',

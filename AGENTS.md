@@ -23,6 +23,8 @@ Free, open-source Czech invoicing app (web + REST + MCP + CLI). Read before work
 ## Deploys
 
 Production deploys **only** from `main` via the Vercel Git integration; PRs get preview deployments.
+Vercel Hobby allows 100 deployments/day, so PR branches (`claude/*`, `dependabot/*`, `worktree-*`) do NOT get
+preview deployments and docs-only commits on `main` skip the build (see `vercel.json`). Verify PRs with CI + `pnpm e2e`.
 Never run `vercel deploy --prod` (or `vercel --prod`) from a worktree — it would ship an unmerged branch.
 To verify a change on production, merge it and wait for the Git deployment of `main`.
 

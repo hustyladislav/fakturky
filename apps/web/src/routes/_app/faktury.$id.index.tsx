@@ -162,6 +162,16 @@ function InvoiceDetail() {
     }),
   )
   const defaults = useQuery(orpc.documents.defaults.queryOptions({ input: {} }))
+  const receipt = useMutation(
+    orpc.documents.createPaymentReceipt.mutationOptions({
+      onSuccess: async (n) => {
+        toast.success(t.receiptCreated)
+        await refresh()
+        navigate({ to: '/faktury/$id/upravit', params: { id: n.id } })
+      },
+      onError,
+    }),
+  )
   const saveTemplate = useMutation(
     orpc.templates.createFromDocument.mutationOptions({
       onSuccess: async () => {
@@ -216,6 +226,11 @@ function InvoiceDetail() {
             </span>
           )}
           <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
+          {d.importedFrom && (
+            <span className="rounded-full border px-2 py-0.5 text-muted-foreground text-xs">
+              {cs.import.imported}
+            </span>
+          )}
         </div>
         <div className="hidden flex-wrap gap-2 sm:flex">
           <Actions />
@@ -312,6 +327,12 @@ function InvoiceDetail() {
                 <Money amount={r.vat} currency={d.currency} />
               </div>
             ))}
+          {Number(d.rounding) !== 0 && (
+            <div className="text-muted-foreground flex justify-between">
+              <span>{cs.invoices.form.rounding}</span>
+              <Money amount={d.rounding} currency={d.currency} />
+            </div>
+          )}
           <div className="flex items-baseline justify-between border-t pt-2 text-lg font-semibold">
             <span>{cs.invoices.form.total}</span>
             <Money amount={d.total} currency={d.currency} />
@@ -322,6 +343,14 @@ function InvoiceDetail() {
                 <span>{t.paidSoFar}</span>
                 <Money amount={d.paidAmount} currency={d.currency} />
               </div>
+              {d.payments
+                .filter((p) => p.method === 'credit_note')
+                .map((p) => (
+                  <div key={p.id} className="text-muted-foreground flex justify-between">
+                    <span>{t.creditedBy(p.note ?? '')}</span>
+                    <Money amount={p.amount} currency={d.currency} />
+                  </div>
+                ))}
               {open && (
                 <div className="flex justify-between font-medium">
                   <span>{t.remaining}</span>
@@ -566,15 +595,33 @@ function InvoiceDetail() {
             >
               {cs.templates.saveAs}
             </Button>
-            {d?.type === 'proforma' && d.status === 'paid' && !defaults.data?.vatPayer && (
-              <Button
-                className={full}
-                disabled={finalInvoice.isPending}
-                onClick={() => finalInvoice.mutate({ id })}
-              >
-                {t.finalInvoice}
-              </Button>
-            )}
+            {d?.type === 'proforma' &&
+              d.status === 'paid' &&
+              defaults.data?.vatPayer &&
+              !d.related.some((r) => r.type === 'payment_receipt' && r.status !== 'cancelled') && (
+                <Button
+                  className={full}
+                  disabled={receipt.isPending}
+                  onClick={() => {
+                    const rate = window.prompt(t.receiptRatePrompt, '21')
+                    if (rate === '21' || rate === '12') receipt.mutate({ id, vatRate: rate })
+                  }}
+                >
+                  {t.receipt}
+                </Button>
+              )}
+            {d?.type === 'proforma' &&
+              d.status === 'paid' &&
+              (!defaults.data?.vatPayer ||
+                d.related.some((r) => r.type === 'payment_receipt' && r.status === 'paid')) && (
+                <Button
+                  className={full}
+                  disabled={finalInvoice.isPending}
+                  onClick={() => finalInvoice.mutate({ id })}
+                >
+                  {t.finalInvoice}
+                </Button>
+              )}
             {d?.type === 'invoice' && (open || d.status === 'paid') && (
               <Button
                 variant="outline"

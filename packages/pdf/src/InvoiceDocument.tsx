@@ -211,6 +211,7 @@ function PartyBlock({
   lang,
   vatPayer,
   customer,
+  accent,
 }: {
   p: ExportParty
   title: string
@@ -218,10 +219,11 @@ function PartyBlock({
   lang: InvoicePdfInput['language']
   vatPayer?: boolean
   customer?: boolean
+  accent: string
 }) {
   const cc = (p.country ?? 'CZ').toUpperCase()
   return (
-    <View style={customer ? [s.party, s.partyCustomer] : s.party}>
+    <View style={customer ? [s.party, s.partyCustomer, { borderLeftColor: accent }] : s.party}>
       <Text style={s.label}>{title}</Text>
       <Text style={s.partyName}>{p.name}</Text>
       <Text>{p.street}</Text>
@@ -271,6 +273,9 @@ export interface InvoiceDocumentProps {
 }
 
 export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement<DocumentProps> {
+  const accent = /^#[0-9a-fA-F]{6}$/.test(doc.accentColor ?? '')
+    ? (doc.accentColor as string)
+    : ACCENT
   const lang = doc.language
   const t = LABELS[lang]
   const cur = doc.currency.toUpperCase()
@@ -379,7 +384,7 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
             >{`${t.numberPrefix} ${doc.number}`}</Text>
           </View>
         </View>
-        <View style={s.rule} />
+        <View style={[s.rule, { borderTopColor: accent }]} />
         <View style={s.rule2} />
 
         <View style={s.meta}>
@@ -392,8 +397,22 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
         </View>
 
         <View style={s.parties}>
-          <PartyBlock p={doc.supplier} title={t.supplier} t={t} lang={lang} vatPayer={payer} />
-          <PartyBlock p={doc.customer} title={t.customer} t={t} lang={lang} customer />
+          <PartyBlock
+            p={doc.supplier}
+            title={t.supplier}
+            t={t}
+            lang={lang}
+            vatPayer={doc.supplierVatPayer ?? payer}
+            accent={accent}
+          />
+          <PartyBlock
+            p={doc.customer}
+            title={t.customer}
+            t={t}
+            lang={lang}
+            customer
+            accent={accent}
+          />
         </View>
 
         {doc.type === 'credit_note' && doc.originalDocument ? (
@@ -490,7 +509,7 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
                   fontWeight: 500,
                   fontSize: 12,
                   marginTop: 14,
-                  color: ACCENT,
+                  color: accent,
                 }}
               >
                 {doc.footerText}
@@ -607,7 +626,13 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
             </View>
 
             <View style={s.total}>
-              <Text style={s.label}>{deposits.isZero() ? t.amountDue : t.remaining}</Text>
+              <Text style={s.label}>
+                {doc.type === 'credit_note'
+                  ? t.creditTotal
+                  : deposits.isZero()
+                    ? t.amountDue
+                    : t.remaining}
+              </Text>
               <Text style={s.totalValue}>{money(due)}</Text>
             </View>
           </View>

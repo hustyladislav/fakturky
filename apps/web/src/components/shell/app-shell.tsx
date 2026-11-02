@@ -25,16 +25,24 @@ import {
   Settings,
   Sparkles,
 } from 'lucide-react'
-import { type ReactNode, useMemo, useState } from 'react'
-import { AssistantPanel } from '@/components/assistant/assistant-panel'
-import { AssistantProvider, clearAssistantStorage } from '@/components/assistant/assistant-provider'
+import { lazy, type ReactNode, Suspense, useMemo, useState } from 'react'
+import { clearAssistantStorage } from '@/components/assistant/assistant-storage'
+import { InstallHint } from '@/components/pwa/install-hint'
 import { cs } from '@/i18n/cs'
-import { authClient } from '@/lib/auth-client'
-import { CommandPalette, useRecordRecent } from './command-palette'
 import { NEW_INVOICE_PATH, navItems } from './nav'
+import { useRecordRecent } from './recent-pages'
 import { ShellContext, type ShellState, useShell as useShellState } from './shell-context'
-import { ShortcutsHelp, useModKey } from './shortcuts-help'
+import { useModKey } from './use-mod-key'
 import { useShortcuts } from './use-shortcuts'
+
+const CommandPalette = lazy(() =>
+  import('./command-palette').then((m) => ({ default: m.CommandPalette })),
+)
+const ShortcutsHelp = lazy(() =>
+  import('./shortcuts-help').then((m) => ({ default: m.ShortcutsHelp })),
+)
+const loadAssistant = () => import('@/components/assistant/assistant-root')
+const AssistantRoot = lazy(loadAssistant)
 
 const navLink =
   'group/nav flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground data-[status=active]:bg-sidebar-accent data-[status=active]:text-sidebar-foreground max-lg:justify-center max-lg:px-0 [&_svg]:size-4 [&_svg]:shrink-0'
@@ -69,21 +77,30 @@ export function AppShell({
 
   return (
     <ShellContext.Provider value={state}>
-      <AssistantProvider userKey={user.email} pendingQuestion={question}>
-        <ShellInner user={user}>{children}</ShellInner>
-      </AssistantProvider>
+      <ShellInner user={user} question={question}>
+        {children}
+      </ShellInner>
     </ShellContext.Provider>
   )
 }
 
 function ShellInner({
   user,
+  question,
   children,
 }: {
   user: { name: string; email: string }
+  question: { id: number; text: string } | null
   children: ReactNode
 }) {
-  const { setPaletteOpen, assistantOpen, setAssistantOpen } = useShellState()
+  const { setPaletteOpen, paletteOpen, helpOpen, assistantOpen, setAssistantOpen } = useShellState()
+  // Dialog code loads the first time it is needed (palette: on first open or intent).
+  const [dialogsSeen, setDialogsSeen] = useState({ palette: false, help: false })
+  if (paletteOpen && !dialogsSeen.palette) setDialogsSeen((d) => ({ ...d, palette: true }))
+  if (helpOpen && !dialogsSeen.help) setDialogsSeen((d) => ({ ...d, help: true }))
+  // Mounted on first open and kept, so the conversation survives closing the panel and navigation.
+  const [assistantMounted, setAssistantMounted] = useState(false)
+  if (assistantOpen && !assistantMounted) setAssistantMounted(true)
   useShortcuts()
   useRecordRecent()
   const modKey = useModKey()
@@ -100,20 +117,22 @@ function ShellInner({
 
       <div className={cn('md:pl-16 lg:pl-60', assistantOpen && 'lg:pr-[380px]')}>
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur md:px-8">
-          <Link to="/prehled" className="md:hidden" aria-label={BRAND.name}>
+          <Link to="/prehled" className="md:hidden">
             <LogoMark letter={BRAND.name.charAt(0)} className="size-7" />
+            <span className="sr-only">{BRAND.name}</span>
           </Link>
           <button
             type="button"
+            onPointerEnter={() => void import('./command-palette')}
+            onFocus={() => void import('./command-palette')}
             onClick={() => setPaletteOpen(true)}
             className="ml-auto flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-sm text-muted-foreground transition-colors hover:text-foreground md:ml-0 md:w-72 md:justify-between"
-            aria-label={cs.shell.search}
           >
             <span className="flex items-center gap-2">
               <Search className="size-4" aria-hidden />
-              <span className="hidden md:inline">{cs.shell.search}</span>
+              <span className="sr-only md:not-sr-only">{cs.shell.search}</span>
             </span>
-            <span className="hidden gap-1 md:flex">
+            <span className="hidden gap-1 md:flex" aria-hidden>
               <Kbd>{modKey}</Kbd>
               <Kbd>K</Kbd>
             </span>
@@ -126,6 +145,8 @@ function ShellInner({
               aria-label={cs.shell.assistant}
               title={`${cs.shell.assistant} (${modKey} J)`}
               aria-pressed={assistantOpen}
+              onPointerEnter={() => void loadAssistant()}
+              onFocus={() => void loadAssistant()}
               onClick={() => setAssistantOpen(!assistantOpen)}
             >
               <PanelRight />
@@ -146,14 +167,26 @@ function ShellInner({
           </div>
         </header>
         <main id="obsah" className="mx-auto w-full max-w-[1200px] px-4 py-6 pb-28 md:px-8 md:pb-10">
+          <InstallHint />
           {children}
         </main>
       </div>
 
-      {assistantOpen && <AssistantPanel onClose={() => setAssistantOpen(false)} />}
+      {assistantMounted && (
+        <Suspense fallback={null}>
+          <AssistantRoot
+            userKey={user.email}
+            pendingQuestion={question}
+            open={assistantOpen}
+            onClose={() => setAssistantOpen(false)}
+          />
+        </Suspense>
+      )}
       <MobileTabs />
-      <CommandPalette />
-      <ShortcutsHelp />
+      <Suspense fallback={null}>
+        {dialogsSeen.palette && <CommandPalette />}
+        {dialogsSeen.help && <ShortcutsHelp />}
+      </Suspense>
     </div>
   )
 }
@@ -162,9 +195,10 @@ function Sidebar({ user }: { user: { name: string; email: string } }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-16 flex-col border-r bg-sidebar text-sidebar-foreground md:flex lg:w-60">
       <div className="flex h-14 items-center px-4 max-lg:justify-center max-lg:px-0">
-        <Link to="/prehled" aria-label={BRAND.name}>
+        <Link to="/prehled">
           <Logo name={BRAND.name} className="max-lg:hidden" markClassName="size-7" />
           <LogoMark letter={BRAND.name.charAt(0)} className="size-8 lg:hidden" />
+          <span className="sr-only lg:hidden">{BRAND.name}</span>
         </Link>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-2 max-lg:px-2" aria-label={cs.shell.navigation}>
@@ -216,10 +250,8 @@ function AccountMenu({ user }: { user: { name: string; email: string } }) {
   const queryClient = useQueryClient()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        className="flex h-12 w-full items-center gap-3 rounded-lg px-2 text-left outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-3 focus-visible:ring-ring/50 max-lg:justify-center"
-        aria-label={cs.shell.account}
-      >
+      <DropdownMenuTrigger className="flex h-12 w-full items-center gap-3 rounded-lg px-2 text-left outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-3 focus-visible:ring-ring/50 max-lg:justify-center">
+        <span className="sr-only lg:hidden">{cs.shell.account}</span>
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-medium text-accent-foreground">
           {user.name.charAt(0).toUpperCase()}
         </span>
@@ -236,7 +268,7 @@ function AccountMenu({ user }: { user: { name: string; email: string } }) {
         <DropdownMenuItem
           onClick={async () => {
             clearAssistantStorage()
-            await authClient.signOut()
+            await (await import('@/lib/auth-client')).authClient.signOut()
             queryClient.clear()
             await navigate({ to: '/prihlaseni' })
           }}
@@ -315,7 +347,7 @@ function MoreMenu({ tabClass }: { tabClass: string }) {
         <DropdownMenuItem
           onClick={async () => {
             clearAssistantStorage()
-            await authClient.signOut()
+            await (await import('@/lib/auth-client')).authClient.signOut()
             queryClient.clear()
             await navigate({ to: '/prihlaseni' })
           }}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_NUMBER_PATTERNS, formatNumber, isValidNumberPattern, parseNumberPattern, periodKey, variableSymbolFromNumber } from '../src/numbering.ts'
+import { DEFAULT_NUMBER_PATTERNS, formatNumber, isValidNumberPattern, parseNumber, parseNumberPattern, periodKey, variableSymbolFromNumber } from '../src/numbering.ts'
 
 const d = { year: 2026, month: 3 }
 
@@ -56,4 +56,23 @@ describe('variable symbol', () => {
     ['ABC', ''],
     ['1234567890123', '4567890123'],
   ])('%s → %s', (n, vs) => expect(variableSymbolFromNumber(n)).toBe(vs))
+})
+
+describe('parseNumber', () => {
+  it('inverts formatNumber', () => {
+    const date = { year: 2026, month: 3 }
+    for (const pattern of ['{YYYY}-{NNNN}', 'Z{YY}/{MM}-{NN}', 'FV{NNNNNN}']) {
+      expect(parseNumber(pattern, formatNumber(pattern, 42, date))).toMatchObject({ counter: 42 })
+    }
+    expect(parseNumber('{YYYY}-{NNNN}', '2026-0042')).toEqual({
+      counter: 42,
+      year: 2026,
+      month: undefined,
+    })
+  })
+
+  it('returns null when the number does not follow the pattern', () => {
+    expect(parseNumber('{YYYY}-{NNNN}', 'FV-1')).toBeNull()
+    expect(parseNumber('FA.{NNN}', 'FAX001')).toBeNull()
+  })
 })

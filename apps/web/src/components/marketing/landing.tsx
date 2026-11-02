@@ -59,7 +59,7 @@ function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-6 px-5 md:px-8">
-        <Link to="/" aria-label={BRAND.name}>
+        <Link to="/">
           <Logo name={BRAND.name} markClassName="size-8" />
         </Link>
         <nav

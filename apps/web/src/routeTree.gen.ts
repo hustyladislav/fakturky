@@ -21,6 +21,7 @@ import { Route as SouhlasRouteImport } from './routes/souhlas'
 import { Route as SoukromiRouteImport } from './routes/soukromi'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
+import { Route as AppImportRouteImport } from './routes/_app/import'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
 import { Route as AppNastaveniRouteImport } from './routes/_app/nastaveni'
 import { Route as AppPrehledRouteImport } from './routes/_app/prehled'
@@ -101,6 +102,11 @@ const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
 const AppFakturyRoute = AppFakturyRouteImport.update({
   id: '/faktury',
   path: '/faktury',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppImportRoute = AppImportRouteImport.update({
+  id: '/import',
+  path: '/import',
   getParentRoute: () => AppRoute,
 } as any)
 const AppKontaktyRoute = AppKontaktyRouteImport.update({
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/faktury': typeof AppFakturyRouteWithChildren
+  '/import': typeof AppImportRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
   '/prehled': typeof AppPrehledRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
+  '/import': typeof AppImportRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
   '/prehled': typeof AppPrehledRoute
@@ -297,6 +305,7 @@ export interface FileRoutesById {
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/_app/faktury': typeof AppFakturyRouteWithChildren
+  '/_app/import': typeof AppImportRoute
   '/_app/kontakty': typeof AppKontaktyRoute
   '/_app/nastaveni': typeof AppNastaveniRoute
   '/_app/prehled': typeof AppPrehledRoute
@@ -334,6 +343,7 @@ export interface FileRouteTypes {
     | '/soukromi'
     | '/.well-known/$'
     | '/faktury'
+    | '/import'
     | '/kontakty'
     | '/nastaveni'
     | '/prehled'
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/souhlas'
     | '/soukromi'
     | '/.well-known/$'
+    | '/import'
     | '/kontakty'
     | '/nastaveni'
     | '/prehled'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/soukromi'
     | '/.well-known/$'
     | '/_app/faktury'
+    | '/_app/import'
     | '/_app/kontakty'
     | '/_app/nastaveni'
     | '/_app/prehled'
@@ -538,6 +550,13 @@ declare module '@tanstack/react-router' {
       path: '/faktury'
       fullPath: '/faktury'
       preLoaderRoute: typeof AppFakturyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/import': {
+      id: '/_app/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof AppImportRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/kontakty': {
@@ -717,6 +736,7 @@ const AppFakturyRouteWithChildren = AppFakturyRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppFakturyRoute: typeof AppFakturyRouteWithChildren
+  AppImportRoute: typeof AppImportRoute
   AppKontaktyRoute: typeof AppKontaktyRoute
   AppNastaveniRoute: typeof AppNastaveniRoute
   AppPrehledRoute: typeof AppPrehledRoute
@@ -725,6 +745,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppFakturyRoute: AppFakturyRouteWithChildren,
+  AppImportRoute: AppImportRoute,
   AppKontaktyRoute: AppKontaktyRoute,
   AppNastaveniRoute: AppNastaveniRoute,
   AppPrehledRoute: AppPrehledRoute,

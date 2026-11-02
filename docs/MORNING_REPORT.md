@@ -9,6 +9,10 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Needs you
 
+- **Vercel deploy quota** — we hit Hobby's 100 deployments / 24 h (every PR push built a preview). Production is
+  frozen at the 03:16 build (has almost everything) until slots free up ~22:00; later merges (TypeScript 7, QA round
+  2 fixes) deploy then automatically. Now only `main` deploys and docs-only commits skip builds. If you want
+  previews per PR and no daily cap, upgrade the team to Pro ($20/mo) — your call.
 0. **Preview database** — previews share the production Neon DB (branching option is disabled for this
    marketplace resource on the free plan). Migrations are now gated to production only (`VERCEL_ENV`), and destructive scripts need `ALLOW_DESTRUCTIVE_DB=1`. Proper fix: a Neon
    branch for Preview — see `docs/SECURITY_AUDIT.md`. Also optional: Vercel Firewall rules (paths/limits in that doc).
@@ -39,8 +43,24 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
    secret `NPM_TOKEN`, then `git tag cli-v0.1.0 && git push origin cli-v0.1.0`. Until then the `npx fakturky …`
    examples in the README, `/llms.txt` and `/docs/mcp` do not work.
 
+## Try it
+
+- App: https://fakturky.vercel.app (Google sign-in works for you; email+password for anyone)
+- AI assistant: ⌘J inside the app
+- MCP: `https://fakturky.vercel.app/mcp` — connect Claude/ChatGPT/Cursor per https://fakturky.vercel.app/docs/mcp
+  (OAuth sign-in or an API key from Nastavení → API klíče)
+- REST: https://fakturky.vercel.app/docs/api · CLI: `packages/cli` (until published) · https://fakturky.vercel.app/llms.txt
+- Import your Fakturoid history: Nastavení → Import
+
 ## Shipped overnight
 
+- TypeScript 7 (native compiler) across the monorepo #104 — no code changes needed; 307 unit + 15 e2e tests green.
+- PWA (installable on phone) #100; performance pass with lazy-loaded heavy UI #93; a11y checks (axe) in e2e #101/#102.
+- **Late night batch**: proforma → tax receipt for received advance → final invoice #94/#96; ČNB rate follows DUZP,
+  CZK VAT amounts, rounding line #92/#98; document appearance (accent colour, logo, signature) #95; JSON export +
+  e2e #97; VAT treatments per line instead of "0 %" #89/#91; legal QA fixes (registry note, required customer data
+  for tax invoices, payment block on public page, 2 536 500 Kč warning) #82; number series settings #81;
+  Fakturoid/CSV/ISDOC import #77; design QA passes #83/#85/#87/#90; e2e now a required check.
 - **In-app assistant (⌘J)** #38/#68/#74: DeepSeek V4.1 Flash via AI Gateway (US inference, prompt training
   disallowed), every app action as a tool, approval cards for destructive actions, navigation tools, ⌘K "Zeptat se
   asistenta". Hard caps: $100/month global, $2/month per organization, per-user rate limit + gateway key/team

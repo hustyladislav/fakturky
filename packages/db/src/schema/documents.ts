@@ -58,7 +58,21 @@ export const document = pgTable(
     total: money('total').notNull().default('0'),
     totalCzk: money('total_czk'),
     rounding: money('rounding').notNull().default('0'),
+    /** Round the payable total to whole currency units; the difference is the separate `rounding` line. */
+    roundTotal: boolean('round_total').notNull().default(false),
+    /** Line prices include VAT (tax receipts for advances: VAT is extracted from the received gross). */
+    pricesIncludeVat: boolean('prices_include_vat').notNull().default(false),
+    /** Look of the document frozen at issue: accent colour, brand line and the logo/signature versions. */
+    appearance: jsonb('appearance').$type<{
+      accentColor: string | null
+      showBrand: boolean
+      logoAssetId: string | null
+      signatureAssetId: string | null
+    }>(),
     relatedDocumentId: text('related_document_id').references((): AnyPgColumn => document.id),
+    /** Set for documents brought in by an import ('fakturoid' | 'csv' | 'isdoc'); they keep their original number. */
+    importedFrom: text('imported_from'),
+    externalId: text('external_id'),
     publicToken: text('public_token'),
     sentAt: timestamp('sent_at', { withTimezone: true }),
     paidAt: timestamp('paid_at', { withTimezone: true }),
@@ -69,6 +83,7 @@ export const document = pgTable(
   (t) => [
     uniqueIndex('document_org_type_number_uq').on(t.organizationId, t.type, t.number),
     uniqueIndex('document_public_token_uq').on(t.publicToken),
+    index('document_org_external_idx').on(t.organizationId, t.importedFrom, t.externalId),
     index('document_org_status_idx').on(t.organizationId, t.status),
     index('document_org_contact_idx').on(t.organizationId, t.contactId),
     index('document_org_due_idx').on(t.organizationId, t.dueDate),

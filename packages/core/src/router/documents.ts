@@ -47,6 +47,52 @@ async function assistantTag<T extends { id: string } | null>(
 }
 
 export const documentsRouter = {
+  createPaymentReceipt: procedure({
+    mcp: {
+      name: 'create_payment_receipt',
+      title:
+        'Create the tax receipt (daňový doklad k přijaté platbě) for a paid proforma — VAT payers',
+    },
+    openapi: {
+      method: 'POST',
+      path: '/documents/{id}/payment-receipt',
+      summary:
+        'Draft tax receipt for the advance received on a paid proforma. The paid amount is treated as VAT-inclusive at the chosen rate. Issue it, then create the final invoice.',
+      tags: tag,
+    },
+  })
+    .input(
+      idInput.extend({
+        vatRate: z.enum(['21', '12']).default('21'),
+        allocations: z
+          .array(
+            z.object({
+              vatRate: z.enum(['21', '12']),
+              amount: z.string().regex(/^\d+(\.\d{1,2})?$/),
+            }),
+          )
+          .min(1)
+          .max(2)
+          .optional()
+          .describe(
+            'Split the received amount over both VAT rates; must add up to the amount received',
+          ),
+      }),
+    )
+    .output(documentDetailSchema)
+    .handler(({ context, input }) =>
+      guard(() =>
+        documentsRepo.createPaymentReceipt(
+          context.db,
+          context.principal.organizationId,
+          context.principal.userId,
+          input.id,
+          input.vatRate,
+          input.allocations,
+        ),
+      ),
+    ),
+
   createFinalInvoice: procedure({
     mcp: {
       name: 'create_final_invoice_from_proforma',

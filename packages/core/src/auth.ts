@@ -30,6 +30,8 @@ export type CreateAuthOptions = {
   /** Transport for Client ID Metadata Documents; defaults to the SSRF-hardened Node fetcher. */
   fetchClientMetadata?: (input: string | URL | Request, init?: RequestInit) => Promise<Response>
   sendMagicLink?: (message: { email: string; url: string }) => Promise<void>
+  /** Sign-ups per hour and IP (default 10). Raised only for the local PGlite/e2e runtime, never in production. */
+  signUpRateLimitMax?: number
 }
 
 function slugify(input: string): string {
@@ -99,7 +101,7 @@ export function createAuth(options: CreateAuthOptions) {
       max: 100,
       customRules: {
         '/sign-in/email': { window: 60, max: 5 },
-        '/sign-up/email': { window: 3600, max: 10 },
+        '/sign-up/email': { window: 3600, max: options.signUpRateLimitMax ?? 10 },
         '/sign-in/magic-link': { window: 600, max: 5 },
         '/request-password-reset': { window: 3600, max: 5 },
         '/reset-password': { window: 3600, max: 10 },

@@ -37,6 +37,8 @@ export type Services = {
   publicBaseUrl?: string
   /** Delivers an invoice/reminder; throws `MailError`. */
   sendInvoice?: (args: SendInvoiceArgs) => Promise<void>
+  /** HTTP transport for outbound integrations (Fakturoid import); tests inject recorded responses. */
+  fetch?: (input: string, init?: RequestInit) => Promise<Response>
   /** Renders an issued document to PDF bytes. */
   renderPdf?: (
     doc: IssuedDocument,

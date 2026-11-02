@@ -11,6 +11,7 @@ import { z } from 'zod'
 import { toDocumentForExport } from '../export'
 import { publicProcedure } from '../orpc'
 import { buildPublicQr } from '../public-qr'
+import { appearanceRepo } from '../repositories/appearance'
 import { publicDocumentsRepo } from '../repositories/public-documents'
 
 const party = z.object({
@@ -78,6 +79,13 @@ export const publicRouter = {
             total: z.string(),
           }),
         ),
+        appearance: z.object({
+          accentColor: z.string().nullable(),
+          showBrand: z.boolean(),
+          logo: z.string().nullable(),
+          signature: z.string().nullable(),
+        }),
+        rounding: z.string(),
         subtotal: z.string(),
         vatTotal: z.string(),
         total: z.string(),
@@ -92,6 +100,7 @@ export const publicRouter = {
       const { doc, lines } = found
       await publicDocumentsRepo.markViewed(context.db, doc)
       const x = toDocumentForExport(doc, lines, found.original)
+      const look = await appearanceRepo.forDocument(context.db, doc.organizationId, doc.appearance)
       const paid = (await publicDocumentsRepo.paidAmount(context.db, doc)).reduce(
         (s, a) => s.plus(parseDecimal(a)),
         new Decimal(0),
@@ -157,6 +166,13 @@ export const publicRouter = {
           vat: r.vat,
           total: r.total,
         })),
+        appearance: {
+          accentColor: look.accentColor,
+          showBrand: look.showBrand,
+          logo: look.logo?.dataUrl ?? null,
+          signature: look.signature?.dataUrl ?? null,
+        },
+        rounding: doc.rounding,
         subtotal: doc.subtotal,
         vatTotal: doc.vatTotal,
         total: doc.total,

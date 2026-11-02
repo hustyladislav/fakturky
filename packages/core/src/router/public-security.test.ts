@@ -67,6 +67,7 @@ test('the public payload is an explicit allow-list (new fields must be added her
   const view = await clientFor(handle, null).public.invoice({ token: doc.publicToken as string })
   expect(Object.keys(view).sort()).toEqual(
     [
+      'appearance',
       'bank',
       'currency',
       'customer',
@@ -83,6 +84,7 @@ test('the public payload is an explicit allow-list (new fields must be added her
       'qr',
       'recap',
       'remaining',
+      'rounding',
       'status',
       'subtotal',
       'supplier',

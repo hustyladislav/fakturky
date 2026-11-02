@@ -49,6 +49,7 @@ export default defineConfig({
               PGLITE_DIR: '.data/pglite-e2e',
               BETTER_AUTH_URL: baseURL,
               ARES_BASE_URL: `http://127.0.0.1:${ARES_PORT}`,
+              CRON_SECRET: 'e2e-'.repeat(6),
             },
           },
         ]),

@@ -4,6 +4,7 @@ import type { RouterOutputs } from '@fakturky/core/router'
 import type { DocumentLanguage, ExportPaymentMethod, VatTreatment } from '@fakturky/domain'
 import { computeDocumentTotals } from '@fakturky/domain/vat'
 import type { InvoiceSheetDraft, QrData } from '@fakturky/pdf/html'
+import { num, validNum } from './invoice-numbers'
 
 export type DocumentDetail = RouterOutputs['documents']['get']
 type Look = RouterOutputs['appearance']['get']
@@ -182,4 +183,118 @@ export function detailToSheet(
   }
   // Issued: the server worked the QR out for what is still unpaid (none once settled). Draft: let the sheet build it.
   return { doc, qr: isDraft ? undefined : d.paymentQr }
+}
+
+// --------------------------------------------------------------------------------------------------------
+// Live preview of the editor
+// --------------------------------------------------------------------------------------------------------
+
+export interface FormLine {
+  description: string
+  quantity: string
+  unit: string
+  unitPrice: string
+  vatRate: string
+  vatTreatment: VatTreatment
+  vatNote: string
+}
+
+export interface FormSheetState {
+  type: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt'
+  issueDate: string
+  taxableDate: string
+  dueDate: string
+  vatPayer: boolean
+  currency: string
+  exchangeRate: string
+  roundTotal: boolean
+  language: DocumentLanguage
+  paymentMethod: string
+  introText: string
+  footerText: string
+  lines: FormLine[]
+  customerName: string | null
+}
+
+/**
+ * The editor's state as an `InvoiceSheet` draft. Numbers typed the Czech way ("1 500,5") are normalised;
+ * anything unparsable counts as 0 so the preview never throws while someone is typing.
+ */
+export function formToSheet(
+  s: FormSheetState,
+  src: Omit<SheetSources, 'accounts'> & { account?: Account | undefined },
+): InvoiceSheetDraft {
+  const clean = (v: string, fallback = '0') => (validNum(v) ? num(v) : fallback)
+  const foreign = s.currency !== 'CZK'
+  const rate = foreign && validNum(s.exchangeRate) && Number(num(s.exchangeRate)) > 0
+  const lines = s.lines
+    .filter((l) => l.description.trim() !== '' || Number(clean(l.unitPrice)) !== 0)
+    .map((l) => ({
+      description: l.description,
+      detail: s.vatPayer && l.vatTreatment === 'exempt' ? l.vatNote.trim() || null : null,
+      quantity: clean(l.quantity, '1'),
+      unit: l.unit || null,
+      unitPrice: clean(l.unitPrice),
+      vatRate: s.vatPayer && l.vatTreatment === 'standard' ? clean(l.vatRate) : '0',
+      vatTreatment: s.vatPayer ? l.vatTreatment : ('standard' as const),
+    }))
+  const totals = computeDocumentTotals(
+    lines.map(({ quantity, unitPrice, vatRate, vatTreatment }) => ({
+      quantity,
+      unitPrice,
+      vatRate,
+      vatTreatment,
+    })),
+    {
+      vatPayer: s.vatPayer,
+      currency: s.currency,
+      exchangeRate: rate ? num(s.exchangeRate) : 1,
+      roundTotal: s.roundTotal,
+    },
+  )
+  const bank = bankSnapshot(src.account)
+  const iban = str(bank?.iban)
+  const supplier = supplierSnapshot(src.profile)
+  const customer = customerSnapshot(src.contact)
+  const noPayment = s.type === 'payment_receipt' || s.type === 'credit_note'
+  return {
+    type: s.type,
+    number: '',
+    issueDate: s.issueDate,
+    taxableDate: s.vatPayer ? s.taxableDate : null,
+    vatPayer: s.vatPayer,
+    supplierVatPayer: str(supplier?.vatStatus) === 'payer' || s.vatPayer,
+    supplier: partyFromSnapshot(supplier),
+    customer: partyFromSnapshot(customer ?? (s.customerName ? { name: s.customerName } : null)),
+    lines,
+    totals,
+    currency: s.currency,
+    ...(rate ? { exchangeRate: num(s.exchangeRate) } : {}),
+    payment: noPayment
+      ? null
+      : {
+          method: METHODS.includes(s.paymentMethod as ExportPaymentMethod)
+            ? (s.paymentMethod as ExportPaymentMethod)
+            : 'other',
+          dueDate: s.dueDate,
+          bankAccount: iban
+            ? {
+                accountNumber: str(bank?.accountNumber) ?? undefined,
+                bankCode: str(bank?.bankCode) ?? undefined,
+                iban,
+                bic: str(bank?.bic) ?? undefined,
+                showQr: bank?.showQr !== false,
+              }
+            : null,
+        },
+    language: s.language,
+    brandName: BRAND.name,
+    ...(src.look ? { showBrand: src.look.showBrand } : {}),
+    ...(src.look?.accentColor ? { accentColor: src.look.accentColor } : {}),
+    logo: src.look?.logo ?? null,
+    signature: src.look?.signature ?? null,
+    headerText: s.introText.trim() || null,
+    footerText: s.footerText.trim() || null,
+    note: null,
+  }
 }

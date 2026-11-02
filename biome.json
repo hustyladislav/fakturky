@@ -15,7 +15,9 @@
       "!**/.output/**",
       "!packages/domain",
       "!design",
-      "!docs"
+      "!docs",
+      "!.agents",
+      "!.claude"
     ]
   },
   "formatter": {

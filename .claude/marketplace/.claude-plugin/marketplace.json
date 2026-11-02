@@ -1,0 +1,12 @@
+{
+  "name": "repo",
+  "description": "Repo-local Claude Code plugins — installed with the repo, no manual setup.",
+  "owner": { "name": "Repository" },
+  "plugins": [
+    {
+      "name": "repo-typescript-lsp",
+      "source": "./typescript-lsp",
+      "description": "TypeScript language server from this repo's node_modules (installed by pnpm install)."
+    }
+  ]
+}

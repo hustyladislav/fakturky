@@ -85,6 +85,7 @@ export function toDocumentForExport(
     issueDate: doc.issueDate ?? '',
     taxableDate: vatPayer ? doc.taxableDate : null,
     vatPayer,
+    supplierVatPayer: (doc.supplierSnapshot as Snapshot)?.vatStatus === 'payer' || vatPayer,
     supplier: party(doc.supplierSnapshot),
     customer: party(doc.customerSnapshot),
     lines: lines.map((l) => ({

@@ -402,7 +402,7 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
             title={t.supplier}
             t={t}
             lang={lang}
-            vatPayer={payer}
+            vatPayer={doc.supplierVatPayer ?? payer}
             accent={accent}
           />
           <PartyBlock

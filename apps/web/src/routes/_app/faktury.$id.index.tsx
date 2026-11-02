@@ -54,6 +54,10 @@ import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/faktury/$id/')({
   head: pageHead(cs.invoices.title),
+  // `?zaplatit` opens the payment panel (⌘K "zaplatit 2026-0028").
+  validateSearch: (s: Record<string, unknown>): { zaplatit?: true } => ({
+    zaplatit: s.zaplatit === true || s.zaplatit === 'true' ? true : undefined,
+  }),
   component: InvoiceDetail,
 })
 
@@ -65,7 +69,11 @@ function InvoiceDetail() {
   const queryClient = useQueryClient()
   const q = useQuery(orpc.documents.get.queryOptions({ input: { id } }))
   useDocumentTitle(q.data?.number)
+  const { zaplatit } = Route.useSearch()
   const [paying, setPaying] = useState(false)
+  useEffect(() => {
+    if (zaplatit) setPaying(true)
+  }, [zaplatit])
   const [docOpen, setDocOpen] = useState(false)
   const [dialog, setDialog] = useState<
     'cancel' | 'delete' | 'rotate' | 'template' | 'credit' | 'receipt' | null

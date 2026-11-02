@@ -14,6 +14,7 @@
     "./context": "./src/context.ts",
     "./testing": "./src/testing.ts",
     "./export": "./src/export.ts",
+    "./appearance-repo": "./src/repositories/appearance.ts",
     "./reminders-repo": "./src/repositories/reminders.ts",
     "./templates-repo": "./src/repositories/templates.ts",
     "./documents-repo": "./src/repositories/documents.ts",

@@ -23,7 +23,16 @@ import { MailError, type Services } from '../context'
 import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
 import { bankAccountsRepo } from './bank-accounts'
 
-const { document, documentLine, payment, activity, businessProfile, contact, numberSeries } = schema
+const {
+  document,
+  documentLine,
+  payment,
+  activity,
+  businessProfile,
+  contact,
+  numberSeries,
+  orgAsset,
+} = schema
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 type DocRow = typeof document.$inferSelect
@@ -131,6 +140,24 @@ function assertVatLines(
       'Use a VAT rate of 21 or 12, or choose a VAT regime (exempt, reverse charge, …) for the line',
       ['line.vatRate'],
     )
+  }
+}
+
+/** Freezes the document look (colour, brand line, logo/signature versions) at issue. */
+async function appearanceSnapshot(db: Db | Tx, orgId: string) {
+  const [p] = await db
+    .select({ accentColor: businessProfile.accentColor, showBrand: businessProfile.showBrand })
+    .from(businessProfile)
+    .where(eq(businessProfile.organizationId, orgId))
+  const assets = await db
+    .select({ id: orgAsset.id, kind: orgAsset.kind })
+    .from(orgAsset)
+    .where(and(eq(orgAsset.organizationId, orgId), isNull(orgAsset.supersededAt)))
+  return {
+    accentColor: p?.accentColor ?? null,
+    showBrand: p?.showBrand ?? true,
+    logoAssetId: assets.find((a) => a.kind === 'logo')?.id ?? null,
+    signatureAssetId: assets.find((a) => a.kind === 'signature')?.id ?? null,
   }
 }
 
@@ -481,6 +508,7 @@ export const documentsRepo = {
           relatedDocumentId: opts.relatedDocumentId ?? null,
           contactId: input.contactId ?? null,
           bankAccountId: bank?.id ?? null,
+          appearance: await appearanceSnapshot(tx, orgId),
           issueDate,
           taxableDate: input.taxableDate ?? issueDate,
           dueDate: input.dueDate ?? addDays(issueDate, dueDays),

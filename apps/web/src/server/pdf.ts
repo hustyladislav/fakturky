@@ -45,7 +45,11 @@ export async function renderDocumentPdf(
   return renderInvoicePdf({
     ...base,
     note: null,
-    lines: base.lines.map((l, i) => ({ ...l, discountPercent: lines[i]?.discountPercent ?? '0' })),
+    lines: base.lines.map((l, i) => ({
+      ...l,
+      detail: lines[i]?.vatNote ? `${lines[i]?.vatNote}` : null,
+      discountPercent: lines[i]?.discountPercent ?? '0',
+    })),
     language: doc.language as DocumentLanguage,
     brandName: BRAND.name,
     headerText: doc.introText,

@@ -70,6 +70,7 @@ export const templatesRepo = {
             unitPrice: l.unitPrice,
             vatRate: l.vatRate,
             vatTreatment: l.vatTreatment as VatTreatment,
+            vatNote: l.vatNote,
             discountPercent: l.discountPercent,
           })),
         },
@@ -114,6 +115,7 @@ export const templatesRepo = {
         unitPrice: l.unitPrice,
         vatRate: l.vatRate,
         vatTreatment: (l.vatTreatment ?? 'standard') as VatTreatment,
+        vatNote: l.vatNote ?? null,
         discountPercent: l.discountPercent ?? '0',
       })),
     })

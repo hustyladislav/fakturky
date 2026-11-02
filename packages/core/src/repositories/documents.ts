@@ -174,6 +174,8 @@ async function writeLines(
       unitPrice: l.unitPrice,
       vatRate: totals.lines[i]?.vatRate ?? '0',
       vatTreatment: vatOn ? (totals.lines[i]?.vatTreatment ?? 'standard') : 'standard',
+      vatNote:
+        vatOn && totals.lines[i]?.vatTreatment === 'exempt' ? l.vatNote?.trim() || null : null,
       discountPercent: l.discountPercent,
       lineSubtotal: totals.lines[i]?.base ?? '0',
       lineVat: totals.lines[i]?.vat ?? '0',
@@ -552,6 +554,14 @@ export const documentsRepo = {
       if (!customer) throw new DocumentError('NOT_FOUND', 'Contact not found')
       // §29 ZDPH: a tax document needs the customer's name, address and (if registered) identification.
       if (vatOnNow) {
+        const exempt = lines.filter((l) => l.vatTreatment === 'exempt')
+        if (exempt.some((l) => !l.vatNote?.trim())) {
+          throw new DocumentError(
+            'PRECONDITION_FAILED',
+            'Exempt lines need the statutory basis (§ of the VAT act)',
+            ['line.vatNote'],
+          )
+        }
         const missing: string[] = []
         if (
           !customer.address.street?.trim() ||
@@ -562,6 +572,14 @@ export const documentsRepo = {
         }
         if (!customer.ico?.trim() && !customer.dic?.trim() && !customer.icDph?.trim()) {
           missing.push('taxId')
+        }
+        // EU reverse charge needs the customer's VAT ID (IČ DPH / DIČ), not just an IČO.
+        if (
+          lines.some((l) => l.vatTreatment === 'eu_reverse_charge') &&
+          !customer.icDph?.trim() &&
+          !customer.dic?.trim()
+        ) {
+          missing.push('vatId')
         }
         if (missing.length > 0) {
           throw new DocumentError(
@@ -798,6 +816,7 @@ export const documentsRepo = {
         unitPrice: l.unitPrice,
         vatRate: l.vatRate,
         vatTreatment: l.vatTreatment as VatTreatment,
+        vatNote: l.vatNote,
         discountPercent: l.discountPercent,
       })),
     })
@@ -861,6 +880,7 @@ export const documentsRepo = {
               unitPrice: l.unitPrice,
               vatRate: l.vatRate,
               vatTreatment: l.vatTreatment as VatTreatment,
+              vatNote: l.vatNote,
               discountPercent: l.discountPercent,
             })),
             {
@@ -918,6 +938,7 @@ export const documentsRepo = {
           unitPrice: l.unitPrice,
           vatRate: l.vatRate,
           vatTreatment: l.vatTreatment as VatTreatment,
+          vatNote: l.vatNote,
           discountPercent: l.discountPercent,
         })),
       },

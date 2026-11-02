@@ -178,6 +178,7 @@ function PublicInvoice() {
                 >
                   <td className="py-2">
                     {l.description}
+                    {l.vatNote && <div className="text-xs text-neutral-500">{l.vatNote}</div>}
                     {Number(l.discountPercent) > 0 && (
                       <div className="text-xs text-neutral-500">
                         {t.discount} {Number(l.discountPercent)} %

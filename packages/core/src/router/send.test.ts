@@ -454,3 +454,47 @@ test('tax receipt keeps the received gross, uses the payment date as tax point, 
   const xml = (await api.documents.isdoc({ id: issued.id })).xml
   expect(xml).not.toContain('<PaymentMeans>')
 })
+
+test('CZK cash drafts round by default (explicit choice wins); a receipt needs a single payment date', async () => {
+  const org = await seedOrg(handle, 'cash-round')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'K',
+    ico: '12345678',
+    address: { street: 'A 1', city: 'Praha', zip: '11000' },
+  })
+  const line = [{ description: 'x', quantity: '1', unitPrice: '100.40', vatRate: '21' }]
+  expect(
+    (await api.documents.createDraft({ contactId: c.id, paymentMethod: 'cash', lines: line }))
+      .roundTotal,
+  ).toBe(true)
+  expect((await api.documents.createDraft({ contactId: c.id, lines: line })).roundTotal).toBe(false)
+  expect(
+    (
+      await api.documents.createDraft({
+        contactId: c.id,
+        paymentMethod: 'cash',
+        roundTotal: false,
+        lines: line,
+      })
+    ).roundTotal,
+  ).toBe(false)
+
+  const pf = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        type: 'proforma',
+        contactId: c.id,
+        lines: [{ description: 'Z', quantity: '1', unitPrice: '1000' }],
+      })
+    ).id,
+  })
+  await api.documents.markPaid({ id: pf.id, amount: '400', paidOn: '2026-01-05' })
+  await api.documents.markPaid({ id: pf.id, amount: '600', paidOn: '2026-02-03' })
+  await expect(api.documents.createPaymentReceipt({ id: pf.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+})

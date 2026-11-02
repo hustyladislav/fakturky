@@ -7,7 +7,7 @@ export interface ShellState {
   setHelpOpen: (open: boolean) => void
   assistantOpen: boolean
   setAssistantOpen: (open: boolean) => void
-  /** Hook for the in-app assistant (comes later): called with the question typed into ⌘K. */
+  /** Opens the assistant panel and sends the question typed into ⌘K. */
   askAssistant: (question: string) => void
 }
 

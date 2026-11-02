@@ -1,0 +1,282 @@
+import type { RouterOutputs } from '@fakturky/core/router'
+import { formatDateCs } from '@fakturky/domain/dates'
+import { Amount } from '@fakturky/ui/components/amount'
+import { Avatar } from '@fakturky/ui/components/avatar'
+import { Button } from '@fakturky/ui/components/button'
+import { RelativeDate } from '@fakturky/ui/components/relative-date'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@fakturky/ui/components/tooltip'
+import { diffDays, parseIsoDate, startOfDay } from '@fakturky/ui/lib/dates'
+import { cn } from '@fakturky/ui/lib/utils'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { Check, CopyPlus, FileDown } from 'lucide-react'
+import type { MouseEvent } from 'react'
+import { toast } from 'sonner'
+import { InvoiceStatus } from '@/components/invoice-status'
+import { cs } from '@/i18n/cs'
+import { apiErrorMessage } from '@/lib/errors'
+import { orpc } from '@/lib/orpc'
+
+export type Doc = RouterOutputs['documents']['list'][number]
+
+const t = cs.invoices
+
+export const isPayable = (d: Doc) =>
+  d.type !== 'credit_note' && ['issued', 'overdue', 'partially_paid'].includes(d.displayStatus)
+
+export const docPath = (d: Doc) => (d.status === 'draft' ? '/faktury/$id/upravit' : '/faktury/$id')
+
+export function overdueDays(d: Doc): number | undefined {
+  if (d.displayStatus !== 'overdue') return undefined
+  const due = parseIsoDate(d.dueDate)
+  return due ? diffDays(startOfDay(new Date()), due) : undefined
+}
+
+/** Types other than a plain invoice get a small label next to the number. */
+function TypeLabel({ d }: { d: Doc }) {
+  if (d.type === 'invoice') return null
+  return (
+    <span className="rounded bg-muted px-1.5 py-px text-[10.5px] font-semibold tracking-wide whitespace-nowrap text-muted-foreground uppercase">
+      {t.typeShort[d.type as keyof typeof t.typeShort] ?? d.type}
+    </span>
+  )
+}
+
+function Secondary({ d, link }: { d: Doc; link?: boolean }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2 text-xs whitespace-nowrap text-muted-foreground">
+      {d.number ? (
+        link ? (
+          <Link
+            to={docPath(d)}
+            params={{ id: d.id }}
+            tabIndex={-1}
+            className="font-mono text-[11.5px] tracking-tight tabular-nums"
+          >
+            {d.number}
+          </Link>
+        ) : (
+          <span className="font-mono text-[11.5px] tracking-tight tabular-nums">{d.number}</span>
+        )
+      ) : (
+        <span className="italic">{t.noNumber}</span>
+      )}
+      <TypeLabel d={d} />
+    </span>
+  )
+}
+
+function DueCell({ d }: { d: Doc }) {
+  if (!d.dueDate || d.displayStatus === 'cancelled') {
+    return <span className="text-muted-foreground">—</span>
+  }
+  const open = d.displayStatus === 'overdue' || d.displayStatus === 'issued'
+  return (
+    <RelativeDate
+      date={d.dueDate}
+      tone={open || d.displayStatus === 'partially_paid' ? 'due' : 'default'}
+      className={cn(!open && d.displayStatus !== 'partially_paid' && 'text-muted-foreground')}
+    />
+  )
+}
+
+export function useDocActions() {
+  const qc = useQueryClient()
+  const navigate = useNavigate()
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: orpc.documents.key() })
+    qc.invalidateQueries({ queryKey: orpc.dashboard.key() })
+  }
+  const markUnpaid = useMutation(orpc.documents.markUnpaid.mutationOptions({ onSuccess: refresh }))
+  const markPaid = useMutation(
+    orpc.documents.markPaid.mutationOptions({
+      onSuccess: (d) => {
+        refresh()
+        toast.success(t.rowActions.markedPaid, {
+          action: { label: t.rowActions.undo, onClick: () => markUnpaid.mutate({ id: d.id }) },
+        })
+      },
+      onError: (e) => toast.error(apiErrorMessage(e)),
+    }),
+  )
+  const duplicate = useMutation(
+    orpc.documents.duplicate.mutationOptions({
+      onSuccess: (d) => {
+        refresh()
+        navigate({ to: '/faktury/$id/upravit', params: { id: d.id } })
+      },
+      onError: (e) => toast.error(apiErrorMessage(e)),
+    }),
+  )
+  return { markPaid, markUnpaid, duplicate, refresh }
+}
+
+function ActionButton({
+  label,
+  children,
+  ...props
+}: { label: string } & React.ComponentProps<typeof Button>) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button variant="ghost" size="icon-sm" aria-label={label} {...props}>
+            {children}
+          </Button>
+        }
+      />
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+/** Hover/focus quick actions: PDF, mark paid, duplicate. */
+export function RowActions({ d }: { d: Doc }) {
+  const { markPaid, duplicate } = useDocActions()
+  const stop = (e: MouseEvent) => e.stopPropagation()
+  return (
+    <div className="row-actions flex items-center justify-end gap-0.5" onClick={stop}>
+      {d.status !== 'draft' && (
+        <ActionButton
+          label={t.rowActions.pdf}
+          nativeButton={false}
+          render={<a href={`/api/documents/${d.id}/pdf`} download />}
+        >
+          <FileDown />
+        </ActionButton>
+      )}
+      {isPayable(d) && (
+        <ActionButton
+          label={t.rowActions.markPaid}
+          disabled={markPaid.isPending}
+          onClick={() => markPaid.mutate({ id: d.id })}
+        >
+          <Check />
+        </ActionButton>
+      )}
+      <ActionButton
+        label={t.rowActions.duplicate}
+        disabled={duplicate.isPending}
+        onClick={() => duplicate.mutate({ id: d.id })}
+      >
+        <CopyPlus />
+      </ActionButton>
+    </div>
+  )
+}
+
+function isInteractive(target: EventTarget | null) {
+  return target instanceof Element && !!target.closest('a,button,input,label,[role=checkbox]')
+}
+
+/** One table row: select, avatar + client/number, dates, amount, status, quick actions. */
+export function InvoiceRow({
+  d,
+  selected,
+  active,
+  onToggle,
+}: {
+  d: Doc
+  selected: boolean
+  active: boolean
+  onToggle: () => void
+}) {
+  const navigate = useNavigate()
+  const name = d.customerName ?? '—'
+  const go = () => navigate({ to: docPath(d), params: { id: d.id } })
+  return (
+    <tr
+      data-doc-id={d.id}
+      data-active={active || undefined}
+      aria-selected={selected}
+      onClick={(e) => {
+        if (!isInteractive(e.target)) go()
+      }}
+      className={cn(
+        'row-hover group/row cursor-pointer',
+        selected && 'bg-primary/[0.05]',
+        active && 'bg-primary/[0.06] [&>td:first-child]:shadow-[inset_2px_0_0_var(--primary)]',
+      )}
+    >
+      <td className="w-10 border-b border-border/60 pl-4">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggle}
+          aria-label={t.bulk.selectRow(name)}
+          className="size-4 cursor-pointer align-middle"
+        />
+      </td>
+      <td className="max-w-0 border-b border-border/60 py-2.5 pr-3 pl-2">
+        <div className="flex items-center gap-3">
+          <Avatar name={name} size="md" />
+          <div className="min-w-0">
+            <Link
+              to={docPath(d)}
+              params={{ id: d.id }}
+              className="block truncate text-sm font-medium outline-none focus-visible:underline"
+            >
+              {name}
+            </Link>
+            <Secondary d={d} link />
+          </div>
+        </div>
+      </td>
+      <td className="hidden border-b border-border/60 px-3 text-sm whitespace-nowrap text-muted-foreground tabular-nums lg:table-cell">
+        {d.issueDate ? formatDateCs(d.issueDate) : '—'}
+      </td>
+      <td className="border-b border-border/60 px-3 text-sm whitespace-nowrap">
+        <DueCell d={d} />
+      </td>
+      <td className="border-b border-border/60 px-3 text-right whitespace-nowrap">
+        <Amount value={d.total} currency={d.currency} size="inline" />
+      </td>
+      <td className="border-b border-border/60 px-3">
+        <InvoiceStatus
+          status={d.displayStatus}
+          viaAssistant={d.viaAssistant}
+          overdueDays={overdueDays(d)}
+        />
+      </td>
+      <td className="w-[7.5rem] border-b border-border/60 pr-3">
+        <RowActions d={d} />
+      </td>
+    </tr>
+  )
+}
+
+/** Phone card: client, amount, status and due date. */
+export function InvoiceCard({ d }: { d: Doc }) {
+  const navigate = useNavigate()
+  const name = d.customerName ?? '—'
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => navigate({ to: docPath(d), params: { id: d.id } })}
+        className="row-hover flex w-full items-start gap-3 border-b border-border/60 px-4 py-3 text-left outline-none focus-visible:bg-muted/60"
+      >
+        <Avatar name={name} size="md" className="mt-0.5" />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline justify-between gap-3">
+            <span className="truncate text-sm font-medium">{name}</span>
+            <Amount value={d.total} currency={d.currency} size="inline" />
+          </span>
+          <span className="mt-0.5 flex items-center justify-between gap-3">
+            <Secondary d={d} />
+            <span className="shrink-0 text-xs">
+              <DueCell d={d} />
+            </span>
+          </span>
+          <span className="mt-2 block">
+            <InvoiceStatus
+              status={d.displayStatus}
+              viaAssistant={d.viaAssistant}
+              overdueDays={overdueDays(d)}
+            />
+          </span>
+        </span>
+      </button>
+    </li>
+  )
+}

@@ -17,6 +17,7 @@ import {
 
 const idInput = z.object({ id: z.string().min(1) })
 const tag = ['Documents']
+const statBucket = z.object({ count: z.number(), sum: z.string().describe('CZK, decimal string') })
 
 async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
   try {
@@ -293,6 +294,11 @@ export const documentsRouter = {
           .enum(['invoice', 'proforma', 'credit_note', 'payment_receipt'])
           .optional()
           .describe('Only documents of this type'),
+        sort: z
+          .enum(['issueDate', 'dueDate', 'number', 'customer', 'total'])
+          .default('issueDate')
+          .describe('Sort column (default: issue date)'),
+        dir: z.enum(['asc', 'desc']).default('desc'),
         limit: z.coerce.number().int().min(1).max(200).default(50),
         offset: z.coerce.number().int().min(0).default(0),
       }),
@@ -300,6 +306,42 @@ export const documentsRouter = {
     .output(z.array(documentSchema))
     .handler(({ context, input }) =>
       documentsRepo.list(context.db, context.principal.organizationId, input),
+    ),
+
+  stats: procedure({
+    mcp: {
+      name: 'get_document_stats',
+      title: 'Counts and CZK sums of documents per status (all, draft, unpaid, overdue, paid)',
+      readOnly: true,
+    },
+    openapi: {
+      method: 'GET',
+      path: '/documents/stats',
+      summary:
+        'Counts and CZK sums per status bucket; unpaid and overdue sum what is still owed. Optional search and type narrow all buckets.',
+      tags: tag,
+    },
+  })
+    .input(
+      z.object({
+        search: z.string().optional().describe('Matches number, variable symbol, customer name'),
+        type: z
+          .enum(['invoice', 'proforma', 'credit_note', 'payment_receipt'])
+          .optional()
+          .describe('Only documents of this type'),
+      }),
+    )
+    .output(
+      z.object({
+        all: statBucket,
+        draft: statBucket,
+        unpaid: statBucket,
+        overdue: statBucket,
+        paid: statBucket,
+      }),
+    )
+    .handler(({ context, input }) =>
+      documentsRepo.stats(context.db, context.principal.organizationId, input),
     ),
 
   get: procedure({

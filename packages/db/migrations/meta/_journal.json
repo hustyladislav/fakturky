@@ -71,6 +71,13 @@
       "when": 1793581382886,
       "tag": "0009_furry_roulette",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793581807841,
+      "tag": "0010_fluffy_sasquatch",
+      "breakpoints": true
     }
   ]
 }

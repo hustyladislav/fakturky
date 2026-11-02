@@ -317,6 +317,12 @@ function InvoiceDetail() {
                 <Money amount={r.vat} currency={d.currency} />
               </div>
             ))}
+          {Number(d.rounding) !== 0 && (
+            <div className="text-muted-foreground flex justify-between">
+              <span>{cs.invoices.form.rounding}</span>
+              <Money amount={d.rounding} currency={d.currency} />
+            </div>
+          )}
           <div className="flex items-baseline justify-between border-t pt-2 text-lg font-semibold">
             <span>{cs.invoices.form.total}</span>
             <Money amount={d.total} currency={d.currency} />

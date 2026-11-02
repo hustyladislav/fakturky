@@ -164,8 +164,8 @@
   input[type="radio"] {
     accent-color: var(--primary);
   }
-  select,
-  textarea {
+  select:not([data-slot]),
+  textarea:not([data-slot]) {
     border-radius: var(--radius-input);
     border-color: var(--input);
     background-color: var(--card);
@@ -173,8 +173,8 @@
       box-shadow 120ms,
       border-color 120ms;
   }
-  select:focus-visible,
-  textarea:focus-visible {
+  select:not([data-slot]):focus-visible,
+  textarea:not([data-slot]):focus-visible {
     outline: none;
     border-color: var(--ring);
     box-shadow: 0 0 0 3px var(--ring);

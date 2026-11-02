@@ -1,5 +1,5 @@
 {
-  "id": "1198eaac-4da4-4c6b-8b28-3c7b4930f27b",
+  "id": "4df1e0f9-97d0-4340-8c8f-a01de04c118f",
   "prevId": "ce846fb6-bd69-46f0-a49e-5d5b8ddd29bb",
   "version": "7",
   "dialect": "postgresql",
@@ -2714,12 +2714,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "external_id": {
-          "name": "external_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "ares_synced_at": {
           "name": "ares_synced_at",
           "type": "timestamp with time zone",
@@ -3438,20 +3432,15 @@
           "notNull": true,
           "default": "'0'"
         },
+        "round_total": {
+          "name": "round_total",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "related_document_id": {
           "name": "related_document_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "imported_from": {
-          "name": "imported_from",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "external_id": {
-          "name": "external_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -3540,33 +3529,6 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "document_org_external_idx": {
-          "name": "document_org_external_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "imported_from",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "external_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}

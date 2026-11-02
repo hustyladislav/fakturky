@@ -46,6 +46,11 @@ const fields = {
     .string()
     .length(3)
     .transform((v) => v.toUpperCase()),
+  roundTotal: z
+    .boolean()
+    .describe(
+      'Round the payable total to whole currency units (shown as a separate rounding line)',
+    ),
   exchangeRate: decimal
     .nullish()
     .describe('CZK per 1 unit of currency; required for foreign currency'),
@@ -69,6 +74,7 @@ export const draftInputSchema = z.object({
   language: fields.language.optional(),
   paymentMethod: fields.paymentMethod.optional(),
   lines: fields.lines.default([]),
+  roundTotal: fields.roundTotal.default(false),
 })
 
 export const draftPatchSchema = z.object(fields).omit({ type: true }).partial()
@@ -132,6 +138,8 @@ export const documentSchema = z.object({
   dueDate: z.string().nullable(),
   currency: z.string(),
   exchangeRate: z.string().nullable(),
+  roundTotal: z.boolean(),
+  rounding: z.string(),
   language: z.string(),
   paymentMethod: z.string(),
   variableSymbol: z.string().nullable(),

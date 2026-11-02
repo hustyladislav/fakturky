@@ -66,7 +66,13 @@ function Secondary({ d, link }: { d: Doc; link?: boolean }) {
   )
 }
 
+/** "3. 11." from an ISO day. */
+const shortDay = (iso: string) => `${Number(iso.slice(8, 10))}. ${Number(iso.slice(5, 7))}.`
+
 function DueCell({ d }: { d: Doc }) {
+  if (d.displayStatus === 'paid' && d.paidOn) {
+    return <span className="text-muted-foreground">{t.paidOn(shortDay(d.paidOn))}</span>
+  }
   if (!d.dueDate || d.displayStatus === 'cancelled') {
     return <span className="text-muted-foreground">—</span>
   }

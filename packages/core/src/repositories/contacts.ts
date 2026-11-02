@@ -1,9 +1,10 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
 import { Decimal, parseDecimal, todayPrague, toFixed } from '@fakturky/domain'
-import { and, asc, eq, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import type { ContactInput, ContactPatch } from '../schemas/contact'
 import { paidSums } from './documents'
+import { foldedWordsMatch } from './fold'
 
 const { contact, document } = schema
 
@@ -19,10 +20,11 @@ export const contactsRepo = {
       eq(contact.organizationId, orgId),
       opts.includeArchived ? undefined : isNull(contact.archivedAt),
       term
-        ? or(
-            ilike(contact.name, `%${term}%`),
-            ilike(sql`coalesce(${contact.ico}, '')`, `%${term}%`),
-          )
+        ? foldedWordsMatch(term, [
+            sql`${contact.name}`,
+            sql`${contact.ico}`,
+            sql`${contact.emails}::text`,
+          ])
         : undefined,
     )
     return db

@@ -17,6 +17,7 @@ export function ShortcutsHelp() {
     { keys: ['G', 'K'], label: cs.shortcuts.goContacts },
     { keys: ['G', 'N'], label: cs.shortcuts.goSettings },
     { keys: [modKey, 'J'], label: cs.shortcuts.assistant },
+    { keys: [modKey, '\\'], label: cs.shortcuts.sidebar },
     { keys: ['?'], label: cs.shortcuts.help },
   ]
   return (

@@ -1,5 +1,6 @@
 import { Button } from '@fakturky/ui/components/button'
 import { Money } from '@fakturky/ui/components/money'
+import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { InvoiceStatus } from '@/components/invoice-status'
@@ -54,6 +55,19 @@ function Overview() {
           <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
             {cs.invoices.emptyCta}
           </Button>
+        </div>
+      )}
+
+      {summary.isError && <p className="text-muted-foreground text-sm">{cs.common.error}</p>}
+
+      {summary.isPending && (
+        <div className="space-y-6" aria-busy="true">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-[110px] rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="h-[198px] rounded-xl" />
         </div>
       )}
 

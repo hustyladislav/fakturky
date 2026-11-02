@@ -98,8 +98,8 @@ function PublicInvoice() {
       <article className="mx-auto max-w-3xl space-y-6 bg-white p-6 text-neutral-900 shadow-sm sm:p-10 print:shadow-none">
         <header className="flex items-start justify-between gap-4 border-b border-neutral-300 pb-4">
           <div>
-            <h1 className="font-heading text-2xl font-semibold">{title}</h1>
-            <div className="font-heading text-xl tabular-nums">{d.number}</div>
+            <h1 className="font-serif text-3xl font-medium">{title}</h1>
+            <div className="font-serif text-xl tabular-nums">{d.number}</div>
             {d.original && (
               <div className="text-sm text-neutral-600">
                 {t.corrects(d.original.number, formatDateCs(d.original.issueDate))}
@@ -128,7 +128,31 @@ function PublicInvoice() {
 
         {d.introText && <p className="text-sm whitespace-pre-line">{d.introText}</p>}
 
-        <div className="overflow-x-auto">
+        <ul className="divide-y divide-neutral-200 border-y border-neutral-300 sm:hidden">
+          {d.lines.map((l) => (
+            <li
+              key={`m-${l.description}-${l.unitPrice}-${l.quantity}-${l.total}`}
+              className="flex items-start justify-between gap-3 py-3 text-sm"
+            >
+              <div className="min-w-0">
+                <div>{l.description}</div>
+                <div className="text-xs text-neutral-500">
+                  {Number(l.quantity)} {l.unit} ×{' '}
+                  <Money amount={l.unitPrice} currency={d.currency} />
+                  {d.vatPayer && <> · {Number(l.vatRate)} %</>}
+                  {Number(l.discountPercent) > 0 && (
+                    <>
+                      {' · '}
+                      {t.discount} {Number(l.discountPercent)} %
+                    </>
+                  )}
+                </div>
+              </div>
+              <Money amount={l.total} currency={d.currency} className="shrink-0" />
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto sm:block">
           <table className="w-full min-w-[34rem] text-sm">
             <thead>
               <tr className="border-b border-neutral-400 text-left text-xs text-neutral-500">
@@ -210,9 +234,9 @@ function PublicInvoice() {
             </div>
           )}
           <div className="flex items-baseline justify-between border-t border-b border-neutral-400 py-2">
-            <span className="font-medium">{t.amountDue}</span>
-            <span className="font-heading text-xl font-semibold">
-              <Money amount={d.remaining} currency={d.currency} />
+            <span className="font-medium">{d.status === 'paid' ? t.lineTotal : t.amountDue}</span>
+            <span className="font-serif text-3xl font-medium">
+              <Money amount={d.status === 'paid' ? d.total : d.remaining} currency={d.currency} />
             </span>
           </div>
         </div>

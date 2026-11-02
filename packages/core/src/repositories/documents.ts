@@ -99,6 +99,13 @@ const SERIES_NAMES: Record<string, string> = {
   payment_receipt: 'Doklady k přijaté platbě',
 }
 
+/** A user-supplied money string ("1500", "1 500,5"); anything else is a client error, not a 500. */
+function parseAmount(raw: string) {
+  const v = raw.replace(/[\s\u00a0]/g, '').replace(',', '.')
+  if (!/^-?\d+(\.\d+)?$/.test(v)) throw new DocumentError('BAD_REQUEST', 'Amount is not a number')
+  return parseDecimal(v)
+}
+
 const vatApplies = (profile: { vatStatus: string } | null, type: string) =>
   profile?.vatStatus === 'payer' &&
   (type === 'invoice' || type === 'credit_note' || type === 'payment_receipt')
@@ -231,6 +238,9 @@ function totalColumns(totals: ReturnType<typeof computeDocumentTotals>, currency
     rounding: totals.rounding,
   }
 }
+
+/** `payment.method` of the settlement a credit note makes on its invoice (the note holds the credit note number). */
+export const CREDIT_NOTE_METHOD = 'credit_note'
 
 async function paidSums(db: Db | Tx, orgId: string, ids: string[]) {
   const map = new Map<string, Decimal>()
@@ -642,7 +652,8 @@ export const documentsRepo = {
         .from(contact)
         .where(and(eq(contact.organizationId, orgId), eq(contact.id, doc.contactId)))
       if (!customer) throw new DocumentError('NOT_FOUND', 'Contact not found')
-      // §29 ZDPH: a tax document needs the customer's name, address and (if registered) identification.
+      // §29 ZDPH: a tax document needs the customer's name and address; the DIČ only if the customer is registered
+      // (a consumer has none), so a missing IČO/DIČ must not block issuing.
       if (vatOnNow) {
         const exempt = lines.filter((l) => l.vatTreatment === 'exempt')
         if (exempt.some((l) => !l.vatNote?.trim())) {
@@ -660,9 +671,6 @@ export const documentsRepo = {
         ) {
           missing.push('address')
         }
-        if (!customer.ico?.trim() && !customer.dic?.trim() && !customer.icDph?.trim()) {
-          missing.push('taxId')
-        }
         // EU reverse charge needs the customer's VAT ID (IČ DPH / DIČ), not just an IČO.
         if (
           lines.some((l) => l.vatTreatment === 'eu_reverse_charge') &&
@@ -670,6 +678,13 @@ export const documentsRepo = {
           !customer.dic?.trim()
         ) {
           missing.push('vatId')
+        }
+        // The EU reverse charge applies to supplies to another member state, not to a domestic customer.
+        if (
+          lines.some((l) => l.vatTreatment === 'eu_reverse_charge') &&
+          (customer.country ?? 'CZ').toUpperCase() === 'CZ'
+        ) {
+          missing.push('country')
         }
         if (missing.length > 0) {
           throw new DocumentError(
@@ -782,7 +797,7 @@ export const documentsRepo = {
           ...totalColumns(totals, doc.currency),
           number,
           seriesId: series.id,
-          variableSymbol: variableSymbolFromNumber(number),
+          variableSymbol: variableSymbolFromNumber(number, doc.type),
           bankAccountId: bank?.id ?? null,
           issueDate,
           publicToken: randomBytes(24).toString('base64url'),
@@ -830,6 +845,39 @@ export const documentsRepo = {
           .update(document)
           .set({ status: 'paid', paidAt: new Date() })
           .where(scoped(orgId, id))
+      }
+      // A credit note settles the corrected invoice's open balance (never beyond it: a refund of money
+      // already received is a separate payment out).
+      if (doc.type === 'credit_note' && doc.relatedDocumentId) {
+        const [orig] = await tx
+          .select()
+          .from(document)
+          .where(scoped(orgId, doc.relatedDocumentId))
+          .for('update')
+        if (orig && orig.status === 'issued') {
+          const open = parseDecimal(orig.total).minus(
+            (await paidSums(tx, orgId, [orig.id])).get(orig.id) ?? new Decimal(0),
+          )
+          const creditTotal = parseDecimal(totals.total).abs()
+          const credit = creditTotal.lt(open) ? creditTotal : open
+          if (credit.gt(0)) {
+            await tx.insert(payment).values({
+              organizationId: orgId,
+              documentId: orig.id,
+              paidOn: doc.issueDate ?? todayPrague(),
+              amount: toFixed(credit, 2),
+              currency: orig.currency,
+              method: CREDIT_NOTE_METHOD,
+              note: number,
+            })
+            if (credit.gte(open)) {
+              await tx
+                .update(document)
+                .set({ status: 'paid', paidAt: new Date() })
+                .where(scoped(orgId, orig.id))
+            }
+          }
+        }
       }
       await logActivity(tx, orgId, actorId, id, 'issued', { number })
     })
@@ -1246,9 +1294,15 @@ export const documentsRepo = {
       }
       const already = (await paidSums(tx, orgId, [id])).get(id) ?? new Decimal(0)
       const remaining = parseDecimal(doc.total).minus(already)
-      const amount = input.amount ? parseDecimal(input.amount) : remaining
+      const amount = input.amount ? parseAmount(input.amount) : remaining
       if (amount.lte(0)) throw new DocumentError('BAD_REQUEST', 'Amount must be positive')
+      if (amount.minus(remaining).greaterThan('0.005')) {
+        throw new DocumentError('BAD_REQUEST', 'The payment exceeds the remaining balance')
+      }
       const paidOn = input.paidOn ?? todayPrague()
+      if (paidOn > todayPrague()) {
+        throw new DocumentError('BAD_REQUEST', 'The payment date cannot be in the future')
+      }
       await tx.insert(payment).values({
         organizationId: orgId,
         documentId: id,
@@ -1350,6 +1404,36 @@ export const documentsRepo = {
         .update(document)
         .set({ status: 'cancelled', cancelledAt: new Date() })
         .where(scoped(orgId, id))
+      // Cancelling a credit note takes back the settlement it made on the corrected invoice.
+      if (doc.type === 'credit_note' && doc.relatedDocumentId && doc.number) {
+        const removed = await tx
+          .delete(payment)
+          .where(
+            and(
+              eq(payment.organizationId, orgId),
+              eq(payment.documentId, doc.relatedDocumentId),
+              eq(payment.method, CREDIT_NOTE_METHOD),
+              eq(payment.note, doc.number),
+            ),
+          )
+          .returning({ id: payment.id })
+        if (removed.length > 0) {
+          const [orig] = await tx
+            .select()
+            .from(document)
+            .where(scoped(orgId, doc.relatedDocumentId))
+            .for('update')
+          if (orig?.status === 'paid') {
+            const paid = (await paidSums(tx, orgId, [orig.id])).get(orig.id) ?? new Decimal(0)
+            if (paid.lt(parseDecimal(orig.total))) {
+              await tx
+                .update(document)
+                .set({ status: 'issued', paidAt: null })
+                .where(scoped(orgId, orig.id))
+            }
+          }
+        }
+      }
       await logActivity(tx, orgId, actorId, id, 'cancelled')
     })
     return this.get(db, orgId, id)

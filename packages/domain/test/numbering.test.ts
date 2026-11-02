@@ -56,6 +56,17 @@ describe('variable symbol', () => {
     ['ABC', ''],
     ['1234567890123', '4567890123'],
   ])('%s → %s', (n, vs) => expect(variableSymbolFromNumber(n)).toBe(vs))
+
+  it('keeps the symbols of different document types apart', () => {
+    const vs = [
+      variableSymbolFromNumber('2026-0001'),
+      variableSymbolFromNumber('Z2026-0001', 'proforma'),
+      variableSymbolFromNumber('D2026-0001', 'credit_note'),
+      variableSymbolFromNumber('P2026-0001', 'payment_receipt'),
+    ]
+    expect(new Set(vs).size).toBe(4)
+    expect(vs.every((v) => v.length <= 10)).toBe(true)
+  })
 })
 
 describe('parseNumber', () => {

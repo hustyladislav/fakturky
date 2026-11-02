@@ -1,7 +1,11 @@
-import { VAT_TREATMENTS } from '@fakturky/domain'
+import { isValidIsoDate, VAT_TREATMENTS } from '@fakturky/domain'
 import { z } from 'zod'
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD')
+/** A real calendar date (rejects 2026-13-45 and 2026-02-31). */
+export const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD')
+  .refine(isValidIsoDate, 'Not a valid date')
 const decimal = z
   .union([z.string(), z.number()])
   .transform((v) => String(v).trim().replace(',', '.'))

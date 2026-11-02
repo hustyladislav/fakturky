@@ -56,6 +56,18 @@ test('template → draft, recurring cron run issues once per due date, tenant sc
   const issued = await api.documents.list({ filter: 'unpaid' })
   expect(issued.some((x) => x.issueDate === '2026-01-01')).toBe(true)
 
+  // Frequency and day can be changed after creation; an explicit next run wins over the recomputed one.
+  const moved = await api.recurring.update({
+    id: rule.id,
+    frequency: 'quarterly',
+    dayOfMonth: 15,
+    nextRunOn: '2026-04-15',
+  })
+  expect([moved.frequency, moved.dayOfMonth, moved.nextRunOn]).toEqual([
+    'quarterly',
+    15,
+    '2026-04-15',
+  ])
   const paused = await api.recurring.update({ id: rule.id, active: false })
   expect(paused.active).toBe(false)
   expect(await recurringRepo.runDue(handle.db, '2026-03-01')).toEqual([])

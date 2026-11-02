@@ -2,6 +2,7 @@ import { type DbHandle, schema } from '@fakturky/db'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { MailError, type SendInvoiceArgs } from '../context'
+import { documentsRepo } from '../repositories/documents'
 import { clientFor, createTestDb, seedOrg } from '../testing'
 
 let handle: DbHandle
@@ -89,10 +90,10 @@ test('credit note reverses an invoice, numbered in its own series, exported with
     contactId: bare.id,
     lines: [{ description: 'x', quantity: '1', unitPrice: '1', vatRate: '21' }],
   })
-  // §29 ZDPH: a tax invoice needs the customer's address and IČO/DIČ (field-level error).
+  // §29 ZDPH: a tax invoice needs the customer's address (field-level error); a consumer without IČO/DIČ is fine.
   await expect(api.documents.issue({ id: incomplete.id })).rejects.toMatchObject({
     code: 'PRECONDITION_FAILED',
-    data: { fields: ['customer.address', 'customer.taxId'] },
+    data: { fields: ['customer.address'] },
   })
   const c = await api.contacts.create({
     name: 'Odběratel',
@@ -144,6 +145,43 @@ test('credit note reverses an invoice, numbered in its own series, exported with
   expect(unpaid.some((d) => d.id === cn.id)).toBe(false)
   const dash = await api.dashboard.summary({})
   expect(dash.monthTurnover).toBe('0.00')
+})
+
+test('a credit note settles the invoice balance and asks for no payment; cancelling it reopens the invoice', async () => {
+  const org = await seedOrg(handle, 'cn-balance')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Neplátce' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({ name: 'Odběratel' })
+  const inv = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        contactId: c.id,
+        lines: [{ description: 'Práce', quantity: '1', unitPrice: '1000' }],
+      })
+    ).id,
+  })
+  const cn = await api.documents.issue({
+    id: (await api.documents.createCreditNote({ id: inv.id, reason: 'Storno služby' })).id,
+  })
+  const after = await api.documents.get({ id: inv.id })
+  expect(after.status).toBe('paid')
+  expect(after.remaining).toBe('0.00')
+  expect(after.payments.map((p) => [p.method, p.note, p.amount])).toEqual([
+    ['credit_note', cn.number, '1000.0000'],
+  ])
+  expect((await api.documents.list({ filter: 'unpaid' })).some((d) => d.id === inv.id)).toBe(false)
+  // The credit note is exported without a payment request (no due date, bank details or QR).
+  const { toDocumentForExport } = await import('../export')
+  const found = await documentsRepo.forExport(handle.db, org, cn.id)
+  expect(toDocumentForExport(found!.doc, found!.lines).payment).toBeNull()
+
+  await api.documents.cancel({ id: cn.id })
+  const reopened = await api.documents.get({ id: inv.id })
+  expect(reopened.status).toBe('issued')
+  expect(reopened.remaining).toBe('1000.00')
+  expect(reopened.payments).toHaveLength(0)
 })
 
 test('proforma → paid → final invoice with the advance deducted; settled on issue', async () => {
@@ -287,10 +325,17 @@ test('exempt lines need a legal basis; EU reverse charge needs the customer VAT 
     ],
   })
   await expect(api.documents.issue({ id: eu.id })).rejects.toMatchObject({
-    data: { fields: ['customer.vatId'] },
+    data: { fields: ['customer.vatId', 'customer.country'] },
   })
   await api.contacts.update({ id: c.id, patch: { icDph: 'DE123456789' } })
-  expect((await api.documents.issue({ id: eu.id })).status).toBe('issued')
+  // A Czech customer cannot be invoiced under the EU reverse charge.
+  await expect(api.documents.issue({ id: eu.id })).rejects.toMatchObject({
+    data: { fields: ['customer.country'] },
+  })
+  await api.contacts.update({ id: c.id, patch: { country: 'DE' } })
+  const issuedEu = await api.documents.issue({ id: eu.id })
+  expect(issuedEu.status).toBe('issued')
+  expect(issuedEu.customerSnapshot).toMatchObject({ country: 'DE' })
 })
 
 test('rounding to whole units is a separate line; foreign currency keeps CZK VAT', async () => {
@@ -548,4 +593,57 @@ test('CZK cash drafts round by default (explicit choice wins); a receipt needs a
   await expect(api.documents.createPaymentReceipt({ id: pf.id })).rejects.toMatchObject({
     code: 'CONFLICT',
   })
+})
+
+test('payments: invalid amount, impossible or future date and overpayment are client errors', async () => {
+  const org = await seedOrg(handle, 'pay-validation')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Neplátce' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({ name: 'Klient' })
+  const inv = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        contactId: c.id,
+        lines: [{ description: 'x', quantity: '1', unitPrice: '1000' }],
+      })
+    ).id,
+  })
+  await expect(api.documents.markPaid({ id: inv.id, amount: 'abc' })).rejects.toMatchObject({
+    code: 'BAD_REQUEST',
+  })
+  await expect(
+    api.documents.markPaid({ id: inv.id, amount: '1', paidOn: '2026-13-45' }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  await expect(
+    api.documents.markPaid({ id: inv.id, amount: '1', paidOn: '2999-01-01' }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  await expect(api.documents.markPaid({ id: inv.id, amount: '1000.01' })).rejects.toMatchObject({
+    code: 'BAD_REQUEST',
+  })
+  const paid = await api.documents.markPaid({ id: inv.id, amount: '1 000,00' })
+  expect(paid.status).toBe('paid')
+})
+
+test('a VAT payer can issue a tax invoice to a consumer without IČO/DIČ (address is enough)', async () => {
+  const org = await seedOrg(handle, 'consumer-a')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const consumer = await api.contacts.create({
+    name: 'Marie Svobodová',
+    address: { street: 'Dlouhá 5', city: 'České Budějovice', zip: '37001' },
+  })
+  await expect(
+    api.documents.issue({
+      id: (
+        await api.documents.createDraft({
+          contactId: consumer.id,
+          lines: [{ description: 'x', quantity: '1', unitPrice: '1', vatRate: '21' }],
+        })
+      ).id,
+    }),
+  ).resolves.toMatchObject({ status: 'issued' })
 })

@@ -62,7 +62,7 @@ describe('invoice PDF', () => {
     expect(r.flat).toContain(n('QR Platba'))
     expect(r.flat).toContain(n('CZ6508000000192000145399'))
     expect(r.flat).toContain(n('Strana 1 / 1'))
-    expect(r.flat).toContain(n('Vystaveno ve Fakturky'))
+    expect(r.flat).toContain(n('Vystaveno v aplikaci Fakturky'))
   })
 
   it('(b) payer: tax document, DUZP, recap per rate', () => {
@@ -168,6 +168,6 @@ describe('invoice PDF', () => {
     expect(r.flat).toContain(n('Uhrazené zálohy'))
     expect(r.flat).toContain(n('Zbývá uhradit'))
     expect(r.flat).toContain(n('Zaokrouhlení'))
-    expect(r.flat).not.toContain(n('Vystaveno ve'))
+    expect(r.flat).not.toContain(n('Vystaveno v aplikaci'))
   })
 })

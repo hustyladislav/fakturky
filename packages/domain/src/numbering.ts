@@ -84,10 +84,24 @@ export function periodKey(reset: NumberingReset, date: NumberDate): string {
   }
 }
 
-/** Default variable symbol: digits of the document number, at most 10 (keeps the trailing digits). */
-export function variableSymbolFromNumber(number: string): string {
+/** Leading digit that keeps variable symbols of different document types apart (invoices have none). */
+const VS_TYPE_PREFIX: Record<string, string> = {
+  proforma: '1',
+  credit_note: '2',
+  payment_receipt: '3',
+  estimate: '4',
+}
+
+/**
+ * Default variable symbol: digits of the document number, at most 10 (keeps the trailing digits).
+ * Non-invoice types get a type digit in front, so `2026-0001` and `Z2026-0001` never share a symbol
+ * and bank matching stays unambiguous.
+ */
+export function variableSymbolFromNumber(number: string, type = 'invoice'): string {
+  const prefix = VS_TYPE_PREFIX[type] ?? ''
   const digits = number.replace(/\D/g, '')
-  return digits.length > 10 ? digits.slice(digits.length - 10) : digits
+  const room = 10 - prefix.length
+  return prefix + (digits.length > room ? digits.slice(digits.length - room) : digits)
 }
 
 export const DEFAULT_NUMBER_PATTERNS = {

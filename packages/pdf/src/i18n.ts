@@ -28,6 +28,7 @@ export interface Labels {
   constantSymbol: string
   specificSymbol: string
   amountDue: string
+  creditTotal: string
   qrSpayd: string
   qrEpc: string
   description: string
@@ -102,6 +103,7 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     constantSymbol: 'Konstantní symbol',
     specificSymbol: 'Specifický symbol',
     amountDue: 'K úhradě',
+    creditTotal: 'Dobropisováno celkem',
     qrSpayd: 'QR Platba',
     qrEpc: 'SEPA QR',
     description: 'Popis',
@@ -127,7 +129,7 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     remaining: 'Zbývá uhradit',
     issuedBy: 'Vystavil(a)',
     page: 'Strana',
-    issuedIn: 'Vystaveno ve',
+    issuedIn: 'Vystaveno v aplikaci',
     notTaxDocument: 'Tento doklad není daňovým dokladem.',
     corrects: 'Opravuje doklad č. {number} ze dne {date}.',
     correctionReason: 'Důvod opravy',
@@ -137,8 +139,8 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     taxableDateDefault: 'DUZP',
     treatments: {
       exempt: 'Osvobozeno',
-      reverse_charge: 'PDP',
-      eu_reverse_charge: 'PDP',
+      reverse_charge: 'Přenesená daňová povinnost',
+      eu_reverse_charge: 'Přenesená daňová povinnost',
       export: 'Vývoz',
       outside_scope: 'Mimo DPH',
     },
@@ -177,6 +179,7 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     constantSymbol: 'Konštantný symbol',
     specificSymbol: 'Špecifický symbol',
     amountDue: 'Na úhradu',
+    creditTotal: 'Dobropisované spolu',
     qrSpayd: 'QR platba',
     qrEpc: 'SEPA QR',
     description: 'Popis',
@@ -202,7 +205,7 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     remaining: 'Zostáva uhradiť',
     issuedBy: 'Vystavil(a)',
     page: 'Strana',
-    issuedIn: 'Vystavené vo',
+    issuedIn: 'Vystavené v aplikácii',
     notTaxDocument: 'Tento doklad nie je daňovým dokladom.',
     corrects: 'Opravuje doklad č. {number} zo dňa {date}.',
     correctionReason: 'Dôvod opravy',
@@ -212,8 +215,8 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     taxableDateDefault: 'Dátum dodania',
     treatments: {
       exempt: 'Oslobodené',
-      reverse_charge: 'PDP',
-      eu_reverse_charge: 'PDP',
+      reverse_charge: 'Prenesená daňová povinnosť',
+      eu_reverse_charge: 'Prenesená daňová povinnosť',
       export: 'Vývoz',
       outside_scope: 'Mimo DPH',
     },
@@ -252,6 +255,7 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     constantSymbol: 'Constant symbol',
     specificSymbol: 'Specific symbol',
     amountDue: 'Amount due',
+    creditTotal: 'Total credited',
     qrSpayd: 'QR payment',
     qrEpc: 'SEPA QR',
     description: 'Description',

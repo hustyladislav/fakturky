@@ -363,6 +363,8 @@ export const cs = {
       vatRecap: 'Rekapitulace DPH',
       vatRecapRow: (rate: string) => `Sazba ${rate} %`,
       nonPayer: 'Nejste plátcem DPH, faktura bude bez DPH.',
+      proformaNoVat:
+        'Zálohová faktura je bez DPH: zadejte částku, kterou má odběratel zaplatit (u plátců včetně DPH). DPH se vyúčtuje dokladem k přijaté platbě.',
       saveDraft: 'Uložit koncept',
       issue: 'Vystavit',
       saved: 'Koncept byl uložen.',
@@ -381,7 +383,8 @@ export const cs = {
         'line.vatRate': 'sazbu DPH 21 / 12 % nebo režim DPH u každé položky',
         'customer.vatId': 'DIČ / IČ DPH (nutné pro přenesení daňové povinnosti v rámci EU)',
         'customer.address': 'adresu (ulice, město, PSČ)',
-        'customer.taxId': 'IČO nebo DIČ',
+        'customer.country':
+          'zemi odběratele v jiném členském státě EU (přenesení daňové povinnosti v rámci EU se nevztahuje na tuzemského odběratele)',
       },
       missingLines: (names: string[]) => `U položek doplňte: ${names.join(', ')}.`,
       missingCustomer: (names: string[]) =>
@@ -432,6 +435,7 @@ export const cs = {
       iban: 'IBAN',
       account: 'Účet',
       paidSoFar: 'Uhrazeno',
+      creditedBy: (number: string) => `Z toho dobropisem ${number}`,
       remaining: 'Zbývá uhradit',
       history: 'Průběh',
       timeline: {
@@ -531,7 +535,7 @@ export const cs = {
     downloadPdf: 'Stáhnout PDF',
     print: 'Vytisknout',
     notFound: 'Tento odkaz na fakturu neplatí nebo byl zrušen.',
-    issuedIn: (brand: string) => `Vystaveno ve ${brand}`,
+    issuedIn: (brand: string) => `Vystaveno v aplikaci ${brand}`,
   },
   appearance: {
     title: 'Vzhled dokladů',
@@ -543,7 +547,7 @@ export const cs = {
     none: 'Nenahráno',
     remove: 'Odebrat',
     hint: 'PNG nebo JPEG, nejvýše 300 KB. Obrázky jsou uložené soukromě a zobrazí se jen na vašich dokladech.',
-    showBrand: 'Zobrazit na dokladu řádek „Vystaveno ve …“',
+    showBrand: 'Zobrazit na dokladu řádek „Vystaveno v aplikaci …“',
     saved: 'Vzhled byl uložen.',
     errors: {
       'image.size': 'Obrázek je příliš velký. Nahrajte soubor do 300 KB.',
@@ -606,9 +610,13 @@ export const cs = {
     street: 'Ulice a číslo',
     city: 'Město',
     zip: 'PSČ',
+    country: 'Země',
+    euReverseChargeDomestic:
+      'Přenesení daňové povinnosti v rámci EU lze použít jen pro odběratele z jiného členského státu. U tohoto kontaktu je nastavena Česká republika.',
     edit: 'Upravit kontakt',
     updated: 'Kontakt byl uložen.',
-    taxDocHint: 'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a jeho IČO nebo DIČ.',
+    taxDocHint:
+      'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a – je-li plátcem DPH – i jeho DIČ.',
     created: 'Kontakt byl vytvořen.',
     archived: 'Kontakt byl archivován.',
   },
@@ -819,6 +827,7 @@ export const cs = {
       archive_contact: 'Archivuji kontakt',
       lookup_company_by_ico: 'Vyhledávám firmu podle IČO',
       lookup_company_ares: 'Hledám firmu v ARES',
+      lookup_eu_vat_id: 'Ověřuji DIČ ve VIES',
       get_exchange_rate: 'Zjišťuji kurz ČNB',
       list_documents: 'Procházím faktury',
       get_document: 'Načítám doklad',

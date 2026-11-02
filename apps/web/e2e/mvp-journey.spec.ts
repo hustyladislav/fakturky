@@ -109,7 +109,6 @@ for (const v of variants) {
         const alert = page.getByRole('alert')
         await expect(alert).toContainText('Daňový doklad vyžaduje údaje odběratele')
         await expect(alert).toContainText('adresu')
-        await expect(alert).toContainText('IČO nebo DIČ')
         // The saved draft's URL is kept, so a refresh or the contacts link does not lose it.
         await expect(page).toHaveURL(/\/faktury\/[^/]+\/upravit$/)
         draftUrl = page.url()

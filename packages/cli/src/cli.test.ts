@@ -1,7 +1,8 @@
-import { mkdtemp, stat } from 'node:fs/promises'
+import { mkdtemp, readFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test } from 'vitest'
+import { saveFile } from './commands'
 import { configDir } from './config'
 import { render } from './format'
 import { coerce, groupOperations, kindOf, parseSpec } from './spec'
@@ -92,4 +93,20 @@ test('config dir honours XDG_CONFIG_HOME', async () => {
   expect(configDir({ XDG_CONFIG_HOME: dir }, 'linux')).toBe(join(dir, 'fakturky'))
   expect(configDir({ APPDATA: 'C:\\x' }, 'win32')).toContain('fakturky')
   expect((await stat(dir)).isDirectory()).toBe(true)
+})
+
+test('file results (PDF base64, ISDOC xml) are written to --out', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'fk-cli-'))
+  const pdf = join(dir, 'a.pdf')
+  expect(
+    await saveFile(
+      { filename: 'a.pdf', contentBase64: Buffer.from('%PDF-1').toString('base64') },
+      pdf,
+    ),
+  ).toBe(true)
+  expect((await readFile(pdf)).toString()).toBe('%PDF-1')
+  const xml = join(dir, 'a.isdoc')
+  expect(await saveFile({ filename: 'a.isdoc', xml: '<Invoice/>' }, xml)).toBe(true)
+  expect(await readFile(xml, 'utf8')).toBe('<Invoice/>')
+  expect(await saveFile({ id: '1' }, join(dir, 'x'))).toBe(false)
 })

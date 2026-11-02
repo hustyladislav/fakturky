@@ -698,6 +698,38 @@ export const documentsRepo = {
         exchangeRate: doc.exchangeRate,
       })
       assertVatLines(lines as unknown as DraftInput['lines'], vatOnNow)
+      if (doc.type === 'credit_note' && doc.relatedDocumentId) {
+        // Corrections may be partial and repeated, but together they cannot refund more than the invoice.
+        const originalId = doc.relatedDocumentId
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`credit:${originalId}`}))`)
+        const [orig] = await tx
+          .select({ total: document.total })
+          .from(document)
+          .where(scoped(orgId, originalId))
+        const others = await tx
+          .select({ total: document.total })
+          .from(document)
+          .where(
+            and(
+              eq(document.organizationId, orgId),
+              eq(document.relatedDocumentId, originalId),
+              eq(document.type, 'credit_note'),
+              inArray(document.status, ['issued', 'paid']),
+              isNull(document.deletedAt),
+              ne(document.id, id),
+            ),
+          )
+        const credited = others.reduce(
+          (sum, o) => sum.plus(parseDecimal(o.total)),
+          parseDecimal(totals.total),
+        )
+        if (orig && credited.abs().greaterThan(parseDecimal(orig.total).abs())) {
+          throw new DocumentError(
+            'CONFLICT',
+            'The credit notes would refund more than the invoice total',
+          )
+        }
+      }
       await writeLines(tx, orgId, id, lines as unknown as DraftInput['lines'], totals, vatOnNow)
 
       // Number allocation: lazily created default series + atomic counter bump.
@@ -1295,6 +1327,24 @@ export const documentsRepo = {
       if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
       if (doc.status !== 'issued' && doc.status !== 'paid') {
         throw new DocumentError('CONFLICT', 'Only issued documents can be cancelled')
+      }
+      const [credit] = await tx
+        .select({ id: document.id })
+        .from(document)
+        .where(
+          and(
+            eq(document.organizationId, orgId),
+            eq(document.relatedDocumentId, id),
+            eq(document.type, 'credit_note'),
+            inArray(document.status, ['issued', 'paid']),
+            isNull(document.deletedAt),
+          ),
+        )
+      if (credit) {
+        throw new DocumentError(
+          'CONFLICT',
+          'This invoice already has a credit note; cancelling it too would correct it twice',
+        )
       }
       await tx
         .update(document)

@@ -136,6 +136,10 @@ test('credit note reverses an invoice, numbered in its own series, exported with
   await expect(api.documents.createCreditNote({ id: draft.id })).rejects.toMatchObject({
     code: 'CONFLICT',
   })
+  // A second full credit note would refund twice; the corrected invoice cannot also be cancelled.
+  const again = await api.documents.createCreditNote({ id: inv.id, reason: 'Znovu' })
+  await expect(api.documents.issue({ id: again.id })).rejects.toMatchObject({ code: 'CONFLICT' })
+  await expect(api.documents.cancel({ id: inv.id })).rejects.toMatchObject({ code: 'CONFLICT' })
   const unpaid = await api.documents.list({ filter: 'unpaid' })
   expect(unpaid.some((d) => d.id === cn.id)).toBe(false)
   const dash = await api.dashboard.summary({})

@@ -21,6 +21,7 @@ import { Label } from '@fakturky/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { bankErrorMessage } from '@/components/bank/bank-errors'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 
@@ -74,8 +75,25 @@ export function BankAccountsCard() {
                 {a.iban}
                 {a.bic ? ` · ${a.bic}` : ''}
               </div>
+              {a.fioConnected && (
+                <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+                  <Badge variant="secondary">{t.fio.connected}</Badge>
+                  {a.fioLastError ? (
+                    <span className="text-destructive">
+                      {bankErrorMessage({ message: a.fioLastError })}
+                    </span>
+                  ) : (
+                    <span>
+                      {a.fioLastSyncedAt
+                        ? t.fio.lastSync(formatDateTimeCs(a.fioLastSyncedAt))
+                        : t.fio.neverSynced}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <FioToken account={a} onChanged={refresh} />
               {!a.defaultForCurrency && (
                 <Button variant="outline" size="sm" onClick={() => setDefault.mutate({ id: a.id })}>
                   {t.makeDefault}
@@ -172,5 +190,89 @@ function NewBankAccount({ onCreated }: { onCreated: () => unknown }) {
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function formatDateTimeCs(d: Date | string) {
+  return new Date(d).toLocaleString('cs-CZ', { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+function FioToken({
+  account,
+  onChanged,
+}: {
+  account: { id: string; fioConnected: boolean; bankCode: string | null }
+  onChanged: () => unknown
+}) {
+  const f = t.fio
+  const [open, setOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const save = useMutation(
+    orpc.bankAccounts.setFioToken.mutationOptions({
+      onSuccess: async (_, v) => {
+        toast.success(v.token ? f.saved : f.removed)
+        setOpen(false)
+        await onChanged()
+      },
+      onError: (e) => {
+        const code = (e as { code?: string }).code
+        setError(code === 'PRECONDITION_FAILED' ? f.notConfigured : f.invalid)
+      },
+    }),
+  )
+  // 2010 is Fio's bank code; other banks have no such API.
+  if (account.bankCode !== '2010') return null
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        {account.fioConnected ? f.reconnect : f.connect}
+      </Button>
+      {account.fioConnected && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => save.mutate({ id: account.id, token: null })}
+        >
+          {f.disconnect}
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <form
+            className="space-y-4"
+            autoComplete="off"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setError(null)
+              const token = String(new FormData(e.currentTarget).get('token') ?? '').trim()
+              save.mutate({ id: account.id, token })
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>{f.title}</DialogTitle>
+            </DialogHeader>
+            <p className="text-muted-foreground text-sm">{f.description}</p>
+            <div className="space-y-2">
+              <Label htmlFor="fio-token">{f.token}</Label>
+              <Input
+                id="fio-token"
+                name="token"
+                type="password"
+                required
+                autoComplete="off"
+                aria-invalid={error ? true : undefined}
+                onChange={() => setError(null)}
+              />
+              <FieldError>{error}</FieldError>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={save.isPending}>
+                {f.save}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

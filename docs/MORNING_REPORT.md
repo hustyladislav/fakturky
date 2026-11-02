@@ -13,6 +13,13 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
   frozen at the 03:16 build (has almost everything) until slots free up ~22:00; later merges (TypeScript 7, QA round
   2 fixes) deploy then automatically. Now only `main` deploys and docs-only commits skip builds. If you want
   previews per PR and no daily cap, upgrade the team to Pro ($20/mo) — your call.
+- **Bank statement import + automatic payment pairing (new, free)** — nothing to do for statement upload. For Fio
+  sync, `ENCRYPTION_KEY` (32 random bytes, base64) was generated and set in Vercel production + preview (sensitive;
+  Fio tokens are stored AES-256-GCM encrypted with it — if you ever rotate it, users just paste their token again).
+  Local dev: `openssl rand -base64 32` into `.env.local`. The daily `/api/cron/bank-sync` (04:00 UTC) needs the existing
+  `CRON_SECRET`. Migrations 0012–0013 run on the next production deploy of `main` (blocked by the deploy quota above
+  until it frees up). Real-bank caveat: the KB / ČSOB / Raiffeisenbank CSV and ABO/GPC readers are built from the
+  banks' documented layouts and synthetic fixtures — please upload one real export per bank you use and tell me what breaks.
 0. **Preview database** — previews share the production Neon DB (branching option is disabled for this
    marketplace resource on the free plan). Migrations are now gated to production only (`VERCEL_ENV`), and destructive scripts need `ALLOW_DESTRUCTIVE_DB=1`. Proper fix: a Neon
    branch for Preview — see `docs/SECURITY_AUDIT.md`. Also optional: Vercel Firewall rules (paths/limits in that doc).

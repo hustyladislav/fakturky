@@ -1,0 +1,7 @@
+"accountId";"bankId";"currency";"dateStart";"dateEnd"
+"2400123455";"2010";"CZK";"{{DATE}}";"{{DATE}}"
+
+ID operace;Datum;Objem;Měna;Protiúčet;Název protiúčtu;Kód banky;KS;VS;SS;Uživatelská identifikace;Zpráva pro příjemce;Typ;Provedl;Upřesnění;Komentář;BIC;ID pokynu
+9100001;{{DATE}};1 000,00;CZK;1234567890;Platící Zákazník s.r.o.;0800;0308;{{VS}};;;Úhrada faktury;Příjem převodem uvnitř banky;;;;;
+9100002;{{DATE}};250,00;CZK;987654321;Neznámý plátce;0100;;;;;Dar;Bezhotovostní příjem;;;;;
+9100003;{{DATE}};-89,90;CZK;;;;;;;Nákup: Papírnictví;;Platba kartou;;;;;

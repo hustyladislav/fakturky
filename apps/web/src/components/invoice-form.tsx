@@ -1,7 +1,6 @@
 import { addDays, isoWeekday, isWeekend, todayPrague } from '@fakturky/domain/dates'
 import { computeDocumentTotals } from '@fakturky/domain/vat'
 import { Button } from '@fakturky/ui/components/button'
-import { FieldError } from '@fakturky/ui/components/field-error'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
@@ -226,22 +225,47 @@ export function InvoiceForm({ id }: { id?: string }) {
       })),
   })
 
+  const [createdId, setCreatedId] = useState<string | undefined>()
+  const [issueError, setIssueError] = useState<string | null>(null)
+  // A refused issue on a brand-new invoice moves to the saved draft's URL; carry the message across.
+  useEffect(() => {
+    if (!id) return
+    try {
+      const kept = sessionStorage.getItem(`issueError:${id}`)
+      if (kept) {
+        setIssueError(kept)
+        sessionStorage.removeItem(`issueError:${id}`)
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, [id])
+  const draftId = id ?? createdId
+
   const save = useMutation({
     mutationFn: async (andIssue: boolean) => {
-      setFormError(null)
+      setIssueError(null)
       const body = payload()
       if (andIssue && !customer) throw new Error(t.needCustomer)
       if (andIssue && body.lines.length === 0) throw new Error(t.needLines)
-      const doc = id
-        ? await client.documents.updateDraft({ id, patch: body })
+      const doc = draftId
+        ? await client.documents.updateDraft({ id: draftId, patch: body })
         : await client.documents.createDraft({ ...body, type: docType })
       if (!andIssue) return doc
       try {
         return await client.documents.issue({ id: doc.id })
       } catch (e) {
-        // Keep the saved draft: continue on its edit page so a retry does not create a second one.
+        // Keep the saved draft: a retry updates it instead of creating a second one.
         await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
-        if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+        setCreatedId(doc.id)
+        if (!id) {
+          try {
+            sessionStorage.setItem(`issueError:${doc.id}`, apiErrorMessage(e))
+          } catch {
+            /* storage unavailable */
+          }
+          navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+        }
         throw e
       }
     },
@@ -249,15 +273,18 @@ export function InvoiceForm({ id }: { id?: string }) {
       await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
       toast.success(andIssue ? cs.invoices.detail.issued(doc.number ?? '') : t.saved)
       if (andIssue) navigate({ to: '/faktury/$id', params: { id: doc.id } })
-      else if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+      else if (!draftId) {
+        setCreatedId(doc.id)
+        navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+      }
     },
     onError: (e) => {
-      setFormError(apiErrorMessage(e))
-      toast.error(apiErrorMessage(e))
+      const message = apiErrorMessage(e)
+      setIssueError(message)
+      toast.error(message)
     },
   })
 
-  const [formError, setFormError] = useState<string | null>(null)
   const weekend = dueDate && isWeekend(dueDate)
   const setLine = (key: number, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)))
@@ -313,6 +340,14 @@ export function InvoiceForm({ id }: { id?: string }) {
 
       <Card title={t.customer}>
         <CustomerPicker value={customer} onChange={setCustomer} />
+        {issueError && (
+          <p role="alert" className="text-destructive text-sm">
+            {issueError}{' '}
+            <Link to="/kontakty" className="underline">
+              {cs.nav.contacts}
+            </Link>
+          </p>
+        )}
       </Card>
 
       <Card title={t.details}>
@@ -601,18 +636,12 @@ export function InvoiceForm({ id }: { id?: string }) {
         </div>
       </Card>
 
-      {formError && (
-        <FieldError className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
-          {formError}
-        </FieldError>
-      )}
-
       <div className="from-background bg-gradient-to-t fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex gap-2 p-4 sm:static sm:justify-end sm:p-0">
         <Button
           type="button"
           variant="outline"
           className="flex-1 sm:flex-none"
-          disabled={save.isPending}
+          disabled={save.isPending || !ready}
           onClick={() => save.mutate(false)}
         >
           {t.saveDraft}
@@ -620,7 +649,7 @@ export function InvoiceForm({ id }: { id?: string }) {
         <Button
           type="button"
           className="flex-[2] sm:flex-none"
-          disabled={save.isPending}
+          disabled={save.isPending || !ready}
           onClick={() => save.mutate(true)}
         >
           {t.issue}

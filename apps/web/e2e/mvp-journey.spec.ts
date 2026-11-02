@@ -59,6 +59,7 @@ const documentId = (page: Page) => new URL(page.url()).pathname.split('/').pop()
 for (const v of variants) {
   test(`MVP journey — ${v.name}`, async ({ page, browser }) => {
     const customerName = 'E2E Odběratel s.r.o.'
+    let draftUrl = ''
 
     await test.step('sign up (email + password) and land in onboarding', async () => {
       await signUp(page, testEmail(v.tag))
@@ -77,6 +78,7 @@ for (const v of variants) {
     })
 
     await test.step('create a contact', async () => {
+      // A VAT payer's tax invoice needs the customer's address and IČO/DIČ (§29 ZDPH): start without them.
       await createContact(page, customerName)
     })
 
@@ -95,7 +97,35 @@ for (const v of variants) {
       }
     })
 
+    if (v.vatPayer) {
+      await test.step('a tax invoice without customer data is refused with a visible, field-level message', async () => {
+        await page.getByRole('button', { name: 'Vystavit', exact: true }).click()
+        const alert = page.getByRole('alert')
+        await expect(alert).toContainText('Daňový doklad vyžaduje údaje odběratele')
+        await expect(alert).toContainText('adresu')
+        await expect(alert).toContainText('IČO nebo DIČ')
+        // The saved draft's URL is kept, so a refresh or the contacts link does not lose it.
+        await expect(page).toHaveURL(/\/faktury\/[^/]+\/upravit$/)
+        draftUrl = page.url()
+      })
+      await test.step('completing the contact lets the same draft be issued', async () => {
+        await page.goto('/kontakty')
+        await page.getByRole('button', { name: 'Upravit', exact: true }).first().click()
+        const dialog = page.getByRole('dialog')
+        await dialog.getByLabel('DIČ').fill('CZ12345024')
+        await dialog.getByLabel('Ulice a číslo').fill('Hlavní 7')
+        await dialog.getByLabel('Město').fill('Ostrava')
+        await dialog.getByLabel('PSČ').fill('70200')
+        await dialog.getByRole('button', { name: 'Uložit' }).click()
+        await expect(dialog).toBeHidden()
+      })
+    }
+
     await test.step('issue allocates the number YYYY-0001', async () => {
+      if (v.vatPayer) {
+        await page.goto(draftUrl)
+        await expect(page.getByText(customerName).first()).toBeVisible()
+      }
       await page.getByRole('button', { name: 'Vystavit', exact: true }).click()
       // `/faktury/nova` also matches a naive pattern, so wait for the issued document's own URL.
       await page.waitForURL(

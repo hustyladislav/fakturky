@@ -7,7 +7,7 @@ const decimal = z
   .transform((v) => String(v).trim().replace(',', '.'))
   .refine((v) => /^-?\d+(\.\d+)?$/.test(v), 'Expected a decimal number')
 
-export const DOCUMENT_TYPES = ['invoice', 'proforma', 'credit_note'] as const
+export const DOCUMENT_TYPES = ['invoice', 'proforma', 'credit_note', 'payment_receipt'] as const
 export const documentTypeSchema = z.enum(DOCUMENT_TYPES)
 
 export const lineInputSchema = z.object({
@@ -155,6 +155,15 @@ export const documentSchema = z.object({
 })
 
 export const documentDetailSchema = documentSchema.extend({
+  /** Documents created from this one (credit notes, receipts, final invoices). */
+  related: z.array(
+    z.object({
+      id: z.string(),
+      type: z.string(),
+      number: z.string().nullable(),
+      status: z.string(),
+    }),
+  ),
   lines: z.array(lineSchema),
   payments: z.array(paymentSchema),
   vatRecap: z.array(

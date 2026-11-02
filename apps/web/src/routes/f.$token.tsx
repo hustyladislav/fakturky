@@ -64,13 +64,15 @@ function PublicInvoice() {
   const title =
     d.type === 'proforma'
       ? t.titleProforma
-      : d.type === 'credit_note'
-        ? d.vatPayer
-          ? t.titleCreditNoteTax
-          : t.titleCreditNote
-        : d.vatPayer
-          ? t.titleTaxInvoice
-          : t.titleInvoice
+      : d.type === 'payment_receipt'
+        ? t.titleReceipt
+        : d.type === 'credit_note'
+          ? d.vatPayer
+            ? t.titleCreditNoteTax
+            : t.titleCreditNote
+          : d.vatPayer
+            ? t.titleTaxInvoice
+            : t.titleInvoice
   const label = (k: string, v: React.ReactNode) => (
     <div>
       <div className="text-xs text-neutral-500">{k}</div>

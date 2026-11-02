@@ -33,6 +33,7 @@ import { Route as FTokenRouteImport } from './routes/f.$token'
 import { Route as AppFakturyIndexRouteImport } from './routes/_app/faktury.index'
 import { Route as AppFakturyNovaRouteImport } from './routes/_app/faktury.nova'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
+import { Route as ApiCronBankSyncRouteImport } from './routes/api/cron.bank-sync'
 import { Route as ApiCronRecurringRouteImport } from './routes/api/cron.recurring'
 import { Route as ApiCronRemindersRouteImport } from './routes/api/cron.reminders'
 import { Route as ApiDevDbKindRouteImport } from './routes/api/dev.db-kind'
@@ -164,6 +165,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronBankSyncRoute = ApiCronBankSyncRouteImport.update({
+  id: '/api/cron/bank-sync',
+  path: '/api/cron/bank-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronRecurringRoute = ApiCronRecurringRouteImport.update({
   id: '/api/cron/recurring',
   path: '/api/cron/recurring',
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/f/$token': typeof FTokenRouteWithChildren
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/bank-sync': typeof ApiCronBankSyncRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/dev/db-kind': typeof ApiDevDbKindRoute
@@ -278,6 +285,7 @@ export interface FileRoutesByTo {
   '/f/$token': typeof FTokenRouteWithChildren
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/bank-sync': typeof ApiCronBankSyncRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/dev/db-kind': typeof ApiDevDbKindRoute
@@ -316,6 +324,7 @@ export interface FileRoutesById {
   '/f/$token': typeof FTokenRouteWithChildren
   '/_app/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/bank-sync': typeof ApiCronBankSyncRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/dev/db-kind': typeof ApiDevDbKindRoute
@@ -354,6 +363,7 @@ export interface FileRouteTypes {
     | '/f/$token'
     | '/faktury/nova'
     | '/api/auth/$'
+    | '/api/cron/bank-sync'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
     | '/api/dev/db-kind'
@@ -389,6 +399,7 @@ export interface FileRouteTypes {
     | '/f/$token'
     | '/faktury/nova'
     | '/api/auth/$'
+    | '/api/cron/bank-sync'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
     | '/api/dev/db-kind'
@@ -426,6 +437,7 @@ export interface FileRouteTypes {
     | '/f/$token'
     | '/_app/faktury/nova'
     | '/api/auth/$'
+    | '/api/cron/bank-sync'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
     | '/api/dev/db-kind'
@@ -457,6 +469,7 @@ export interface RootRouteChildren {
   DocsMcpRoute: typeof DocsMcpRoute
   FTokenRoute: typeof FTokenRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCronBankSyncRoute: typeof ApiCronBankSyncRoute
   ApiCronRecurringRoute: typeof ApiCronRecurringRoute
   ApiCronRemindersRoute: typeof ApiCronRemindersRoute
   ApiDevDbKindRoute: typeof ApiDevDbKindRoute
@@ -636,6 +649,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/bank-sync': {
+      id: '/api/cron/bank-sync'
+      path: '/api/cron/bank-sync'
+      fullPath: '/api/cron/bank-sync'
+      preLoaderRoute: typeof ApiCronBankSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/recurring': {
       id: '/api/cron/recurring'
       path: '/api/cron/recurring'
@@ -784,6 +804,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsMcpRoute: DocsMcpRoute,
   FTokenRoute: FTokenRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCronBankSyncRoute: ApiCronBankSyncRoute,
   ApiCronRecurringRoute: ApiCronRecurringRoute,
   ApiCronRemindersRoute: ApiCronRemindersRoute,
   ApiDevDbKindRoute: ApiDevDbKindRoute,

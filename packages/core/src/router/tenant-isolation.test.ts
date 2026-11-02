@@ -57,6 +57,21 @@ const cases: Record<string, Case> = {
     run: (b, a) => b.bankAccounts.delete({ id: a.bankAccountId }),
   },
 
+  'bankAccounts.setFioToken': {
+    kind: 'foreign',
+    run: (b, a) => b.bankAccounts.setFioToken({ id: a.bankAccountId, token: null }),
+  },
+  'bank.list': { kind: 'scoped', run: (b) => b.bank.list({}) },
+  'bank.importStatement': {
+    kind: 'foreign',
+    run: (b, a) =>
+      b.bank.importStatement({
+        bankAccountId: a.bankAccountId,
+        content: 'Datum;Objem;Měna\n05.01.2026;100,00;CZK\n',
+      }),
+  },
+  'bank.syncFio': { kind: 'foreign', run: (b, a) => b.bank.syncFio({ id: a.bankAccountId }) },
+
   'businessProfile.get': { kind: 'scoped', run: (b) => b.businessProfile.get() },
   'businessProfile.update': {
     kind: 'scoped',
@@ -252,6 +267,10 @@ beforeAll(async () => {
 
   const contact = await aApi.contacts.create({ name: SECRET, emails: ['a-secret@example.com'] })
   const bank = await aApi.bankAccounts.create({ label: SECRET, account: '19-2000145399/0800' })
+  await aApi.bank.importStatement({
+    bankAccountId: bank.id,
+    content: `Datum;Objem;Měna;Název protiúčtu;VS\n05.01.2026;100,00;CZK;${SECRET};424242\n`,
+  })
   const draft = await aApi.documents.createDraft({
     contactId: contact.id,
     privateNote: SECRET,
@@ -372,6 +391,10 @@ describe('tenant isolation', () => {
     const issued = await aApi.documents.get({ id: a.issuedId })
     expect(issued.status).toBe('issued')
     expect(issued.payments).toHaveLength(0)
+    // org A's statement is intact and was not duplicated or altered by B's hostile import
+    const txs = await aApi.bank.list({})
+    expect(txs.total).toBe(1)
+    expect(txs.items[0]).toMatchObject({ matchStatus: 'unmatched', counterpartyName: SECRET })
     // org A's own list is unchanged: no document appeared from B's hostile createDraft/duplicate calls
     expect((await aApi.documents.list({})).length).toBe(2)
     // …and B did not gain documents referencing A's contact or bank account

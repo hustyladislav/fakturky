@@ -90,6 +90,14 @@ export const bankAccount = pgTable(
     isDefault: boolean('is_default').notNull().default(false),
     defaultForCurrency: boolean('default_for_currency').notNull().default(false),
     showQr: boolean('show_qr').notNull().default(true),
+    /** Fio read-only API token, AES-256-GCM encrypted with `ENCRYPTION_KEY` (never returned to clients). */
+    fioTokenEncrypted: text('fio_token_encrypted'),
+    /** Last Fio request, kept in the DB so the 1 request / 30 s limit holds across serverless instances. */
+    fioLastRequestAt: timestamp('fio_last_request_at', { withTimezone: true }),
+    fioLastSyncedAt: timestamp('fio_last_synced_at', { withTimezone: true }),
+    /** Statement coverage reached by the last successful sync (YYYY-MM-DD); the next sync resumes from here. */
+    fioSyncedThrough: text('fio_synced_through'),
+    fioLastError: text('fio_last_error'),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     ...timestamps(),
   },

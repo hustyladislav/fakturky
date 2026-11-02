@@ -8,6 +8,7 @@ export { parseCamt053 } from './camt.ts'
 export { detectCsvFormat, parseBankCsv, readDelimited } from './csv.ts'
 export { decodeBankFile, parseBankAmount, parseBankDate } from './text.ts'
 export * from './types.ts'
+export * from '../integrations/fio.ts'
 
 /** Detects CAMT.053 XML, ABO/GPC or CSV from the content and parses it. */
 export function parseStatement(text: string, options: CsvParseOptions = {}): ParsedStatement {

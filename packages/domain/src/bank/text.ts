@@ -22,7 +22,7 @@ const pad = (n: number, w = 2) => String(n).padStart(w, '0')
 /** Accepts 05.01.2026, 5. 1. 2026, 2026-01-05, 2026-01-05T10:00:00+0100, 05/01/2026, 05.01.2026 10:22. Returns YYYY-MM-DD or null. */
 export function parseBankDate(raw: string): string | null {
   const s = raw.trim()
-  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$/.exec(s)
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s+].*)?$/.exec(s)
   if (m) return ymd(Number(m[1]), Number(m[2]), Number(m[3]))
   m = /^(\d{1,2})\s*[./]\s*(\d{1,2})\s*[./]\s*(\d{4})(?:[,\s].*)?$/.exec(s)
   if (m) return ymd(Number(m[3]), Number(m[2]), Number(m[1]))

@@ -361,6 +361,8 @@ export const cs = {
       vatRecap: 'Rekapitulace DPH',
       vatRecapRow: (rate: string) => `Sazba ${rate} %`,
       nonPayer: 'Nejste plátcem DPH, faktura bude bez DPH.',
+      proformaNoVat:
+        'Zálohová faktura je bez DPH: zadejte částku, kterou má odběratel zaplatit (u plátců včetně DPH). DPH se vyúčtuje dokladem k přijaté platbě.',
       saveDraft: 'Uložit koncept',
       issue: 'Vystavit',
       saved: 'Koncept byl uložen.',
@@ -379,7 +381,6 @@ export const cs = {
         'line.vatRate': 'sazbu DPH 21 / 12 % nebo režim DPH u každé položky',
         'customer.vatId': 'DIČ / IČ DPH (nutné pro přenesení daňové povinnosti v rámci EU)',
         'customer.address': 'adresu (ulice, město, PSČ)',
-        'customer.taxId': 'IČO nebo DIČ',
         'customer.country':
           'zemi odběratele v jiném členském státě EU (přenesení daňové povinnosti v rámci EU se nevztahuje na tuzemského odběratele)',
       },
@@ -605,7 +606,8 @@ export const cs = {
       'Přenesení daňové povinnosti v rámci EU lze použít jen pro odběratele z jiného členského státu. U tohoto kontaktu je nastavena Česká republika.',
     edit: 'Upravit kontakt',
     updated: 'Kontakt byl uložen.',
-    taxDocHint: 'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a jeho IČO nebo DIČ.',
+    taxDocHint:
+      'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a – je-li plátcem DPH – i jeho DIČ.',
     created: 'Kontakt byl vytvořen.',
     archived: 'Kontakt byl archivován.',
   },

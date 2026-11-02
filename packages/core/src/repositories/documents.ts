@@ -310,6 +310,7 @@ export const documentsRepo = {
     opts: {
       filter: 'all' | 'draft' | 'unpaid' | 'overdue' | 'paid' | 'cancelled'
       search?: string
+      type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt'
       limit: number
       offset: number
     },
@@ -337,6 +338,7 @@ export const documentsRepo = {
           eq(document.organizationId, orgId),
           isNull(document.deletedAt),
           statusWhere,
+          opts.type ? eq(document.type, opts.type) : undefined,
           term
             ? or(
                 ilike(sql`coalesce(${document.number}, '')`, `%${term}%`),
@@ -440,6 +442,22 @@ export const documentsRepo = {
         total: r.total,
       })),
       activity: acts,
+      /** The document this one corrects or was created from (proforma, invoice), if any. */
+      parent: doc.relatedDocumentId
+        ? ((
+            await db
+              .select({
+                id: document.id,
+                type: document.type,
+                number: document.number,
+                status: document.status,
+              })
+              .from(document)
+              .where(
+                and(eq(document.organizationId, orgId), eq(document.id, doc.relatedDocumentId)),
+              )
+          )[0] ?? null)
+        : null,
       related: await db
         .select({
           id: document.id,

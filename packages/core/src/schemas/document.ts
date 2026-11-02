@@ -169,6 +169,15 @@ export const documentSchema = z.object({
 })
 
 export const documentDetailSchema = documentSchema.extend({
+  /** The document this one corrects or was created from (proforma, invoice). */
+  parent: z
+    .object({
+      id: z.string(),
+      type: z.string(),
+      number: z.string().nullable(),
+      status: z.string(),
+    })
+    .nullable(),
   /** Documents created from this one (credit notes, receipts, final invoices). */
   related: z.array(
     z.object({

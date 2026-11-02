@@ -21,6 +21,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { PromptDialog } from '@/components/prompt-dialog'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
 
@@ -46,6 +47,7 @@ export function ApiKeys() {
     },
   })
 
+  const [revoking, setRevoking] = useState<string | null>(null)
   const revoke = useMutation({
     mutationFn: async (keyId: string) => {
       const res = await authClient.apiKey.delete({ keyId })
@@ -60,6 +62,19 @@ export function ApiKeys() {
 
   return (
     <section className="space-y-4">
+      <PromptDialog
+        open={revoking !== null}
+        onOpenChange={(o) => !o && setRevoking(null)}
+        title={cs.apiKeys.revoke}
+        description={cs.apiKeys.revokeConfirm}
+        confirmLabel={cs.apiKeys.revoke}
+        destructive
+        pending={revoke.isPending}
+        onConfirm={() => {
+          if (revoking) revoke.mutate(revoking)
+          setRevoking(null)
+        }}
+      />
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-xl font-semibold">{cs.apiKeys.title}</h2>
@@ -97,13 +112,7 @@ export function ApiKeys() {
                 <TableCell>{formatDate(k.createdAt)}</TableCell>
                 <TableCell>{formatDate(k.lastRequest)}</TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (window.confirm(cs.apiKeys.revokeConfirm)) revoke.mutate(k.id)
-                    }}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => setRevoking(k.id)}>
                     {cs.apiKeys.revoke}
                   </Button>
                 </TableCell>

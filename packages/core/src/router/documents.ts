@@ -289,6 +289,10 @@ export const documentsRouter = {
           .default('all')
           .describe('all | draft | unpaid (issued, not fully paid) | overdue | paid | cancelled'),
         search: z.string().optional().describe('Matches number, variable symbol, customer name'),
+        type: z
+          .enum(['invoice', 'proforma', 'credit_note', 'payment_receipt'])
+          .optional()
+          .describe('Only documents of this type'),
         limit: z.coerce.number().int().min(1).max(200).default(50),
         offset: z.coerce.number().int().min(0).default(0),
       }),

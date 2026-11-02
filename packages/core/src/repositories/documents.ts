@@ -486,9 +486,12 @@ export const documentsRepo = {
       const currency = input.currency ?? profile?.defaultCurrency ?? 'CZK'
       const vatPayer = await vatOn(tx, orgId, profile, input.type, opts.relatedDocumentId)
       assertVatLines(input.lines, vatPayer)
+      const paymentMethod = input.paymentMethod ?? profile?.defaultPaymentMethod ?? 'bank_transfer'
+      // Whole-koruna rounding is the default for CZK cash payments (docs/DOMAIN.md); an explicit choice wins.
+      const roundTotal = input.roundTotal ?? (currency === 'CZK' && paymentMethod === 'cash')
       const totals = totalsFor(input.lines, {
         vatPayer,
-        roundTotal: input.roundTotal ?? false,
+        roundTotal,
         pricesIncludeVat: opts.pricesIncludeVat,
         currency,
         exchangeRate: input.exchangeRate,
@@ -503,7 +506,7 @@ export const documentsRepo = {
         .values({
           organizationId: orgId,
           type: input.type,
-          roundTotal: input.roundTotal ?? false,
+          roundTotal,
           pricesIncludeVat: opts.pricesIncludeVat ?? false,
           relatedDocumentId: opts.relatedDocumentId ?? null,
           contactId: input.contactId ?? null,
@@ -917,6 +920,13 @@ export const documentsRepo = {
     const profile = await loadProfile(db, orgId)
     if (!vatApplies(profile, 'payment_receipt')) {
       throw new DocumentError('CONFLICT', 'Only VAT payers issue a tax receipt for an advance')
+    }
+    // One receipt = one tax point: an advance received on several days needs a receipt per payment date.
+    if (new Set(src.payments.map((p) => p.paidOn)).size > 1) {
+      throw new DocumentError(
+        'CONFLICT',
+        'The advance was received on different dates; issue a receipt for each payment separately',
+      )
     }
     const paid = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
     // The received amount is VAT-inclusive: the draft is priced gross and VAT is extracted (A × r / (100 + r)).

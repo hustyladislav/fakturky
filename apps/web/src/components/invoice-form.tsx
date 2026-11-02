@@ -7,7 +7,7 @@ import { Money } from '@fakturky/ui/components/money'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Plus, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage } from '@/lib/errors'
@@ -85,6 +85,9 @@ export function InvoiceForm({ id }: { id?: string }) {
   const [currency, setCurrency] = useState('CZK')
   const [exchangeRate, setExchangeRate] = useState('')
   const [rateTouched, setRateTouched] = useState(false)
+  // The tax-point date the current rate belongs to; reopening a draft keeps its rate until the date changes.
+  const [rateFor, setRateFor] = useState<string | null>(null)
+  const rateRequest = useRef(0)
   const [roundTotal, setRoundTotal] = useState(false)
   const [bankAccountId, setBankAccountId] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer')
@@ -161,7 +164,8 @@ export function InvoiceForm({ id }: { id?: string }) {
     setTaxableDate(d.taxableDate ?? d.issueDate ?? today)
     setCurrency(d.currency)
     setExchangeRate(d.exchangeRate ? trimDecimal(d.exchangeRate) : '')
-    setRateTouched(!!d.exchangeRate)
+    setRateTouched(false)
+    setRateFor(d.exchangeRate ? (d.taxableDate ?? d.issueDate ?? today) : null)
     setRoundTotal(d.roundTotal)
     setBankAccountId(d.bankAccountId ?? '')
     setPaymentMethod(d.paymentMethod)
@@ -203,15 +207,19 @@ export function InvoiceForm({ id }: { id?: string }) {
   // The ČNB rate follows the tax point (DUZP; the issue date for non-payers) until the user edits it.
   const rateDate = vatPayer ? taxableDate : issueDate
   useEffect(() => {
-    if (!ready || currency === 'CZK' || rateTouched) return
+    if (!ready || currency === 'CZK' || rateTouched || rateFor === rateDate) return
     void loadRate(currency, rateDate)
-  }, [ready, currency, rateDate, rateTouched])
+  }, [ready, currency, rateDate, rateTouched, rateFor])
 
-  async function loadRate(cur = currency, date = taxableDate) {
+  async function loadRate(cur = currency, date = rateDate) {
     if (cur === 'CZK' || cur.length !== 3) return
+    const request = ++rateRequest.current
     try {
       const r = await client.lookup.exchangeRate({ currency: cur, date })
+      // Ignore a late answer for an older request/date.
+      if (request !== rateRequest.current) return
       setExchangeRate(r.rate)
+      setRateFor(date)
     } catch {
       /* the user can type the rate manually */
     }
@@ -460,7 +468,10 @@ export function InvoiceForm({ id }: { id?: string }) {
               onChange={(e) => {
                 const v = e.target.value.toUpperCase()
                 setCurrency(v)
-                if (v.length === 3 && v !== 'CZK') void loadRate(v)
+                if (v.length === 3 && v !== 'CZK') {
+                  setRateTouched(false)
+                  setRateFor(null)
+                }
               }}
             />
             <datalist id="currencies">
@@ -487,7 +498,7 @@ export function InvoiceForm({ id }: { id?: string }) {
                   variant="outline"
                   onClick={() => {
                     setRateTouched(false)
-                    void loadRate()
+                    void loadRate(currency, rateDate)
                   }}
                 >
                   {t.exchangeRateLoad}
@@ -616,7 +627,7 @@ export function InvoiceForm({ id }: { id?: string }) {
             {Number(totals.rounding) !== 0 && (
               <Row label={t.rounding} amount={totals.rounding} currency={currency} muted />
             )}
-            {vatPayer && foreign && (
+            {vatPayer && foreign && validNum(exchangeRate) && Number(num(exchangeRate)) > 0 && (
               <Row label={t.vatInCzk} amount={totals.vatTotalCzk} currency="CZK" muted />
             )}
             <div className="flex items-baseline justify-between pt-1 text-base font-semibold">

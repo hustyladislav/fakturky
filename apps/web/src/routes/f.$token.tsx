@@ -331,7 +331,7 @@ function PublicInvoice() {
           <img src={d.appearance.signature} alt="" className="h-14 max-w-48 object-contain" />
         )}
         {d.appearance.showBrand && (
-          <footer className="border-t border-neutral-200 pt-3 text-xs text-neutral-400">
+          <footer className="border-t border-neutral-200 pt-3 text-xs text-neutral-500">
             {t.issuedIn(cs.brand)}
           </footer>
         )}

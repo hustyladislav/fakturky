@@ -3,6 +3,14 @@ export type { InvoiceDocumentProps } from './InvoiceDocument.tsx'
 export { InvoiceDocument } from './InvoiceDocument.tsx'
 export type { Labels } from './i18n.ts'
 export { LABELS } from './i18n.ts'
+export type {
+  InvoiceSheetDraft,
+  InvoiceSheetInput,
+  SheetDraftLine,
+  SheetImage,
+  SheetModel,
+} from './model.ts'
+export { buildSheetModel, resolveSheetInput, titleFor } from './model.ts'
 export { amountDue, buildInvoiceQr } from './qr.ts'
 export { renderInvoicePdf } from './render.ts'
 export type { ImageBytes, InvoicePdfInput, PdfLine, QrData } from './types.ts'

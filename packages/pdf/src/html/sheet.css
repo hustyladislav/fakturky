@@ -1,0 +1,601 @@
+/*
+ * HTML twin of the PDF (`../InvoiceDocument.tsx`). Every number below is the react-pdf style value (points) used
+ * 1:1 as CSS px on a 595.28 x 841.89 paper, then the whole sheet is scaled with `zoom`. When you change the PDF
+ * styles, change them here too (the dev route `/_dev/sheet` shows both side by side).
+ *
+ * Unlayered on purpose: it must win over Tailwind's preflight/utilities (which live in cascade layers).
+ */
+
+@font-face {
+  font-family: "Fakturky Fraunces";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("../../fonts/Fraunces-500.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Fakturky Fraunces";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("../../fonts/Fraunces-600.ttf") format("truetype");
+}
+
+.fk-sheet-wrap {
+  --fk-ink: #1b1a17;
+  --fk-muted: #6b665b;
+  --fk-rule: #d6cdba;
+  --fk-accent: #1f4d3c;
+  --fk-zoom: 1;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  color-scheme: light;
+}
+
+/* Until the width is measured the sheet would flash at 100% scale. */
+.fk-sheet-wrap[data-pending] .fk-sheet {
+  visibility: hidden;
+}
+
+.fk-sheet,
+.fk-sheet *,
+.fk-sheet *::before,
+.fk-sheet *::after {
+  box-sizing: border-box;
+}
+
+.fk-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 595.28px;
+  min-height: 841.89px;
+  margin: 0 auto;
+  padding: 40px 44px 0;
+  zoom: var(--fk-zoom);
+  background: #fff;
+  color: var(--fk-ink);
+  font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 8.6px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  font-variant-numeric: normal;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-wrap: break-word;
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 1px rgb(27 26 23 / 0.06),
+    0 1px 2px rgb(27 26 23 / 0.06),
+    0 10px 28px -10px rgb(27 26 23 / 0.22);
+}
+
+:where(.fk-sheet) :where(p, h2, h3, h4, dl, dd, dt, ul, li, figure) {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+:where(.fk-sheet) table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+:where(.fk-sheet) :where(th, td) {
+  padding: 0;
+  font: inherit;
+  text-align: inherit;
+  vertical-align: top;
+  border: 0;
+}
+
+:where(.fk-sheet) :where(svg, img) {
+  display: block;
+  max-width: none;
+}
+
+.fk-serif {
+  font-family: "Fakturky Fraunces", "Fraunces Variable", Georgia, serif;
+  font-weight: 500;
+  font-variation-settings: normal;
+}
+
+.fk-muted {
+  color: var(--fk-muted);
+}
+
+.fk-bold {
+  font-weight: 600;
+}
+
+.fk-label {
+  font-size: 6.6px;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--fk-muted);
+}
+
+.fk-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Header ---------------------------------------------------------------------------------------------- */
+
+.fk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.fk-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding-right: 20px;
+}
+
+.fk-logo {
+  width: 110px;
+  height: 38px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.fk-supplier-name {
+  font-family: "Fakturky Fraunces", "Fraunces Variable", Georgia, serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: -0.15px;
+}
+
+.fk-heading {
+  text-align: right;
+}
+
+.fk-title {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 8.6px;
+  font-weight: 500;
+  color: var(--fk-muted);
+}
+
+.fk-number {
+  display: block;
+  padding-bottom: 2px;
+  position: relative;
+  top: 4px;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.fk-number[data-pending] {
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+  color: var(--fk-muted);
+}
+
+.fk-rule {
+  margin-top: 14px;
+  border-top: 1.6px solid var(--fk-accent);
+}
+
+.fk-rule2 {
+  margin-top: 2.2px;
+  border-top: 0.5px solid var(--fk-ink);
+}
+
+/* Dates ----------------------------------------------------------------------------------------------- */
+
+.fk-meta {
+  display: flex;
+  border-bottom: 0.5px solid var(--fk-rule);
+}
+
+.fk-meta-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 9px 8px 9px 0;
+}
+
+.fk-meta-cell + .fk-meta-cell {
+  padding-left: 12px;
+  border-left: 0.5px solid var(--fk-rule);
+}
+
+.fk-meta-value {
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* Parties --------------------------------------------------------------------------------------------- */
+
+.fk-parties {
+  display: flex;
+  gap: 32px;
+  padding: 18px 0 16px;
+}
+
+.fk-party {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.fk-party[data-customer] {
+  padding-left: 14px;
+  border-left: 1.2px solid var(--fk-accent);
+}
+
+.fk-party-name {
+  margin: 5px 0 4px;
+  font-size: 12.5px;
+}
+
+.fk-party-name[data-empty] {
+  color: var(--fk-muted);
+}
+
+.fk-ids {
+  padding-top: 7.5px;
+}
+
+.fk-id {
+  display: flex;
+  margin-top: 1px;
+}
+
+.fk-id dt {
+  flex: none;
+  width: 34px;
+  color: var(--fk-muted);
+}
+
+.fk-sheet[lang="en"] .fk-id dt {
+  width: 58px;
+}
+
+.fk-id dd {
+  font-weight: 600;
+}
+
+/* Text above the items -------------------------------------------------------------------------------- */
+
+.fk-intro {
+  margin-bottom: 10px;
+  white-space: pre-line;
+}
+
+/* Items ----------------------------------------------------------------------------------------------- */
+
+.fk-items th {
+  padding: 5px 0;
+  border-top: 0.9px solid var(--fk-ink);
+  border-bottom: 0.5px solid var(--fk-rule);
+  font-size: 6.6px;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--fk-muted);
+}
+
+.fk-items td {
+  padding: 7px 0;
+  border-bottom: 0.5px solid var(--fk-rule);
+}
+
+.fk-items .c-desc {
+  padding-right: 8px;
+}
+
+.fk-items .c-qty,
+.fk-items .c-price,
+.fk-items .c-vat,
+.fk-items .c-total {
+  text-align: right;
+}
+
+.fk-items .c-unit {
+  text-align: center;
+}
+
+.fk-row-title {
+  font-weight: 600;
+  white-space: pre-line;
+}
+
+.fk-row-detail {
+  margin-top: 1px;
+  font-size: 7.8px;
+  color: var(--fk-muted);
+  white-space: pre-line;
+}
+
+.fk-items tr {
+  break-inside: avoid;
+}
+
+/* Payment / totals ------------------------------------------------------------------------------------ */
+
+.fk-bottom {
+  display: flex;
+  gap: 28px;
+  margin-top: 21px;
+}
+
+.fk-left {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.fk-right {
+  flex: none;
+  width: 218px;
+}
+
+.fk-pay {
+  display: flex;
+  gap: 11px;
+  padding: 10px;
+  border: 0.6px solid var(--fk-rule);
+  border-radius: 4px;
+}
+
+.fk-qr {
+  flex: none;
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fk-qr-frame {
+  width: 80px;
+  height: 80px;
+  padding: 5px;
+  border: 0.5px solid var(--fk-rule);
+  background: #fff;
+}
+
+.fk-qr-frame svg {
+  width: 70px;
+  height: 70px;
+}
+
+.fk-qr .fk-label {
+  margin-top: 4px;
+  text-align: center;
+}
+
+.fk-pay-details {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.fk-pay-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3.5px;
+}
+
+.fk-pay-row dt {
+  font-size: 7.6px;
+  color: var(--fk-muted);
+}
+
+.fk-pay-row dd {
+  font-size: 8px;
+  text-align: right;
+}
+
+.fk-closing {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--fk-accent);
+  white-space: pre-line;
+}
+
+.fk-notice {
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.fk-signature {
+  margin-top: 22px;
+}
+
+.fk-signature img {
+  width: 150px;
+  height: 44px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.fk-sig-line {
+  width: 170px;
+  padding-top: 4px;
+  border-top: 0.6px solid var(--fk-ink);
+  font-size: 7.6px;
+  color: var(--fk-muted);
+  text-align: center;
+}
+
+.fk-recap + .fk-recap {
+  margin-top: 12px;
+}
+
+.fk-recap caption {
+  padding-bottom: 4px;
+  font-size: 6.6px;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--fk-muted);
+  caption-side: top;
+}
+
+.fk-recap thead th {
+  padding-bottom: 4px;
+  font-size: 6.6px;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--fk-muted);
+}
+
+.fk-recap td {
+  padding: 3.5px 0;
+  border-top: 0.5px solid var(--fk-rule);
+}
+
+.fk-recap tfoot td {
+  border-top: 0.6px solid var(--fk-ink);
+  font-weight: 600;
+}
+
+.fk-recap .r {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.fk-rate-line {
+  margin-top: 8px;
+  color: var(--fk-muted);
+}
+
+.fk-recap + .fk-rate-line {
+  margin-top: 5px;
+  font-size: 7.6px;
+}
+
+.fk-sums {
+  padding-top: 8px;
+}
+
+.fk-sum {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.fk-sum dt {
+  color: var(--fk-muted);
+}
+
+.fk-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding: 11px 0;
+  border-top: 1px solid var(--fk-ink);
+  border-bottom: 0.5px solid var(--fk-ink);
+}
+
+.fk-total-value {
+  position: relative;
+  top: 2px;
+  font-size: 21px;
+  line-height: 1;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.fk-note {
+  margin-top: 14px;
+  color: var(--fk-muted);
+  white-space: pre-line;
+}
+
+.fk-legal {
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 0.5px solid var(--fk-rule);
+  break-inside: avoid;
+}
+
+.fk-legal .fk-label {
+  margin-bottom: 3px;
+  letter-spacing: 0.8px;
+}
+
+.fk-legal p {
+  font-size: 8.2px;
+}
+
+/* Footer ---------------------------------------------------------------------------------------------- */
+
+.fk-body {
+  flex: 1 1 auto;
+  padding-bottom: 33px;
+}
+
+.fk-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 26px;
+  padding-top: 8px;
+  border-top: 0.5px solid var(--fk-rule);
+  font-size: 7px;
+  color: var(--fk-muted);
+}
+
+.fk-footer > p:first-child {
+  flex: 1;
+}
+
+.fk-footer-right {
+  text-align: right;
+}
+
+/* Compact density: a content-sized card for previews, no A4 floor and no footer. ----------------------- */
+
+.fk-sheet[data-density="compact"] {
+  min-height: 0;
+  padding: 28px 36px 0;
+}
+
+.fk-sheet[data-density="compact"] .fk-body {
+  padding-bottom: 24px;
+}
+
+.fk-sheet[data-density="compact"] .fk-footer {
+  display: none;
+}
+
+@media print {
+  .fk-sheet-wrap {
+    --fk-zoom: 1 !important;
+  }
+
+  .fk-sheet {
+    box-shadow: none;
+  }
+}

@@ -1,4 +1,4 @@
-import { type FetchLike, IntegrationError } from '@fakturky/domain'
+import { Decimal, type FetchLike, IntegrationError } from '@fakturky/domain'
 import { BRAND } from '../brand'
 import type { ImportContact, ImportDocument, ImportLine } from './types'
 
@@ -187,6 +187,19 @@ export function mapInvoice(i: Json): ImportDocument | null {
     .filter((p): p is { paidOn: string; amount: string } => !!p.paidOn && !!p.amount)
   if (payments.length === 0 && status === 'paid' && paidOn && total) {
     payments.push({ paidOn, amount: total })
+  }
+
+  // Advances (final invoices) and partial payments: `remaining_amount` is what is still owed.
+  const remaining = str(i.remaining_amount)
+  if (remaining !== null && total !== null && status !== 'cancelled') {
+    const paidSoFar = payments.reduce((sum, p) => sum.plus(p.amount), new Decimal(0))
+    const implied = new Decimal(total).minus(remaining).minus(paidSoFar)
+    if (implied.gt('0.005')) {
+      payments.push({
+        paidOn: (paidOn ?? str(i.issued_on) ?? '').slice(0, 10),
+        amount: implied.toFixed(2),
+      })
+    }
   }
 
   const issueDate = (str(i.issued_on) ?? '').slice(0, 10)

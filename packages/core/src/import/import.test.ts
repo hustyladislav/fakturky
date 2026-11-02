@@ -432,3 +432,41 @@ describe('review hardening 2', () => {
     expect(doc?.customerSnapshot).toMatchObject({ name: 'Nová Firma GmbH' })
   })
 })
+
+describe('review hardening 3', () => {
+  test('a CSV line with an amount but no description rejects the invoice', () => {
+    const { documents, problems } = invoicesFromCsv(
+      'number;issue_date;description;unit_price\nC1;2024-01-01;ok;100\nC1;2024-01-01;;50\n',
+    )
+    expect(documents).toHaveLength(0)
+    expect(problems[0]?.message).toContain('no description')
+  })
+
+  test('Fakturoid advances / partial payments are reflected via remaining_amount', async () => {
+    const { mapInvoice } = await import('./fakturoid')
+    const base = {
+      document_type: 'final_invoice',
+      number: 'F1',
+      issued_on: '2024-03-01',
+      status: 'sent',
+      total: '1000.0',
+      lines: [{ name: 'x', unit_price: '1000', vat_rate: 0, unit_price_without_vat: '1000' }],
+    }
+    const withAdvance = mapInvoice({
+      ...base,
+      remaining_amount: '400.0',
+      paid_advances: [{ id: 1 }],
+    })
+    expect(withAdvance?.payments).toEqual([{ paidOn: '2024-03-01', amount: '600.00' }])
+    expect(mapInvoice({ ...base, remaining_amount: '1000.0' })?.payments).toEqual([])
+    const partlyPaid = mapInvoice({
+      ...base,
+      remaining_amount: '250.0',
+      payments: [{ paid_on: '2024-03-05', amount: '500.0' }],
+    })
+    expect(partlyPaid?.payments).toEqual([
+      { paidOn: '2024-03-05', amount: '500.0' },
+      { paidOn: '2024-03-01', amount: '250.00' },
+    ])
+  })
+})

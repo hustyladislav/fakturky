@@ -204,6 +204,12 @@ export function invoicesFromCsv(input: string): CsvInvoiceResult {
       documents.set(number, doc)
     }
     const description = get(r, 'description')
+    if (!description && (get(r, 'unit_price') !== '' || get(r, 'quantity') !== '')) {
+      // An amount without a description would silently vanish from the totals.
+      invalid.add(number)
+      problems.push({ number, message: 'A line has an amount but no description' })
+      continue
+    }
     if (description) {
       // Money cells must parse: never import altered amounts silently.
       const quantity = get(r, 'quantity') === '' ? '1' : parseDec(get(r, 'quantity'))

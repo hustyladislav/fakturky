@@ -43,7 +43,7 @@ function Row({ doc }: { doc: Doc }) {
           <Link
             to="/faktury/$id"
             params={{ id: doc.id }}
-            className="truncate text-sm font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-ring/60 focus-visible:after:ring-inset"
+            className="line-clamp-2 min-w-0 text-sm font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-ring/60 focus-visible:after:ring-inset"
           >
             {name}
           </Link>
@@ -91,7 +91,7 @@ export function AwaitingList({
 }) {
   const rows = sortByDue(docs).slice(0, 6)
   return (
-    <section className={cn('sheet pt-5 pb-2', className)}>
+    <section className={cn('sheet @container pt-5 pb-2', className)}>
       <SectionLabel
         className="px-5"
         action={

@@ -35,7 +35,7 @@ export function Delta({
   const up = percent >= 0
   const Icon = up ? ArrowUpRight : ArrowDownRight
   return (
-    <span className="flex items-center gap-1.5">
+    <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
       <span
         className={cn(
           'inline-flex h-5 items-center gap-0.5 rounded-full px-1.5 text-[11px] font-semibold tabular-nums',
@@ -50,7 +50,7 @@ export function Delta({
         {up ? '+' : '−'}
         {Math.abs(percent)}&nbsp;%
       </span>
-      <span className="whitespace-nowrap">{t.vsLast}</span>
+      <span>{t.vsLast}</span>
     </span>
   )
 }
@@ -82,7 +82,7 @@ export function KpiCard({
     <div
       data-slot="kpi-card"
       className={cn(
-        'sheet relative flex min-w-0 flex-col justify-between gap-4 overflow-hidden p-5',
+        'sheet @container relative flex min-w-0 flex-col justify-between gap-4 overflow-hidden p-5',
         spark && 'pb-14',
         className,
       )}
@@ -96,7 +96,7 @@ export function KpiCard({
             tone={tone}
             animate
             hideZeroFraction
-            className="text-[32px] leading-9"
+            className="text-[length:clamp(1.5rem,14cqi,2rem)] leading-9"
           />
         </div>
       </div>

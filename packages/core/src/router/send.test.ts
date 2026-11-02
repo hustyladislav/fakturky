@@ -355,7 +355,27 @@ test('appearance: accent colour, private logo/signature validated by content, in
   expect(theirs.accentColor).toBeNull()
   const exported = JSON.parse((await api.exports.organization({})).json)
   expect(exported.images[0]).toMatchObject({ kind: 'logo', contentType: 'image/png' })
-  expect((await api.appearance.deleteAsset({ kind: 'logo' })).logo).toBeNull()
+  // A truncated PNG with a valid signature is rejected as damaged.
+  const truncated = Buffer.from(png, 'base64').subarray(0, 20).toString('base64')
+  await expect(
+    api.appearance.setAsset({ kind: 'signature', dataBase64: truncated }),
+  ).rejects.toMatchObject({
+    data: { fields: ['image.corrupt'] },
+  })
+  // Documents keep the look they were issued with, even after settings change.
+  const c = await api.contacts.create({ name: 'K' })
+  const draft = await api.documents.createDraft({
+    contactId: c.id,
+    lines: [{ description: 'x', quantity: '1', unitPrice: '1' }],
+  })
+  const issued = await api.documents.issue({ id: draft.id })
+  await api.appearance.update({ accentColor: '#ff0000', showBrand: true })
+  await api.appearance.deleteAsset({ kind: 'logo' })
+  const view = await clientFor(handle, null).public.invoice({ token: issued.publicToken as string })
+  expect(view.appearance.accentColor).toBe('#112233')
+  expect(view.appearance.showBrand).toBe(false)
+  expect(view.appearance.logo?.startsWith('data:image/png')).toBe(true)
+  expect((await api.appearance.get({})).logo).toBeNull()
 })
 
 test('VAT payer advance: proforma → paid → tax receipt → final invoice deducting base and VAT', async () => {

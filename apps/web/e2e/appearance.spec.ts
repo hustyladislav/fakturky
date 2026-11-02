@@ -24,7 +24,7 @@ test('logo and accent colour are stored privately and used in the PDF', async ({
     mimeType: 'image/png',
     buffer: Buffer.from('not an image at all, just text bytes'),
   })
-  await expect(page.getByText('Only PNG and JPEG images are supported')).toBeVisible()
+  await expect(page.getByText('Podporujeme jen obrázky PNG a JPEG.')).toBeVisible()
 
   await page.goto('/faktury/nova')
   await page.waitForLoadState('networkidle')

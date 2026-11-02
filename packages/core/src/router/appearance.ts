@@ -16,7 +16,12 @@ async function guard<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn()
   } catch (e) {
-    if (e instanceof DocumentError) throw new ORPCError(e.code, { message: e.message })
+    if (e instanceof DocumentError) {
+      throw new ORPCError(e.code, {
+        message: e.message,
+        ...(e.fields ? { data: { fields: e.fields } } : {}),
+      })
+    }
     throw e
   }
 }

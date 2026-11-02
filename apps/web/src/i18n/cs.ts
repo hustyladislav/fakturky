@@ -526,6 +526,11 @@ export const cs = {
     hint: 'PNG nebo JPEG, nejvýše 300 KB. Obrázky jsou uložené soukromě a zobrazí se jen na vašich dokladech.',
     showBrand: 'Zobrazit na dokladu řádek „Vystaveno ve …“',
     saved: 'Vzhled byl uložen.',
+    errors: {
+      'image.size': 'Obrázek je příliš velký. Nahrajte soubor do 300 KB.',
+      'image.type': 'Podporujeme jen obrázky PNG a JPEG.',
+      'image.corrupt': 'Soubor je poškozený nebo neúplný. Zkuste ho exportovat znovu.',
+    },
   },
   numberSeries: {
     title: 'Číslování dokladů',

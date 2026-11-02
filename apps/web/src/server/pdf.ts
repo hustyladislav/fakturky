@@ -46,11 +46,8 @@ export async function renderDocumentPdf(
     import('@fakturky/core/appearance-repo'),
   ])
   const { handle } = await getRuntime()
-  const look = await appearanceRepo.get(handle.db, doc.organizationId)
-  const [logo, signature] = await Promise.all([
-    appearanceRepo.bytes(handle.db, doc.organizationId, 'logo'),
-    appearanceRepo.bytes(handle.db, doc.organizationId, 'signature'),
-  ])
+  // Issued documents render with the look frozen at issue (see documents.appearance).
+  const look = await appearanceRepo.forDocument(handle.db, doc.organizationId, doc.appearance)
   const base = toDocumentForExport(doc, lines, original)
   return renderInvoicePdf({
     ...base,
@@ -64,8 +61,8 @@ export async function renderDocumentPdf(
     brandName: BRAND.name,
     showBrand: look.showBrand,
     accentColor: look.accentColor ?? undefined,
-    logo,
-    signature,
+    logo: look.logo?.bytes,
+    signature: look.signature?.bytes,
     headerText: doc.introText,
     footerText: doc.footerText,
   })

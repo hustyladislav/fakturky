@@ -36,7 +36,10 @@ function AssetRow({ kind, src }: { kind: 'logo' | 'signature'; src: string | nul
       toast.success(t.saved)
       await refresh()
     },
-    onError: (e) => toast.error((e as Error).message || cs.common.error),
+    onError: (e) => {
+      const field = (e as { data?: { fields?: string[] } }).data?.fields?.[0]
+      toast.error(t.errors[field as keyof typeof t.errors] ?? cs.common.error)
+    },
   })
   const remove = useMutation(
     orpc.appearance.deleteAsset.mutationOptions({

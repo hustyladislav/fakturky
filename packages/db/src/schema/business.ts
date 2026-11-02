@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import {
   boolean,
   index,
@@ -64,9 +65,15 @@ export const orgAsset = pgTable(
     contentType: text('content_type').notNull(),
     /** Base64 of the PNG/JPEG bytes (size-limited at the procedure boundary). */
     data: text('data').notNull(),
+    /** Replaced or removed images are kept (issued documents reference the version they were issued with). */
+    supersededAt: timestamp('superseded_at', { withTimezone: true }),
     ...timestamps(),
   },
-  (t) => [uniqueIndex('org_asset_org_kind_uq').on(t.organizationId, t.kind)],
+  (t) => [
+    uniqueIndex('org_asset_org_kind_current_uq')
+      .on(t.organizationId, t.kind)
+      .where(sql`${t.supersededAt} is null`),
+  ],
 )
 
 export const bankAccount = pgTable(

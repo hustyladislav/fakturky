@@ -111,13 +111,11 @@ export const cs = {
       'Přehledný fakturační program pro české živnostníky a firmy. Správná DPH, QR platba, údaje z ARES i export do ISDOC. Bez karty, bez reklam, s otevřeným kódem.',
     heroNote: 'Vytvoření účtu trvá minutu.',
     docs: 'Dokumentace API',
-    mock: {
-      invoice: 'Faktura',
-      number: '2026-0042',
-      customer: 'Novák & syn s.r.o.',
-      total: 'Celkem k úhradě',
-      qr: 'QR Platba',
-      recent: 'Poslední doklady',
+    hero: {
+      kpiMonth: 'Obrat tento měsíc',
+      kpiReceived: 'Zaplaceno tento měsíc',
+      awaiting: 'Čeká na platbu',
+      paidToast: 'Platba spárována',
     },
     whyTitle: 'Proč zdarma?',
     whyText: [
@@ -143,8 +141,8 @@ export const cs = {
         'Plátci i neplátci. DPH se počítá po sazbách a zaokrouhluje podle pravidel.',
       ],
       [
-        'Opakované faktury (brzy)',
-        'Připravujeme: pravidelné služby se vystaví samy, vy je jen zkontrolujete.',
+        'Opakované faktury a upomínky',
+        'Pravidelné služby se vystaví samy a nezaplacené faktury se připomenou, vy to jen hlídáte.',
       ],
       [
         'ISDOC a PDF',
@@ -152,11 +150,17 @@ export const cs = {
       ],
     ],
     aiTitle: 'Pro AI asistenty',
+    aiConfigTitle: 'Konfigurace MCP klienta (Cursor, Claude Desktop)',
+    aiConfigHint: 'Klíč vytvoříte v Nastavení → API klíče.',
+    aiMcpDocs: 'Návod pro MCP',
     aiText:
       'Vše, co umíte v aplikaci, je dostupné i programově. Váš AI asistent nebo skript může připravit koncept faktury, dohledat kontakt nebo zjistit, co je po splatnosti. Vy ho vždy schvalujete.',
     aiCards: [
       ['REST API', 'Dostupné už dnes. Klíč vytvoříte v Nastavení, popis najdete v dokumentaci.'],
-      ['MCP server', 'Připravujeme. Napojíte Claude nebo jiného asistenta přímo na své faktury.'],
+      [
+        'MCP server',
+        'Dostupný už dnes. Napojíte Claude, Cursor nebo jiného asistenta přímo na své faktury.',
+      ],
       ['Příkazová řádka', 'Připravujeme. Fakturujte z terminálu nebo skriptu.'],
     ],
     faqTitle: 'Časté dotazy',

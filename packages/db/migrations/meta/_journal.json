@@ -85,6 +85,13 @@
       "when": 1793582023434,
       "tag": "0011_high_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793593752703,
+      "tag": "0012_pale_jack_power",
+      "breakpoints": true
     }
   ]
 }

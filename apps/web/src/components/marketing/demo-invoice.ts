@@ -55,3 +55,33 @@ export const demoInvoice: InvoiceSheetDraft = {
     },
   },
 }
+
+export type AresSupplier = {
+  ico: string
+  name: string
+  dic: string | null
+  address: { street: string; city: string; zip: string; country: string }
+  vatPayer: boolean
+}
+
+/** The demo invoice issued by a firm looked up in ARES (or a placeholder firm before any lookup). */
+export function demoInvoiceFor(
+  supplier: AresSupplier | null,
+  placeholderName: string,
+): InvoiceSheetDraft {
+  return {
+    ...demoInvoice,
+    vatPayer: supplier?.vatPayer ?? true,
+    supplier: supplier
+      ? {
+          name: supplier.name,
+          ico: supplier.ico,
+          ...(supplier.dic ? { dic: supplier.dic } : {}),
+          street: supplier.address.street,
+          city: supplier.address.city,
+          zip: supplier.address.zip,
+          country: supplier.address.country || 'CZ',
+        }
+      : { name: placeholderName },
+  }
+}

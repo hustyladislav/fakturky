@@ -1,12 +1,15 @@
 import { Button } from '@fakturky/ui/components/button'
 import { Money } from '@fakturky/ui/components/money'
+import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/prehled')({
+  head: pageHead(cs.nav.overview),
   component: Overview,
 })
 
@@ -54,6 +57,19 @@ function Overview() {
           <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
             {cs.invoices.emptyCta}
           </Button>
+        </div>
+      )}
+
+      {summary.isError && <p className="text-muted-foreground text-sm">{cs.common.error}</p>}
+
+      {summary.isPending && (
+        <div className="space-y-6" aria-busy="true">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-[110px] rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="h-[198px] rounded-xl" />
         </div>
       )}
 
@@ -113,8 +129,12 @@ function Overview() {
                   {t.vatLimit.progress(s.vatLimit.percent)}
                 </span>
               </div>
-              {s.vatLimit.percent >= 80 && (
-                <p className="text-warning text-sm">{t.vatLimit.warn}</p>
+              {s.vatLimit.immediateExceeded ? (
+                <p className="text-destructive text-sm font-medium">{t.vatLimit.immediate}</p>
+              ) : (
+                s.vatLimit.percent >= 80 && (
+                  <p className="text-warning text-sm">{t.vatLimit.warn}</p>
+                )
               )}
             </section>
           )}
@@ -165,7 +185,7 @@ function Overview() {
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <Money amount={d.total} currency={d.currency} />
-                  <InvoiceStatus status={d.displayStatus} />
+                  <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
                 </div>
               </Link>
             ))}

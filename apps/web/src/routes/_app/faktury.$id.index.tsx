@@ -3,6 +3,7 @@ import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
+import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Check, Copy, Download, ExternalLink, Pencil, RefreshCw, Trash2 } from 'lucide-react'
@@ -10,9 +11,12 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
+import { apiErrorMessage } from '@/lib/errors'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/faktury/$id/')({
+  head: pageHead(cs.invoices.title),
   component: InvoiceDetail,
 })
 
@@ -64,7 +68,7 @@ function InvoiceDetail() {
   const [paidOn, setPaidOn] = useState('')
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
-  const onError = (e: unknown) => toast.error((e as Error).message || cs.common.error)
+  const onError = (e: unknown) => toast.error(apiErrorMessage(e))
   const issue = useMutation(
     orpc.documents.issue.mutationOptions({
       onSuccess: async (d) => {
@@ -180,7 +184,14 @@ function InvoiceDetail() {
 
   const d = q.data
   if (q.isError) return <p className="text-muted-foreground">{t.notFound}</p>
-  if (!d) return <p className="text-muted-foreground">{cs.common.loading}</p>
+  if (!d) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-4" aria-busy="true">
+        <Skeleton className="h-9 w-48" />
+        <Skeleton className="h-[520px] rounded-xl" />
+      </div>
+    )
+  }
 
   const isDraft = d.status === 'draft'
   const open = d.status === 'issued' && d.type !== 'credit_note'
@@ -204,7 +215,7 @@ function InvoiceDetail() {
               {cs.invoices.type[d.type as keyof typeof cs.invoices.type]}
             </span>
           )}
-          <InvoiceStatus status={d.displayStatus} />
+          <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
           {d.importedFrom && (
             <span className="rounded-full border px-2 py-0.5 text-muted-foreground text-xs">
               {cs.import.imported}
@@ -253,7 +264,11 @@ function InvoiceDetail() {
                 {d.vatMode !== 'none' && (
                   <th className="py-2 text-right font-medium">{cs.invoices.form.vatRate}</th>
                 )}
-                <th className="py-2 text-right font-medium">{cs.invoices.form.lineTotal}</th>
+                <th className="py-2 text-right font-medium">
+                  {d.vatMode !== 'none'
+                    ? cs.invoices.form.lineTotalNet
+                    : cs.invoices.form.lineTotal}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -270,7 +285,7 @@ function InvoiceDetail() {
                     <td className="py-2 text-right tabular-nums">{Number(l.vatRate)} %</td>
                   )}
                   <td className="py-2 text-right">
-                    <Money amount={l.lineTotal} currency={d.currency} />
+                    <Money amount={l.lineSubtotal} currency={d.currency} />
                   </td>
                 </tr>
               ))}

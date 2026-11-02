@@ -30,6 +30,7 @@ export class DocumentError extends Error {
   constructor(
     readonly code: 'NOT_FOUND' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'BAD_REQUEST',
     message: string,
+    readonly fields?: string[],
   ) {
     super(message)
   }
@@ -224,6 +225,7 @@ export const documentsRepo = {
       language: p?.defaultLanguage ?? 'cs',
       paymentMethod: p?.defaultPaymentMethod ?? 'bank_transfer',
       footerText: p?.defaultFooter ?? null,
+      registryNoteMissing: !p?.registryNote?.trim(),
     }
   },
 
@@ -278,13 +280,33 @@ export const documentsRepo = {
       orgId,
       rows.map((r) => r.doc.id),
     )
-    return rows.map(({ doc, contactName }) =>
-      decorate(
+    // Drafts the assistant created are flagged so the UI can show "Koncept · navrhl asistent".
+    const viaRows = rows.length
+      ? await db
+          .select({ id: activity.entityId })
+          .from(activity)
+          .where(
+            and(
+              eq(activity.organizationId, orgId),
+              eq(activity.entityType, 'document'),
+              eq(activity.action, 'created'),
+              sql`${activity.data}->>'via' = 'assistant'`,
+              inArray(
+                activity.entityId,
+                rows.map((r) => r.doc.id),
+              ),
+            ),
+          )
+      : []
+    const viaAssistant = new Set(viaRows.map((r) => r.id))
+    return rows.map(({ doc, contactName }) => ({
+      ...decorate(
         doc,
         sums.get(doc.id) ?? new Decimal(0),
         (doc.customerSnapshot?.name as string | undefined) ?? contactName,
       ),
-    )
+      viaAssistant: viaAssistant.has(doc.id),
+    }))
   },
 
   async get(db: Db | Tx, orgId: string, id: string) {
@@ -340,6 +362,9 @@ export const documentsRepo = {
         total: r.total,
       })),
       activity: acts,
+      viaAssistant: acts.some(
+        (a) => a.action === 'created' && (a.data as { via?: string } | null)?.via === 'assistant',
+      ),
     }
   },
 
@@ -490,11 +515,33 @@ export const documentsRepo = {
           'Exchange rate is required for foreign currency',
         )
       }
+      const vatOnNow = await vatOn(tx, orgId, profile, doc.type, doc.relatedDocumentId)
       const [customer] = await tx
         .select()
         .from(contact)
         .where(and(eq(contact.organizationId, orgId), eq(contact.id, doc.contactId)))
       if (!customer) throw new DocumentError('NOT_FOUND', 'Contact not found')
+      // §29 ZDPH: a tax document needs the customer's name, address and (if registered) identification.
+      if (vatOnNow) {
+        const missing: string[] = []
+        if (
+          !customer.address.street?.trim() ||
+          !customer.address.city?.trim() ||
+          !customer.address.zip?.trim()
+        ) {
+          missing.push('address')
+        }
+        if (!customer.ico?.trim() && !customer.dic?.trim() && !customer.icDph?.trim()) {
+          missing.push('taxId')
+        }
+        if (missing.length > 0) {
+          throw new DocumentError(
+            'PRECONDITION_FAILED',
+            `The customer is missing: ${missing.join(', ')}`,
+            missing.map((f) => `customer.${f}`),
+          )
+        }
+      }
       const bank = doc.bankAccountId
         ? await bankAccountsRepo.get(tx, orgId, doc.bankAccountId)
         : await bankAccountsRepo.defaultFor(tx, orgId, doc.currency)
@@ -506,7 +553,6 @@ export const documentsRepo = {
           'A credit note needs the corrected invoice and a reason',
         )
       }
-      const vatOnNow = await vatOn(tx, orgId, profile, doc.type, doc.relatedDocumentId)
       const totals = totalsFor(lines as unknown as DraftInput['lines'], {
         vatPayer: vatOnNow,
         currency: doc.currency,
@@ -679,6 +725,21 @@ export const documentsRepo = {
       }
     })
     return this.get(db, orgId, id)
+  },
+
+  /** Marks a freshly created draft as proposed by the assistant (for drafts made by duplicate/template/credit-note). */
+  async tagAssistant(db: Db, orgId: string, documentId: string) {
+    await db
+      .update(activity)
+      .set({ data: sql`coalesce(${activity.data}, '{}'::jsonb) || '{"via":"assistant"}'::jsonb` })
+      .where(
+        and(
+          eq(activity.organizationId, orgId),
+          eq(activity.entityType, 'document'),
+          eq(activity.entityId, documentId),
+          eq(activity.action, 'created'),
+        ),
+      )
   },
 
   async duplicate(db: Db, orgId: string, actorId: string, id: string) {

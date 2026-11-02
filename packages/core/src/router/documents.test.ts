@@ -195,3 +195,27 @@ describe('documents', () => {
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 })
+
+describe('assistant drafts', () => {
+  test('drafts created via the assistant are flagged in list and get', async () => {
+    const human = clientFor(handle, principal(orgA))
+    const bot = clientFor(handle, { ...principal(orgA), via: 'assistant' })
+    const c = await human.contacts.create({ name: 'Asistent s.r.o.' })
+    const byBot = await bot.documents.createDraft({ contactId: c.id, lines: [line] })
+    const byHuman = await human.documents.createDraft({ contactId: c.id, lines: [line] })
+    const list = await human.documents.list({ filter: 'draft', limit: 200, offset: 0 })
+    expect(list.find((d) => d.id === byBot.id)?.viaAssistant).toBe(true)
+    expect(list.find((d) => d.id === byHuman.id)?.viaAssistant).toBe(false)
+    expect((await human.documents.get({ id: byBot.id })).viaAssistant).toBe(true)
+  })
+
+  test('duplicates made by the assistant keep the provenance', async () => {
+    const human = clientFor(handle, principal(orgA))
+    const bot = clientFor(handle, { ...principal(orgA), via: 'assistant' })
+    const c = await human.contacts.create({ name: 'Kopie s.r.o.' })
+    const src = await human.documents.createDraft({ contactId: c.id, lines: [line] })
+    const copy = await bot.documents.duplicate({ id: src.id })
+    expect((await human.documents.get({ id: copy.id })).viaAssistant).toBe(true)
+    expect((await human.documents.get({ id: src.id })).viaAssistant).toBe(false)
+  })
+})

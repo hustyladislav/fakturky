@@ -1,7 +1,7 @@
 import { formatDateCs } from '@fakturky/domain/dates'
 import { Button } from '@fakturky/ui/components/button'
 import { Money } from '@fakturky/ui/components/money'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, notFound } from '@tanstack/react-router'
 import { Download, Printer } from 'lucide-react'
 import { cs } from '@/i18n/cs'
 import { client } from '@/lib/orpc'
@@ -9,7 +9,21 @@ import { client } from '@/lib/orpc'
 const t = cs.publicInvoice
 
 export const Route = createFileRoute('/f/$token')({
-  loader: ({ params }) => client.public.invoice({ token: params.token }).catch(() => null),
+  loader: async ({ params }) => {
+    try {
+      return await client.public.invoice({ token: params.token })
+    } catch (e) {
+      // Only an unknown token is a 404; outages and other failures must surface as errors.
+      if ((e as { code?: string }).code === 'NOT_FOUND') throw notFound()
+      throw e
+    }
+  },
+  notFoundComponent: () => (
+    <main className="mx-auto max-w-md p-6 pt-24 text-center">
+      <h1 className="font-serif text-3xl font-medium">404</h1>
+      <p className="mt-2 text-muted-foreground">{t.notFound}</p>
+    </main>
+  ),
   head: () => ({
     meta: [{ name: 'robots', content: 'noindex, nofollow, noarchive' }, { title: cs.brand }],
   }),
@@ -47,13 +61,6 @@ function PartyBlock({ title, p }: { title: string; p: Party }) {
 function PublicInvoice() {
   const d = Route.useLoaderData()
   const { token } = Route.useParams()
-  if (!d) {
-    return (
-      <main className="mx-auto max-w-md p-6 pt-24 text-center">
-        <p className="text-muted-foreground">{t.notFound}</p>
-      </main>
-    )
-  }
   const title =
     d.type === 'proforma'
       ? t.titleProforma
@@ -98,8 +105,8 @@ function PublicInvoice() {
       <article className="mx-auto max-w-3xl space-y-6 bg-white p-6 text-neutral-900 shadow-sm sm:p-10 print:shadow-none">
         <header className="flex items-start justify-between gap-4 border-b border-neutral-300 pb-4">
           <div>
-            <h1 className="font-heading text-2xl font-semibold">{title}</h1>
-            <div className="font-heading text-xl tabular-nums">{d.number}</div>
+            <h1 className="font-serif text-3xl font-medium">{title}</h1>
+            <div className="font-serif text-xl tabular-nums">{d.number}</div>
             {d.original && (
               <div className="text-sm text-neutral-600">
                 {t.corrects(d.original.number, formatDateCs(d.original.issueDate))}
@@ -128,7 +135,31 @@ function PublicInvoice() {
 
         {d.introText && <p className="text-sm whitespace-pre-line">{d.introText}</p>}
 
-        <div className="overflow-x-auto">
+        <ul className="divide-y divide-neutral-200 border-y border-neutral-300 sm:hidden">
+          {d.lines.map((l) => (
+            <li
+              key={`m-${l.description}-${l.unitPrice}-${l.quantity}-${l.total}`}
+              className="flex items-start justify-between gap-3 py-3 text-sm"
+            >
+              <div className="min-w-0">
+                <div>{l.description}</div>
+                <div className="text-xs text-neutral-500">
+                  {Number(l.quantity)} {l.unit} ×{' '}
+                  <Money amount={l.unitPrice} currency={d.currency} />
+                  {d.vatPayer && <> · {Number(l.vatRate)} %</>}
+                  {Number(l.discountPercent) > 0 && (
+                    <>
+                      {' · '}
+                      {t.discount} {Number(l.discountPercent)} %
+                    </>
+                  )}
+                </div>
+              </div>
+              <Money amount={l.total} currency={d.currency} className="shrink-0" />
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto sm:block">
           <table className="w-full min-w-[34rem] text-sm">
             <thead>
               <tr className="border-b border-neutral-400 text-left text-xs text-neutral-500">
@@ -171,42 +202,95 @@ function PublicInvoice() {
           </table>
         </div>
 
+        {d.vatPayer && (
+          <div className="ml-auto max-w-md overflow-x-auto">
+            <table className="w-full text-sm">
+              <caption className="pb-1 text-left text-xs text-neutral-500">{t.vatRecap}</caption>
+              <thead>
+                <tr className="border-b border-neutral-400 text-xs text-neutral-500">
+                  <th className="py-1 text-left font-medium">{t.rate}</th>
+                  <th className="py-1 text-right font-medium">{t.base}</th>
+                  <th className="py-1 text-right font-medium">{t.vat}</th>
+                  <th className="py-1 text-right font-medium">{t.total}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {d.recap.map((r) => (
+                  <tr key={r.vatRate} className="border-b border-neutral-200">
+                    <td className="py-1 tabular-nums">{Number(r.vatRate)} %</td>
+                    <td className="py-1 text-right">
+                      <Money amount={r.base} currency={d.currency} />
+                    </td>
+                    <td className="py-1 text-right">
+                      <Money amount={r.vat} currency={d.currency} />
+                    </td>
+                    <td className="py-1 text-right">
+                      <Money amount={r.total} currency={d.currency} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         <div className="ml-auto max-w-xs space-y-1 text-sm">
-          {d.vatPayer &&
-            d.recap.map((r) => (
-              <div key={r.vatRate} className="flex justify-between text-neutral-600">
-                <span>
-                  {t.vatRecap} {Number(r.vatRate)} %: {t.base}{' '}
-                  <Money amount={r.base} currency={d.currency} />
-                </span>
-                <Money amount={r.vat} currency={d.currency} />
-              </div>
-            ))}
           {d.exchangeRate && (
             <div className="text-xs text-neutral-500">
               {t.exchangeRate}: {Number(d.exchangeRate)}
             </div>
           )}
           <div className="flex items-baseline justify-between border-t border-b border-neutral-400 py-2">
-            <span className="font-medium">{t.amountDue}</span>
-            <span className="font-heading text-xl font-semibold">
-              <Money amount={d.remaining} currency={d.currency} />
+            <span className="font-medium">{d.status === 'paid' ? t.lineTotal : t.amountDue}</span>
+            <span className="font-serif text-3xl font-medium">
+              <Money amount={d.status === 'paid' ? d.total : d.remaining} currency={d.currency} />
             </span>
           </div>
         </div>
 
-        {d.bank && d.status === 'issued' && (
-          <section className="space-y-1 text-sm">
-            <h2 className="text-xs text-neutral-500">{t.payment}</h2>
-            {d.bank.account && (
+        {d.status !== 'cancelled' && (
+          <section className="flex flex-wrap items-start justify-between gap-4 text-sm">
+            <div className="space-y-1">
+              <h2 className="text-xs text-neutral-500">{t.payment}</h2>
               <div>
-                {t.account}: <span className="tabular-nums">{d.bank.account}</span>
+                {t.paymentMethod}:{' '}
+                {t.methods[d.paymentMethod as keyof typeof t.methods] ?? d.paymentMethod}
               </div>
-            )}
-            <div>
-              {t.iban}: <span className="tabular-nums">{d.bank.iban}</span>
-              {d.bank.bic ? ` · ${t.bic}: ${d.bank.bic}` : ''}
+              {d.variableSymbol && (
+                <div>
+                  {t.variableSymbol}: <span className="tabular-nums">{d.variableSymbol}</span>
+                </div>
+              )}
+              {d.bank && d.status === 'issued' && (
+                <>
+                  {d.bank.account && (
+                    <div>
+                      {t.account}: <span className="tabular-nums">{d.bank.account}</span>
+                    </div>
+                  )}
+                  <div>
+                    {t.iban}: <span className="tabular-nums">{d.bank.iban}</span>
+                    {d.bank.bic ? ` · ${t.bic}: ${d.bank.bic}` : ''}
+                  </div>
+                </>
+              )}
             </div>
+            {d.qr && (
+              <figure className="space-y-1 text-center">
+                <svg
+                  role="img"
+                  aria-label={d.qr.kind === 'spayd' ? t.qrPlatba : t.qrEpc}
+                  viewBox={`0 0 ${d.qr.viewBox} ${d.qr.viewBox}`}
+                  className="size-32 bg-white"
+                  shapeRendering="crispEdges"
+                >
+                  <path d={d.qr.path} stroke="#000" fill="none" />
+                </svg>
+                <figcaption className="text-xs text-neutral-500">
+                  {d.qr.kind === 'spayd' ? t.qrPlatba : t.qrEpc}
+                </figcaption>
+              </figure>
+            )}
           </section>
         )}
 

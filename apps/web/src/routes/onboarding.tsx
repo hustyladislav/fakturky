@@ -1,3 +1,4 @@
+import { Button } from '@fakturky/ui/components/button'
 import {
   Card,
   CardContent,
@@ -9,10 +10,12 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { BusinessProfileForm } from '@/components/business-profile-form'
 import { cs } from '@/i18n/cs'
-import { orpc } from '@/lib/orpc'
+import { pageHead } from '@/lib/head'
+import { client, orpc } from '@/lib/orpc'
 import { getSessionFn } from '@/server/session'
 
 export const Route = createFileRoute('/onboarding')({
+  head: pageHead(cs.onboarding.pageTitle),
   beforeLoad: async () => {
     if (!(await getSessionFn())) throw redirect({ to: '/prihlaseni' })
   },
@@ -36,8 +39,22 @@ function Onboarding() {
             <BusinessProfileForm
               profile={profile}
               submitLabel={cs.onboarding.submit}
-              onSaved={() => navigate({ to: '/' })}
+              onSaved={() => navigate({ to: '/prehled' })}
             />
+          )}
+          {profile && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="mt-2 w-full"
+              onClick={async () => {
+                // Finishing onboarding stamps onboardedAt; keep whatever is already stored.
+                await client.businessProfile.update({ legalName: profile.legalName })
+                await navigate({ to: '/prehled' })
+              }}
+            >
+              {cs.onboarding.skip}
+            </Button>
           )}
         </CardContent>
       </Card>

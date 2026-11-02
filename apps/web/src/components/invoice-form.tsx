@@ -7,9 +7,11 @@ import { Money } from '@fakturky/ui/components/money'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Plus, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
+import { apiErrorMessage } from '@/lib/errors'
+import { type InvoicePrefill, onInvoicePrefill, takeInvoicePrefill } from '@/lib/invoice-prefill'
 import { client, orpc } from '@/lib/orpc'
 import { CustomerPicker, type PickedCustomer } from './customer-picker'
 
@@ -80,6 +82,43 @@ export function InvoiceForm({ id }: { id?: string }) {
   const [ready, setReady] = useState(false)
   const [dueTouched, setDueTouched] = useState(false)
 
+  const vatPayerDefault = defaults.data?.vatPayer ?? false
+  const applyPrefill = useCallback(
+    (prefill: InvoicePrefill) => {
+      if (prefill.dueDate) {
+        setDueDate(prefill.dueDate)
+        setDueTouched(true)
+      }
+      if (prefill.lines.length) {
+        setLines(
+          prefill.lines.map((l) => ({
+            key: lineKey++,
+            description: l.description,
+            quantity: l.quantity || '1',
+            unit: 'ks',
+            unitPrice: l.unitPrice,
+            vatRate: l.vatRate ?? (vatPayerDefault ? '21' : '0'),
+          })),
+        )
+      }
+      if (prefill.contactId) {
+        client.contacts
+          .get({ id: prefill.contactId })
+          .then((c) => setCustomer({ id: c.id, name: c.name, ico: c.ico }))
+          .catch(() => undefined)
+      }
+    },
+    [vatPayerDefault],
+  )
+  // An assistant prefill that arrives while this form is already open (no remount happens).
+  useEffect(() => {
+    if (id || !ready) return
+    return onInvoicePrefill(() => {
+      const p = takeInvoicePrefill()
+      if (p) applyPrefill(p)
+    })
+  }, [id, ready, applyPrefill])
+
   // Seed from defaults (new) or from the stored draft (edit), once.
   useEffect(() => {
     if (id || ready || !defaults.data) return
@@ -89,8 +128,11 @@ export function InvoiceForm({ id }: { id?: string }) {
     setPaymentMethod(d.paymentMethod)
     setFooterText(d.footerText ?? '')
     setLines([emptyLine(d.vatPayer ? '21' : '0')])
+    // Hand-off from the assistant (`prefillInvoiceForm`): applied once, on top of the defaults.
+    const prefill = takeInvoicePrefill()
+    if (prefill) applyPrefill(prefill)
     setReady(true)
-  }, [defaults.data, ready, today, id])
+  }, [defaults.data, ready, today, id, applyPrefill])
   useEffect(() => {
     const d = existing.data
     if (!id || !d || ready || !defaults.data) return
@@ -183,21 +225,47 @@ export function InvoiceForm({ id }: { id?: string }) {
       })),
   })
 
+  const [createdId, setCreatedId] = useState<string | undefined>()
+  const [issueError, setIssueError] = useState<string | null>(null)
+  // A refused issue on a brand-new invoice moves to the saved draft's URL; carry the message across.
+  useEffect(() => {
+    if (!id) return
+    try {
+      const kept = sessionStorage.getItem(`issueError:${id}`)
+      if (kept) {
+        setIssueError(kept)
+        sessionStorage.removeItem(`issueError:${id}`)
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, [id])
+  const draftId = id ?? createdId
+
   const save = useMutation({
     mutationFn: async (andIssue: boolean) => {
+      setIssueError(null)
       const body = payload()
       if (andIssue && !customer) throw new Error(t.needCustomer)
       if (andIssue && body.lines.length === 0) throw new Error(t.needLines)
-      const doc = id
-        ? await client.documents.updateDraft({ id, patch: body })
+      const doc = draftId
+        ? await client.documents.updateDraft({ id: draftId, patch: body })
         : await client.documents.createDraft({ ...body, type: docType })
       if (!andIssue) return doc
       try {
         return await client.documents.issue({ id: doc.id })
       } catch (e) {
-        // Keep the saved draft: continue on its edit page so a retry does not create a second one.
+        // Keep the saved draft: a retry updates it instead of creating a second one.
         await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
-        if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+        setCreatedId(doc.id)
+        if (!id) {
+          try {
+            sessionStorage.setItem(`issueError:${doc.id}`, apiErrorMessage(e))
+          } catch {
+            /* storage unavailable */
+          }
+          navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+        }
         throw e
       }
     },
@@ -205,15 +273,15 @@ export function InvoiceForm({ id }: { id?: string }) {
       await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
       toast.success(andIssue ? cs.invoices.detail.issued(doc.number ?? '') : t.saved)
       if (andIssue) navigate({ to: '/faktury/$id', params: { id: doc.id } })
-      else if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+      else if (!draftId) {
+        setCreatedId(doc.id)
+        navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+      }
     },
     onError: (e) => {
-      const code = (e as { code?: string }).code
-      toast.error(
-        code === 'PRECONDITION_FAILED'
-          ? (e as Error).message
-          : (e as Error).message || cs.common.error,
-      )
+      const message = apiErrorMessage(e)
+      setIssueError(message)
+      toast.error(message)
     },
   })
 
@@ -244,6 +312,15 @@ export function InvoiceForm({ id }: { id?: string }) {
         </p>
       )}
 
+      {defaults.data?.hasProfile && defaults.data.registryNoteMissing && (
+        <p className="bg-warning/14 text-warning rounded-lg p-3 text-sm">
+          {t.registryNoteMissing}{' '}
+          <Link to="/nastaveni" className="underline">
+            {cs.nav.settings}
+          </Link>
+        </p>
+      )}
+
       {!id && (
         <Card title={t.documentType}>
           <select
@@ -263,6 +340,14 @@ export function InvoiceForm({ id }: { id?: string }) {
 
       <Card title={t.customer}>
         <CustomerPicker value={customer} onChange={setCustomer} />
+        {issueError && (
+          <p role="alert" className="text-destructive text-sm">
+            {issueError}{' '}
+            <Link to="/kontakty" className="underline">
+              {cs.nav.contacts}
+            </Link>
+          </p>
+        )}
       </Card>
 
       <Card title={t.details}>
@@ -556,7 +641,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           type="button"
           variant="outline"
           className="flex-1 sm:flex-none"
-          disabled={save.isPending}
+          disabled={save.isPending || !ready}
           onClick={() => save.mutate(false)}
         >
           {t.saveDraft}
@@ -564,7 +649,7 @@ export function InvoiceForm({ id }: { id?: string }) {
         <Button
           type="button"
           className="flex-[2] sm:flex-none"
-          disabled={save.isPending}
+          disabled={save.isPending || !ready}
           onClick={() => save.mutate(true)}
         >
           {t.issue}

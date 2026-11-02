@@ -37,6 +37,8 @@ export const aresSubjectSchema = z.object({
   dic: z.string().nullable(),
   address: z.object({ street: z.string(), city: z.string(), zip: z.string(), country: z.string() }),
   vatPayer: z.boolean(),
+  /** ARES legal-form code; 101 = fyzická osoba (podnikatel). */
+  legalForm: z.string().nullable().optional(),
 })
 
 export type BusinessProfile = z.infer<typeof businessProfileSchema>

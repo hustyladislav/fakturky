@@ -9,6 +9,7 @@ const EXCLUDED = new Set([
   'export_document_pdf',
   'export_contacts_csv',
   'export_documents_csv',
+  'export_organization_json',
 ])
 
 /** Cap one tool result so a big list cannot blow up the context (and the bill). */
@@ -16,6 +17,17 @@ const MAX_RESULT_CHARS = 24_000
 
 export function needsApproval(tool: { name: string; annotations: { destructiveHint: boolean } }) {
   return tool.annotations.destructiveHint || ALWAYS_APPROVE_TOOLS.has(tool.name)
+}
+
+/** Name, description and input schema of every tool that needs approval (for the client's interrupt binding). */
+export function listApprovalTools() {
+  return buildAgentTools()
+    .filter((tool) => !EXCLUDED.has(tool.name) && needsApproval(tool))
+    .map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      inputSchema: tool.inputSchema as Record<string, unknown>,
+    }))
 }
 
 /**

@@ -2,6 +2,7 @@ import { type DbHandle, schema } from '@fakturky/db'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { MailError, type SendInvoiceArgs } from '../context'
+import { documentsRepo } from '../repositories/documents'
 import { clientFor, createTestDb, seedOrg } from '../testing'
 
 let handle: DbHandle
@@ -140,6 +141,43 @@ test('credit note reverses an invoice, numbered in its own series, exported with
   expect(unpaid.some((d) => d.id === cn.id)).toBe(false)
   const dash = await api.dashboard.summary({})
   expect(dash.monthTurnover).toBe('0.00')
+})
+
+test('a credit note settles the invoice balance and asks for no payment; cancelling it reopens the invoice', async () => {
+  const org = await seedOrg(handle, 'cn-balance')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Neplátce' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({ name: 'Odběratel' })
+  const inv = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        contactId: c.id,
+        lines: [{ description: 'Práce', quantity: '1', unitPrice: '1000' }],
+      })
+    ).id,
+  })
+  const cn = await api.documents.issue({
+    id: (await api.documents.createCreditNote({ id: inv.id, reason: 'Storno služby' })).id,
+  })
+  const after = await api.documents.get({ id: inv.id })
+  expect(after.status).toBe('paid')
+  expect(after.remaining).toBe('0.00')
+  expect(after.payments.map((p) => [p.method, p.note, p.amount])).toEqual([
+    ['credit_note', cn.number, '1000.0000'],
+  ])
+  expect((await api.documents.list({ filter: 'unpaid' })).some((d) => d.id === inv.id)).toBe(false)
+  // The credit note is exported without a payment request (no due date, bank details or QR).
+  const { toDocumentForExport } = await import('../export')
+  const found = await documentsRepo.forExport(handle.db, org, cn.id)
+  expect(toDocumentForExport(found!.doc, found!.lines).payment).toBeNull()
+
+  await api.documents.cancel({ id: cn.id })
+  const reopened = await api.documents.get({ id: inv.id })
+  expect(reopened.status).toBe('issued')
+  expect(reopened.remaining).toBe('1000.00')
+  expect(reopened.payments).toHaveLength(0)
 })
 
 test('proforma → paid → final invoice with the advance deducted; settled on issue', async () => {

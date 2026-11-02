@@ -626,7 +626,13 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
             </View>
 
             <View style={s.total}>
-              <Text style={s.label}>{deposits.isZero() ? t.amountDue : t.remaining}</Text>
+              <Text style={s.label}>
+                {doc.type === 'credit_note'
+                  ? t.creditTotal
+                  : deposits.isZero()
+                    ? t.amountDue
+                    : t.remaining}
+              </Text>
               <Text style={s.totalValue}>{money(due)}</Text>
             </View>
           </View>

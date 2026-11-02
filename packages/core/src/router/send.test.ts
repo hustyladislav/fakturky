@@ -172,6 +172,10 @@ test('a credit note settles the invoice balance and asks for no payment; cancell
     ['credit_note', cn.number, '1000.0000'],
   ])
   expect((await api.documents.list({ filter: 'unpaid' })).some((d) => d.id === inv.id)).toBe(false)
+  // Related documents are linked both ways and the list can be narrowed by type.
+  expect((await api.documents.get({ id: cn.id })).parent).toMatchObject({ id: inv.id })
+  expect(after.related.map((r) => r.id)).toEqual([cn.id])
+  expect((await api.documents.list({ type: 'credit_note' })).map((d) => d.id)).toEqual([cn.id])
   // The credit note is exported without a payment request (no due date, bank details or QR).
   const { toDocumentForExport } = await import('../export')
   const found = await documentsRepo.forExport(handle.db, org, cn.id)

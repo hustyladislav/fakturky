@@ -14,6 +14,18 @@ function apply(pref: ThemePreference) {
   document.documentElement.classList.toggle('dark', dark)
 }
 
+/** Stores and applies a theme preference (used by the account menu). */
+export function setThemePreference(pref: ThemePreference) {
+  localStorage.setItem(KEY, pref)
+  apply(pref)
+  window.dispatchEvent(new Event('theme-change'))
+}
+
+export function readThemePreference(): ThemePreference {
+  const v = localStorage.getItem(KEY)
+  return v === 'light' || v === 'dark' ? v : 'system'
+}
+
 const order: ThemePreference[] = ['system', 'light', 'dark']
 const icons = { system: Monitor, light: Sun, dark: Moon }
 

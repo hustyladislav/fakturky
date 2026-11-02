@@ -182,7 +182,9 @@ for (const v of variants) {
         pub.getByText(v.vatPayer ? 'Faktura – daňový doklad' : 'Faktura', { exact: true }),
       ).toBeVisible()
       await expect(pub.getByText(amountRe(v.total)).first()).toBeVisible()
-      await expect(pub.getByRole('img', { name: 'QR Platba' })).toBeVisible()
+      await expect(
+        pub.getByTestId('public-qr').getByRole('img', { name: 'QR Platba' }),
+      ).toBeVisible()
       const token = new URL(pub.url()).pathname.split('/').pop()
       const qrPng = await pub.request.get(`/f/${token}/qr.png`)
       expect(qrPng.status()).toBe(200)

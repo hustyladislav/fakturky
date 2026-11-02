@@ -27,6 +27,11 @@ export function useShortcuts() {
         shell.setPaletteOpen(!shell.paletteOpen)
         return
       }
+      if (mod && e.key === '\\') {
+        e.preventDefault()
+        shell.toggleSidebar()
+        return
+      }
       if (mod && e.key.toLowerCase() === 'j') {
         e.preventDefault()
         shell.setAssistantOpen(!shell.assistantOpen)

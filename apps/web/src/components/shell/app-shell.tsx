@@ -4,13 +4,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@fakturky/ui/components/dropdown-menu'
 import { Kbd } from '@fakturky/ui/components/kbd'
-import { Logo, LogoMark } from '@fakturky/ui/components/logo'
-import { ThemeToggle } from '@fakturky/ui/components/theme'
+import { LogoMark } from '@fakturky/ui/components/logo'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -25,13 +23,14 @@ import {
   Settings,
   Sparkles,
 } from 'lucide-react'
-import { lazy, type ReactNode, Suspense, useMemo, useState } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useMemo, useState } from 'react'
 import { clearAssistantStorage } from '@/components/assistant/assistant-storage'
 import { InstallHint } from '@/components/pwa/install-hint'
 import { cs } from '@/i18n/cs'
 import { type NavItem, NEW_INVOICE_PATH, navItems, useNavItems } from './nav'
 import { useRecordRecent } from './recent-pages'
 import { ShellContext, type ShellState, useShell as useShellState } from './shell-context'
+import { Breadcrumbs, NewInvoiceButton, Sidebar } from './sidebar'
 import { useModKey } from './use-mod-key'
 import { useShortcuts } from './use-shortcuts'
 
@@ -44,8 +43,7 @@ const ShortcutsHelp = lazy(() =>
 const loadAssistant = () => import('@/components/assistant/assistant-root')
 const AssistantRoot = lazy(loadAssistant)
 
-const navLink =
-  'group/nav flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground data-[status=active]:bg-sidebar-accent data-[status=active]:text-sidebar-foreground max-lg:justify-center max-lg:px-0 [&_svg]:size-4 [&_svg]:shrink-0'
+const COLLAPSE_KEY = 'sidebar-collapsed'
 
 export function AppShell({
   user,
@@ -59,8 +57,27 @@ export function AppShell({
   const [assistantOpen, setAssistantOpen] = useState(false)
   const [question, setQuestion] = useState<{ id: number; text: string } | null>(null)
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  useEffect(() => {
+    try {
+      setSidebarCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1')
+    } catch {
+      // storage unavailable: stay expanded
+    }
+  }, [])
+
   const state = useMemo<ShellState>(
     () => ({
+      sidebarCollapsed,
+      toggleSidebar: () =>
+        setSidebarCollapsed((c) => {
+          try {
+            localStorage.setItem(COLLAPSE_KEY, c ? '0' : '1')
+          } catch {
+            // ignore
+          }
+          return !c
+        }),
       paletteOpen,
       setPaletteOpen,
       helpOpen,
@@ -72,7 +89,7 @@ export function AppShell({
         setAssistantOpen(true)
       },
     }),
-    [paletteOpen, helpOpen, assistantOpen],
+    [paletteOpen, helpOpen, assistantOpen, sidebarCollapsed],
   )
 
   return (
@@ -93,7 +110,14 @@ function ShellInner({
   question: { id: number; text: string } | null
   children: ReactNode
 }) {
-  const { setPaletteOpen, paletteOpen, helpOpen, assistantOpen, setAssistantOpen } = useShellState()
+  const {
+    setPaletteOpen,
+    paletteOpen,
+    helpOpen,
+    assistantOpen,
+    setAssistantOpen,
+    sidebarCollapsed,
+  } = useShellState()
   // Dialog code loads the first time it is needed (palette: on first open or intent).
   const [dialogsSeen, setDialogsSeen] = useState({ palette: false, help: false })
   if (paletteOpen && !dialogsSeen.palette) setDialogsSeen((d) => ({ ...d, palette: true }))
@@ -106,7 +130,7 @@ function ShellInner({
   const modKey = useModKey()
 
   return (
-    <div className="min-h-svh">
+    <div className="group/shell min-h-svh" data-collapsed={sidebarCollapsed}>
       <a
         href="#obsah"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2"
@@ -115,18 +139,24 @@ function ShellInner({
       </a>
       <Sidebar user={user} />
 
-      <div className={cn('md:pl-16 lg:pl-60', assistantOpen && 'lg:pr-[380px]')}>
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur md:px-8">
+      <div
+        className={cn(
+          'transition-[padding] duration-200 md:pl-16 lg:pl-[15.5rem] lg:group-data-[collapsed=true]/shell:pl-16',
+          assistantOpen && 'lg:pr-[380px]',
+        )}
+      >
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 bg-background/80 px-4 backdrop-blur md:px-8">
           <Link to="/prehled" className="md:hidden">
             <LogoMark letter={BRAND.name.charAt(0)} className="size-7" />
             <span className="sr-only">{BRAND.name}</span>
           </Link>
+          <Breadcrumbs />
           <button
             type="button"
             onPointerEnter={() => void import('./command-palette')}
             onFocus={() => void import('./command-palette')}
             onClick={() => setPaletteOpen(true)}
-            className="ml-auto flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-sm text-muted-foreground transition-colors hover:text-foreground md:ml-0 md:w-72 md:justify-between"
+            className="sheet !rounded-lg ml-auto flex h-9 items-center gap-2 px-3 text-sm text-muted-foreground transition-colors hover:text-foreground md:w-80 md:justify-between xl:w-[26rem]"
           >
             <span className="flex items-center gap-2">
               <Search className="size-4" aria-hidden />
@@ -137,7 +167,7 @@ function ShellInner({
               <Kbd>K</Kbd>
             </span>
           </button>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
@@ -151,19 +181,7 @@ function ShellInner({
             >
               <PanelRight />
             </Button>
-            <ThemeToggle labels={cs.theme} />
-            <Button
-              size="lg"
-              className="ml-2 hidden md:inline-flex"
-              nativeButton={false}
-              render={<Link to={NEW_INVOICE_PATH as never} />}
-            >
-              <Plus data-icon="inline-start" />
-              {cs.shell.newInvoice}
-              <Kbd className="ml-1 border-primary-foreground/30 bg-transparent text-primary-foreground/80">
-                N
-              </Kbd>
-            </Button>
+            <NewInvoiceButton />
           </div>
         </header>
         <main
@@ -191,97 +209,6 @@ function ShellInner({
         {dialogsSeen.help && <ShortcutsHelp />}
       </Suspense>
     </div>
-  )
-}
-
-function Sidebar({ user }: { user: { name: string; email: string } }) {
-  const items = useNavItems()
-  return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-16 flex-col border-r bg-sidebar text-sidebar-foreground md:flex lg:w-60">
-      <div className="flex h-14 items-center px-4 max-lg:justify-center max-lg:px-0">
-        <Link to="/prehled">
-          <Logo name={BRAND.name} className="max-lg:hidden" markClassName="size-7" />
-          <LogoMark letter={BRAND.name.charAt(0)} className="size-8 lg:hidden" />
-          <span className="sr-only lg:hidden">{BRAND.name}</span>
-        </Link>
-      </div>
-      <nav className="flex-1 space-y-1 px-3 py-2 max-lg:px-2" aria-label={cs.shell.navigation}>
-        {items.map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            activeOptions={{ exact: false }}
-            className={navLink}
-            title={item.label}
-          >
-            <item.icon aria-hidden />
-            <span className="max-lg:sr-only">{item.label}</span>
-            <Kbd className="ml-auto hidden border-transparent bg-transparent opacity-0 transition-opacity group-hover/nav:opacity-100 lg:inline-flex">
-              G {item.goKey.toUpperCase()}
-            </Kbd>
-          </Link>
-        ))}
-      </nav>
-      <div className="space-y-1 border-t px-3 py-3 max-lg:px-2">
-        <a
-          href={BRAND.supportUrl}
-          target="_blank"
-          rel="noreferrer"
-          className={navLink}
-          title={cs.shell.coffee}
-        >
-          <Coffee aria-hidden />
-          <span className="max-lg:sr-only">{cs.shell.coffee}</span>
-        </a>
-        <a
-          href={BRAND.issuesUrl}
-          target="_blank"
-          rel="noreferrer"
-          className={navLink}
-          title={cs.shell.feedback}
-        >
-          <MessageSquare aria-hidden />
-          <span className="max-lg:sr-only">{cs.shell.feedback}</span>
-        </a>
-        <AccountMenu user={user} />
-      </div>
-    </aside>
-  )
-}
-
-function AccountMenu({ user }: { user: { name: string; email: string } }) {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="flex h-12 w-full items-center gap-3 rounded-lg px-2 text-left outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-3 focus-visible:ring-ring/50 max-lg:justify-center">
-        <span className="sr-only lg:hidden">{cs.shell.account}</span>
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-medium text-accent-foreground">
-          {user.name.charAt(0).toUpperCase()}
-        </span>
-        <span className="min-w-0 flex-1 max-lg:hidden">
-          <span className="block truncate text-sm font-medium">{user.name}</span>
-          <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
-        </span>
-        <Ellipsis className="size-4 text-muted-foreground max-lg:hidden" aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start">
-        <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem render={<Link to="/nastaveni" />}>{cs.nav.settings}</DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={async () => {
-            clearAssistantStorage()
-            await (await import('@/lib/auth-client')).authClient.signOut()
-            queryClient.clear()
-            await navigate({ to: '/prihlaseni' })
-          }}
-        >
-          <LogOut aria-hidden />
-          {cs.common.signOut}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }
 

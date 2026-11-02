@@ -2,6 +2,7 @@ import { Button } from '@fakturky/ui/components/button'
 import { FieldError } from '@fakturky/ui/components/field-error'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
+import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -9,9 +10,6 @@ import { cs } from '@/i18n/cs'
 import { client, orpc } from '@/lib/orpc'
 
 type Profile = Awaited<ReturnType<typeof client.businessProfile.get>>
-
-const selectClass =
-  'h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 export function BusinessProfileForm({
   profile,
@@ -132,16 +130,11 @@ export function BusinessProfileForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="vatStatus">{cs.profile.vatStatus}</Label>
-          <select
-            id="vatStatus"
-            className={selectClass}
-            value={values.vatStatus}
-            onChange={set('vatStatus')}
-          >
+          <NativeSelect id="vatStatus" value={values.vatStatus} onChange={set('vatStatus')}>
             <option value="non_payer">{cs.profile.vatNonPayer}</option>
             <option value="payer">{cs.profile.vatPayer}</option>
             <option value="identified_person">{cs.profile.vatIdentified}</option>
-          </select>
+          </NativeSelect>
         </div>
       </div>
       <div className="space-y-2">

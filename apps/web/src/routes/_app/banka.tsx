@@ -4,6 +4,7 @@ import { Button } from '@fakturky/ui/components/button'
 import { EmptyState } from '@fakturky/ui/components/empty-state'
 import { Input } from '@fakturky/ui/components/input'
 import { Money } from '@fakturky/ui/components/money'
+import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
@@ -164,9 +165,9 @@ function BankPage() {
           ))}
         </div>
         {accountList.length > 1 && (
-          <select
+          <NativeSelect
+            className="sm:w-56"
             aria-label={t.account}
-            className="border-input bg-background h-9 rounded-md border px-2 text-sm"
             value={ucet ?? ''}
             onChange={(e) =>
               navigate({ search: (s) => ({ ...s, ucet: e.target.value || undefined }) })
@@ -178,7 +179,7 @@ function BankPage() {
                 {a.label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         )}
         <div className="relative sm:w-80">
           <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />

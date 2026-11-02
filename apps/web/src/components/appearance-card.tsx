@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@fakturky/ui/components/card'
-import { Input } from '@fakturky/ui/components/input'
+import { FilePicker } from '@fakturky/ui/components/file-picker'
 import { Label } from '@fakturky/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -62,11 +62,11 @@ function AssetRow({ kind, src }: { kind: 'logo' | 'signature'; src: string | nul
         ) : (
           <span className="text-muted-foreground text-sm">{t.none}</span>
         )}
-        <Input
+        <FilePicker
           id={`asset-${kind}`}
-          type="file"
+          buttonLabel={cs.common.chooseFile}
+          emptyLabel={cs.common.noFile}
           accept="image/png,image/jpeg"
-          className="max-w-64"
           onChange={(e) => {
             const f = e.target.files?.[0]
             if (f) upload.mutate(f)

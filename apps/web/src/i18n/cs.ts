@@ -81,6 +81,8 @@ export const cs = {
     error: 'Něco se pokazilo. Zkuste to prosím znovu.',
     signOut: 'Odhlásit se',
     support: 'Podpořit projekt',
+    chooseFile: 'Vybrat soubor',
+    noFile: 'Žádný soubor',
   },
   landing: {
     metaTitle: `${BRAND.name} — fakturace zdarma pro živnostníky a firmy`,

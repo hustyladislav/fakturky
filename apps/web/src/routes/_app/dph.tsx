@@ -6,6 +6,7 @@ import { EmptyState } from '@fakturky/ui/components/empty-state'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
+import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -37,9 +38,6 @@ type Figures = {
   r64: string
   r65: string
 }
-
-const selectClass =
-  'h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 const AMOUNT = /^-?\d+([.,]\d{1,2})?$/
 
@@ -142,21 +140,19 @@ function PayerPage({ profile }: { profile: Profile }) {
       <section className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="vat-kind">{t.period}</Label>
-          <select
+          <NativeSelect
             id="vat-kind"
-            className={selectClass}
             value={kind}
             onChange={(e) => switchKind(e.target.value as PeriodKind)}
           >
             <option value="month">{t.monthly}</option>
             <option value="quarter">{t.quarterly}</option>
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-2">
           <Label htmlFor="vat-year">{t.year}</Label>
-          <select
+          <NativeSelect
             id="vat-year"
-            className={selectClass}
             value={year}
             onChange={(e) => setPeriod({ year: Number(e.target.value), idx })}
           >
@@ -165,13 +161,12 @@ function PayerPage({ profile }: { profile: Profile }) {
                 {y}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-2">
           <Label htmlFor="vat-idx">{kind === 'month' ? t.monthly : t.quarterly}</Label>
-          <select
+          <NativeSelect
             id="vat-idx"
-            className={selectClass}
             value={idx}
             onChange={(e) => setPeriod({ year, idx: Number(e.target.value) })}
           >
@@ -186,7 +181,7 @@ function PayerPage({ profile }: { profile: Profile }) {
                     {t.quarter(q)}
                   </option>
                 ))}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <div className="text-sm font-medium">{t.deadline}</div>
@@ -201,22 +196,20 @@ function PayerPage({ profile }: { profile: Profile }) {
         <h2 className="font-semibold sm:col-span-2">{t.options.title}</h2>
         <div className="space-y-2">
           <Label htmlFor="eu-kind">{t.options.euKind}</Label>
-          <select
+          <NativeSelect
             id="eu-kind"
-            className={selectClass}
             value={euSupplyKind}
             onChange={(e) => setEuSupplyKind(e.target.value as 'services' | 'goods')}
           >
             <option value="services">{t.options.euServices}</option>
             <option value="goods">{t.options.euGoods}</option>
-          </select>
+          </NativeSelect>
           <p className="text-xs text-muted-foreground">{t.options.euHint}</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="rc-code">{t.options.rcCode}</Label>
-          <select
+          <NativeSelect
             id="rc-code"
-            className={selectClass}
             value={reverseChargeCode}
             onChange={(e) => setRcCode(e.target.value)}
           >
@@ -225,7 +218,7 @@ function PayerPage({ profile }: { profile: Profile }) {
                 {label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
       </section>
 
@@ -355,27 +348,25 @@ function FilingCard({ profile }: { profile: Profile }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="uf-type">{t.filing.subjectType}</Label>
-            <select
+            <NativeSelect
               id="uf-type"
-              className={selectClass}
               value={subjectType}
               onChange={(e) => setType(e.target.value as 'F' | 'P')}
             >
               <option value="F">{t.filing.personF}</option>
               <option value="P">{t.filing.personP}</option>
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-2">
             <Label htmlFor="uf-period">{t.filing.periodLabel}</Label>
-            <select
+            <NativeSelect
               id="uf-period"
-              className={selectClass}
               value={period}
               onChange={(e) => setPeriodKind(e.target.value as 'monthly' | 'quarterly')}
             >
               <option value="monthly">{t.monthly}</option>
               <option value="quarterly">{t.quarterly}</option>
-            </select>
+            </NativeSelect>
           </div>
           <div className="sm:col-span-2">
             <Button type="submit" disabled={save.isPending}>

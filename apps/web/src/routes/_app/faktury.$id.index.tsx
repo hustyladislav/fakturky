@@ -343,6 +343,14 @@ function InvoiceDetail() {
                 <span>{t.paidSoFar}</span>
                 <Money amount={d.paidAmount} currency={d.currency} />
               </div>
+              {d.payments
+                .filter((p) => p.method === 'credit_note')
+                .map((p) => (
+                  <div key={p.id} className="text-muted-foreground flex justify-between">
+                    <span>{t.creditedBy(p.note ?? '')}</span>
+                    <Money amount={p.amount} currency={d.currency} />
+                  </div>
+                ))}
               {open && (
                 <div className="flex justify-between font-medium">
                   <span>{t.remaining}</span>

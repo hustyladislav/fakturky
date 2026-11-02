@@ -429,6 +429,7 @@ export const cs = {
       iban: 'IBAN',
       account: 'Účet',
       paidSoFar: 'Uhrazeno',
+      creditedBy: (number: string) => `Z toho dobropisem ${number}`,
       remaining: 'Zbývá uhradit',
       history: 'Průběh',
       timeline: {

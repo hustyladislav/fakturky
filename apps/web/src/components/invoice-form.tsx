@@ -351,7 +351,7 @@ export function InvoiceForm({ id }: { id?: string }) {
     <div className="mx-auto max-w-3xl space-y-4 pb-28 sm:pb-6">
       <h1 className="text-2xl font-semibold">{id ? t.titleEdit : t.titleNew}</h1>
       {defaults.data && !defaults.data.hasProfile && (
-        <p className="bg-warning/14 text-warning rounded-lg p-3 text-sm">
+        <p className="rounded-lg border border-warning/50 bg-warning/14 p-3 text-sm text-foreground">
           {t.needProfile}{' '}
           <Link to="/nastaveni" className="underline">
             {cs.nav.settings}
@@ -360,7 +360,7 @@ export function InvoiceForm({ id }: { id?: string }) {
       )}
 
       {defaults.data?.hasProfile && defaults.data.registryNoteMissing && (
-        <p className="bg-warning/14 text-warning rounded-lg p-3 text-sm">
+        <p className="rounded-lg border border-warning/50 bg-warning/14 p-3 text-sm text-foreground">
           {t.registryNoteMissing}{' '}
           <Link to="/nastaveni" className="underline">
             {cs.nav.settings}

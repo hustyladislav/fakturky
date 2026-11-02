@@ -17,8 +17,7 @@ function LogoMark({
     <svg
       viewBox="0 0 32 32"
       className={cn('size-8 shrink-0', className)}
-      role="img"
-      aria-label={`${letter}.`}
+      aria-hidden="true"
       data-paid={paid || undefined}
     >
       <rect width="32" height="32" rx="8" className="fill-primary" />

@@ -12,7 +12,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
     <div className="grid min-h-svh lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
       <main className="flex flex-col px-6 py-6 sm:px-12">
         <div className="flex items-center justify-between">
-          <Link to="/" aria-label={BRAND.name}>
+          <Link to="/">
             <Logo name={BRAND.name} markClassName="size-8" />
           </Link>
           <ThemeToggle labels={cs.theme} />

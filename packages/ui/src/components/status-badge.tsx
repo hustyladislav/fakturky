@@ -13,7 +13,7 @@ const statusVariants = cva(
         draft: 'bg-muted text-muted-foreground',
         issued: 'bg-info/12 text-info',
         overdue: 'bg-destructive/12 text-destructive',
-        partial: 'bg-warning/14 text-warning',
+        partial: 'bg-warning/14 text-[color-mix(in_srgb,var(--warning),var(--foreground)_40%)]',
         paid: 'bg-success/12 text-success',
         cancelled: 'bg-muted text-muted-foreground line-through',
       },

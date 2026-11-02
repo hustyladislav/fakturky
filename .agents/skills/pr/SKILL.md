@@ -104,7 +104,7 @@ Show before and after, strongest first:
 3. **Reasoning** — only when nothing can be run; say so.
 
 Match the proof to the change, as in `AGENTS.md`: copy/CSS/docs → the affected
-test · logic → `pnpm verify` · UI → + screenshot · risky paths → + `pnpm e2e`. **Not verified** is mandatory: name what you did not check.
+test · logic → the verify command from `AGENTS.md` · UI → + screenshot · risky paths → + e2e. **Not verified** is mandatory: name what you did not check.
 
 ## Merge Danger
 

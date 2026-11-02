@@ -8,6 +8,9 @@ const { document, payment, businessProfile } = schema
 /** Annual turnover (without VAT) above which a non-payer must register for VAT. */
 export const VAT_REGISTRATION_LIMIT = '2000000'
 
+/** Above this turnover the obligation to register starts immediately (docs/DOMAIN.md). */
+export const IMMEDIATE_REGISTRATION_LIMIT = '2536500'
+
 const DAY = 86_400_000
 
 export const dashboardRepo = {
@@ -116,6 +119,8 @@ export const dashboardRepo = {
             year: Number(year),
             turnover: toFixed(yearTurnover, 2),
             limit: toFixed(limit, 0),
+            immediateLimit: toFixed(new Decimal(IMMEDIATE_REGISTRATION_LIMIT), 0),
+            immediateExceeded: yearTurnover.gt(IMMEDIATE_REGISTRATION_LIMIT),
             percent: Math.min(100, Math.round(yearTurnover.div(limit).times(100).toNumber())),
           }
         : null,

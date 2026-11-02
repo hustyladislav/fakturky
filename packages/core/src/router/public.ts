@@ -3,6 +3,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { toDocumentForExport } from '../export'
 import { publicProcedure } from '../orpc'
+import { buildPublicQr } from '../public-qr'
 import { publicDocumentsRepo } from '../repositories/public-documents'
 
 const party = z.object({
@@ -42,6 +43,10 @@ export const publicRouter = {
           })
           .nullable(),
         variableSymbol: z.string().nullable(),
+        paymentMethod: z.string(),
+        qr: z
+          .object({ kind: z.enum(['spayd', 'epc']), viewBox: z.number(), path: z.string() })
+          .nullable(),
         lines: z.array(
           z.object({
             description: z.string(),
@@ -114,6 +119,8 @@ export const publicRouter = {
             }
           : null,
         variableSymbol: doc.variableSymbol,
+        paymentMethod: doc.paymentMethod,
+        qr: doc.status === 'issued' ? await buildPublicQr(x, left) : null,
         lines: lines.map((l) => ({
           description: l.description,
           quantity: l.quantity,

@@ -10,6 +10,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
+import { apiErrorMessage } from '@/lib/errors'
 import { type InvoicePrefill, onInvoicePrefill, takeInvoicePrefill } from '@/lib/invoice-prefill'
 import { client, orpc } from '@/lib/orpc'
 import { CustomerPicker, type PickedCustomer } from './customer-picker'
@@ -249,12 +250,7 @@ export function InvoiceForm({ id }: { id?: string }) {
       else if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
     },
     onError: (e) => {
-      const code = (e as { code?: string }).code
-      toast.error(
-        code === 'PRECONDITION_FAILED'
-          ? (e as Error).message
-          : (e as Error).message || cs.common.error,
-      )
+      toast.error(apiErrorMessage(e))
     },
   })
 
@@ -279,6 +275,15 @@ export function InvoiceForm({ id }: { id?: string }) {
       {defaults.data && !defaults.data.hasProfile && (
         <p className="bg-warning/14 text-warning rounded-lg p-3 text-sm">
           {t.needProfile}{' '}
+          <Link to="/nastaveni" className="underline">
+            {cs.nav.settings}
+          </Link>
+        </p>
+      )}
+
+      {defaults.data?.hasProfile && defaults.data.registryNoteMissing && (
+        <p className="bg-warning/14 text-warning rounded-lg p-3 text-sm">
+          {t.registryNoteMissing}{' '}
           <Link to="/nastaveni" className="underline">
             {cs.nav.settings}
           </Link>

@@ -49,6 +49,11 @@ export function BusinessProfileForm({
         city: s.address.city,
         zip: s.address.zip,
         vatStatus: s.vatPayer ? 'payer' : v.vatStatus,
+        // OZ §435: sole traders are "Fyzická osoba zapsaná v živnostenském rejstříku"; companies add their court entry.
+        registryNote:
+          s.legalForm === '101' && !v.registryNote
+            ? cs.profile.registryNoteSoleTrader
+            : v.registryNote,
       }))
       toast.success(cs.profile.icoFound)
     },

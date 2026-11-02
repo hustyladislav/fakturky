@@ -32,6 +32,13 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 4. **Google sign-in** — OAuth client created in Google Cloud project `fakturky`; consent screen is in *Testing*
    (only you can use it) until it's published with the domain + privacy page.
 
+5. **Publish the CLI to npm (needs a token from you)** — `packages/cli` (`fakturky` binary) is publish-ready and the
+   workflow `.github/workflows/publish-cli.yml` publishes with provenance when a `cli-v<version>` tag is pushed. I
+   did **not** publish. To release: create an npm token (npmjs.com → Access Tokens → *Granular*, publish rights for
+   package `fakturky` — the name was free at last check — or an Automation token), add it as the GitHub repository
+   secret `NPM_TOKEN`, then `git tag cli-v0.1.0 && git push origin cli-v0.1.0`. Until then the `npx fakturky …`
+   examples in the README, `/llms.txt` and `/docs/mcp` do not work.
+
 ## Shipped overnight
 
 - Security audit done (`docs/SECURITY_AUDIT.md`): tenant-isolation suite over every procedure, CSRF/origin checks,

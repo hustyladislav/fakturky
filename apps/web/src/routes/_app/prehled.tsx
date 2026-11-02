@@ -113,8 +113,12 @@ function Overview() {
                   {t.vatLimit.progress(s.vatLimit.percent)}
                 </span>
               </div>
-              {s.vatLimit.percent >= 80 && (
-                <p className="text-warning text-sm">{t.vatLimit.warn}</p>
+              {s.vatLimit.immediateExceeded ? (
+                <p className="text-destructive text-sm font-medium">{t.vatLimit.immediate}</p>
+              ) : (
+                s.vatLimit.percent >= 80 && (
+                  <p className="text-warning text-sm">{t.vatLimit.warn}</p>
+                )
               )}
             </section>
           )}

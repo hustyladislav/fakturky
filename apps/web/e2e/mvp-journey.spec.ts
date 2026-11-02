@@ -150,6 +150,11 @@ for (const v of variants) {
       // Variable symbol defaults to the digits of the number.
       await expect(page.getByText(/^\d{4}0001$/)).toBeVisible()
       await expect(page.getByText('CZ6508000000192000145399')).toBeVisible()
+      // The payment card carries the QR Platba, black on white, at least 160 px wide.
+      const qr = page.getByRole('img', { name: 'QR Platba' })
+      await expect(qr).toBeVisible()
+      expect((await qr.boundingBox())?.width).toBeGreaterThanOrEqual(160)
+      await expect(page.getByText('Naskenujte v bankovní aplikaci')).toBeVisible()
     })
 
     const id = documentId(page)
@@ -177,7 +182,12 @@ for (const v of variants) {
         pub.getByText(v.vatPayer ? 'Faktura – daňový doklad' : 'Faktura', { exact: true }),
       ).toBeVisible()
       await expect(pub.getByText(amountRe(v.total)).first()).toBeVisible()
+      await expect(pub.getByRole('img', { name: 'QR Platba' })).toBeVisible()
       const token = new URL(pub.url()).pathname.split('/').pop()
+      const qrPng = await pub.request.get(`/f/${token}/qr.png`)
+      expect(qrPng.status()).toBe(200)
+      expect(qrPng.headers()['content-type']).toBe('image/png')
+      expect((await qrPng.body()).subarray(1, 4).toString()).toBe('PNG')
       const pdf = await pub.request.get(`/f/${token}/pdf`)
       expect(pdf.status()).toBe(200)
       expect(pdf.headers()['content-type']).toContain('application/pdf')
@@ -195,6 +205,8 @@ for (const v of variants) {
       await page.getByRole('button', { name: 'Označit jako zaplacenou' }).first().click()
       await page.getByRole('button', { name: 'Označit jako zaplacenou' }).last().click()
       await expect(page.getByText('Zaplacená', { exact: true }).first()).toBeVisible()
+      // Nothing left to pay: no QR on the detail page.
+      await expect(page.getByRole('img', { name: 'QR Platba' })).toHaveCount(0)
     })
 
     await test.step('dashboard KPIs update', async () => {

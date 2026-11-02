@@ -17,6 +17,8 @@ export type SendInvoiceArgs = {
   total: string
   dueDate: string
   publicUrl: string
+  /** Hosted PNG of the payment QR (`/f/:token/qr.png`); null when there is nothing to pay by transfer. */
+  qrUrl: string | null
   message: string | null
   isReminder: boolean
   language: 'cs' | 'sk' | 'en'

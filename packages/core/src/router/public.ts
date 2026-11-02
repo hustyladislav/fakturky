@@ -1,7 +1,9 @@
 import {
+  buildPaymentQrPayload,
   Decimal,
   generateIsdoc,
   parseDecimal,
+  renderPaymentQr,
   todayPrague,
   toFixed,
   vatTreatmentText,
@@ -10,7 +12,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { toDocumentForExport } from '../export'
 import { publicProcedure } from '../orpc'
-import { buildPublicQr } from '../public-qr'
+import { paymentQrInput } from '../payment-qr'
 import { appearanceRepo } from '../repositories/appearance'
 import { publicDocumentsRepo } from '../repositories/public-documents'
 
@@ -146,7 +148,7 @@ export const publicRouter = {
           : null,
         variableSymbol: doc.variableSymbol,
         paymentMethod: doc.paymentMethod,
-        qr: doc.status === 'issued' ? await buildPublicQr(x, left) : null,
+        qr: await renderPaymentQr(paymentQrInput(doc, lines, paid)),
         lines: lines.map((l) => ({
           description: l.description,
           quantity: l.quantity,
@@ -195,6 +197,23 @@ export const publicRouter = {
         filename: `${found.doc.number ?? 'faktura'}.isdoc`,
         xml: generateIsdoc(toDocumentForExport(found.doc, found.lines, found.original)),
       }
+    }),
+
+  /** The payment QR as a PNG for the invoice e-mail (mail clients cannot show SVG or data: images). Not a "view". */
+  qrPng: publicProcedure
+    .input(z.object({ token: z.string().min(20).max(200) }))
+    .output(z.object({ contentBase64: z.string() }))
+    .handler(async ({ context, input }) => {
+      const found = await publicDocumentsRepo.getByToken(context.db, input.token)
+      if (!found) throw new ORPCError('NOT_FOUND', { message: 'Document not found' })
+      const paid = (await publicDocumentsRepo.paidAmount(context.db, found.doc)).reduce(
+        (s, a) => s.plus(parseDecimal(a)),
+        new Decimal(0),
+      )
+      const qr = buildPaymentQrPayload(paymentQrInput(found.doc, found.lines, paid))
+      if (!qr) throw new ORPCError('NOT_FOUND', { message: 'No payment QR for this document' })
+      const { renderQrPng } = await import('@fakturky/domain/qr/png')
+      return { contentBase64: Buffer.from(await renderQrPng(qr.payload)).toString('base64') }
     }),
 
   pdf: publicProcedure

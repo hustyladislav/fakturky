@@ -171,6 +171,10 @@ export const documentSchema = z.object({
 })
 
 export const documentDetailSchema = documentSchema.extend({
+  /** QR Platba (CZK) / EPC (EUR) for the amount still due; null when nothing is payable by bank transfer. */
+  paymentQr: z
+    .object({ kind: z.enum(['spayd', 'epc']), viewBox: z.number(), path: z.string() })
+    .nullable(),
   /** The document this one corrects or was created from (proforma, invoice). */
   parent: z
     .object({

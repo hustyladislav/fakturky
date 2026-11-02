@@ -36,6 +36,7 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ErrorState } from '@/components/error-state'
 import { InvoiceStatus } from '@/components/invoice-status'
+import { PaymentQr } from '@/components/payment-qr'
 import { PromptDialog } from '@/components/prompt-dialog'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage } from '@/lib/errors'
@@ -302,13 +303,15 @@ function InvoiceDetail() {
           {d.vatMode !== 'none' && (
             <Field label={t.taxableDate}>{d.taxableDate ? formatDateCs(d.taxableDate) : '—'}</Field>
           )}
-          {d.variableSymbol && <Field label={t.variableSymbol}>{d.variableSymbol}</Field>}
-          {bank?.iban && (
+          {!d.paymentQr && d.variableSymbol && (
+            <Field label={t.variableSymbol}>{d.variableSymbol}</Field>
+          )}
+          {!d.paymentQr && bank?.iban && (
             <Field wide label={t.iban}>
               {bank.iban}
             </Field>
           )}
-          {bank?.accountNumber && (
+          {!d.paymentQr && bank?.accountNumber && (
             <Field wide label={t.account}>
               {bank.accountNumber}/{bank.bankCode}
             </Field>
@@ -417,6 +420,47 @@ function InvoiceDetail() {
           <p className="text-muted-foreground text-sm whitespace-pre-line">{d.footerText}</p>
         )}
       </section>
+
+      {d.paymentQr && (
+        <section
+          className="flex flex-col items-center gap-5 rounded-xl border p-4 sm:flex-row sm:items-start sm:gap-8 sm:p-6"
+          aria-labelledby="payment-card-title"
+          data-testid="payment-card"
+        >
+          <div className="w-full min-w-0 flex-1 space-y-3">
+            <h2 id="payment-card-title" className="font-semibold">
+              {t.payment}
+            </h2>
+            <dl className="grid grid-cols-2 gap-4">
+              <Field label={t.amountDue}>
+                <span className="font-medium">
+                  <Money amount={d.remaining} currency={d.currency} />
+                </span>
+              </Field>
+              {d.variableSymbol && <Field label={t.variableSymbol}>{d.variableSymbol}</Field>}
+              {bank?.accountNumber && (
+                <Field wide label={t.account}>
+                  {bank.accountNumber}/{bank.bankCode}
+                </Field>
+              )}
+              {bank?.iban && (
+                <Field wide label={t.iban}>
+                  {bank.iban}
+                </Field>
+              )}
+            </dl>
+          </div>
+          <figure className="shrink-0 space-y-1.5 text-center">
+            <PaymentQr qr={d.paymentQr} className="mx-auto" />
+            <figcaption className="text-xs">
+              <div className="font-medium">
+                {d.paymentQr.kind === 'spayd' ? cs.paymentQr.platba : cs.paymentQr.epc}
+              </div>
+              <div className="text-muted-foreground">{cs.paymentQr.hint}</div>
+            </figcaption>
+          </figure>
+        </section>
+      )}
 
       {(d.parent || d.related.length > 0) && (
         <section className="space-y-2 rounded-xl border p-4 text-sm" aria-label={t.relatedTitle}>

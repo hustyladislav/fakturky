@@ -526,7 +526,7 @@ export const cs = {
     downloadPdf: 'Stáhnout PDF',
     print: 'Vytisknout',
     notFound: 'Tento odkaz na fakturu neplatí nebo byl zrušen.',
-    issuedIn: (brand: string) => `Vystaveno ve ${brand}`,
+    issuedIn: (brand: string) => `Vystaveno v aplikaci ${brand}`,
   },
   appearance: {
     title: 'Vzhled dokladů',
@@ -538,7 +538,7 @@ export const cs = {
     none: 'Nenahráno',
     remove: 'Odebrat',
     hint: 'PNG nebo JPEG, nejvýše 300 KB. Obrázky jsou uložené soukromě a zobrazí se jen na vašich dokladech.',
-    showBrand: 'Zobrazit na dokladu řádek „Vystaveno ve …“',
+    showBrand: 'Zobrazit na dokladu řádek „Vystaveno v aplikaci …“',
     saved: 'Vzhled byl uložen.',
     errors: {
       'image.size': 'Obrázek je příliš velký. Nahrajte soubor do 300 KB.',

@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { type ArgsDef, type CommandDef, defineCommand } from 'citty'
 import { type Credentials, request } from './api'
 import { render } from './format'
@@ -30,6 +30,20 @@ export async function guard(fn: () => Promise<void>): Promise<void> {
   }
 }
 
+/** Writes `{ contentBase64 }` (PDF) or `{ xml }` (ISDOC) results to `path`; false when the result is not a file. */
+export async function saveFile(result: unknown, path: string): Promise<boolean> {
+  const r = (result ?? {}) as { contentBase64?: unknown; xml?: unknown }
+  if (typeof r.contentBase64 === 'string') {
+    await writeFile(path, Buffer.from(r.contentBase64, 'base64'))
+  } else if (typeof r.xml === 'string') {
+    await writeFile(path, r.xml, 'utf8')
+  } else {
+    return false
+  }
+  console.log(`Uloženo: ${path}`)
+  return true
+}
+
 export function output(value: unknown, json: boolean): void {
   if (typeof value === 'string') process.stdout.write(value.endsWith('\n') ? value : `${value}\n`)
   else console.log(json ? JSON.stringify(value, null, 2) : render(value))
@@ -57,6 +71,11 @@ export function buildOperationCommand(
       type: 'string',
       description: p.kind === 'json' ? `${p.description ?? p.name} (JSON)` : p.description,
     }
+  }
+  args.out = {
+    type: 'string',
+    alias: 'o',
+    description: 'Write a file result (PDF, ISDOC, …) to this path instead of printing it',
   }
   if (op.bodyProps.length > 0) {
     args.data = { type: 'string', description: 'Request body as JSON, @file.json or - (stdin)' }
@@ -91,6 +110,7 @@ export function buildOperationCommand(
         }
 
         const result = await request(await getCredentials(), op.method, path, { query, body })
+        if (typeof values.out === 'string' && (await saveFile(result, values.out))) return
         output(result, values.json === true)
       }),
   })

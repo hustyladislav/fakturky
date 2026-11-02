@@ -160,6 +160,48 @@ describe('documents', () => {
     expect(undone.remaining).toBe('1500.00')
   })
 
+  test('a partial credit note credits a VAT-inclusive amount, spread over the rates', async () => {
+    const org = await seedOrg(handle, 'doc-partial-cn')
+    await profile(org, 'payer')
+    const api = clientFor(handle, principal(org))
+    const c = await api.contacts.create({
+      name: 'Odběratel a.s.',
+      ico: '12345678',
+      address: { street: 'Hlavní 1', city: 'Praha', zip: '11000' },
+    })
+    const inv = await api.documents.issue({
+      id: (
+        await api.documents.createDraft({
+          contactId: c.id,
+          lines: [
+            { description: 'A', quantity: '1', unitPrice: '1000', vatRate: '21' },
+            { description: 'B', quantity: '1', unitPrice: '1000', vatRate: '12' },
+          ],
+        })
+      ).id,
+    })
+    expect(inv.total).toBe('2330.0000')
+    const cn = await api.documents.createCreditNote({ id: inv.id, amount: '1000', reason: 'Sleva' })
+    expect(cn.total).toBe('-1000.0000')
+    expect(cn.roundTotal).toBe(false)
+    expect(cn.vatRecap.map((r) => [r.vatRate, Number(r.total)])).toEqual([
+      ['21', -519.31],
+      ['12', -480.69],
+    ])
+    expect(Number(cn.vatTotal)).toBeCloseTo(-141.63, 2)
+    // Drafts count against what is still creditable.
+    await expect(
+      api.documents.createCreditNote({ id: inv.id, amount: '1500' }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    })
+    await expect(api.documents.createCreditNote({ id: inv.id, amount: '0' })).rejects.toMatchObject(
+      {
+        code: 'BAD_REQUEST',
+      },
+    )
+  })
+
   test('overdue is derived from the due date', async () => {
     const api = clientFor(handle, principal(orgA))
     const d = await draft(orgA, { issueDate: '2020-01-01', dueDate: '2020-01-15' })

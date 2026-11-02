@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeDocumentTotals, getVatRates, isValidVatRate, vatTreatmentText, VAT_TREATMENTS } from '../src/vat.ts'
+import { allocateGross, computeDocumentTotals, splitGross, getVatRates, isValidVatRate, vatTreatmentText, VAT_TREATMENTS } from '../src/vat.ts'
 
 describe('rates and texts', () => {
   it('lists rates per country', () => {
@@ -142,5 +142,21 @@ describe('computeDocumentTotals', () => {
     expect(() => computeDocumentTotals([line], { documentDiscountPercent: '-1' })).toThrow()
     expect(() => computeDocumentTotals([line], { exchangeRate: '0' })).toThrow()
     expect(() => computeDocumentTotals([{ ...line, vatRate: '-1' }])).toThrow()
+  })
+})
+
+describe('allocateGross / splitGross', () => {
+  it('spreads an amount proportionally and always adds up', () => {
+    const parts = allocateGross('1000', ['1210', '1120'])
+    expect(parts.map((p) => p.toFixed(2))).toEqual(['519.31', '480.69'])
+    const odd = allocateGross('100', ['1', '1', '1'])
+    expect(odd.reduce((a, b) => a.plus(b)).toFixed(2)).toBe('100.00')
+  })
+
+  it('splits a gross amount top-down', () => {
+    const { base, vat } = splitGross('1210', '21')
+    expect(base.toFixed(2)).toBe('1000.00')
+    expect(vat.toFixed(2)).toBe('210.00')
+    expect(splitGross('100', '0').vat.toFixed(2)).toBe('0.00')
   })
 })

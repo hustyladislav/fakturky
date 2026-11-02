@@ -283,3 +283,29 @@ export function computeDocumentTotals(
     totalCzk: toFixed(totalCzk),
   }
 }
+
+/**
+ * Spreads a VAT-inclusive amount over groups (e.g. VAT rates) in proportion to their gross totals,
+ * to whole cents; the last group takes the remainder so the parts always add up to `amount`.
+ */
+export function allocateGross(amount: MoneyInput, grosses: readonly MoneyInput[]): Decimal[] {
+  const total = sum(grosses)
+  const target = parseDecimal(amount)
+  let left = target
+  return grosses.map((g, i) => {
+    const share =
+      i === grosses.length - 1 || total.isZero()
+        ? left
+        : round(target.times(parseDecimal(g)).div(total), 2)
+    left = left.minus(share)
+    return share
+  })
+}
+
+/** Splits a VAT-inclusive amount into base and VAT top-down (VAT = gross × r / (100 + r)). */
+export function splitGross(gross: MoneyInput, ratePct: MoneyInput): { base: Decimal; vat: Decimal } {
+  const g = parseDecimal(gross)
+  const r = parseDecimal(ratePct)
+  const vat = round(g.times(r).div(r.plus(100)), 2)
+  return { base: g.minus(vat), vat }
+}

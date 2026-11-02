@@ -35,6 +35,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ErrorState } from '@/components/error-state'
+import { CreditNoteDialog } from '@/components/invoice-detail/credit-note-dialog'
 import {
   DocHero,
   DocumentPaper,
@@ -474,16 +475,14 @@ function InvoiceDetail() {
           saveTemplate.mutate({ documentId: id, name })
         }}
       />
-      <PromptDialog
+      <CreditNoteDialog
         open={dialog === 'credit'}
         onOpenChange={(o) => !o && setDialog(null)}
-        title={t.creditNote}
-        confirmLabel={t.creditNote}
+        doc={d}
         pending={creditNote.isPending}
-        input={{ label: t.creditNotePrompt }}
-        onConfirm={(reason) => {
+        onConfirm={(v) => {
           setDialog(null)
-          creditNote.mutate({ id, reason: reason || undefined })
+          creditNote.mutate({ id, reason: v.reason, amount: v.amount })
         }}
       />
       <PromptDialog

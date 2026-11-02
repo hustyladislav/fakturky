@@ -41,6 +41,13 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Shipped overnight
 
+- **In-app assistant (⌘J)** #38/#68/#74: DeepSeek V4.1 Flash via AI Gateway (US inference, prompt training
+  disallowed), every app action as a tool, approval cards for destructive actions, navigation tools, ⌘K "Zeptat se
+  asistenta". Hard caps: $100/month global, $2/month per organization, per-user rate limit + gateway key/team
+  budgets. Measured ≈ $0.01 per typical conversation. Note: zero-data-retention requires a paid Vercel plan
+  (opt-in via `AI_ZERO_DATA_RETENTION=1`).
+- **QA**: Playwright e2e of the full MVP journey (payer + non-payer) in CI #43; bug bash → issues #52–#66, fixes
+  #34 #45 #67 #79 #80 (e.g. Czech-formatted amounts, DUZP default, mobile actions, Prague-time dates).
 - Security audit done (`docs/SECURITY_AUDIT.md`): tenant-isolation suite over every procedure, CSRF/origin checks,
   CodeQL + gitleaks + OSV + dependency review in CI, `SECURITY.md`, Dependabot alerts on. Set `CRON_SECRET`
   (prod+preview) so recurring invoices/reminders run; branch protection on `main` (required `check` + `gitleaks`).

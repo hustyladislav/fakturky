@@ -9,6 +9,10 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Needs you
 
+- ⚠️ **Production is behind main.** Vercel Hobby's 100 deploys/24 h quota ran out at ~03:30, so
+  https://fakturky.vercel.app still runs the 03:16 build; everything merged after that (TypeScript 7, QA round 2
+  fixes, bank import, VAT reports, polish) deploys automatically when the quota frees (~22:00 today). To get it
+  live this morning, upgrade the Vercel team to Pro, then run `vercel --prod` once from main (or push any commit).
 - **Vercel deploy quota** — we hit Hobby's 100 deployments / 24 h (every PR push built a preview). Production is
   frozen at the 03:16 build (has almost everything) until slots free up ~22:00; later merges (TypeScript 7, QA round
   2 fixes) deploy then automatically. Now only `main` deploys and docs-only commits skip builds. If you want
@@ -61,6 +65,10 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Shipped overnight
 
+- **VAT reports for payers** (/dph) #123/#125/#126/#127/#129: přiznání k DPH (DPHDP3), kontrolní hlášení (DPHKH1),
+  souhrnné hlášení (DPHSHV) XML validated against the official XSDs, drill-down, warnings, manual input-VAT rows,
+  EPO upload guide + disclaimer. Also via REST/MCP/CLI. Input side (received invoices) stays manual for now.
+  Open questions for you (goods vs services per line, KH A.1 code per line, rounding) in `docs/research/vat-reports.md`.
 - **Bank import + automatic payment pairing** (/banka) #122/#124/#128/#130/#131: Fio/Revolut/Raiffeisen/ČSOB/KB
   CSV (+ manual column mapping), ABO/GPC, CAMT.053; Fio API daily sync (token AES-encrypted, `ENCRYPTION_KEY` set);
   exact VS+amount auto-match, fuzzy suggestions, partial/overpayments, undo. **Please test with a real Raiffeisen

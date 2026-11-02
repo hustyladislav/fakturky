@@ -1,58 +1,44 @@
 # Morning report
 
-Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of each section.
+Overnight build, 2026-11-01 22:00 → 2026-11-02 08:00. ~135 PRs merged, CI green (unit + e2e + a11y + security scans).
+
+## TL;DR
+
+A complete, free Czech invoicing app: invoices, proformas, credit notes, VAT payers and non-payers, foreign currency
+with ČNB rates, QR Platba, PDF + public link + ISDOC, recurring invoices, e-mail & reminders, bank-statement import
+with automatic payment pairing, VAT reports (DPH/KH/SH XML for EPO), Fakturoid import — plus a ⌘J AI assistant,
+a remote MCP server, REST API and CLI over the same operations.
 
 ## Live
 
-- Production: https://fakturky.vercel.app (Vercel Hobby `ladislav-5721`, region fra1, Neon Postgres in Frankfurt)
-- Repo: https://github.com/hustyladislav/fakturky (public; Vercel GitHub app installed; Codex auto-review on)
+- Production: https://fakturky.vercel.app (Vercel Hobby `ladislav-5721`, fra1; Neon Postgres in Frankfurt)
+- Repo: https://github.com/hustyladislav/fakturky (public; Codex auto-review; branch protection with required CI + e2e)
 
-## Needs you
+## Needs you (in priority order)
 
-- ⚠️ **Production is behind main.** Vercel Hobby's 100 deploys/24 h quota ran out at ~03:30, so
-  https://fakturky.vercel.app still runs the 03:16 build; everything merged after that (TypeScript 7, QA round 2
-  fixes, bank import, VAT reports, polish) deploys automatically when the quota frees (~22:00 today). To get it
-  live this morning, upgrade the Vercel team to Pro, then run `vercel --prod` once from main (or push any commit).
-- **Vercel deploy quota** — we hit Hobby's 100 deployments / 24 h (every PR push built a preview). Production is
-  frozen at the 03:16 build (has almost everything) until slots free up ~22:00; later merges (TypeScript 7, QA round
-  2 fixes) deploy then automatically. Now only `main` deploys and docs-only commits skip builds. If you want
-  previews per PR and no daily cap, upgrade the team to Pro ($20/mo) — your call.
-- **Bank statement import + automatic payment pairing (new, free)** — nothing to do for statement upload. For Fio
-  sync, `ENCRYPTION_KEY` (32 random bytes, base64) was generated and set in Vercel production + preview (sensitive;
-  Fio tokens are stored AES-256-GCM encrypted with it — if you ever rotate it, users just paste their token again).
-  Local dev: `openssl rand -base64 32` into `.env.local`. The daily `/api/cron/bank-sync` (04:00 UTC) needs the existing
-  `CRON_SECRET`. Migrations 0012–0013 run on the next production deploy of `main` (blocked by the deploy quota above
-  until it frees up). Real-bank caveat: the KB / ČSOB / Raiffeisenbank CSV and ABO/GPC readers are built from the
-  banks' documented layouts and synthetic fixtures — please upload one real export per bank you use and tell me what breaks.
-0. **Preview database** — previews share the production Neon DB (branching option is disabled for this
-   marketplace resource on the free plan). Migrations are now gated to production only (`VERCEL_ENV`), and destructive scripts need `ALLOW_DESTRUCTIVE_DB=1`. Proper fix: a Neon
-   branch for Preview — see `docs/SECURITY_AUDIT.md`. Also optional: Vercel Firewall rules (paths/limits in that doc).
-0b. **Neon branch for Preview (needs a key from you)** — create a Neon API key (Neon console → Account settings →
-   API keys; or the Vercel marketplace resource page → "Open in Neon"), then add it as `NEON_API_KEY` (Vercel env,
-   Preview + Production, sensitive). With `NEON_PROJECT_ID` (already set) a build step can
-   `POST https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches` (name `preview/$VERCEL_GIT_COMMIT_REF`,
-   parent = main branch, with a read-write endpoint), read the branch's connection URI and export it as
-   `DATABASE_URL`/`DATABASE_URL_UNPOOLED` for the build and the function (set via `vercel env add … preview <git-branch>`
-   per branch, or by having the app read the branch URL at runtime). Until then previews write to the production DB —
-   treat previews as production-adjacent and don't create junk data there.
-1. **Domain** — pick a name/domain from `docs/research/names.md` (shortlist; `fakturky.app` is free, $9.99) and
-   buy it (or tell me to). Then: add it in Resend (your existing account, team "moravio") + DNS → switch
-   `EMAIL_FROM` env so magic links/invoice emails reach everyone (today: Resend sandbox, delivers only to you).
-   Also add it to Google OAuth origins and publish the Google consent screen (needs homepage + privacy URL).
-2. **AI Gateway credits** — the assistant uses DeepSeek V4.1 Flash via Vercel AI Gateway. Caps are set ($100/month
-   on the key + $100/month team budget). Hobby includes a small free monthly credit; beyond that, top up credits
-   in the Vercel dashboard (AI Gateway → Credits) if you want it running for everyone.
-3. **Clerk app** — an unused, empty Clerk app `fakturky-auth` exists on your Vercel team (we went back to Better
-   Auth). Say the word and I'll delete it.
-4. **Google sign-in** — OAuth client created in Google Cloud project `fakturky`; consent screen is in *Testing*
-   (only you can use it) until it's published with the domain + privacy page.
+1. **Production is behind `main`.** Vercel Hobby allows 100 deploys / 24 h and we used them up at ~03:30 (every PR
+   built a preview — now fixed: only `main` deploys, docs-only commits skip). Production still runs the 03:16 build;
+   bank import, VAT reports, QA round 2 fixes and the final polish deploy automatically when the quota frees
+   (~22:00). **To ship now:** upgrade the team to Pro ($20/mo), then push any commit to `main`.
+2. **Domain** — pick one (`docs/research/names.md`; `fakturky.app` is free, $9.99/yr) and buy it or tell me to.
+   Unblocks: magic-link & invoice e-mails to everyone (Resend sandbox today delivers to nobody, since your Resend
+   team "moravio" is owned by another address), publishing the Google consent screen (today only you can use
+   Google sign-in), and a nicer URL. I'll wire DNS, Resend, Google and Vercel in ~15 min.
+3. **Try it with your real data** — Nastavení → Import (Fakturoid), then upload one real **Raiffeisen** CSV statement
+   in Banka (bank parsers were built from documentation + synthetic fixtures), and check the DPH page once you're a
+   payer. VAT report questions for you: `docs/research/vat-reports.md` (goods vs services per line, KH A.1 code).
+4. **npm** (to publish the `fakturky` CLI) — create an npm granular token, add repo secret `NPM_TOKEN`, then
+   `git tag cli-v0.1.0 && git push origin cli-v0.1.0`.
+5. **AI Gateway credits** — assistant ≈ $0.01/conversation; caps $100/month (key + team budget) and $2/org/month.
+   Hobby has a small free credit; top up in Vercel → AI Gateway if you open it to everyone.
+6. **Preview database** (only matters after a Pro upgrade brings previews back) — previews share the production Neon
+   DB; migrations are gated to production. Proper fix needs a Neon API key (`NEON_API_KEY`) — steps in
+   `docs/SECURITY_AUDIT.md`.
+7. Small: delete the unused Clerk app `fakturky-auth` on Vercel (say the word); optional Vercel Firewall rules
+   (paths/limits in `docs/SECURITY_AUDIT.md`); your X/Twitter handle if you want it in the feedback links.
 
-5. **Publish the CLI to npm (needs a token from you)** — `packages/cli` (`fakturky` binary) is publish-ready and the
-   workflow `.github/workflows/publish-cli.yml` publishes with provenance when a `cli-v<version>` tag is pushed. I
-   did **not** publish. To release: create an npm token (npmjs.com → Access Tokens → *Granular*, publish rights for
-   package `fakturky` — the name was free at last check — or an Automation token), add it as the GitHub repository
-   secret `NPM_TOKEN`, then `git tag cli-v0.1.0 && git push origin cli-v0.1.0`. Until then the `npx fakturky …`
-   examples in the README, `/llms.txt` and `/docs/mcp` do not work.
+Already set for you: `CRON_SECRET`, `ENCRYPTION_KEY` (Fio tokens), `AI_GATEWAY_API_KEY`, Google OAuth client, Resend
+key, Better Auth dashboard (dash.better-auth.com), branch protection, auto-merge.
 
 ## Try it
 
@@ -123,18 +109,17 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 - Monorepo foundation: TanStack Start, Tailwind v4 + shadcn, Drizzle + Neon, Better Auth, oRPC + REST/OpenAPI,
   contacts, CI (PR #2).
 
-## In progress
+## Next up (proposed)
 
-- `invoices` — PDF download (#31), then templates, recurring, proformas, credit notes, email sending, CSV export
-- `agents` — API keys (#17), MCP server, CLI, llms.txt
-- `shell` — auth restyle + terms/privacy (#30), landing page, mobile/responsive pass
-- assistant agent — in-app AI assistant (⌘J) with spend caps
-- security agent — tenant-isolation tests, headers, CI security scanners, `docs/SECURITY_AUDIT.md`
-- qa agent — Playwright e2e of the MVP journey, bug bash → GitHub issues
+- Expenses / received invoices (would complete the VAT return input side), price list (ceník), estimates (nabídky).
+- Slovak market (SK VAT, Pay by square, Peppol for the 2027 SK mandate).
+- Leftovers: #61 (form flash while defaults load), occasional flaky a11y e2e on the dark ⌘K check.
 
 ## Decisions made
 
 - Design: council picked direction A (calm editorial) + B's shell + C's mobile flow → `docs/DESIGN.md`.
 - Name: "Fakturky" kept as working name (council split; hotovo.* domains taken). Rename = one constant.
 - Auth: Better Auth (Clerk tried, reverted on your request).
-- Assistant model: DeepSeek V4.1 Flash (newer than V4), US-hosted, zero data retention; no EU host exists for it.
+- Assistant model: DeepSeek V4.1 Flash (newer than the V4 you named), US inference, prompt training disallowed; no EU
+  host serves it; zero-data-retention needs a paid Vercel plan.
+- Deploys: only `main` via Git; PRs verified by CI + local e2e (Hobby deploy quota).

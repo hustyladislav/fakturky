@@ -348,6 +348,7 @@ export const cs = {
     },
     allInvoices: 'Všechny faktury',
     emptyTitle: 'Začněte první fakturou',
+    addBankAccount: 'Přidat bankovní účet',
     emptyText: 'Přidejte bankovní účet a vystavte první fakturu. Zabere to pár minut.',
     months: ['led', 'úno', 'bře', 'dub', 'kvě', 'čvn', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro'],
   },
@@ -1140,15 +1141,18 @@ export const cs = {
     submit: 'Pokračovat',
     skip: 'Vyplním později',
     progressLabel: 'Postup nastavení',
-    steps: ['Firma', 'Zkontrolujte údaje', 'Hotovo'],
+    steps: ['Firma', 'Zkontrolujte údaje', 'Bankovní účet', 'Hotovo'],
     stepOf: (n: number, total: number) => `Krok ${n} z ${total}`,
     previewLabel: 'Tak to bude vypadat na dokladech',
-    aresHint: 'Zadejte IČO a klikněte na Načíst z ARES: název, adresu i DIČ doplníme za vás.',
+    aresHint:
+      'Zadejte IČO a doplníme z ARES název, adresu, DIČ, plátcovství DPH i zápis v rejstříku.',
     doneTitle: 'Máte hotovo',
     doneText: 'Firma je nastavená. Tak se bude objevovat na každé vaší faktuře.',
     firstInvoice: 'Vystavit první fakturu',
     toDashboard: 'Přejít na přehled',
-    redirecting: 'Za chvíli vás přesměrujeme na přehled.',
+    bankTitle: 'Kam vám mají klienti platit?',
+    bankDescription:
+      'Číslo účtu se objeví na každé faktuře spolu s QR platbou, kterou klient naskenuje v bankovní aplikaci.',
   },
   profile: {
     cardLabel: 'Náhled firmy na dokladech',
@@ -1168,7 +1172,6 @@ export const cs = {
     vatPayer: 'Plátce DPH',
     vatIdentified: 'Identifikovaná osoba',
     registryNote: 'Zápis v rejstříku',
-    registryNoteSoleTrader: 'Fyzická osoba zapsaná v živnostenském rejstříku.',
     registryNoteHint:
       'Např. „Fyzická osoba zapsaná v živnostenském rejstříku“ nebo spisová značka.',
     email: 'E-mail',
@@ -1196,6 +1199,13 @@ export const cs = {
     deleted: 'Účet byl smazán.',
     updated: 'Výchozí účet byl změněn.',
     invalid: 'Číslo účtu nebo IBAN není platné. Zkontrolujte ho prosím.',
+    quick: {
+      submit: 'Přidat účet',
+      skip: 'Přeskočit',
+      required: 'Zadejte číslo účtu nebo IBAN.',
+      defaultLabel: 'Hlavní účet',
+      hint: 'České číslo účtu doplníme na IBAN a BIC. Revolut a zahraniční banky: vložte IBAN z aplikace.',
+    },
     fio: {
       connect: 'Propojit s Fio',
       reconnect: 'Změnit token',

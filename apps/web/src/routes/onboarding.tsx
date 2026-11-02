@@ -3,10 +3,11 @@ import { Button } from '@fakturky/ui/components/button'
 import { Logo } from '@fakturky/ui/components/logo'
 import { ThemeToggle } from '@fakturky/ui/components/theme'
 import { cn } from '@fakturky/ui/lib/utils'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { Check, Sparkles } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { QuickAccountForm } from '@/components/bank/quick-account-form'
 import { BusinessCard } from '@/components/business-card'
 import { BusinessProfileForm, type ProfileValues } from '@/components/business-profile-form'
 import { cs } from '@/i18n/cs'
@@ -25,23 +26,24 @@ export const Route = createFileRoute('/onboarding')({
 })
 
 const t = cs.onboarding
-const REDIRECT_MS = 4000
 
-/** 1 Firma -> 2 Zkontrolujte údaje -> 3 Hotovo. The step follows what the user has actually filled in. */
-function Progress({ step }: { step: 1 | 2 | 3 }) {
+type Step = 1 | 2 | 3 | 4
+
+/** 1 Firma -> 2 Zkontrolujte údaje -> 3 Bankovní účet -> 4 Hotovo. Steps 1-2 follow what the user has filled in. */
+function Progress({ step }: { step: Step }) {
   return (
-    <ol className="flex items-center gap-2 sm:gap-3" aria-label={t.progressLabel}>
+    <ol className="flex items-center gap-1 sm:gap-3" aria-label={t.progressLabel}>
       {t.steps.map((label, i) => {
         const n = i + 1
-        const done = n < step || step === 3
-        const current = n === step && step !== 3
+        const done = n < step || step === 4
+        const current = n === step && step !== 4
         return (
-          <li key={label} className="flex items-center gap-2 sm:gap-3">
+          <li key={label} className="flex items-center gap-1 sm:gap-3">
             {i > 0 && (
               <span
                 aria-hidden
                 className={cn(
-                  'h-px w-5 sm:w-10',
+                  'h-px w-3 sm:w-10',
                   n <= step ? 'bg-primary' : 'bg-border',
                   'transition-colors',
                 )}
@@ -78,10 +80,9 @@ function Progress({ step }: { step: 1 | 2 | 3 }) {
 }
 
 function Finish({ values, onGo }: { values: ProfileValues; onGo: () => void }) {
-  useEffect(() => {
-    const h = setTimeout(onGo, REDIRECT_MS)
-    return () => clearTimeout(h)
-  }, [onGo])
+  // React's autoFocus skips anchors; Enter should go straight to the first invoice.
+  const firstInvoice = useRef<HTMLButtonElement>(null)
+  useEffect(() => firstInvoice.current?.focus(), [])
   return (
     <div className="finish-motion mx-auto flex max-w-md flex-col items-center py-6 text-center">
       <span className="flex size-20 animate-[pop-soft_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both] items-center justify-center rounded-full bg-primary/12">
@@ -102,24 +103,39 @@ function Finish({ values, onGo }: { values: ProfileValues; onGo: () => void }) {
       <p className="mt-2 text-muted-foreground">{t.doneText}</p>
       <BusinessCard values={values} className="mt-8 w-full text-left" />
       <div className="mt-8 flex w-full flex-col gap-2 sm:flex-row">
-        <Button className="h-10 flex-1" nativeButton={false} render={<Link to="/faktury/nova" />}>
+        <Button
+          ref={firstInvoice}
+          className="h-10 flex-1"
+          nativeButton={false}
+          render={<Link to="/faktury/nova" />}
+        >
           <Sparkles /> {t.firstInvoice}
         </Button>
         <Button variant="outline" className="h-10 flex-1" onClick={onGo}>
           {t.toDashboard}
         </Button>
       </div>
-      <div
-        className="mt-6 h-1 w-40 overflow-hidden rounded-full bg-muted"
-        role="presentation"
-        aria-hidden
-      >
-        <div
-          className="h-full origin-left animate-[fill-bar_4s_linear_forwards] rounded-full bg-primary/60"
-          style={{ animationDuration: `${REDIRECT_MS}ms` }}
-        />
+    </div>
+  )
+}
+
+/** Step 3: first bank account, so the very first invoice carries a QR payment. Skippable. */
+function BankStep({ onDone }: { onDone: () => void }) {
+  const queryClient = useQueryClient()
+  const done = async () => {
+    await queryClient.invalidateQueries({ queryKey: orpc.bankAccounts.key() })
+    onDone()
+  }
+  return (
+    <div>
+      <p className="label-caps mb-3">{t.stepOf(3, 4)}</p>
+      <h1 className="font-serif text-[34px] leading-[1.1] tracking-[-0.015em] text-balance">
+        {t.bankTitle}
+      </h1>
+      <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{t.bankDescription}</p>
+      <div className="sheet mt-7 p-5 sm:p-6 [&_[data-slot=label]]:label-caps">
+        <QuickAccountForm autoFocus onCreated={done} onSkip={onDone} />
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">{t.redirecting}</p>
     </div>
   )
 }
@@ -130,28 +146,35 @@ function Onboarding() {
   const appearance = useQuery(orpc.appearance.get.queryOptions({ input: {} }))
   const [values, setValues] = useState<ProfileValues | null>(null)
   const [saved, setSaved] = useState(false)
+  const [bankDone, setBankDone] = useState(false)
   const go = () => navigate({ to: '/prehled' })
-  const step: 1 | 2 | 3 = saved
-    ? 3
+  const step: Step = saved
+    ? bankDone
+      ? 4
+      : 3
     : values && values.ico && values.legalName.trim() && values.street
       ? 2
       : 1
 
   return (
     <div className="min-h-svh">
-      <header className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-6">
+      <header className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
         <Logo name={BRAND.name} markClassName="size-8" />
         <Progress step={step} />
         <ThemeToggle labels={cs.theme} />
       </header>
 
       <main className="mx-auto max-w-5xl px-6 pt-6 pb-16 sm:pt-10">
-        {saved && values ? (
+        {saved && values && bankDone ? (
           <Finish values={values} onGo={go} />
+        ) : saved ? (
+          <div className="mx-auto max-w-lg">
+            <BankStep onDone={() => setBankDone(true)} />
+          </div>
         ) : (
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)] lg:gap-14">
             <div>
-              <p className="label-caps mb-3">{t.stepOf(step, 3)}</p>
+              <p className="label-caps mb-3">{t.stepOf(step, 4)}</p>
               <h1 className="font-serif text-[34px] leading-[1.1] tracking-[-0.015em] text-balance">
                 {t.title}
               </h1>

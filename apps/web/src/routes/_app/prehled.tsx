@@ -101,6 +101,8 @@ function Overview() {
   )
   const activity = useQuery(orpc.dashboard.activity.queryOptions({ input: { limit: 6 } }))
   const s = summary.data
+  const bankAccounts = useQuery(orpc.bankAccounts.list.queryOptions({ input: {} }))
+  const noBankAccount = bankAccounts.isSuccess && bankAccounts.data.length === 0
   const hasDocs = (recent.data?.length ?? 0) > 0
 
   const prev = s?.months.at(-2)
@@ -128,9 +130,20 @@ function Overview() {
           title={t.emptyTitle}
           className="mb-6 bg-card"
           action={
-            <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
-              {cs.invoices.emptyCta}
-            </Button>
+            noBankAccount ? (
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button nativeButton={false} render={<Link to="/nastaveni" hash="banka" />}>
+                  {t.addBankAccount}
+                </Button>
+                <Button variant="outline" nativeButton={false} render={<Link to="/faktury/nova" />}>
+                  {cs.invoices.emptyCta}
+                </Button>
+              </div>
+            ) : (
+              <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
+                {cs.invoices.emptyCta}
+              </Button>
+            )
           }
         >
           {t.emptyText}

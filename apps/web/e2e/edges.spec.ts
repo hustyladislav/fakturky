@@ -6,6 +6,7 @@ import {
   onboardByIco,
   PASSWORD,
   signUp,
+  skipOnboardingBank,
   testEmail,
 } from './helpers'
 
@@ -47,7 +48,7 @@ test('unknown IČO and invalid bank account are rejected with helpful copy', asy
   // Manual fallback still works.
   await page.getByLabel('Obchodní jméno / jméno a příjmení').fill('Ruční Zadání')
   await page.getByRole('button', { name: 'Pokračovat' }).click()
-  await expect(page.getByRole('heading', { name: 'Dobrý den' })).toBeVisible()
+  await skipOnboardingBank(page)
 
   // Sections are deep-linkable and the sub-navigation follows the anchor.
   await page.goto('/nastaveni#banka')

@@ -1,9 +1,21 @@
+import { Amount } from '@fakturky/ui/components/amount'
+import { Avatar } from '@fakturky/ui/components/avatar'
 import { Button } from '@fakturky/ui/components/button'
-import { Money } from '@fakturky/ui/components/money'
+import { EmptyState } from '@fakturky/ui/components/empty-state'
+import { Kbd } from '@fakturky/ui/components/kbd'
+import { PageHeader, SectionLabel } from '@fakturky/ui/components/page-header'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
+import { moneyParts } from '@fakturky/ui/lib/money'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { FilePlus2, Landmark, Layers, Sparkles } from 'lucide-react'
+import { AwaitingList } from '@/components/dashboard/awaiting-list'
+import { Delta, KpiCard, wholeCrowns } from '@/components/dashboard/kpi-card'
+import { RevenueChart } from '@/components/dashboard/revenue-chart'
+import { VatLimitCard } from '@/components/dashboard/vat-limit'
 import { InvoiceStatus } from '@/components/invoice-status'
+import { useShell } from '@/components/shell/shell-context'
+import { useModKey } from '@/components/shell/use-mod-key'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
@@ -15,182 +27,219 @@ export const Route = createFileRoute('/_app/prehled')({
 
 const t = cs.overview
 
-function Kpi({
-  label,
-  hint,
-  amount,
-  tone,
-}: {
-  label: string
-  hint: string
-  amount: string
-  tone?: 'danger'
-}) {
+/** `92 400 Kč` (whole crowns, non-breaking spaces) for running text. */
+function crowns(amount: string) {
+  const p = moneyParts(wholeCrowns(amount))
+  return `${p.integer}\u00a0${p.currency}`
+}
+
+function today() {
+  return new Intl.DateTimeFormat('cs-CZ', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date())
+}
+
+function QuickActions() {
+  const shell = useShell()
+  const mod = useModKey()
   return (
-    <div className="min-w-0 rounded-xl border p-4">
-      <div className="text-muted-foreground text-sm">{label}</div>
-      <div
-        className={`mt-1 font-serif text-2xl font-medium break-words lg:text-3xl ${tone === 'danger' ? 'text-destructive' : ''}`}
+    <nav aria-label={t.quick.title} className="mb-6 flex flex-wrap gap-2">
+      <Button
+        nativeButton={false}
+        render={<Link to="/faktury/nova" />}
+        size="lg"
+        className="px-3.5"
       >
-        <Money amount={amount} />
-      </div>
-      <div className="text-muted-foreground mt-1 text-xs">{hint}</div>
-    </div>
+        <FilePlus2 />
+        {t.quick.newInvoice}
+      </Button>
+      <Button
+        variant="outline"
+        size="lg"
+        nativeButton={false}
+        render={<Link to="/sablony" />}
+        className="bg-card px-3.5"
+      >
+        <Layers />
+        {t.quick.fromTemplate}
+      </Button>
+      <Button
+        variant="outline"
+        size="lg"
+        nativeButton={false}
+        render={<Link to="/banka" />}
+        className="bg-card px-3.5"
+      >
+        <Landmark />
+        {t.quick.uploadStatement}
+      </Button>
+      <Button
+        variant="outline"
+        size="lg"
+        onClick={() => shell.setAssistantOpen(true)}
+        className="bg-card px-3.5"
+      >
+        <Sparkles />
+        {t.quick.askAssistant}
+        <Kbd className="ml-1 hidden sm:inline-flex">{mod} J</Kbd>
+      </Button>
+    </nav>
   )
 }
 
 function Overview() {
   const summary = useQuery(orpc.dashboard.summary.queryOptions({ input: {} }))
   const recent = useQuery(orpc.documents.list.queryOptions({ input: { limit: 5 } }))
+  const unpaid = useQuery(
+    orpc.documents.list.queryOptions({ input: { filter: 'unpaid', limit: 200 } }),
+  )
   const s = summary.data
   const hasDocs = (recent.data?.length ?? 0) > 0
-  const max = Math.max(1, ...(s?.months.map((m) => Number(m.turnover)) ?? [0]))
+
+  const prev = s?.months.at(-2)
+  const monthN = Number(s?.monthTurnover ?? 0)
+  const spark = s?.months.slice(-6)
+
+  const subtitle = s ? (
+    <>
+      {s.monthIssuedCount > 0
+        ? t.summary.issued(s.monthIssuedCount, monthN > 0 ? crowns(s.monthTurnover) : null)
+        : t.summary.none}{' '}
+      {t.summary.awaiting(s.unpaidCount)}
+    </>
+  ) : undefined
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6">
-      <h1 className="text-2xl font-semibold">{t.greeting}</h1>
+    <div className="mx-auto max-w-[1200px]">
+      <PageHeader eyebrow={today()} title={t.greeting} subtitle={subtitle} className="mb-5" />
+
+      <QuickActions />
 
       {recent.isSuccess && !hasDocs && (
-        <div className="space-y-3 rounded-xl border p-6">
-          <h2 className="font-semibold">{t.emptyTitle}</h2>
-          <p className="text-muted-foreground text-sm">{t.emptyText}</p>
-          <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
-            {cs.invoices.emptyCta}
-          </Button>
-        </div>
+        <EmptyState
+          illustration="invoices"
+          title={t.emptyTitle}
+          className="mb-6 bg-card"
+          action={
+            <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
+              {cs.invoices.emptyCta}
+            </Button>
+          }
+        >
+          {t.emptyText}
+        </EmptyState>
       )}
 
-      {summary.isError && <p className="text-muted-foreground text-sm">{cs.common.error}</p>}
+      {summary.isError && <p className="text-sm text-muted-foreground">{cs.common.error}</p>}
 
       {summary.isPending && (
-        <div className="space-y-6" aria-busy="true">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-[110px] rounded-xl" />
+        <div className="space-y-5" aria-busy="true">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-[142px] rounded-xl" />
             ))}
           </div>
-          <Skeleton className="h-[198px] rounded-xl" />
+          <Skeleton className="h-[340px] rounded-xl" />
         </div>
       )}
 
       {s && (
-        <>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Kpi label={t.kpi.month} hint={t.kpi.monthHint} amount={s.monthTurnover} />
-            <Kpi label={t.kpi.unpaid} hint={t.kpi.unpaidHint} amount={s.unpaid} />
-            <Kpi
+        <div className="space-y-5">
+          {/* KPIs: 4 across on desktop, 2x2 on tablet, a snap carousel on phones */}
+          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+            <KpiCard
+              className="w-[78%] shrink-0 snap-start md:w-auto"
+              label={t.kpi.month}
+              amount={s.monthTurnover}
+              delta={<Delta current={monthN} previous={Number(prev?.turnover ?? 0)} />}
+              hint={monthN < 0 ? t.kpi.monthNegative : t.kpi.monthHint}
+              spark={spark?.map((m) => Number(m.turnover))}
+            />
+            <KpiCard
+              className="w-[78%] shrink-0 snap-start md:w-auto"
+              label={t.kpi.unpaid}
+              amount={s.unpaid}
+              hint={t.kpi.unpaidHint(s.unpaidCount)}
+            />
+            <KpiCard
+              className="w-[78%] shrink-0 snap-start md:w-auto"
               label={t.kpi.overdue}
-              hint={s.overdueCount > 0 ? t.kpi.overdueHint(s.overdueCount) : t.kpi.none}
               amount={s.overdue}
-              tone={s.overdueCount > 0 ? 'danger' : undefined}
+              tone={s.overdueCount > 0 ? 'overdue' : undefined}
+              hint={
+                s.overdueCount > 0
+                  ? t.kpi.overdueHint(s.overdueCount, s.oldestOverdueDays)
+                  : t.kpi.none
+              }
+            />
+            <KpiCard
+              className="w-[78%] shrink-0 snap-start md:w-auto"
+              label={t.kpi.received}
+              amount={s.monthReceived}
+              delta={
+                <Delta current={Number(s.monthReceived)} previous={Number(prev?.received ?? 0)} />
+              }
+              hint={t.kpi.receivedHint}
+              spark={spark?.map((m) => Number(m.received))}
             />
           </div>
 
-          {s.overdueCount > 0 && (
-            <div className="bg-destructive/8 flex flex-wrap items-center justify-between gap-2 rounded-lg p-3 text-sm">
-              <span>{t.nudgeOverdue(s.oldestOverdueDays)}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                nativeButton={false}
-                render={<Link to="/faktury" search={{ filter: 'overdue' }} />}
-              >
-                {t.nudgeAction}
-              </Button>
-            </div>
-          )}
-
-          {s.vatLimit && (
-            <section className="space-y-3 rounded-xl border p-4">
-              <div>
-                <h2 className="font-semibold">{t.vatLimit.title}</h2>
-                <p className="text-muted-foreground text-sm">
-                  {t.vatLimit.description(s.vatLimit.year)}
-                </p>
-              </div>
-              <div
-                role="progressbar"
-                aria-valuenow={s.vatLimit.percent}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                className="bg-muted h-2 overflow-hidden rounded-full"
-              >
-                <div
-                  className={`h-full rounded-full ${s.vatLimit.percent >= 80 ? 'bg-warning' : 'bg-primary'}`}
-                  style={{ width: `${s.vatLimit.percent}%` }}
-                />
-              </div>
-              <div className="flex items-baseline justify-between text-sm">
-                <span>
-                  <Money amount={s.vatLimit.turnover} /> /{' '}
-                  <Money amount={`${s.vatLimit.limit}.00`} />
-                </span>
-                <span className="text-muted-foreground">
-                  {t.vatLimit.progress(s.vatLimit.percent)}
-                </span>
-              </div>
-              {s.vatLimit.immediateExceeded ? (
-                <p className="text-destructive text-sm font-medium">{t.vatLimit.immediate}</p>
-              ) : (
-                s.vatLimit.percent >= 80 && (
-                  <p className="text-warning text-sm">{t.vatLimit.warn}</p>
-                )
+          <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start">
+            <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-5">
+              <RevenueChart months={s.months} className="order-2" />
+              {hasDocs && (
+                <section className="sheet order-4 pt-5 pb-2">
+                  <SectionLabel
+                    className="px-5"
+                    action={
+                      <Link
+                        to="/faktury"
+                        search={{ filter: 'all' }}
+                        className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                      >
+                        {t.allInvoices}
+                      </Link>
+                    }
+                  >
+                    {t.recent}
+                  </SectionLabel>
+                  <ul className="mt-2 divide-y divide-border/60">
+                    {recent.data?.map((d) => (
+                      <li key={d.id} className="row-hover relative">
+                        <Link
+                          to={d.status === 'draft' ? '/faktury/$id/upravit' : '/faktury/$id'}
+                          params={{ id: d.id }}
+                          className="flex items-center gap-3 px-5 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset"
+                        >
+                          <Avatar name={d.customerName ?? '?'} size="md" />
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium">
+                              {d.customerName ?? '—'}
+                            </div>
+                            <div className="truncate text-xs text-muted-foreground tabular-nums">
+                              {d.number ?? cs.invoices.draftNumber}
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-4">
+                            <Amount value={d.total} currency={d.currency} hideZeroFraction />
+                            <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               )}
-            </section>
-          )}
-
-          <section className="space-y-3 rounded-xl border p-4">
-            <h2 className="font-semibold">{t.chart}</h2>
-            <div className="flex h-32 items-end gap-2" role="img" aria-label={t.chart}>
-              {s.months.map((m) => (
-                <div key={m.month} className="flex h-full flex-1 flex-col items-center gap-1">
-                  <div className="flex w-full flex-1 items-end">
-                    <div
-                      className="bg-primary/70 w-full rounded-t"
-                      style={{ height: `${Math.max(2, (Number(m.turnover) / max) * 100)}%` }}
-                      title={m.turnover}
-                    />
-                  </div>
-                  <span className="text-muted-foreground text-xs">
-                    {t.months[Number(m.month.slice(5, 7)) - 1]}
-                  </span>
-                </div>
-              ))}
             </div>
-          </section>
-        </>
-      )}
 
-      {hasDocs && (
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold">{t.recent}</h2>
-            <Link to="/faktury" search={{ filter: 'all' }} className="text-sm underline">
-              {t.allInvoices}
-            </Link>
+            <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-5">
+              <AwaitingList docs={unpaid.data ?? []} total={s.unpaidCount} className="order-1" />
+              {s.vatLimit && <VatLimitCard vat={s.vatLimit} className="order-3" />}
+            </div>
           </div>
-          <div className="divide-y overflow-hidden rounded-xl border">
-            {recent.data?.map((d) => (
-              <Link
-                key={d.id}
-                to={d.status === 'draft' ? '/faktury/$id/upravit' : '/faktury/$id'}
-                params={{ id: d.id }}
-                className="hover:bg-muted/30 flex items-center justify-between gap-3 p-3 text-sm"
-              >
-                <div className="min-w-0">
-                  <div className="font-medium tabular-nums">
-                    {d.number ?? cs.invoices.draftNumber}
-                  </div>
-                  <div className="text-muted-foreground truncate">{d.customerName ?? '—'}</div>
-                </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <Money amount={d.total} currency={d.currency} />
-                  <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+        </div>
       )}
     </div>
   )

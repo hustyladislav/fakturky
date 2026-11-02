@@ -19,8 +19,8 @@ export const dashboardRepo = {
     const year = today.slice(0, 4)
     const month = today.slice(0, 7)
     const [y, m] = [Number(year), Number(today.slice(5, 7))]
-    // First day of the month five months back (chart window).
-    const chartStart = new Date(Date.UTC(y, m - 6, 1)).toISOString().slice(0, 10)
+    // First day of the month eleven months back (12-month chart window).
+    const chartStart = new Date(Date.UTC(y, m - 12, 1)).toISOString().slice(0, 10)
     const since = chartStart < `${year}-01-01` ? chartStart : `${year}-01-01`
 
     const [profile] = await db
@@ -68,15 +68,54 @@ export const dashboardRepo = {
       return amount.times(parseDecimal(doc.totalCzk)).div(total)
     }
 
+    // Payments received inside the window (cash view for "Zaplaceno tento měsíc").
+    const received = new Map<string, Decimal>()
+    const receivedRows = await db
+      .select({
+        paidOn: payment.paidOn,
+        amount: payment.amount,
+        total: document.total,
+        totalCzk: document.totalCzk,
+        currency: document.currency,
+      })
+      .from(payment)
+      .innerJoin(
+        document,
+        and(eq(document.id, payment.documentId), eq(document.organizationId, orgId)),
+      )
+      .where(
+        and(
+          eq(payment.organizationId, orgId),
+          isNull(document.deletedAt),
+          eq(document.type, 'invoice'),
+          gte(payment.paidOn, chartStart),
+        ),
+      )
+    for (const p of receivedRows) {
+      const total = parseDecimal(p.total)
+      const amount = parseDecimal(p.amount)
+      const inCzk =
+        p.currency === 'CZK' || total.isZero() || !p.totalCzk
+          ? amount
+          : amount.times(parseDecimal(p.totalCzk)).div(total)
+      const key = p.paidOn.slice(0, 7)
+      received.set(key, (received.get(key) ?? new Decimal(0)).plus(inCzk))
+    }
+
     let monthTurnover = new Decimal(0)
+    let monthIssuedCount = 0
+    let unpaidCount = 0
     let yearTurnover = new Decimal(0)
     let unpaid = new Decimal(0)
     let overdue = new Decimal(0)
     let overdueCount = 0
     let oldestOverdue: string | null = null
-    const byMonth = new Map<string, Decimal>()
-    for (let i = 5; i >= 0; i--) {
-      byMonth.set(new Date(Date.UTC(y, m - 1 - i, 1)).toISOString().slice(0, 7), new Decimal(0))
+    const byMonth = new Map<string, { turnover: Decimal; paid: Decimal }>()
+    for (let i = 11; i >= 0; i--) {
+      byMonth.set(new Date(Date.UTC(y, m - 1 - i, 1)).toISOString().slice(0, 7), {
+        turnover: new Decimal(0),
+        paid: new Decimal(0),
+      })
     }
 
     for (const d of rows) {
@@ -86,8 +125,24 @@ export const dashboardRepo = {
         const net = czk(d, parseDecimal(d.subtotal))
         const key = issue.slice(0, 7)
         const bucket = byMonth.get(key)
-        if (bucket) byMonth.set(key, bucket.plus(net))
-        if (key === month) monthTurnover = monthTurnover.plus(net)
+        if (bucket) {
+          bucket.turnover = bucket.turnover.plus(net)
+          // Share of this document that is already paid (credit notes carry no payment).
+          const total = parseDecimal(d.total)
+          const share =
+            d.type !== 'invoice'
+              ? new Decimal(0)
+              : d.status === 'paid'
+                ? new Decimal(1)
+                : total.isZero()
+                  ? new Decimal(0)
+                  : (paid.get(d.id) ?? new Decimal(0)).div(total)
+          bucket.paid = bucket.paid.plus(net.times(share.gt(1) ? 1 : share))
+        }
+        if (key === month) {
+          monthTurnover = monthTurnover.plus(net)
+          if (d.type === 'invoice') monthIssuedCount++
+        }
         if (issue.startsWith(year)) yearTurnover = yearTurnover.plus(net)
       }
       // Credit notes net the turnover above but are never "open" receivables.
@@ -95,6 +150,7 @@ export const dashboardRepo = {
         const left = czk(d, parseDecimal(d.total).minus(paid.get(d.id) ?? 0))
         if (left.gt(0)) {
           unpaid = unpaid.plus(left)
+          unpaidCount++
           if (d.dueDate && d.dueDate < today) {
             overdue = overdue.plus(left)
             overdueCount++
@@ -108,6 +164,9 @@ export const dashboardRepo = {
     const limit = new Decimal(VAT_REGISTRATION_LIMIT)
     return {
       monthTurnover: toFixed(monthTurnover, 2),
+      monthIssuedCount,
+      monthReceived: toFixed(received.get(month) ?? new Decimal(0), 2),
+      unpaidCount,
       unpaid: toFixed(unpaid, 2),
       overdue: toFixed(overdue, 2),
       overdueCount,
@@ -124,7 +183,13 @@ export const dashboardRepo = {
             percent: Math.min(100, Math.round(yearTurnover.div(limit).times(100).toNumber())),
           }
         : null,
-      months: [...byMonth.entries()].map(([key, v]) => ({ month: key, turnover: toFixed(v, 2) })),
+      months: [...byMonth.entries()].map(([key, v]) => ({
+        month: key,
+        turnover: toFixed(v.turnover, 2),
+        paid: toFixed(v.paid, 2),
+        unpaid: toFixed(v.turnover.minus(v.paid), 2),
+        received: toFixed(received.get(key) ?? new Decimal(0), 2),
+      })),
     }
   },
 }

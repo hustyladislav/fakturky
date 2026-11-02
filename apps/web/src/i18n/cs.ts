@@ -209,6 +209,8 @@ export const cs = {
   legal: {
     termsSections,
     privacySections,
+    eyebrow: 'Právní dokumenty',
+    contents: 'Obsah',
     terms: 'Podmínky používání',
     privacy: 'Zásady ochrany osobních údajů',
     updated: (date: string) => `Poslední aktualizace: ${date}`,
@@ -1090,6 +1092,10 @@ export const cs = {
     },
   },
   docsMcp: {
+    eyebrow: 'Dokumentace',
+    contents: 'Obsah',
+    copy: 'Kopírovat',
+    copied: 'Zkopírováno',
     title: 'Připojení přes MCP',
     intro:
       'Fakturky mají vzdálený MCP server. Díky němu může AI asistent (Claude, ChatGPT, Cursor…) vystavovat faktury, hledat kontakty a zapisovat platby za vás – stejně jako vy v aplikaci.',

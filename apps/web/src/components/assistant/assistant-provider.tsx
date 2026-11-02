@@ -11,19 +11,22 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react'
 import { getApprovalToolsFn } from '@/server/agent-approval-tools'
+import { type Conversation, loadHistory, saveHistory, titleOf, upsert } from './assistant-history'
 import { storageKey, threadKey } from './assistant-storage'
 import { createClientTools } from './client-tools'
 
 type Message = ReturnType<typeof useChat>['messages'][number]
 
-function newThreadId(userKey: string) {
+function newThreadId(userKey: string, scope = 'chat', renew = false) {
+  const key = scope === 'chat' ? threadKey(userKey) : `${threadKey(userKey)}:${scope}`
   try {
-    const existing = sessionStorage.getItem(threadKey(userKey))
+    const existing = renew ? null : sessionStorage.getItem(key)
     if (existing) return existing
     const id = crypto.randomUUID()
-    sessionStorage.setItem(threadKey(userKey), id)
+    sessionStorage.setItem(key, id)
     return id
   } catch {
     return crypto.randomUUID()
@@ -60,6 +63,10 @@ export type AssistantApi = Pick<
   ReturnType<typeof useChat>,
   'messages' | 'isLoading' | 'stop' | 'error' | 'clear'
 > & {
+  /** Recent conversations of this user, newest first (this browser only). */
+  history: ReadonlyArray<Conversation>
+  openConversation: (id: string) => void
+  clearHistory: () => void
   interrupts: ReadonlyArray<unknown>
   resolveInterrupts: (approved: boolean) => void
   send: (text: string) => Promise<void>
@@ -132,6 +139,47 @@ export function AssistantProvider({
 
   useEffect(() => saveMessages(userKey, chat.messages), [userKey, chat.messages])
 
+  // The history id is separate from the chat thread: "new conversation" starts a new entry.
+  const conversationId = useRef(newThreadId(userKey, 'conv'))
+  const [history, setHistory] = useState<Conversation[]>(() => loadHistory(userKey))
+  useEffect(() => {
+    if (chat.isLoading || chat.messages.length === 0) return
+    setHistory((list) => {
+      const next = upsert(list, {
+        id: conversationId.current,
+        title: titleOf(chat.messages),
+        updatedAt: Date.now(),
+        messages: chat.messages.slice(-60) as never,
+      })
+      saveHistory(userKey, next)
+      return next
+    })
+  }, [userKey, chat.messages, chat.isLoading])
+
+  const { clear: clearChat, setMessages } = chat
+  const clear = useCallback(() => {
+    clearChat()
+    conversationId.current = newThreadId(userKey, 'conv', true)
+  }, [clearChat, userKey])
+  const openConversation = useCallback(
+    (id: string) => {
+      const found = loadHistory(userKey).find((c) => c.id === id)
+      if (!found) return
+      conversationId.current = id
+      try {
+        sessionStorage.setItem(`${threadKey(userKey)}:conv`, id)
+      } catch {
+        // storage unavailable
+      }
+      setMessages(found.messages as never)
+    },
+    [userKey, setMessages],
+  )
+  const clearHistory = useCallback(() => {
+    saveHistory(userKey, [])
+    setHistory([])
+  }, [userKey])
+
   // The assistant changes data through the same API as the UI: refresh whatever the user is looking at.
   const wasLoading = useRef(false)
   useEffect(() => {
@@ -156,7 +204,10 @@ export function AssistantProvider({
       error: chat.error,
       interrupts: chat.interrupts,
       resolveInterrupts: chat.resolveInterrupts,
-      clear: chat.clear,
+      clear,
+      history,
+      openConversation,
+      clearHistory,
       send,
     }),
     [
@@ -166,7 +217,10 @@ export function AssistantProvider({
       chat.error,
       chat.interrupts,
       chat.resolveInterrupts,
-      chat.clear,
+      clear,
+      history,
+      openConversation,
+      clearHistory,
       send,
     ],
   )

@@ -1,5 +1,5 @@
 {
-  "id": "b69d075c-6fba-4b24-9765-d678cbba9e06",
+  "id": "f7fd2288-d466-4fcc-8f0b-63a32c283264",
   "prevId": "723f8450-9dd0-4f84-ae5a-5d1ff9612bef",
   "version": "7",
   "dialect": "postgresql",
@@ -2571,19 +2571,6 @@
           "notNull": true,
           "default": false
         },
-        "accent_color": {
-          "name": "accent_color",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "show_brand": {
-          "name": "show_brand",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
         "onboarded_at": {
           "name": "onboarded_at",
           "type": "timestamp with time zone",
@@ -3129,99 +3116,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.org_asset": {
-      "name": "org_asset",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content_type": {
-          "name": "content_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "data": {
-          "name": "data",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "org_asset_org_kind_uq": {
-          "name": "org_asset_org_kind_uq",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "kind",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "org_asset_organization_id_organization_id_fk": {
-          "name": "org_asset_organization_id_organization_id_fk",
-          "tableFrom": "org_asset",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.activity": {
       "name": "activity",
       "schema": "",
@@ -3546,6 +3440,13 @@
         },
         "round_total": {
           "name": "round_total",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "prices_include_vat": {
+          "name": "prices_include_vat",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,

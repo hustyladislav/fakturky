@@ -57,7 +57,13 @@ export function toDocumentForExport(
       vatTreatment: l.vatTreatment as VatTreatment,
       discountPercent: l.discountPercent,
     })),
-    { vatPayer, currency: doc.currency, exchangeRate },
+    {
+      vatPayer,
+      currency: doc.currency,
+      exchangeRate,
+      roundTotal: doc.roundTotal,
+      pricesIncludeVat: doc.pricesIncludeVat,
+    },
   )
   const bank = doc.bankSnapshot as Snapshot
   const method = METHODS.includes(doc.paymentMethod as ExportPaymentMethod)
@@ -65,7 +71,13 @@ export function toDocumentForExport(
     : 'other'
   return {
     type:
-      doc.type === 'proforma' ? 'proforma' : doc.type === 'credit_note' ? 'credit_note' : 'invoice',
+      doc.type === 'proforma'
+        ? 'proforma'
+        : doc.type === 'credit_note'
+          ? 'credit_note'
+          : doc.type === 'payment_receipt'
+            ? 'payment_receipt'
+            : 'invoice',
     originalDocument: original ?? null,
     number: doc.number ?? '',
     uuid: doc.id,
@@ -87,19 +99,23 @@ export function toDocumentForExport(
     currency: doc.currency,
     exchangeRate,
     note: [doc.introText, doc.footerText].filter(Boolean).join('\n') || null,
-    payment: {
-      method,
-      dueDate: doc.dueDate ?? doc.issueDate ?? '',
-      variableSymbol: doc.variableSymbol,
-      constantSymbol: doc.constantSymbol,
-      bankAccount: str(bank?.iban)
-        ? {
-            accountNumber: str(bank?.accountNumber) ?? undefined,
-            bankCode: str(bank?.bankCode) ?? undefined,
-            iban: str(bank?.iban) as string,
-            bic: str(bank?.bic) ?? undefined,
-          }
-        : null,
-    },
+    // A receipt documents money already received: no payment request, bank details or QR.
+    payment:
+      doc.type === 'payment_receipt'
+        ? null
+        : {
+            method,
+            dueDate: doc.dueDate ?? doc.issueDate ?? '',
+            variableSymbol: doc.variableSymbol,
+            constantSymbol: doc.constantSymbol,
+            bankAccount: str(bank?.iban)
+              ? {
+                  accountNumber: str(bank?.accountNumber) ?? undefined,
+                  bankCode: str(bank?.bankCode) ?? undefined,
+                  iban: str(bank?.iban) as string,
+                  bic: str(bank?.bic) ?? undefined,
+                }
+              : null,
+          },
   }
 }

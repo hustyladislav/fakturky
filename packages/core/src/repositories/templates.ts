@@ -101,6 +101,7 @@ export const templatesRepo = {
     }
     return documentsRepo.createDraft(db, orgId, actorId, {
       type: t.documentType === 'proforma' ? 'proforma' : 'invoice',
+      roundTotal: false,
       contactId: t.body.contactId ?? null,
       currency: t.body.currency,
       exchangeRate,

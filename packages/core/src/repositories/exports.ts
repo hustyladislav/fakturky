@@ -17,6 +17,7 @@ const {
   numberSeries,
   numberSeriesCounter,
   activity,
+  orgAsset,
 } = schema
 
 export const exportsRepo = {
@@ -49,6 +50,7 @@ export const exportsRepo = {
         templates: await tx.select().from(template).where(eq(template.organizationId, orgId)),
         rules: await tx.select().from(recurringRule).where(eq(recurringRule.organizationId, orgId)),
         series: await tx.select().from(numberSeries).where(eq(numberSeries.organizationId, orgId)),
+        assets: await tx.select().from(orgAsset).where(eq(orgAsset.organizationId, orgId)),
         counters: await tx
           .select()
           .from(numberSeriesCounter)
@@ -85,6 +87,11 @@ export const exportsRepo = {
         recurringRules: rules,
         numberSeries: series,
         numberSeriesCounters: snap.counters,
+        images: snap.assets.map((a) => ({
+          kind: a.kind,
+          contentType: a.contentType,
+          dataBase64: a.data,
+        })),
       },
       null,
       2,

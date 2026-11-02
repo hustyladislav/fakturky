@@ -4,6 +4,7 @@ export {
   DEFAULT_NUMBER_PATTERNS,
   formatNumber as formatDocumentNumber,
   isValidNumberPattern,
+  parseNumber,
   parseNumberPattern,
   periodKey,
   variableSymbolFromNumber,

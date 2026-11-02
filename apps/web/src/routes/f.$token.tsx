@@ -64,13 +64,15 @@ function PublicInvoice() {
   const title =
     d.type === 'proforma'
       ? t.titleProforma
-      : d.type === 'credit_note'
-        ? d.vatPayer
-          ? t.titleCreditNoteTax
-          : t.titleCreditNote
-        : d.vatPayer
-          ? t.titleTaxInvoice
-          : t.titleInvoice
+      : d.type === 'payment_receipt'
+        ? t.titleReceipt
+        : d.type === 'credit_note'
+          ? d.vatPayer
+            ? t.titleCreditNoteTax
+            : t.titleCreditNote
+          : d.vatPayer
+            ? t.titleTaxInvoice
+            : t.titleInvoice
   const label = (k: string, v: React.ReactNode) => (
     <div>
       <div className="text-xs text-neutral-500">{k}</div>
@@ -103,8 +105,14 @@ function PublicInvoice() {
       </div>
 
       <article className="mx-auto max-w-3xl space-y-6 bg-white p-6 text-neutral-900 shadow-sm sm:p-10 print:shadow-none">
-        <header className="flex items-start justify-between gap-4 border-b border-neutral-300 pb-4">
+        <header
+          className="flex items-start justify-between gap-4 border-b-2 pb-4"
+          style={{ borderColor: d.appearance.accentColor ?? '#1F4D3C' }}
+        >
           <div>
+            {d.appearance.logo && (
+              <img src={d.appearance.logo} alt="" className="mb-2 h-12 max-w-48 object-contain" />
+            )}
             <h1 className="font-serif text-3xl font-medium">{title}</h1>
             <div className="font-serif text-xl tabular-nums">{d.number}</div>
             {d.original && (
@@ -251,6 +259,12 @@ function PublicInvoice() {
           ))}
 
         <div className="ml-auto max-w-xs space-y-1 text-sm">
+          {Number(d.rounding) !== 0 && (
+            <div className="flex justify-between text-neutral-600">
+              <span>{t.rounding}</span>
+              <Money amount={d.rounding} currency={d.currency} />
+            </div>
+          )}
           {d.exchangeRate && (
             <div className="text-xs text-neutral-500">
               {t.exchangeRate}: {Number(d.exchangeRate)}
@@ -313,9 +327,14 @@ function PublicInvoice() {
         {d.footerText && (
           <p className="text-sm whitespace-pre-line text-neutral-600">{d.footerText}</p>
         )}
-        <footer className="border-t border-neutral-200 pt-3 text-xs text-neutral-400">
-          {t.issuedIn(cs.brand)}
-        </footer>
+        {d.appearance.signature && (
+          <img src={d.appearance.signature} alt="" className="h-14 max-w-48 object-contain" />
+        )}
+        {d.appearance.showBrand && (
+          <footer className="border-t border-neutral-200 pt-3 text-xs text-neutral-400">
+            {t.issuedIn(cs.brand)}
+          </footer>
+        )}
       </article>
     </div>
   )

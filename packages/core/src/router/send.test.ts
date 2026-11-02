@@ -197,7 +197,7 @@ test('proforma → paid → final invoice with the advance deducted; settled on 
   })
   await p.documents.markPaid({ id: ppf.id })
   await expect(p.documents.createFinalInvoice({ id: ppf.id })).rejects.toMatchObject({
-    code: 'CONFLICT',
+    code: 'PRECONDITION_FAILED',
   })
 })
 
@@ -287,4 +287,170 @@ test('exempt lines need a legal basis; EU reverse charge needs the customer VAT 
   })
   await api.contacts.update({ id: c.id, patch: { icDph: 'DE123456789' } })
   expect((await api.documents.issue({ id: eu.id })).status).toBe('issued')
+})
+
+test('rounding to whole units is a separate line; foreign currency keeps CZK VAT', async () => {
+  const org = await seedOrg(handle, 'rounding')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'K',
+    ico: '12345678',
+    address: { street: 'A 1', city: 'Praha', zip: '11000' },
+  })
+  const d = await api.documents.createDraft({
+    contactId: c.id,
+    roundTotal: true,
+    lines: [{ description: 'x', quantity: '1', unitPrice: '100.40', vatRate: '21' }],
+  })
+  // 100,40 + 21,08 = 121,48 → 121, rounding −0,48
+  expect(d.total).toBe('121.0000')
+  expect(d.rounding).toBe('-0.4800')
+  const issued = await api.documents.issue({ id: d.id })
+  expect(issued.total).toBe('121.0000')
+  const view = await clientFor(handle, null).public.invoice({ token: issued.publicToken as string })
+  expect(view.rounding).toBe('-0.4800')
+  expect(view.total).toBe('121.0000')
+  const off = await api.documents.updateDraft({
+    id: (await api.documents.duplicate({ id: issued.id })).id,
+    patch: { roundTotal: false },
+  })
+  expect(off.rounding).toBe('0.0000')
+  expect(off.total).toBe('121.4800')
+})
+
+test('appearance: accent colour, private logo/signature validated by content, included in the export', async () => {
+  const org = await seedOrg(handle, 'look-a')
+  const other = await seedOrg(handle, 'look-b')
+  for (const id of [org, other]) {
+    await handle.db
+      .insert(schema.businessProfile)
+      .values({ organizationId: id, legalName: 'Firma' })
+  }
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const png =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=='
+  expect((await api.appearance.get({})).logo).toBeNull()
+  await expect(api.appearance.update({ accentColor: 'red' })).rejects.toBeTruthy()
+  expect(
+    (await api.appearance.update({ accentColor: '#112233', showBrand: false })).accentColor,
+  ).toBe('#112233')
+  await expect(
+    api.appearance.setAsset({
+      kind: 'logo',
+      dataBase64: Buffer.from('<svg onload=alert(1)>').toString('base64') + 'AAAA',
+    }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  const withLogo = await api.appearance.setAsset({ kind: 'logo', dataBase64: png })
+  expect(withLogo.logo?.startsWith('data:image/png;base64,')).toBe(true)
+  // Another organization never sees it.
+  const theirs = await clientFor(handle, {
+    userId: 'u',
+    organizationId: other,
+    via: 'session',
+  }).appearance.get({})
+  expect(theirs.logo).toBeNull()
+  expect(theirs.accentColor).toBeNull()
+  const exported = JSON.parse((await api.exports.organization({})).json)
+  expect(exported.images[0]).toMatchObject({ kind: 'logo', contentType: 'image/png' })
+  // A truncated PNG with a valid signature is rejected as damaged.
+  const truncated = Buffer.from(png, 'base64').subarray(0, 20).toString('base64')
+  await expect(
+    api.appearance.setAsset({ kind: 'signature', dataBase64: truncated }),
+  ).rejects.toMatchObject({
+    data: { fields: ['image.corrupt'] },
+  })
+  // Documents keep the look they were issued with, even after settings change.
+  const c = await api.contacts.create({ name: 'K' })
+  const draft = await api.documents.createDraft({
+    contactId: c.id,
+    lines: [{ description: 'x', quantity: '1', unitPrice: '1' }],
+  })
+  const issued = await api.documents.issue({ id: draft.id })
+  await api.appearance.update({ accentColor: '#ff0000', showBrand: true })
+  await api.appearance.deleteAsset({ kind: 'logo' })
+  const view = await clientFor(handle, null).public.invoice({ token: issued.publicToken as string })
+  expect(view.appearance.accentColor).toBe('#112233')
+  expect(view.appearance.showBrand).toBe(false)
+  expect(view.appearance.logo?.startsWith('data:image/png')).toBe(true)
+  expect((await api.appearance.get({})).logo).toBeNull()
+})
+
+test('VAT payer advance: proforma → paid → tax receipt → final invoice deducting base and VAT', async () => {
+  const org = await seedOrg(handle, 'advance-payer')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'K',
+    ico: '12345678',
+    address: { street: 'A 1', city: 'Praha', zip: '11000' },
+  })
+  const pf = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        type: 'proforma',
+        contactId: c.id,
+        lines: [{ description: 'Projekt', quantity: '1', unitPrice: '10000', vatRate: '21' }],
+      })
+    ).id,
+  })
+  await api.documents.markPaid({ id: pf.id })
+  // The final invoice needs the receipt first.
+  await expect(api.documents.createFinalInvoice({ id: pf.id })).rejects.toMatchObject({
+    code: 'PRECONDITION_FAILED',
+  })
+  const rDraft = await api.documents.createPaymentReceipt({ id: pf.id, vatRate: '21' })
+  expect(rDraft.type).toBe('payment_receipt')
+  expect(rDraft.total).toBe('10000.0000') // the advance is VAT-inclusive
+  expect(rDraft.vatTotal).toBe('1735.5400') // 10 000 × 21 / 121
+  await expect(api.documents.createPaymentReceipt({ id: pf.id })).rejects.toMatchObject({
+    code: 'CONFLICT',
+  })
+  const receipt = await api.documents.issue({ id: rDraft.id })
+  expect(receipt.number).toMatch(/^P\d{4}-0001$/)
+  expect(receipt.status).toBe('paid') // documents a payment already received
+  await expect(api.documents.markUnpaid({ id: pf.id })).rejects.toMatchObject({ code: 'CONFLICT' })
+
+  const fin = await api.documents.createFinalInvoice({ id: pf.id })
+  // Work (gross 12 100 for the full 10 000 net) minus the receipt (8 264,46 net + 1 735,54 VAT).
+  expect(fin.lines.map((l) => l.vatRate)).toEqual(['21.00', '21.00'])
+  const issued = await api.documents.issue({ id: fin.id })
+  expect(issued.status).toBe('issued')
+  expect(Number(issued.total)).toBeCloseTo(2100, 2) // 12 100 − 10 000: the VAT-exclusive remainder is billed
+})
+
+test('tax receipt keeps the received gross, uses the payment date as tax point, cannot be created directly', async () => {
+  const org = await seedOrg(handle, 'receipt-fix')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'K',
+    ico: '12345678',
+    address: { street: 'A 1', city: 'Praha', zip: '11000' },
+  })
+  await expect(
+    api.documents.createDraft({ type: 'payment_receipt', contactId: c.id, lines: [] }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  const pf = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        type: 'proforma',
+        contactId: c.id,
+        lines: [{ description: 'Záloha', quantity: '1', unitPrice: '100.06' }],
+      })
+    ).id,
+  })
+  await api.documents.markPaid({ id: pf.id, paidOn: '2026-01-05' })
+  const r = await api.documents.createPaymentReceipt({ id: pf.id, vatRate: '21' })
+  expect(r.total).toBe('100.0600')
+  expect(r.taxableDate).toBe('2026-01-05')
+  const issued = await api.documents.issue({ id: r.id })
+  const xml = (await api.documents.isdoc({ id: issued.id })).xml
+  expect(xml).not.toContain('<PaymentMeans>')
 })

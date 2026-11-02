@@ -1,0 +1,4 @@
+číslo;typ;datum vystavení;splatnost;měna;odběratel;ičo odběratele;popis;množství;jednotka;cena;dph;datum úhrady
+2024-0001;faktura;15.1.2024;29.1.2024;CZK;Novák s.r.o.;27082440;Vývoj;10;hod;1000;21;5.2.2024
+2024-0001;faktura;15.1.2024;29.1.2024;CZK;Novák s.r.o.;27082440;Hosting;1;ks;500,50;21;5.2.2024
+2024-0002;faktura;1.2.2024;15.2.2024;CZK;Jan Svoboda;;Poradenství;2;hod;800;0;

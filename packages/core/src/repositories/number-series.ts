@@ -16,6 +16,7 @@ const TYPES = [
   ['invoice', 'Faktury'],
   ['proforma', 'Zálohové faktury'],
   ['credit_note', 'Opravné doklady'],
+  ['payment_receipt', 'Doklady k přijaté platbě'],
 ] as const
 
 function dateParts(today: string) {

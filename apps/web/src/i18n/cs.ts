@@ -361,6 +361,8 @@ export const cs = {
       vatRecap: 'Rekapitulace DPH',
       vatRecapRow: (rate: string) => `Sazba ${rate} %`,
       nonPayer: 'Nejste plátcem DPH, faktura bude bez DPH.',
+      proformaNoVat:
+        'Zálohová faktura je bez DPH: zadejte částku, kterou má odběratel zaplatit (u plátců včetně DPH). DPH se vyúčtuje dokladem k přijaté platbě.',
       saveDraft: 'Uložit koncept',
       issue: 'Vystavit',
       saved: 'Koncept byl uložen.',

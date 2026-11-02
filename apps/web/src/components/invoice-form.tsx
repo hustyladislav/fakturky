@@ -192,10 +192,12 @@ export function InvoiceForm({ id }: { id?: string }) {
   }, [existing.data, defaults.data, id, ready, today])
 
   // A credit note keeps the VAT treatment of the invoice it corrects, whatever the profile says now.
+  // A proforma is not a tax document: it carries no VAT, the amount entered is what the customer pays.
+  const isProforma = (existing.data?.type ?? docType) === 'proforma'
   const vatPayer =
     existing.data?.type === 'credit_note'
       ? existing.data.vatMode !== 'none'
-      : (defaults.data?.vatPayer ?? false)
+      : !isProforma && (defaults.data?.vatPayer ?? false)
   const foreign = currency !== 'CZK'
 
   const currencyAccounts = (accounts.data ?? []).filter((a) => a.currency === currency)
@@ -634,7 +636,11 @@ export function InvoiceForm({ id }: { id?: string }) {
               <span>{t.total}</span>
               <Money amount={totals.total} currency={currency} />
             </div>
-            {!vatPayer && <p className="text-muted-foreground text-xs">{t.nonPayer}</p>}
+            {!vatPayer && (
+              <p className="text-muted-foreground text-xs">
+                {isProforma ? t.proformaNoVat : t.nonPayer}
+              </p>
+            )}
           </div>
         )}
       </Card>

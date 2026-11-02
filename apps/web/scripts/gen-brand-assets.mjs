@@ -18,8 +18,8 @@ const fontFile = (pkg, f) =>
 
 const geistSerif = pathToFileURL(
   resolve(
-    dirname(require.resolve('geist/package.json')),
-    'dist/fonts/geist-serif/GeistSerif-Regular.woff2',
+    here,
+    '../../../packages/ui/node_modules/geist/dist/fonts/geist-serif/GeistSerif-Regular.woff2',
   ),
 ).href
 

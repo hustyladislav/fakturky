@@ -77,6 +77,7 @@ for (const v of variants) {
     })
 
     await test.step('create a contact', async () => {
+      // A VAT payer's tax invoice needs the customer's address and IČO/DIČ (§29 ZDPH): start without them.
       await createContact(page, customerName)
     })
 
@@ -95,7 +96,34 @@ for (const v of variants) {
       }
     })
 
+    if (v.vatPayer) {
+      await test.step('a tax invoice without customer data is refused with a visible, field-level message', async () => {
+        await page.getByRole('button', { name: 'Vystavit', exact: true }).click()
+        const alert = page.getByRole('alert')
+        await expect(alert).toContainText('Daňový doklad vyžaduje údaje odběratele')
+        await expect(alert).toContainText('adresu')
+        await expect(alert).toContainText('IČO nebo DIČ')
+        await expect(page).toHaveURL(/\/faktury\/nova$/)
+      })
+      await test.step('completing the contact lets the same draft be issued', async () => {
+        await page.goto('/kontakty')
+        await page.getByRole('button', { name: 'Upravit', exact: true }).first().click()
+        const dialog = page.getByRole('dialog')
+        await dialog.getByLabel('DIČ').fill('CZ12345024')
+        await dialog.getByLabel('Ulice a číslo').fill('Hlavní 7')
+        await dialog.getByLabel('Město').fill('Ostrava')
+        await dialog.getByLabel('PSČ').fill('70200')
+        await dialog.getByRole('button', { name: 'Uložit' }).click()
+        await expect(dialog).toBeHidden()
+      })
+    }
+
     await test.step('issue allocates the number YYYY-0001', async () => {
+      if (v.vatPayer) {
+        // The unsaved form was left; the refused draft exists in the list — open and issue it.
+        await page.goto('/faktury?filter=draft')
+        await page.getByRole('link', { name: 'Koncept' }).first().click()
+      }
       await page.getByRole('button', { name: 'Vystavit', exact: true }).click()
       await page.waitForURL(/\/faktury\/[^/]+$/)
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^\d{4}-0001$/)

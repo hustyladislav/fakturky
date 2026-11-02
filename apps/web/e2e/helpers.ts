@@ -52,12 +52,25 @@ export async function addBankAccount(page: Page) {
   await expect(page.getByText('CZ6508000000192000145399')).toBeVisible()
 }
 
-export async function createContact(page: Page, name: string) {
+export type ContactDetails = {
+  ico?: string
+  dic?: string
+  street?: string
+  city?: string
+  zip?: string
+}
+
+export async function createContact(page: Page, name: string, d: ContactDetails = {}) {
   await page.goto('/kontakty')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Nový kontakt' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('Název nebo jméno').fill(name)
+  if (d.ico) await dialog.getByLabel('IČO').fill(d.ico)
+  if (d.dic) await dialog.getByLabel('DIČ').fill(d.dic)
+  if (d.street) await dialog.getByLabel('Ulice a číslo').fill(d.street)
+  if (d.city) await dialog.getByLabel('Město').fill(d.city)
+  if (d.zip) await dialog.getByLabel('PSČ').fill(d.zip)
   await dialog.getByRole('button', { name: 'Vytvořit' }).click()
   await expect(page.getByRole('cell', { name })).toBeVisible()
 }

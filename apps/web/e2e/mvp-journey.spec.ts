@@ -110,8 +110,15 @@ for (const v of variants) {
       })
       await test.step('completing the contact lets the same draft be issued', async () => {
         await page.goto('/kontakty')
-        await page.getByRole('button', { name: 'Upravit', exact: true }).first().click()
+        // Wait for hydration: an early click on the server-rendered button does nothing.
+        await page.waitForLoadState('networkidle')
+        await page
+          .getByRole('button', { name: 'Upravit', exact: true })
+          .locator('visible=true')
+          .first()
+          .click()
         const dialog = page.getByRole('dialog')
+        await expect(dialog).toBeVisible()
         await dialog.getByLabel('DIČ').fill('CZ12345024')
         await dialog.getByLabel('Ulice a číslo').fill('Hlavní 7')
         await dialog.getByLabel('Město').fill('Ostrava')

@@ -182,6 +182,7 @@ export const documentDetailSchema = documentSchema.extend({
       type: z.string(),
       number: z.string().nullable(),
       status: z.string(),
+      issueDate: z.string().nullable(),
     })
     .nullable(),
   /** Documents created from this one (credit notes, receipts, final invoices). */

@@ -48,7 +48,7 @@ import { PromptDialog } from '@/components/prompt-dialog'
 import { cs } from '@/i18n/cs'
 import { detailToSheet } from '@/lib/document-sheet'
 import { apiErrorMessage } from '@/lib/errors'
-import { pageHead } from '@/lib/head'
+import { pageHead, useDocumentTitle } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/faktury/$id/')({
@@ -63,6 +63,7 @@ function InvoiceDetail() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const q = useQuery(orpc.documents.get.queryOptions({ input: { id } }))
+  useDocumentTitle(q.data?.number)
   const [paying, setPaying] = useState(false)
   const [docOpen, setDocOpen] = useState(false)
   const [dialog, setDialog] = useState<

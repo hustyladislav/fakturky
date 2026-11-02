@@ -20,9 +20,10 @@ import { Textarea } from '@fakturky/ui/components/textarea'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Loader2 } from 'lucide-react'
+import { ChevronDown, Loader2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { QuickAccountForm } from '@/components/bank/quick-account-form'
 import { cs } from '@/i18n/cs'
 import { formToSheet } from '@/lib/document-sheet'
 import { apiErrorMessage } from '@/lib/errors'
@@ -62,6 +63,8 @@ function Row({
   )
 }
 
+const REGISTRY_DISMISS_KEY = 'registryNoteBannerDismissed'
+
 export function InvoiceForm({ id }: { id?: string }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -99,6 +102,7 @@ export function InvoiceForm({ id }: { id?: string }) {
   const [ready, setReady] = useState(false)
   const [dueTouched, setDueTouched] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [datesOpen, setDatesOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const wide = useIsWide()
 
@@ -367,10 +371,19 @@ export function InvoiceForm({ id }: { id?: string }) {
     },
   })
 
-  // Ctrl/⌘ + Enter issues from anywhere on the page.
+  // Ctrl/⌘ + Enter issues from anywhere on the page. Without a bank account the first press asks
+  // "pokračovat?" and the second one issues: an invoice with no QR is the costliest silent failure.
+  const [confirmNoBank, setConfirmNoBank] = useState(false)
+  const missingBank = accounts.isSuccess && !effectiveAccount
   const issueRef = useRef<() => void>(() => {})
   issueRef.current = () => {
-    if (ready && !save.isPending) save.mutate(true)
+    if (!ready || save.isPending) return
+    if (missingBank && !confirmNoBank) {
+      setConfirmNoBank(true)
+      return
+    }
+    setConfirmNoBank(false)
+    save.mutate(true)
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -384,6 +397,7 @@ export function InvoiceForm({ id }: { id?: string }) {
   }, [])
 
   const weekend = dueDate && isWeekend(dueDate)
+  const dueInDays = Math.round((Date.parse(dueDate) - Date.parse(issueDate)) / 86_400_000)
 
   function setIssue(v: string) {
     setIssueDate(v)
@@ -442,6 +456,23 @@ export function InvoiceForm({ id }: { id?: string }) {
     ],
   )
 
+  const [registryDismissed, setRegistryDismissed] = useState(false)
+  useEffect(() => {
+    try {
+      setRegistryDismissed(localStorage.getItem(REGISTRY_DISMISS_KEY) === '1')
+    } catch {
+      /* storage unavailable: the banner just stays */
+    }
+  }, [])
+  function dismissRegistry() {
+    setRegistryDismissed(true)
+    try {
+      localStorage.setItem(REGISTRY_DISMISS_KEY, '1')
+    } catch {
+      /* storage unavailable */
+    }
+  }
+
   const supplier = profile.data
   const supplierAddress = supplier?.address
   const totalValue = totals?.total ?? '0'
@@ -451,7 +482,8 @@ export function InvoiceForm({ id }: { id?: string }) {
       <PageHeader
         eyebrow={cs.invoices.type[type]}
         title={id ? t.titleEdit : t.titleNew}
-        subtitle={dirty ? t.unsaved : draftId ? t.savedState : undefined}
+        // A non-breaking space keeps the line, so the form does not jump when "unsaved" appears.
+        subtitle={dirty ? t.unsaved : draftId ? t.savedState : '\u00a0'}
         className="mb-5"
       />
       {defaults.data && !defaults.data.hasProfile && (
@@ -463,22 +495,34 @@ export function InvoiceForm({ id }: { id?: string }) {
         </p>
       )}
 
-      {defaults.data?.hasProfile && defaults.data.registryNoteMissing && (
-        <p className="mb-4 rounded-lg border border-warning/50 bg-warning/14 p-3 text-foreground text-sm">
-          {t.registryNoteMissing}{' '}
-          <Link to="/nastaveni" className="underline">
-            {cs.nav.settings}
-          </Link>
-        </p>
+      {defaults.data?.hasProfile && defaults.data.registryNoteMissing && !registryDismissed && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-warning/50 bg-warning/14 p-3 text-foreground text-sm max-sm:hidden">
+          <p className="min-w-0 flex-1">
+            {t.registryNoteMissing}{' '}
+            <Link to="/nastaveni" className="underline">
+              {cs.nav.settings}
+            </Link>
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t.registryNoteDismiss}
+            className="-my-1 -mr-1 shrink-0"
+            onClick={dismissRegistry}
+          >
+            <X />
+          </Button>
+        </div>
       )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
         <section
-          className="sheet @container min-w-0 divide-y divide-border"
+          className="sheet @container flex min-w-0 flex-col divide-y divide-border"
           aria-label={t.documentHeading}
         >
           {/* Header: what kind of document, and that the number comes at issue. */}
-          <div className="space-y-3 p-5 sm:p-6">
+          <div className="space-y-3 p-5 max-sm:order-1 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               {id ? (
                 <span className="font-serif text-xl">{cs.invoices.type[type]}</span>
@@ -504,22 +548,24 @@ export function InvoiceForm({ id }: { id?: string }) {
           </div>
 
           {/* Parties, side by side like on the invoice. */}
-          <div className="grid gap-6 p-5 sm:p-6 @[34rem]:grid-cols-2">
+          <div className="grid gap-6 p-5 max-sm:order-2 sm:p-6 @[34rem]:grid-cols-2">
             <div>
               <SectionTitle>{t.supplier}</SectionTitle>
               {supplier ? (
                 <div className="space-y-0.5 text-sm">
                   <div className="font-serif text-[17px] leading-6">{supplier.legalName}</div>
                   {supplierAddress?.street && (
-                    <div className="text-muted-foreground">{supplierAddress.street}</div>
+                    <div className="text-muted-foreground max-sm:hidden">
+                      {supplierAddress.street}
+                    </div>
                   )}
                   {(supplierAddress?.zip || supplierAddress?.city) && (
-                    <div className="text-muted-foreground">
+                    <div className="text-muted-foreground max-sm:hidden">
                       {supplierAddress.zip} {supplierAddress.city}
                     </div>
                   )}
                   {(supplier.ico || supplier.dic) && (
-                    <div className="pt-0.5 text-muted-foreground tabular-nums">
+                    <div className="pt-0.5 text-muted-foreground tabular-nums max-sm:hidden">
                       {supplier.ico && <>IČO {supplier.ico}</>}
                       {supplier.ico && supplier.dic && ' · '}
                       {supplier.dic && <>DIČ {supplier.dic}</>}
@@ -527,7 +573,7 @@ export function InvoiceForm({ id }: { id?: string }) {
                   )}
                   <Link
                     to="/nastaveni"
-                    className="inline-block pt-1.5 text-muted-foreground text-xs underline underline-offset-2 hover:text-foreground"
+                    className="inline-block pt-1.5 text-muted-foreground text-xs underline underline-offset-2 hover:text-foreground max-sm:hidden"
                   >
                     {t.supplierEdit}
                   </Link>
@@ -568,10 +614,41 @@ export function InvoiceForm({ id }: { id?: string }) {
             </div>
           </div>
 
-          {/* Dates and currency. */}
-          <div className="p-5 sm:p-6">
-            <SectionTitle>{t.dates}</SectionTitle>
-            <div className="grid gap-4 sm:grid-cols-2">
+          {/* Dates and currency. On a phone they sit after the items, folded into one summary row. */}
+          <div className="p-5 max-sm:order-4 sm:p-6">
+            <div className="max-sm:hidden">
+              <SectionTitle>{t.dates}</SectionTitle>
+            </div>
+            <button
+              type="button"
+              aria-expanded={datesOpen}
+              aria-controls="dates-fields"
+              onClick={() => setDatesOpen((o) => !o)}
+              className="flex w-full items-center justify-between gap-3 text-left text-sm sm:hidden"
+            >
+              <span>
+                {t.dueSummary(dueInDays, dueDate)}
+                {foreign && ` · ${currency}`}
+                <span className="text-muted-foreground">
+                  {' '}
+                  · {datesOpen ? t.datesHide : t.datesEdit}
+                </span>
+              </span>
+              <ChevronDown
+                aria-hidden
+                className={cn(
+                  'size-4 shrink-0 text-muted-foreground transition-transform',
+                  datesOpen && 'rotate-180',
+                )}
+              />
+            </button>
+            <div
+              id="dates-fields"
+              className={cn(
+                'grid gap-4 sm:grid-cols-2',
+                datesOpen ? 'max-sm:mt-4' : 'max-sm:hidden',
+              )}
+            >
               <div className="space-y-1.5">
                 <Label htmlFor="issueDate">{t.issueDate}</Label>
                 <DatePicker id="issueDate" value={issueDate} onChange={setIssue} />
@@ -646,14 +723,16 @@ export function InvoiceForm({ id }: { id?: string }) {
               )}
             </div>
             {weekend && (
-              <p className="mt-3 text-muted-foreground text-sm">
+              <p
+                className={cn('mt-3 text-muted-foreground text-sm', !datesOpen && 'max-sm:hidden')}
+              >
                 {t.weekendHint(t.weekdays[isoWeekday(dueDate) % 7] ?? '')}
               </p>
             )}
           </div>
 
           {/* Items and totals. */}
-          <div className="p-5 sm:p-6">
+          <div className="p-5 max-sm:order-3 sm:p-6">
             <SectionTitle>{t.items}</SectionTitle>
             <ItemsTable
               lines={lines}
@@ -708,31 +787,42 @@ export function InvoiceForm({ id }: { id?: string }) {
           </div>
 
           {/* Payment. */}
-          <div className="p-5 sm:p-6">
+          <div className="p-5 max-sm:order-5 sm:p-6">
             <SectionTitle>{t.payment}</SectionTitle>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="bank">{t.bankAccount}</Label>
-                <NativeSelect
-                  id="bank"
-                  value={effectiveAccount}
-                  onChange={(e) => setBankAccountId(e.target.value)}
-                >
-                  {currencyAccounts.length === 0 && <option value="">{t.bankAccountNone}</option>}
-                  {currencyAccounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.label}
-                    </option>
-                  ))}
-                </NativeSelect>
-                {account && (
-                  <p className="text-muted-foreground text-xs tabular-nums">
-                    {account.accountNumber
-                      ? `${account.accountNumber}/${account.bankCode}`
-                      : account.iban}
-                  </p>
-                )}
-              </div>
+              {accounts.isSuccess && accounts.data.length === 0 ? (
+                <div className="space-y-2 sm:col-span-2">
+                  <p className="text-muted-foreground text-sm">{t.bankAddInline}</p>
+                  <QuickAccountForm
+                    onCreated={() =>
+                      queryClient.invalidateQueries({ queryKey: orpc.bankAccounts.key() })
+                    }
+                  />
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label htmlFor="bank">{t.bankAccount}</Label>
+                  <NativeSelect
+                    id="bank"
+                    value={effectiveAccount}
+                    onChange={(e) => setBankAccountId(e.target.value)}
+                  >
+                    {currencyAccounts.length === 0 && <option value="">{t.bankAccountNone}</option>}
+                    {currencyAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.label}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                  {account && (
+                    <p className="text-muted-foreground text-xs tabular-nums">
+                      {account.accountNumber
+                        ? `${account.accountNumber}/${account.bankCode}`
+                        : account.iban}
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="method">{t.paymentMethod}</Label>
                 <NativeSelect
@@ -751,7 +841,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           </div>
 
           {/* Texts, order number, language: out of the way until needed. */}
-          <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
+          <Collapsible open={moreOpen} onOpenChange={setMoreOpen} className="max-sm:order-6">
             <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 p-5 text-left outline-none focus-visible:bg-muted/50 sm:px-6">
               <span>
                 <span className="block font-medium text-sm">{t.moreOptions}</span>
@@ -823,6 +913,33 @@ export function InvoiceForm({ id }: { id?: string }) {
 
       {/* Sticky action bar: the total, whether anything is unsaved, and the two ways out. */}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 -mx-4 mt-6 border-t bg-background/90 px-4 py-3 backdrop-blur md:bottom-0 md:-mx-8 md:px-8">
+        {confirmNoBank && missingBank && (
+          <div
+            role="alert"
+            className="mx-auto mb-3 flex max-w-[1136px] flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-warning/50 bg-warning/14 px-3 py-2 text-sm"
+          >
+            <span className="min-w-0 flex-1">{t.noBankConfirm}</span>
+            <span className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                autoFocus
+                onClick={() => issueRef.current()}
+                disabled={save.isPending}
+              >
+                {t.noBankConfirmYes}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setConfirmNoBank(false)}
+              >
+                {cs.common.cancel}
+              </Button>
+            </span>
+          </div>
+        )}
         <div className="mx-auto flex max-w-[1136px] items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="label-caps max-sm:sr-only">{t.totalShort}</div>
@@ -858,7 +975,7 @@ export function InvoiceForm({ id }: { id?: string }) {
             type="button"
             title={t.issueHint}
             disabled={save.isPending || !ready}
-            onClick={() => save.mutate(true)}
+            onClick={() => issueRef.current()}
           >
             {save.isPending && <Loader2 className="animate-spin" aria-hidden />}
             {t.issue}

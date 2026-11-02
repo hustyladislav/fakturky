@@ -490,6 +490,16 @@ export const cs = {
       taxableDate: 'DUZP (datum zdanitelného plnění)',
       taxableHint: 'Den, kdy nastalo plnění. U plátců DPH určuje, do kterého měsíce DPH patří.',
       dueIn: (days: number) => `${days} dní`,
+      dueSummary: (days: number, date: string) => {
+        const when = new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' }).format(
+          new Date(`${date}T12:00:00`),
+        )
+        if (days <= 0) return `Splatnost ihned (${when})`
+        const unit = days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'
+        return `Splatnost za ${days} ${unit} (${when})`
+      },
+      datesEdit: 'upravit',
+      datesHide: 'skrýt',
       today: 'Dnes',
       currency: 'Měna',
       exchangeRate: 'Kurz ČNB (Kč za 1 jednotku)',
@@ -511,6 +521,9 @@ export const cs = {
       payment: 'Platba',
       bankAccount: 'Bankovní účet',
       bankAccountNone: 'Žádný účet – přidejte ho v Nastavení',
+      bankAddInline: 'Přidejte účet, ať faktura ponese číslo účtu a QR platbu.',
+      noBankConfirm: 'Faktura nebude mít QR platbu ani číslo účtu — pokračovat?',
+      noBankConfirmYes: 'Vystavit i tak',
       paymentMethod: 'Forma úhrady',
       methods: { bank_transfer: 'Převodem', cash: 'Hotově', card: 'Kartou' },
       texts: 'Texty',
@@ -552,6 +565,7 @@ export const cs = {
         `Daňový doklad vyžaduje údaje odběratele. Doplňte u kontaktu: ${names.join(', ')}.`,
       registryNoteMissing:
         'V nastavení chybí zápis v rejstříku (např. „Fyzická osoba zapsaná v živnostenském rejstříku“). Podnikatelé ho mají na fakturách uvádět.',
+      registryNoteDismiss: 'Skrýt upozornění',
       needProfile: 'Než vystavíte fakturu, vyplňte prosím údaje o své firmě v Nastavení.',
     },
     detail: {

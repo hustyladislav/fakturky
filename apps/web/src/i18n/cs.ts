@@ -653,6 +653,8 @@ export const cs = {
       creditNotePrompt: 'Důvod opravy (zobrazí se na dokladu)',
       creditNoteCreated: 'Vytvořili jsme koncept opravného dokladu. Upravte ho a vystavte.',
       send: 'Odeslat e-mailem',
+      sendShort: 'Odeslat',
+      remindShort: 'Upomínka',
       sendTitle: 'Odeslat fakturu',
       sendTo: 'Příjemce',
       sendMessage: 'Vzkaz v e-mailu (nepovinné)',

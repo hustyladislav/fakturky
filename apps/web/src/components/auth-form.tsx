@@ -24,7 +24,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     <AuthLayout>
       <div className="space-y-6">
         <div className="space-y-1.5">
-          <h1 className="text-3xl leading-tight font-medium">
+          <h1 className="font-serif text-[34px] leading-tight font-medium tracking-[-0.015em]">
             {signUp ? cs.auth.signUpTitle : cs.auth.signInTitle}
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -64,21 +64,35 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           >
             {signUp && (
               <div className="space-y-2">
-                <Label htmlFor="name">{cs.auth.name}</Label>
-                <Input id="name" name="name" autoComplete="name" required />
+                <Label htmlFor="name" className="label-caps">
+                  {cs.auth.name}
+                </Label>
+                <Input id="name" name="name" autoComplete="name" required className="h-10" />
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">{cs.auth.email}</Label>
-              <Input id="email" name="email" type="email" autoComplete="email webauthn" required />
+              <Label htmlFor="email" className="label-caps">
+                {cs.auth.email}
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email webauthn"
+                required
+                className="h-10"
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{cs.auth.password}</Label>
+              <Label htmlFor="password" className="label-caps">
+                {cs.auth.password}
+              </Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 minLength={8}
+                className="h-10"
                 autoComplete={signUp ? 'new-password' : 'current-password webauthn'}
                 required
               />
@@ -89,7 +103,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
                 {error}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={pending || !hydrated}>
+            <Button type="submit" className="h-10 w-full" disabled={pending || !hydrated}>
               {signUp ? cs.auth.signUpAction : cs.auth.signInAction}
             </Button>
           </form>
@@ -101,7 +115,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           {!signUp && (
             <Button
               variant="outline"
-              className="w-full"
+              className="h-10 w-full"
               onClick={async () => {
                 const result = await authClient.signIn.passkey()
                 if (result?.error) setError(cs.auth.invalidCredentials)

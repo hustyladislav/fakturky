@@ -283,10 +283,17 @@ test('exempt lines need a legal basis; EU reverse charge needs the customer VAT 
     ],
   })
   await expect(api.documents.issue({ id: eu.id })).rejects.toMatchObject({
-    data: { fields: ['customer.vatId'] },
+    data: { fields: ['customer.vatId', 'customer.country'] },
   })
   await api.contacts.update({ id: c.id, patch: { icDph: 'DE123456789' } })
-  expect((await api.documents.issue({ id: eu.id })).status).toBe('issued')
+  // A Czech customer cannot be invoiced under the EU reverse charge.
+  await expect(api.documents.issue({ id: eu.id })).rejects.toMatchObject({
+    data: { fields: ['customer.country'] },
+  })
+  await api.contacts.update({ id: c.id, patch: { country: 'DE' } })
+  const issuedEu = await api.documents.issue({ id: eu.id })
+  expect(issuedEu.status).toBe('issued')
+  expect(issuedEu.customerSnapshot).toMatchObject({ country: 'DE' })
 })
 
 test('rounding to whole units is a separate line; foreign currency keeps CZK VAT', async () => {

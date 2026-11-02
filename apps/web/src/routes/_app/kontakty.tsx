@@ -23,6 +23,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { CountrySelect } from '@/components/country-select'
 import { CsvDownload } from '@/components/csv-download'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
@@ -153,6 +154,7 @@ function NewContact() {
               phone: text('phone'),
               address: { street: text('street'), city: text('city'), zip: text('zip') },
               emails: email ? [email] : [],
+              country: text('country') ?? 'CZ',
             })
           }}
         >
@@ -186,6 +188,10 @@ function NewContact() {
               <Label htmlFor="zip">{cs.contacts.zip}</Label>
               <Input id="zip" name="zip" autoComplete="off" />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="country">{cs.contacts.country}</Label>
+            <CountrySelect id="country" />
           </div>
           <p className="text-muted-foreground text-xs">{cs.contacts.taxDocHint}</p>
           <div className="grid grid-cols-2 gap-4">
@@ -256,6 +262,7 @@ function EditContact({ contact }: { contact: ContactRow }) {
                   zip: text('zip'),
                 },
                 emails: email ? [email] : [],
+                country: text('country') || 'CZ',
               },
             })
           }}
@@ -272,6 +279,10 @@ function EditContact({ contact }: { contact: ContactRow }) {
           <div className="grid grid-cols-2 gap-4">
             {field('city', cs.contacts.city, contact.address.city)}
             {field('zip', cs.contacts.zip, contact.address.zip)}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="e-country">{cs.contacts.country}</Label>
+            <CountrySelect id="e-country" defaultValue={contact.country} />
           </div>
           <p className="text-muted-foreground text-xs">{cs.contacts.taxDocHint}</p>
           <div className="grid grid-cols-2 gap-4">

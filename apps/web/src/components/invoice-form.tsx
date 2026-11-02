@@ -246,6 +246,15 @@ export function InvoiceForm({ id }: { id?: string }) {
     }
   }, [lines, vatPayer, currency, exchangeRate, foreign, roundTotal])
 
+  const customerRow = useQuery({
+    ...orpc.contacts.get.queryOptions({ input: { id: customer?.id ?? '' } }),
+    enabled: !!customer?.id,
+  })
+  const euReverseDomestic =
+    vatPayer &&
+    lines.some((l) => l.vatTreatment === 'eu_reverse_charge') &&
+    customerRow.data?.country?.toUpperCase() === 'CZ'
+
   const payload = () => ({
     contactId: customer?.id ?? null,
     bankAccountId: effectiveAccount || null,
@@ -387,6 +396,11 @@ export function InvoiceForm({ id }: { id?: string }) {
 
       <Card title={t.customer}>
         <CustomerPicker value={customer} onChange={setCustomer} />
+        {euReverseDomestic && (
+          <p role="alert" className="text-destructive text-sm">
+            {cs.contacts.euReverseChargeDomestic}
+          </p>
+        )}
         {issueError && (
           <p role="alert" className="text-destructive text-sm">
             {issueError}{' '}

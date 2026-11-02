@@ -653,6 +653,13 @@ export const documentsRepo = {
         ) {
           missing.push('vatId')
         }
+        // The EU reverse charge applies to supplies to another member state, not to a domestic customer.
+        if (
+          lines.some((l) => l.vatTreatment === 'eu_reverse_charge') &&
+          (customer.country ?? 'CZ').toUpperCase() === 'CZ'
+        ) {
+          missing.push('country')
+        }
         if (missing.length > 0) {
           throw new DocumentError(
             'PRECONDITION_FAILED',

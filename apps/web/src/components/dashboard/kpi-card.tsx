@@ -56,7 +56,7 @@ export function Delta({
 }
 
 /**
- * One headline number: micro-label, Fraunces amount (counts up on first paint), then a footer line
+ * One headline number: micro-label, Geist Serif amount (counts up on first paint), then a footer line
  * with the delta / hint on the left and an optional sparkline on the right.
  */
 export function KpiCard({

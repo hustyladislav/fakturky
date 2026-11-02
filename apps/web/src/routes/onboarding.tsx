@@ -96,7 +96,7 @@ function Finish({ values, onGo }: { values: ProfileValues; onGo: () => void }) {
           />
         </svg>
       </span>
-      <h1 className="mt-6 font-serif text-[34px] leading-tight font-medium tracking-[-0.015em]">
+      <h1 className="mt-6 font-serif text-[34px] leading-tight tracking-[-0.015em]">
         {t.doneTitle}
       </h1>
       <p className="mt-2 text-muted-foreground">{t.doneText}</p>
@@ -152,7 +152,7 @@ function Onboarding() {
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)] lg:gap-14">
             <div>
               <p className="label-caps mb-3">{t.stepOf(step, 3)}</p>
-              <h1 className="font-serif text-[34px] leading-[1.1] font-medium tracking-[-0.015em] text-balance">
+              <h1 className="font-serif text-[34px] leading-[1.1] tracking-[-0.015em] text-balance">
                 {t.title}
               </h1>
               <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">

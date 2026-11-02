@@ -2,7 +2,7 @@ import { cn } from 'cn'
 import type { ReactNode } from 'react'
 
 /**
- * Page title block used on every page: optional eyebrow micro-label, Fraunces title (28/32),
+ * Page title block used on every page: optional eyebrow micro-label, Geist Serif title (28/32),
  * a one-line context subtitle with live numbers, right-aligned actions, and a tabs slot beneath.
  */
 function PageHeader({
@@ -31,7 +31,7 @@ function PageHeader({
           {leading}
           <div className="min-w-0">
             {eyebrow && <div className="label-caps mb-1.5">{eyebrow}</div>}
-            <h1 className="font-serif text-[28px] leading-8 font-medium tracking-[-0.015em] text-balance">
+            <h1 className="font-serif text-[28px] leading-8 tracking-[-0.015em] text-balance">
               {title}
             </h1>
             {subtitle && (

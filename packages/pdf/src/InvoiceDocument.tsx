@@ -37,7 +37,7 @@ const s = StyleSheet.create({
   },
   muted: { color: MUTED },
   bold: { fontWeight: 600 },
-  serif: { fontFamily: 'Fraunces', fontWeight: 500 },
+  serif: { fontFamily: 'Geist Serif', fontWeight: 400 },
   row: { flexDirection: 'row' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   rule: { marginTop: 14, borderTopWidth: 1.6, borderTopColor: ACCENT },
@@ -50,8 +50,7 @@ const s = StyleSheet.create({
   party: { flex: 1 },
   partyCustomer: { borderLeftWidth: 1.2, borderLeftColor: ACCENT, paddingLeft: 14 },
   partyName: {
-    fontFamily: 'Fraunces',
-    fontWeight: 500,
+    fontFamily: 'Geist Serif',
     fontSize: 12.5,
     marginTop: 5,
     marginBottom: 4,
@@ -123,9 +122,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   totalValue: {
-    fontFamily: 'Fraunces',
-    fontWeight: 500,
-    fontSize: 21,
+    fontFamily: 'Geist Serif',
+    fontSize: 22.5,
     lineHeight: 1,
     letterSpacing: -0.3,
   },
@@ -253,10 +251,9 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
             ) : null}
             <Text
               style={{
-                fontFamily: 'Fraunces',
-                fontWeight: 600,
-                fontSize: 13,
-                letterSpacing: -0.15,
+                fontFamily: 'Geist Serif',
+                fontSize: 14.5,
+                letterSpacing: -0.1,
               }}
             >
               {m.supplierName}
@@ -268,9 +265,8 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
             </Text>
             <Text
               style={{
-                fontFamily: 'Fraunces',
-                fontWeight: 500,
-                fontSize: 26,
+                fontFamily: 'Geist Serif',
+                fontSize: 28,
                 lineHeight: 1,
                 letterSpacing: -0.5,
                 paddingBottom: 2,
@@ -351,8 +347,7 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
             {m.footerText ? (
               <Text
                 style={{
-                  fontFamily: 'Fraunces',
-                  fontWeight: 500,
+                  fontFamily: 'Geist Serif',
                   fontSize: 12,
                   marginTop: 14,
                   color: accent,

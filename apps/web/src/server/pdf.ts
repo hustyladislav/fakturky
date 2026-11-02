@@ -8,8 +8,7 @@ const FONT_FILES = [
   'Inter-Regular.ttf',
   'Inter-Medium.ttf',
   'Inter-SemiBold.ttf',
-  'Fraunces-500.ttf',
-  'Fraunces-600.ttf',
+  'GeistSerif-Regular.ttf',
 ]
 let fontsLoaded: Promise<void> | null = null
 

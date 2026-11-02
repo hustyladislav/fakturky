@@ -49,7 +49,7 @@ export function BusinessCard({
         <div className="min-w-0 pt-0.5">
           <p
             className={cn(
-              'font-serif text-xl leading-6 font-medium break-words',
+              'font-serif text-xl leading-6 break-words',
               !name && 'text-muted-foreground/60',
             )}
           >

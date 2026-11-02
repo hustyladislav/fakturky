@@ -434,9 +434,7 @@ export function InvoiceSheet({
                 {...(decorative ? {} : { role: 'group', 'aria-label': m.total.label })}
               >
                 <span className="fk-label">{m.total.label}</span>
-                <strong className="fk-total-value fk-serif" style={{ fontWeight: 500 }}>
-                  {m.total.value}
-                </strong>
+                <strong className="fk-total-value fk-serif">{m.total.value}</strong>
               </div>
             </div>
           </div>

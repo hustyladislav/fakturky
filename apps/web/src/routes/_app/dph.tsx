@@ -233,7 +233,7 @@ function PayerPage({ profile }: { profile: Profile }) {
         </div>
         <div className="ml-auto text-right">
           <div className="label-caps">{t.deadline}</div>
-          <div className="font-serif text-2xl leading-8 font-medium tabular-nums">
+          <div className="font-serif text-2xl leading-8 tabular-nums">
             {r ? formatDateCs(r.deadline) : '…'}
           </div>
           <div className="text-xs text-muted-foreground">{t.deadlineHint}</div>
@@ -470,7 +470,7 @@ function Warnings({ report }: { report: Report }) {
                 <Badge variant={w.blocking ? 'destructive' : 'secondary'}>
                   {w.blocking ? t.warnings.blocking : t.warnings.info}
                 </Badge>
-                <span className="font-serif font-medium tabular-nums">
+                <span className="font-serif tabular-nums">
                   <DocLink report={report} id={w.documentId} />
                 </span>
               </div>
@@ -606,7 +606,7 @@ function DphSection({
   return (
     <section className="space-y-4 sheet p-5 sm:p-7">
       <div>
-        <h2 className="font-serif text-xl font-medium">{t.dph.title}</h2>
+        <h2 className="font-serif text-xl">{t.dph.title}</h2>
         <p className="text-sm text-muted-foreground">{t.dph.description}</p>
       </div>
       <ul className="divide-y border-y sm:hidden">
@@ -756,7 +756,7 @@ function KhSection({
   return (
     <section className="space-y-4 sheet p-5 sm:p-7">
       <div>
-        <h2 className="font-serif text-xl font-medium">{t.kh.title}</h2>
+        <h2 className="font-serif text-xl">{t.kh.title}</h2>
         <p className="text-sm text-muted-foreground">{t.kh.description}</p>
       </div>
 
@@ -868,7 +868,7 @@ function ShSection({ report }: { report: Report }) {
   return (
     <section className="space-y-3 sheet p-5 sm:p-7">
       <div>
-        <h2 className="font-serif text-xl font-medium">{t.sh.title}</h2>
+        <h2 className="font-serif text-xl">{t.sh.title}</h2>
         <p className="text-sm text-muted-foreground">{t.sh.description}</p>
       </div>
       {report.sh.length === 0 ? (
@@ -926,7 +926,7 @@ function Downloads({
   return (
     <section className="space-y-3 sheet p-5 sm:p-7">
       <div>
-        <h2 className="font-serif text-xl font-medium">{t.downloads.title}</h2>
+        <h2 className="font-serif text-xl">{t.downloads.title}</h2>
         <p className="text-sm text-muted-foreground">{t.downloads.description}</p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -951,7 +951,7 @@ function Downloads({
 function Guide() {
   return (
     <section className="space-y-3 sheet p-5 sm:p-7">
-      <h2 className="font-serif text-xl font-medium">{t.guide.title}</h2>
+      <h2 className="font-serif text-xl">{t.guide.title}</h2>
       <ol className="list-decimal space-y-1 pl-5 text-sm">
         {t.guide.steps.map((s) => (
           <li key={s}>{s}</li>

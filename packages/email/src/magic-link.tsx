@@ -3,6 +3,7 @@ import {
   Body,
   Button,
   Container,
+  Font,
   Head,
   Html,
   Preview,
@@ -15,13 +16,23 @@ const paper = '#F6F2EA'
 const ink = '#1B1A17'
 const muted = '#6B665B'
 const green = '#1F4D3C'
-const serif = 'Georgia, "Times New Roman", serif'
+// Geist Serif is served from the app's /fonts (clients without web-font support fall back to Georgia).
+const serif = '"Geist Serif", Georgia, "Times New Roman", serif'
+const serifFontUrl = `${BRAND.productionUrl}/fonts/GeistSerif-Regular.woff2`
 const sans = '-apple-system, "Segoe UI", Helvetica, Arial, sans-serif'
 
 export function MagicLinkEmail({ url }: { url: string }) {
   return (
     <Html lang="cs">
-      <Head />
+      <Head>
+        <Font
+          fontFamily="Geist Serif"
+          fallbackFontFamily={['Georgia', 'Times New Roman', 'serif']}
+          webFont={{ url: serifFontUrl, format: 'woff2' }}
+          fontWeight={400}
+          fontStyle="normal"
+        />
+      </Head>
       <Preview>{`Přihlášení do aplikace ${BRAND.name}`}</Preview>
       <Body style={{ backgroundColor: paper, margin: 0, padding: '32px 0', fontFamily: sans }}>
         <Container
@@ -33,7 +44,7 @@ export function MagicLinkEmail({ url }: { url: string }) {
             padding: 32,
           }}
         >
-          <Text style={{ fontFamily: serif, fontSize: 24, fontWeight: 600, color: ink, margin: 0 }}>
+          <Text style={{ fontFamily: serif, fontSize: 26, fontWeight: 400, color: ink, margin: 0 }}>
             {BRAND.name}.
           </Text>
           <Text style={{ fontSize: 16, color: ink, lineHeight: '24px' }}>

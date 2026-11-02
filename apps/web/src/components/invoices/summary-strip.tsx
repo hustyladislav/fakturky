@@ -23,7 +23,7 @@ export function crowns(amount: string): string {
 }
 
 /**
- * Filter chips as summary cards: micro-label, count (Fraunces) and the CZK sum underneath.
+ * Filter chips as summary cards: micro-label, count (Geist Serif) and the CZK sum underneath.
  * One card is always active (toggle buttons in a group).
  */
 export function SummaryStrip({
@@ -63,7 +63,7 @@ export function SummaryStrip({
               {b && (
                 <span
                   className={cn(
-                    'font-serif text-xl leading-6 font-medium tabular-nums',
+                    'font-serif text-xl leading-6 tabular-nums',
                     danger && 'text-destructive',
                   )}
                 >

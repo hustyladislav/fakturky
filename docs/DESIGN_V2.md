@@ -6,7 +6,7 @@ Review of all pages (`apps/web/.data/review/*`, 1440/390, light/dark) by the orc
 ## Diagnosis
 
 The **PDF invoice is beautiful; the app is not.** The PDF has: uppercase micro-labels with tracking, hairline rules,
-large Fraunces figures, a strict grid, white paper. The app has: beige bordered cards on a beige background, everything
+large serif figures, a strict grid, white paper. The app has: beige bordered cards on a beige background, everything
 the same weight, centered narrow columns with empty margins, plain bar blocks, native browser date inputs, forms that
 read like settings pages, an invoice detail that doesn't look like an invoice, no avatars, no motion, no data richness.
 
@@ -22,9 +22,9 @@ document: paper sheets on a desk, micro-labels, hairlines, serif numbers, tabula
 2. **Micro-label** utility (`.label-caps`): 11 px, 600, `letter-spacing: .08em`, uppercase, muted — used for every
    field label in read views, table headers, section eyebrows (exactly like the PDF).
 3. **Hairline** utility and `Separator` with 1 px `border` color; section headers = micro-label + hairline.
-4. **Figures.** `Amount` component: Fraunces for hero amounts (KPI, amount due), Inter `tnum` elsewhere; haléře dimmed;
+4. **Figures.** `Amount` component: Geist Serif (single weight 400) for hero amounts (KPI, amount due), Inter `tnum` elsewhere; haléře dimmed;
    negative amounts in muted red with a minus sign, not alarming red unless overdue.
-5. **PageHeader** component: Fraunces title (28/32), one-line context subtitle with live numbers ("32 dokladů ·
+5. **PageHeader** component: Geist Serif title (28/32, weight 400), one-line context subtitle with live numbers ("32 dokladů ·
    94 985 Kč neuhrazeno"), right-aligned actions, optional tabs row beneath with counts. Used on every page.
 6. **Avatar** with deterministic tinted initials (6 muted brand-compatible hues) for contacts and users.
 7. **StatusBadge v2**: 6 px dot + label, soft tint background, consistent widths; overdue shows days ("14 dní po
@@ -78,11 +78,11 @@ document: paper sheets on a desk, micro-labels, hairlines, serif numbers, tabula
 - Items: table with column headers (Popis, Množství, MJ, Cena, DPH, Celkem), inline totals per row, drag handle,
   "+ Přidat položku" row, Enter adds a row, ⌘⌫ deletes; description supports a second detail line.
 - Texts collapsed under "Další možnosti" (úvodní text, poznámka, soukromá poznámka, objednávka, jazyk).
-- **Sticky bottom action bar**: total due (Fraunces), "Uložit koncept", "Vystavit" (⌘↵), unsaved-changes indicator.
+- **Sticky bottom action bar**: total due (Geist Serif), "Uložit koncept", "Vystavit" (⌘↵), unsaved-changes indicator.
 
 ### Faktura detail
 - Two columns: left = **paper sheet** rendering of the actual document (same HTML twin as the editor preview, incl.
-  QR Platba, logo, signature) with subtle shadow; right rail (sticky): status + amount due hero (Fraunces), primary
+  QR Platba, logo, signature) with subtle shadow; right rail (sticky): status + amount due hero (Geist Serif), primary
   action, secondary actions, payment info (account, VS, QR), timeline (vertical, icons, who/when, "Označeno ručně" vs
   "Spárováno z banky"), related documents, public link.
 - Mobile: hero (status, amount due, due date), QR card, collapsed document, sticky primary action.

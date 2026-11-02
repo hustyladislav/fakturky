@@ -7,19 +7,11 @@
  */
 
 @font-face {
-  font-family: "Fakturky Fraunces";
-  font-weight: 500;
+  font-family: "Fakturky Geist Serif";
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url("../../fonts/Fraunces-500.ttf") format("truetype");
-}
-
-@font-face {
-  font-family: "Fakturky Fraunces";
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-  src: url("../../fonts/Fraunces-600.ttf") format("truetype");
+  src: url("../../fonts/GeistSerif-Regular.ttf") format("truetype");
 }
 
 .fk-sheet-wrap {
@@ -107,9 +99,9 @@
 }
 
 .fk-serif {
-  font-family: "Fakturky Fraunces", "Fraunces Variable", Georgia, serif;
-  font-weight: 500;
-  font-variation-settings: normal;
+  font-family: "Fakturky Geist Serif", "Geist Serif", Georgia, serif;
+  font-weight: 400;
+  font-synthesis: none;
 }
 
 .fk-muted {
@@ -165,10 +157,11 @@
 }
 
 .fk-supplier-name {
-  font-family: "Fakturky Fraunces", "Fraunces Variable", Georgia, serif;
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: -0.15px;
+  font-family: "Fakturky Geist Serif", "Geist Serif", Georgia, serif;
+  font-weight: 400;
+  font-synthesis: none;
+  font-size: 14.5px;
+  letter-spacing: -0.1px;
 }
 
 .fk-heading {
@@ -188,7 +181,7 @@
   padding-bottom: 2px;
   position: relative;
   top: 4px;
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1;
   letter-spacing: -0.5px;
 }
@@ -521,7 +514,7 @@
 .fk-total-value {
   position: relative;
   top: 2px;
-  font-size: 21px;
+  font-size: 22.5px;
   line-height: 1;
   letter-spacing: -0.3px;
   white-space: nowrap;

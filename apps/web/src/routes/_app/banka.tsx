@@ -403,9 +403,7 @@ function BankPage() {
                             <Sparkles className="size-3" /> {t.suggestion}
                           </p>
                           <p className="text-sm">
-                            <span className="font-serif text-base font-medium tabular-nums">
-                              {s.number}
-                            </span>
+                            <span className="font-serif text-base tabular-nums">{s.number}</span>
                             {s.customerName && (
                               <span className="text-muted-foreground"> · {s.customerName}</span>
                             )}

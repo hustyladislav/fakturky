@@ -6,10 +6,10 @@ import { moneyParts } from '../lib/money'
 const amountVariants = cva('whitespace-nowrap tabular-nums', {
   variants: {
     size: {
-      /** KPI / amount due: Fraunces. */
-      hero: 'font-serif text-[44px] leading-[1.05] font-medium tracking-[-0.02em]',
-      lg: 'font-serif text-[28px] leading-8 font-medium tracking-[-0.01em]',
-      md: 'font-serif text-xl leading-7 font-medium',
+      /** KPI / amount due: Geist Serif. */
+      hero: 'font-serif text-[44px] leading-[1.05] tracking-[-0.02em]',
+      lg: 'font-serif text-[28px] leading-8 tracking-[-0.01em]',
+      md: 'font-serif text-xl leading-7',
       /** Inline in tables and lists: Inter tabular. */
       inline: 'text-sm font-medium',
       sm: 'text-[13px]',
@@ -28,7 +28,7 @@ const amountVariants = cva('whitespace-nowrap tabular-nums', {
 })
 
 /**
- * Money amount from a decimal string. Hero sizes use Fraunces, inline uses Inter tabular;
+ * Money amount from a decimal string. Hero sizes use Geist Serif, inline uses Inter tabular;
  * haléře are dimmed; negative amounts get a real minus and a muted red (not alarming).
  * `animate` counts up once on first paint (reduced-motion safe).
  */

@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-router'
 import { RegisterServiceWorker } from '@/components/pwa/register-sw'
 import { cs } from '@/i18n/cs'
+import geistSerifRegular from '../../node_modules/geist/dist/fonts/geist-serif/GeistSerif-Regular.woff2?url'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -30,6 +31,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
     links: [
+      {
+        rel: 'preload',
+        href: geistSerifRegular,
+        as: 'font',
+        type: 'font/woff2',
+        crossOrigin: 'anonymous',
+      },
       { rel: 'stylesheet', href: appCss },
       { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
       { rel: 'icon', href: '/favicon-32.png', type: 'image/png', sizes: '32x32' },

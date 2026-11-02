@@ -27,9 +27,9 @@ function LogoMark({
         className="fill-primary-foreground"
         style={{
           fontFamily: 'var(--font-serif)',
-          fontWeight: 600,
+          fontWeight: 400,
+          fontSynthesis: 'none',
           fontSize: 23,
-          fontVariationSettings: '"opsz" 48',
         }}
       >
         {letter.charAt(0).toUpperCase()}
@@ -47,7 +47,7 @@ function LogoMark({
   )
 }
 
-/** Mark + wordmark (Fraunces 600). */
+/** Mark + wordmark (Geist Serif 400). */
 function Logo({
   name,
   className,
@@ -60,7 +60,7 @@ function Logo({
   return (
     <span className={cn('inline-flex items-center gap-2.5', className)}>
       <LogoMark letter={name.charAt(0)} className={markClassName} />
-      <span className="font-serif text-xl font-semibold tracking-tight">{name}</span>
+      <span className="font-serif text-xl tracking-tight">{name}</span>
     </span>
   )
 }

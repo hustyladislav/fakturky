@@ -45,8 +45,12 @@ Brand green is never a status.
 ## Typography
 
 - **Inter** (UI, tables, body) with `font-feature-settings: "tnum", "lnum", "cv11"`. Self-hosted via Fontsource, `latin-ext`.
-- **Fraunces** (opsz, 400–600, SOFT 0, WONK 0) only for: page titles, KPI amounts, document number and total on the
-  invoice, the wordmark. Never for body text on mobile.
+- **Geist Serif** (Vercel, SIL OFL 1.1; Regular only, ELSH axis at default 0) only for: page titles, KPI amounts,
+  document number and total on the invoice, the wordmark. Never for body text on mobile. **Single weight (400):** never
+  set `font-medium`/`font-semibold` on serif elements (`font-synthesis: none` forbids faux bold) — build hierarchy with
+  size, tracking and colour instead, and size serif a notch larger than a weighted face would need. Self-hosted from the
+  `geist` npm package (`geist/dist/fonts/geist-serif`), `font-display: swap`, Regular preloaded from the root route;
+  PDF uses the TTF made by `packages/pdf/scripts/geist-serif-to-ttf.py`; emails load it from `/fonts` with a Georgia fallback.
 - **JetBrains Mono** only for IBAN, account numbers, VS, API keys, code. **Never for amounts.**
 - Amounts: Czech format `148 500,00 Kč` with non-breaking spaces; the haléře part rendered at 60 % opacity in UI
   (not on the document). One notation per document (Kč for CZK, ISO code for others).
@@ -61,7 +65,7 @@ Icons: lucide-react, 16 px in UI, 1.5 stroke.
 ## Logo
 
 Rounded-square mark with the letter of the brand + a period ("F."). The dot is the one semantic, animatable
-element: it fills when an invoice is paid (a restrained ~1 s moment — no confetti). Wordmark in Fraunces 600.
+element: it fills when an invoice is paid (a restrained ~1 s moment — no confetti). Wordmark in Geist Serif 400.
 One-color version for PDFs. Generated from `BRAND.name`, so a rename only swaps the letter.
 
 ## Shell
@@ -91,13 +95,13 @@ One-color version for PDFs. Generated from `BRAND.name`, so a rename only swaps 
 - White paper in both themes; black text; brand color only as thin rule + logo. **No white-on-dark boxes**, no
   color-only meaning — prints in grayscale and OCRs cleanly.
 - Header: logo (optional), title by type and VAT status — "Faktura" (neplátce), "Faktura – daňový doklad" (plátce),
-  "Zálohová faktura", "Opravný daňový doklad"/"Opravný doklad", "Daňový doklad k přijaté platbě" — and number in Fraunces.
+  "Zálohová faktura", "Opravný daňový doklad"/"Opravný doklad", "Daňový doklad k přijaté platbě" — and number in Geist Serif.
 - Dodavatel / Odběratel columns with IČO, DIČ; registry note; "Neplátce DPH" or "Plátce DPH" consistent with profile.
 - Dates block: Datum vystavení, Datum uskutečnění zdanitelného plnění (payers), Datum splatnosti; Forma úhrady.
 - Payment block: account number, IBAN, BIC, VS, (KS), amount due, QR Platba (CZK) / EPC QR (EUR) with label.
 - Items table: Popis, Množství, MJ, Cena za MJ, (DPH %), Celkem. Payers: VAT recap per rate (Základ, DPH, Celkem),
   CZK amounts + exchange rate line for foreign currency, rounding line if any, legal text for special treatments.
-- Total: large Fraunces figure on paper, framed by hairlines (not a filled box).
+- Total: large Geist Serif figure on paper, framed by hairlines (not a filled box).
 - Footer: "Vystavil(a)", contact, page "Strana 1 / 1", small "Vystaveno ve {BRAND.name}" (removable in settings).
 - Languages: cs, sk, en.
 

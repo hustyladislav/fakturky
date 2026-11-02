@@ -2,8 +2,18 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter/wght.css";
-@import "@fontsource-variable/fraunces/opsz.css";
 @import "@fontsource-variable/jetbrains-mono/wght.css";
+
+/* Geist Serif (Vercel, SIL OFL 1.1), self-hosted from the `geist` package. Single weight (400) -> display only;
+   never request 500/600 on serif elements (synthetic bold is disabled below). Preloaded from the root route. */
+@font-face {
+  font-family: "Geist Serif";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../node_modules/geist/dist/fonts/geist-serif/GeistSerif-Regular.woff2")
+    format("woff2");
+}
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
@@ -51,7 +61,7 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Fraunces Variable", ui-serif, Georgia, serif;
+  --font-serif: "Geist Serif", ui-serif, Georgia, serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
   --color-success: var(--success);
   --color-warning: var(--warning);
@@ -183,7 +193,8 @@
   h1,
   h2 {
     font-family: var(--font-serif);
-    font-variation-settings: "opsz" 48;
+    font-weight: 400;
+    font-synthesis: none;
     letter-spacing: -0.01em;
   }
   input[type="checkbox"],
@@ -209,7 +220,8 @@
     font-family: var(--font-sans);
   }
   .font-serif {
-    font-variation-settings: "opsz" 48;
+    font-weight: 400;
+    font-synthesis: none;
   }
 }
 

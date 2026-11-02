@@ -24,7 +24,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     <AuthLayout>
       <div className="space-y-6">
         <div className="space-y-1.5">
-          <h1 className="font-serif text-[34px] leading-tight font-medium tracking-[-0.015em]">
+          <h1 className="font-serif text-[34px] leading-tight tracking-[-0.015em]">
             {signUp ? cs.auth.signUpTitle : cs.auth.signInTitle}
           </h1>
           <p className="text-sm text-muted-foreground">

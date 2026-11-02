@@ -117,7 +117,7 @@ function Templates() {
               <MiniPaper lines={tpl.body.lines} currency={currency} net={net} />
               <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
                 <div>
-                  <h2 className="font-serif text-lg leading-6 font-medium">{tpl.name}</h2>
+                  <h2 className="font-serif text-lg leading-6">{tpl.name}</h2>
                   <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[13px] text-muted-foreground">
                     <span>{t.lines(tpl.body.lines.length)}</span>
                     <span aria-hidden>·</span>
@@ -361,7 +361,7 @@ function MiniPaper({
           <span className="text-[7px] font-semibold tracking-widest text-[#6b665b] uppercase">
             {currency}
           </span>
-          <span className="font-serif text-sm font-medium tabular-nums">
+          <span className="font-serif text-sm tabular-nums">
             {net.toLocaleString('cs-CZ', { maximumFractionDigits: 0 })}
           </span>
         </div>

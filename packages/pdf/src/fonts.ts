@@ -26,7 +26,7 @@ function file(name: string): string {
 }
 
 /**
- * Registers bundled Inter + Fraunces (latin-ext) and disables hyphenation.
+ * Registers bundled Inter + Geist Serif and disables hyphenation.
  *
  * Re-registers from scratch on every call: react-pdf keeps the loaded fontkit font (and its glyph
  * subset) on the registered source, so reusing it across documents corrupts glyph/ToUnicode maps of every
@@ -49,11 +49,9 @@ export function registerFonts(): void {
     ],
   })
   Font.register({
-    family: 'Fraunces',
-    fonts: [
-      { src: file('Fraunces-500.ttf'), fontWeight: 500 },
-      { src: file('Fraunces-600.ttf'), fontWeight: 600 },
-    ],
+    // Single weight: serif text is display-only and never bold.
+    family: 'Geist Serif',
+    fonts: [{ src: file('GeistSerif-Regular.ttf'), fontWeight: 400 }],
   })
   Font.registerHyphenationCallback((word) => [word])
 }

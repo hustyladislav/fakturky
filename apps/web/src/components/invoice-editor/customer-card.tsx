@@ -100,7 +100,7 @@ export function CustomerCard({
       <div className="flex items-start gap-3">
         <Avatar name={value.name} size="md" />
         <div className="min-w-0 flex-1 text-sm">
-          <div className="font-serif text-[17px] leading-6 font-medium">{value.name}</div>
+          <div className="font-serif text-[17px] leading-6">{value.name}</div>
           {line.map((l) => (
             <div key={l} className="text-muted-foreground">
               {l}

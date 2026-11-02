@@ -37,7 +37,7 @@ function EmptyState({
           </span>
         )
       )}
-      <h2 className="font-serif text-xl font-medium">{title}</h2>
+      <h2 className="font-serif text-xl">{title}</h2>
       {children && <p className="max-w-sm text-sm text-muted-foreground">{children}</p>}
       {action && <div className="mt-1">{action}</div>}
     </div>

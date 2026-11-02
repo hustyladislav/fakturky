@@ -481,7 +481,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           <div className="space-y-3 p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               {id ? (
-                <span className="font-serif text-xl font-medium">{cs.invoices.type[type]}</span>
+                <span className="font-serif text-xl">{cs.invoices.type[type]}</span>
               ) : (
                 <NativeSelect
                   aria-label={t.documentType}
@@ -509,9 +509,7 @@ export function InvoiceForm({ id }: { id?: string }) {
               <SectionTitle>{t.supplier}</SectionTitle>
               {supplier ? (
                 <div className="space-y-0.5 text-sm">
-                  <div className="font-serif text-[17px] leading-6 font-medium">
-                    {supplier.legalName}
-                  </div>
+                  <div className="font-serif text-[17px] leading-6">{supplier.legalName}</div>
                   {supplierAddress?.street && (
                     <div className="text-muted-foreground">{supplierAddress.street}</div>
                   )}

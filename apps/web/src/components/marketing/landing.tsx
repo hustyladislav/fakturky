@@ -203,14 +203,14 @@ function ProductMock() {
             <div className="mx-auto max-w-sm rounded-md border bg-white p-5 text-[#1B1A17] shadow-sm">
               <div className="flex items-baseline justify-between">
                 <span className="text-xs text-neutral-500">{t.mock.invoice}</span>
-                <span className="font-serif text-lg font-semibold">{t.mock.number}</span>
+                <span className="font-serif text-lg">{t.mock.number}</span>
               </div>
               <div className="mt-1 text-sm">{t.mock.customer}</div>
               <div className="my-4 h-px bg-neutral-200" />
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <div className="text-xs text-neutral-500">{t.mock.total}</div>
-                  <div className="font-serif text-3xl font-medium">24&nbsp;200,00&nbsp;Kč</div>
+                  <div className="font-serif text-3xl">24&nbsp;200,00&nbsp;Kč</div>
                 </div>
                 <div className="text-center">
                   <div className="grid size-16 grid-cols-13 gap-px">

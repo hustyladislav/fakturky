@@ -9,6 +9,7 @@ import {
   Scripts,
   useRouter,
 } from '@tanstack/react-router'
+import { RegisterServiceWorker } from '@/components/pwa/register-sw'
 import { cs } from '@/i18n/cs'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -18,7 +19,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: `${cs.brand} — ${cs.meta.title}` },
       { name: 'description', content: cs.meta.description },
-      { name: 'theme-color', content: '#1F4D3C' },
+      { name: 'theme-color', content: '#F6F2EA', media: '(prefers-color-scheme: light)' },
+      { name: 'theme-color', content: '#121310', media: '(prefers-color-scheme: dark)' },
       { property: 'og:type', content: 'website' },
       { property: 'og:locale', content: 'cs_CZ' },
       { property: 'og:site_name', content: cs.brand },
@@ -56,6 +58,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         {children}
         <Toaster />
+        <RegisterServiceWorker />
         <Scripts />
       </body>
     </html>

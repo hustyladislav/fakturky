@@ -4,6 +4,14 @@ import { privacySections, termsSections } from './legal'
 /** All user-facing copy lives here. Natural Czech, correct diacritics. */
 export const cs = {
   brand: BRAND.name,
+  pwa: {
+    title: 'Přidejte si aplikaci na plochu',
+    android: 'Otevře se rychleji a bez adresního řádku, jako běžná aplikace.',
+    install: 'Přidat na plochu',
+    ios: 'V Safari klepněte na',
+    iosEnd: 'Sdílet a zvolte „Přidat na plochu“.',
+    dismiss: 'Skrýt',
+  },
   meta: {
     title: 'Fakturace zdarma pro živnostníky a firmy',
     description:

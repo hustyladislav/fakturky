@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { lazy, type ReactNode, Suspense, useMemo, useState } from 'react'
 import { clearAssistantStorage } from '@/components/assistant/assistant-storage'
+import { InstallHint } from '@/components/pwa/install-hint'
 import { cs } from '@/i18n/cs'
 import { NEW_INVOICE_PATH, navItems } from './nav'
 import { useRecordRecent } from './recent-pages'
@@ -166,6 +167,7 @@ function ShellInner({
           </div>
         </header>
         <main id="obsah" className="mx-auto w-full max-w-[1200px] px-4 py-6 pb-28 md:px-8 md:pb-10">
+          <InstallHint />
           {children}
         </main>
       </div>

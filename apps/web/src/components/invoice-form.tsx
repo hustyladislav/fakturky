@@ -23,6 +23,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { QuickAccountForm } from '@/components/bank/quick-account-form'
 import { cs } from '@/i18n/cs'
 import { formToSheet } from '@/lib/document-sheet'
 import { apiErrorMessage } from '@/lib/errors'
@@ -367,10 +368,19 @@ export function InvoiceForm({ id }: { id?: string }) {
     },
   })
 
-  // Ctrl/⌘ + Enter issues from anywhere on the page.
+  // Ctrl/⌘ + Enter issues from anywhere on the page. Without a bank account the first press asks
+  // "pokračovat?" and the second one issues: an invoice with no QR is the costliest silent failure.
+  const [confirmNoBank, setConfirmNoBank] = useState(false)
+  const missingBank = accounts.isSuccess && !effectiveAccount
   const issueRef = useRef<() => void>(() => {})
   issueRef.current = () => {
-    if (ready && !save.isPending) save.mutate(true)
+    if (!ready || save.isPending) return
+    if (missingBank && !confirmNoBank) {
+      setConfirmNoBank(true)
+      return
+    }
+    setConfirmNoBank(false)
+    save.mutate(true)
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -711,28 +721,39 @@ export function InvoiceForm({ id }: { id?: string }) {
           <div className="p-5 sm:p-6">
             <SectionTitle>{t.payment}</SectionTitle>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="bank">{t.bankAccount}</Label>
-                <NativeSelect
-                  id="bank"
-                  value={effectiveAccount}
-                  onChange={(e) => setBankAccountId(e.target.value)}
-                >
-                  {currencyAccounts.length === 0 && <option value="">{t.bankAccountNone}</option>}
-                  {currencyAccounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.label}
-                    </option>
-                  ))}
-                </NativeSelect>
-                {account && (
-                  <p className="text-muted-foreground text-xs tabular-nums">
-                    {account.accountNumber
-                      ? `${account.accountNumber}/${account.bankCode}`
-                      : account.iban}
-                  </p>
-                )}
-              </div>
+              {accounts.isSuccess && accounts.data.length === 0 ? (
+                <div className="space-y-2 sm:col-span-2">
+                  <p className="text-muted-foreground text-sm">{t.bankAddInline}</p>
+                  <QuickAccountForm
+                    onCreated={() =>
+                      queryClient.invalidateQueries({ queryKey: orpc.bankAccounts.key() })
+                    }
+                  />
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label htmlFor="bank">{t.bankAccount}</Label>
+                  <NativeSelect
+                    id="bank"
+                    value={effectiveAccount}
+                    onChange={(e) => setBankAccountId(e.target.value)}
+                  >
+                    {currencyAccounts.length === 0 && <option value="">{t.bankAccountNone}</option>}
+                    {currencyAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.label}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                  {account && (
+                    <p className="text-muted-foreground text-xs tabular-nums">
+                      {account.accountNumber
+                        ? `${account.accountNumber}/${account.bankCode}`
+                        : account.iban}
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="method">{t.paymentMethod}</Label>
                 <NativeSelect
@@ -823,6 +844,33 @@ export function InvoiceForm({ id }: { id?: string }) {
 
       {/* Sticky action bar: the total, whether anything is unsaved, and the two ways out. */}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 -mx-4 mt-6 border-t bg-background/90 px-4 py-3 backdrop-blur md:bottom-0 md:-mx-8 md:px-8">
+        {confirmNoBank && missingBank && (
+          <div
+            role="alert"
+            className="mx-auto mb-3 flex max-w-[1136px] flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-warning/50 bg-warning/14 px-3 py-2 text-sm"
+          >
+            <span className="min-w-0 flex-1">{t.noBankConfirm}</span>
+            <span className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                autoFocus
+                onClick={() => issueRef.current()}
+                disabled={save.isPending}
+              >
+                {t.noBankConfirmYes}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setConfirmNoBank(false)}
+              >
+                {cs.common.cancel}
+              </Button>
+            </span>
+          </div>
+        )}
         <div className="mx-auto flex max-w-[1136px] items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="label-caps max-sm:sr-only">{t.totalShort}</div>
@@ -858,7 +906,7 @@ export function InvoiceForm({ id }: { id?: string }) {
             type="button"
             title={t.issueHint}
             disabled={save.isPending || !ready}
-            onClick={() => save.mutate(true)}
+            onClick={() => issueRef.current()}
           >
             {save.isPending && <Loader2 className="animate-spin" aria-hidden />}
             {t.issue}

@@ -15,3 +15,4 @@ playwright-report
 test-results
 .claude/worktrees
 design/explorations/shots
+.claude/settings.local.json

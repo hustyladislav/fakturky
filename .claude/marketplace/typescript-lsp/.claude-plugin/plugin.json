@@ -1,0 +1,6 @@
+{
+  "name": "repo-typescript-lsp",
+  "version": "1.0.0",
+  "description": "TypeScript 7 native language server (tsc --lsp) from this repo's node_modules, so pnpm install is the only setup.",
+  "author": { "name": "Repository" }
+}

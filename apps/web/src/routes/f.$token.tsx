@@ -10,9 +10,13 @@ const t = cs.publicInvoice
 
 export const Route = createFileRoute('/f/$token')({
   loader: async ({ params }) => {
-    const invoice = await client.public.invoice({ token: params.token }).catch(() => null)
-    if (!invoice) throw notFound()
-    return invoice
+    try {
+      return await client.public.invoice({ token: params.token })
+    } catch (e) {
+      // Only an unknown token is a 404; outages and other failures must surface as errors.
+      if ((e as { code?: string }).code === 'NOT_FOUND') throw notFound()
+      throw e
+    }
   },
   notFoundComponent: () => (
     <main className="mx-auto max-w-md p-6 pt-24 text-center">

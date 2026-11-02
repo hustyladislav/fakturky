@@ -911,6 +911,8 @@ export const documentsRepo = {
     actorId: string,
     id: string,
     vatRate: '21' | '12',
+    /** Splits the received amount over several VAT rates (must add up to the amount received). */
+    allocations?: { vatRate: '21' | '12'; amount: string }[],
   ) {
     const src = await this.get(db, orgId, id)
     if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
@@ -929,6 +931,17 @@ export const documentsRepo = {
       )
     }
     const paid = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
+    const split = allocations?.length ? allocations : [{ vatRate, amount: toFixed(paid, 2) }]
+    if (
+      new Set(split.map((a) => a.vatRate)).size !== split.length ||
+      split.some((a) => parseDecimal(a.amount).lte(0)) ||
+      !split.reduce((s, a) => s.plus(parseDecimal(a.amount)), new Decimal(0)).eq(paid)
+    ) {
+      throw new DocumentError(
+        'BAD_REQUEST',
+        `The allocations must use each VAT rate once and add up to the amount received (${toFixed(paid, 2)})`,
+      )
+    }
     // The received amount is VAT-inclusive: the draft is priced gross and VAT is extracted (A × r / (100 + r)).
     // The tax point is the day the payment was received; foreign advances use the ČNB rate of that day.
     const paidOn =
@@ -975,18 +988,19 @@ export const documentsRepo = {
           language: src.language as 'cs' | 'sk' | 'en',
           paymentMethod: src.paymentMethod,
           introText: `Přijatá záloha na základě zálohové faktury ${src.number}`,
-          lines: [
-            {
-              description: `Přijatá záloha (zálohová faktura ${src.number})`,
-              quantity: '1',
-              unit: null,
-              unitPrice: toFixed(paid, 2),
-              vatRate,
-              vatTreatment: 'standard' as const,
-              vatNote: null,
-              discountPercent: '0',
-            },
-          ],
+          lines: split.map((a) => ({
+            description:
+              split.length > 1
+                ? `Přijatá záloha ${a.vatRate} % (zálohová faktura ${src.number})`
+                : `Přijatá záloha (zálohová faktura ${src.number})`,
+            quantity: '1',
+            unit: null,
+            unitPrice: toFixed(parseDecimal(a.amount), 2),
+            vatRate: a.vatRate,
+            vatTreatment: 'standard' as const,
+            vatNote: null,
+            discountPercent: '0',
+          })),
         },
         { relatedDocumentId: id, pricesIncludeVat: true },
       )
@@ -1006,7 +1020,7 @@ export const documentsRepo = {
     const profile = await loadProfile(db, orgId)
     const payer = vatApplies(profile, 'invoice')
     // A VAT payer deducts the advance as shown on the tax receipt (base and VAT per rate).
-    let receipt: { number: string | null; rate: string; base: string } | null = null
+    let receipt: { number: string | null; parts: { rate: string; base: string }[] } | null = null
     if (payer) {
       const [r] = await db
         .select()
@@ -1020,19 +1034,23 @@ export const documentsRepo = {
             isNull(document.deletedAt),
           ),
         )
-      const [rl] = r
+      const rls = r
         ? await db
             .select()
             .from(documentLine)
             .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, r.id)))
+            .orderBy(asc(documentLine.position))
         : []
-      if (!r || !rl) {
+      if (!r || rls.length === 0) {
         throw new DocumentError(
           'PRECONDITION_FAILED',
           'Issue the tax receipt for the received advance first',
         )
       }
-      receipt = { number: r.number, rate: rl.vatRate, base: rl.lineSubtotal }
+      receipt = {
+        number: r.number,
+        parts: rls.map((rl) => ({ rate: rl.vatRate, base: rl.lineSubtotal })),
+      }
     }
     const advance = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
     const draft = await db.transaction(async (txn) => {
@@ -1075,31 +1093,36 @@ export const documentsRepo = {
               unit: l.unit,
               unitPrice: l.unitPrice,
               // Proforma lines carry no VAT rate; a payer's final invoice uses the receipt's rate.
-              vatRate: receipt && Number(l.vatRate) === 0 ? receipt.rate : l.vatRate,
+              vatRate:
+                receipt && Number(l.vatRate) === 0
+                  ? (receipt.parts[0]?.rate ?? l.vatRate)
+                  : l.vatRate,
               vatTreatment: l.vatTreatment as VatTreatment,
               vatNote: l.vatNote,
               discountPercent: l.discountPercent,
             })),
-            receipt
-              ? {
-                  description: `Odpočet zálohy (daňový doklad k přijaté platbě ${receipt.number})`,
+            ...(receipt
+              ? receipt.parts.map((part) => ({
+                  description: `Odpočet zálohy ${part.rate} % (daňový doklad k přijaté platbě ${receipt.number})`,
                   quantity: '1',
                   unit: null,
-                  unitPrice: parseDecimal(receipt.base).negated().toString(),
-                  vatRate: receipt.rate,
+                  unitPrice: parseDecimal(part.base).negated().toString(),
+                  vatRate: part.rate,
                   vatTreatment: 'standard' as const,
                   vatNote: null,
                   discountPercent: '0',
-                }
-              : {
-                  description: `Uhrazená záloha (zálohová faktura ${src.number})`,
-                  quantity: '1',
-                  unit: null,
-                  unitPrice: advance.negated().toString(),
-                  vatRate: '0',
-                  vatTreatment: 'standard' as const,
-                  discountPercent: '0',
-                },
+                }))
+              : [
+                  {
+                    description: `Uhrazená záloha (zálohová faktura ${src.number})`,
+                    quantity: '1',
+                    unit: null,
+                    unitPrice: advance.negated().toString(),
+                    vatRate: '0',
+                    vatTreatment: 'standard' as const,
+                    discountPercent: '0',
+                  },
+                ]),
           ],
         },
         { relatedDocumentId: id },

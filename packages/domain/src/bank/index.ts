@@ -7,6 +7,7 @@ export { parseAbo } from './abo.ts'
 export { parseCamt053 } from './camt.ts'
 export { detectCsvFormat, parseBankCsv, readDelimited } from './csv.ts'
 export { decodeBankFile, parseBankAmount, parseBankDate } from './text.ts'
+export * from './matching.ts'
 export * from './types.ts'
 export * from '../integrations/fio.ts'
 

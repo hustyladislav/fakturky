@@ -227,6 +227,19 @@ export function InvoiceForm({ id }: { id?: string }) {
 
   const [createdId, setCreatedId] = useState<string | undefined>()
   const [issueError, setIssueError] = useState<string | null>(null)
+  // A refused issue on a brand-new invoice moves to the saved draft's URL; carry the message across.
+  useEffect(() => {
+    if (!id) return
+    try {
+      const kept = sessionStorage.getItem(`issueError:${id}`)
+      if (kept) {
+        setIssueError(kept)
+        sessionStorage.removeItem(`issueError:${id}`)
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, [id])
   const draftId = id ?? createdId
 
   const save = useMutation({
@@ -245,6 +258,14 @@ export function InvoiceForm({ id }: { id?: string }) {
         // Keep the saved draft: a retry updates it instead of creating a second one.
         await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
         setCreatedId(doc.id)
+        if (!id) {
+          try {
+            sessionStorage.setItem(`issueError:${doc.id}`, apiErrorMessage(e))
+          } catch {
+            /* storage unavailable */
+          }
+          navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+        }
         throw e
       }
     },
@@ -620,7 +641,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           type="button"
           variant="outline"
           className="flex-1 sm:flex-none"
-          disabled={save.isPending}
+          disabled={save.isPending || !ready}
           onClick={() => save.mutate(false)}
         >
           {t.saveDraft}
@@ -628,7 +649,7 @@ export function InvoiceForm({ id }: { id?: string }) {
         <Button
           type="button"
           className="flex-[2] sm:flex-none"
-          disabled={save.isPending}
+          disabled={save.isPending || !ready}
           onClick={() => save.mutate(true)}
         >
           {t.issue}

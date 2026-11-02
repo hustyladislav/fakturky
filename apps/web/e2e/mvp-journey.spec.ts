@@ -59,6 +59,7 @@ const documentId = (page: Page) => new URL(page.url()).pathname.split('/').pop()
 for (const v of variants) {
   test(`MVP journey — ${v.name}`, async ({ page, browser }) => {
     const customerName = 'E2E Odběratel s.r.o.'
+    let draftUrl = ''
 
     await test.step('sign up (email + password) and land in onboarding', async () => {
       await signUp(page, testEmail(v.tag))
@@ -103,7 +104,9 @@ for (const v of variants) {
         await expect(alert).toContainText('Daňový doklad vyžaduje údaje odběratele')
         await expect(alert).toContainText('adresu')
         await expect(alert).toContainText('IČO nebo DIČ')
-        await expect(page).toHaveURL(/\/faktury\/nova$/)
+        // The saved draft's URL is kept, so a refresh or the contacts link does not lose it.
+        await expect(page).toHaveURL(/\/faktury\/[^/]+\/upravit$/)
+        draftUrl = page.url()
       })
       await test.step('completing the contact lets the same draft be issued', async () => {
         await page.goto('/kontakty')
@@ -120,9 +123,8 @@ for (const v of variants) {
 
     await test.step('issue allocates the number YYYY-0001', async () => {
       if (v.vatPayer) {
-        // The unsaved form was left; the refused draft exists in the list — open and issue it.
-        await page.goto('/faktury?filter=draft')
-        await page.getByRole('link', { name: 'Koncept' }).first().click()
+        await page.goto(draftUrl)
+        await expect(page.getByText(customerName).first()).toBeVisible()
       }
       await page.getByRole('button', { name: 'Vystavit', exact: true }).click()
       await page.waitForURL(/\/faktury\/[^/]+$/)

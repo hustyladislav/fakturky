@@ -6,7 +6,8 @@ export const dashboardRouter = {
   summary: procedure({
     mcp: {
       name: 'get_dashboard_summary',
-      title: 'Business overview: monthly turnover, unpaid, overdue, VAT registration limit',
+      title:
+        'Business overview: 12-month turnover (paid/unpaid), received payments, unpaid, overdue, VAT registration limit',
       readOnly: true,
     },
     openapi: {
@@ -21,6 +22,9 @@ export const dashboardRouter = {
     .output(
       z.object({
         monthTurnover: z.string(),
+        monthIssuedCount: z.number().describe('Invoices with a tax date in the current month'),
+        monthReceived: z.string().describe('Payments received this month (CZK)'),
+        unpaidCount: z.number(),
         unpaid: z.string(),
         overdue: z.string(),
         overdueCount: z.number(),
@@ -35,7 +39,17 @@ export const dashboardRouter = {
             percent: z.number(),
           })
           .nullable(),
-        months: z.array(z.object({ month: z.string(), turnover: z.string() })),
+        months: z
+          .array(
+            z.object({
+              month: z.string().describe('YYYY-MM'),
+              turnover: z.string().describe('Net turnover (credit notes included)'),
+              paid: z.string().describe('Paid part of the turnover'),
+              unpaid: z.string().describe('Turnover not paid yet'),
+              received: z.string().describe('Payments received in the month'),
+            }),
+          )
+          .describe('Last 12 months, oldest first'),
       }),
     )
     .handler(({ context }) => dashboardRepo.summary(context.db, context.principal.organizationId)),

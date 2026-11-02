@@ -14,6 +14,16 @@ import {
 /** WCAG 2.x A + AA over every page, in both themes. Violations are listed with their selectors. */
 async function expectNoViolations(page: Page, label: string) {
   await page.waitForLoadState('networkidle')
+  // Let finite animations (dialog pop-in, bar growth, count-up) finish: axe reads the colours that are
+  // painted right now, so a half-transparent popover would be measured against the page behind it.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  )
   const { violations } = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze()

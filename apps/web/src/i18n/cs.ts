@@ -358,6 +358,11 @@ export const cs = {
     new: 'Nová faktura',
     empty: 'Zatím nemáte žádné faktury.',
     emptyFiltered: 'Nic neodpovídá zvolenému filtru.',
+    emptyFilteredBy: (search: string | null, filters: string[]) => {
+      const parts = [search ? `hledání „${search}“` : null, ...filters].filter(Boolean)
+      return `Nic nenalezeno: ${parts.join(' · ')}`
+    },
+    paidOn: (date: string) => `Zaplaceno ${date}`,
     emptyCta: 'Vystavit první fakturu',
     search: 'Hledat podle čísla, odběratele nebo VS…',
     subtitle: (count: number, unpaid: string | null) =>
@@ -374,7 +379,7 @@ export const cs = {
     issuedLabel: 'vystaveno',
     noMonth: 'Bez data',
     noNumber: 'Bez čísla',
-    resetFilter: 'Zrušit filtr',
+    resetFilter: 'Zrušit filtry',
     loadMore: 'Načíst další',
     sortBy: (column: string) => `Seřadit podle: ${column}`,
     keyboardHint: 'J / K pohyb · Enter otevřít · X vybrat',
@@ -485,6 +490,16 @@ export const cs = {
       taxableDate: 'DUZP (datum zdanitelného plnění)',
       taxableHint: 'Den, kdy nastalo plnění. U plátců DPH určuje, do kterého měsíce DPH patří.',
       dueIn: (days: number) => `${days} dní`,
+      dueSummary: (days: number, date: string) => {
+        const when = new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' }).format(
+          new Date(`${date}T12:00:00`),
+        )
+        if (days <= 0) return `Splatnost ihned (${when})`
+        const unit = days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'
+        return `Splatnost za ${days} ${unit} (${when})`
+      },
+      datesEdit: 'upravit',
+      datesHide: 'skrýt',
       today: 'Dnes',
       currency: 'Měna',
       exchangeRate: 'Kurz ČNB (Kč za 1 jednotku)',
@@ -506,6 +521,9 @@ export const cs = {
       payment: 'Platba',
       bankAccount: 'Bankovní účet',
       bankAccountNone: 'Žádný účet – přidejte ho v Nastavení',
+      bankAddInline: 'Přidejte účet, ať faktura ponese číslo účtu a QR platbu.',
+      noBankConfirm: 'Faktura nebude mít QR platbu ani číslo účtu — pokračovat?',
+      noBankConfirmYes: 'Vystavit i tak',
       paymentMethod: 'Forma úhrady',
       methods: { bank_transfer: 'Převodem', cash: 'Hotově', card: 'Kartou' },
       texts: 'Texty',
@@ -547,6 +565,7 @@ export const cs = {
         `Daňový doklad vyžaduje údaje odběratele. Doplňte u kontaktu: ${names.join(', ')}.`,
       registryNoteMissing:
         'V nastavení chybí zápis v rejstříku (např. „Fyzická osoba zapsaná v živnostenském rejstříku“). Podnikatelé ho mají na fakturách uvádět.',
+      registryNoteDismiss: 'Skrýt upozornění',
       needProfile: 'Než vystavíte fakturu, vyplňte prosím údaje o své firmě v Nastavení.',
     },
     detail: {
@@ -560,7 +579,15 @@ export const cs = {
       markPaidPartial: 'Přijatá částka',
       markPaidDate: 'Datum platby',
       markPaidMethod: 'Způsob platby',
-      markPaidConfirm: 'Označit jako zaplacenou',
+      markPaidConfirm: 'Uložit platbu',
+      markPaidMore: 'Další možnosti platby',
+      markPaidOther: 'Jiná částka nebo datum…',
+      undo: 'Vrátit zpět',
+      share: 'Sdílet',
+      shareCopied: 'Zkopírováno',
+      shareText: (what: string, amount: string, due: string | null) =>
+        `${what}, ${amount}${due ? `, splatnost ${due}` : ''}.`,
+      copyFailed: 'Odkaz se nepodařilo zkopírovat. Zkopírujte ho z karty Veřejný odkaz.',
       markUnpaid: 'Označit jako neuhrazenou',
       duplicate: 'Duplikovat',
       cancel: 'Stornovat',
@@ -1251,7 +1278,14 @@ export const cs = {
     autoMatch: 'Spárovat znovu',
     allAccounts: 'Všechny účty',
     account: 'Bankovní účet',
-    filters: { unmatched: 'Nespárované', matched: 'Spárované', ignored: 'Ignorované' },
+    filters: {
+      unmatched: 'Nespárované',
+      matched: 'Spárované',
+      ignored: 'Ignorované',
+      outgoing: 'Odchozí',
+    },
+    emptyOutgoingTitle: 'Žádné odchozí platby',
+    emptyOutgoing: 'Odchozí platby z výpisu se ukládají jen pro přehled, s fakturami se nepárují.',
     search: 'Hledat podle názvu, zprávy nebo symbolu',
     columns: {
       date: 'Datum',
@@ -1314,9 +1348,45 @@ export const cs = {
       message: 'Zpráva',
     },
     noColumn: '— žádný —',
-    imported: (n: number, dup: number, matched: number) =>
-      `Nahráno ${n} nových plateb${dup ? `, ${dup} už bylo v systému` : ''}${matched ? `, ${matched} spárováno s fakturami` : ''}.`,
-    skippedRows: (n: number) => `${n} řádků se nepodařilo přečíst a byly přeskočeny.`,
+    dropTitle: 'Přetáhněte výpis sem',
+    dropOr: 'nebo klikněte a vyberte soubor',
+    dropActive: 'Pusťte soubor pro načtení',
+    previewTitle: 'Co se nahraje',
+    previewRows: (n: number) => `Řádků ve výpisu: ${n}`,
+    previewIncoming: (n: number) => `příchozí: ${n}`,
+    previewOutgoing: (n: number) => `odchozí: ${n}`,
+    previewIncomingHint: 'Příchozí platby se spárují s fakturami podle variabilního symbolu.',
+    previewOutgoingHint: 'Odchozí platba',
+    previewOutgoingNote: 'uloží se, nepáruje se',
+    previewMore: (n: number) => `…a dalších ${n} řádků`,
+    previewSkipped: (n: number) => `Řádků, které nelze přečíst a přeskočí se: ${n}`,
+    previewUnreadable: 'Soubor se nepodařilo přečíst. Zkontrolujte, že jde o výpis z banky.',
+    previewColumns: { date: 'Datum', who: 'Protistrana', amount: 'Částka', result: 'Dopad' },
+    resultTitle: 'Výpis je nahraný',
+    resultRows: (n: number) => `Zpracováno řádků: ${n}`,
+    resultTruncated: 'Zobrazeno prvních 500 řádků.',
+    resultAgain: 'Nahrát další',
+    resultDone: 'Hotovo',
+    resultGroups: {
+      matched: 'Spárováno',
+      suggested: 'Návrh',
+      unmatched: 'Nespárováno',
+      skipped: 'Přeskočeno',
+    },
+    outcomes: {
+      matched: (n: string | null) => `Spárováno s fakturou ${n ?? ''}`.trim(),
+      suggested: (n: string | null) => `Návrh: faktura ${n ?? ''} (potvrdíte na kartě Nespárované)`,
+      unmatched: 'Nespárováno, žádná faktura nesedí',
+      outgoing: 'Přeskočeno: odchozí platba (najdete ji v Odchozí)',
+      duplicate: 'Přeskočeno: už bylo nahráno',
+    },
+    skippedReasons: {
+      date: 'nečitelné datum nebo částka',
+      currency: 'chybí měna',
+      other: 'řádek nelze přečíst',
+    },
+    skippedRow: (where: string, reason: string) => `${where}: přeskočeno, ${reason}`,
+    rowWord: 'Řádek',
     synced: (n: number, matched: number) =>
       `Staženo ${n} nových plateb${matched ? `, ${matched} spárováno s fakturami` : ''}.`,
     autoMatched: (n: number) =>

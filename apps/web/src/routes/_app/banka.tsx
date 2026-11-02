@@ -33,7 +33,7 @@ import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
-const FILTERS = ['unmatched', 'matched', 'ignored'] as const
+const FILTERS = ['unmatched', 'matched', 'ignored', 'outgoing'] as const
 type Filter = (typeof FILTERS)[number]
 
 export const Route = createFileRoute('/_app/banka')({
@@ -72,7 +72,15 @@ function BankPage() {
   const accounts = useQuery(orpc.bankAccounts.list.queryOptions({ input: {} }))
   const list = useQuery(
     orpc.bank.list.queryOptions({
-      input: { status: filter, search: q || undefined, bankAccountId: ucet, limit: 100 },
+      input: {
+        // Outgoing payments are stored but never paired; they get their own tab so no row goes missing.
+        ...(filter === 'outgoing'
+          ? { status: 'unmatched' as const, direction: 'debit' as const }
+          : { status: filter }),
+        search: q || undefined,
+        bankAccountId: ucet,
+        limit: 100,
+      },
     }),
   )
   const accountList = accounts.data ?? []
@@ -251,6 +259,10 @@ function BankPage() {
         ) : !q && filter === 'matched' ? (
           <EmptyState illustration="bank" title={t.emptyMatchedTitle}>
             {t.emptyMatched}
+          </EmptyState>
+        ) : !q && filter === 'outgoing' ? (
+          <EmptyState illustration="bank" title={t.emptyOutgoingTitle}>
+            {t.emptyOutgoing}
           </EmptyState>
         ) : !q && filter === 'ignored' ? (
           <EmptyState illustration="bank" title={t.emptyIgnoredTitle}>

@@ -255,6 +255,7 @@ export function ItemsTable({
                     if (el) descInputs.current.set(l.key, el)
                     else descInputs.current.delete(l.key)
                   }}
+                  data-line-desc=""
                   aria-label={t.description}
                   placeholder={t.description}
                   value={l.description}

@@ -12,7 +12,7 @@ A preview build running migrations could change production's schema from an unme
 The Vercel build command runs `pnpm db:migrate` first, and the migrate CLI does nothing unless `VERCEL_ENV=production`. Scripts that delete or
 overwrite data call `assertDestructiveAllowed()` from `@fakturky/db` (needs `ALLOW_DESTRUCTIVE_DB=1`). Migrations are generated locally and committed.
 
-## Rejected
+## Rejected (to confirm by the owner)
 - **Migrate on every build:** a preview could break production.
 
 ## Consequences

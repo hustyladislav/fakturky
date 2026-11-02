@@ -13,7 +13,7 @@ How work gets from a branch to production. Open this before you push, open a PR,
 
 ## CI and branch protection
 - CI runs on PRs and `main` only. Required checks on `main`: `check` (lint · typecheck · unit · build), `e2e` (Playwright on the embedded PGlite DB and a mock ARES, no secrets), `gitleaks` (job in `security.yml`). Branches must be up to date. Branch protection and auto-merge are already configured on the repo.
-- Docs-only changes (Markdown, `.claude/**`, `.agents/**`) report `check` and `e2e` as a pass with nothing run.
+- Docs-only changes (Markdown, `.claude/**`, `.agents/**`, `skills-lock.json`) report `check` and `e2e` as a pass with nothing run.
 - `security.yml` also runs CodeQL, OSV-Scanner and dependency review; Dependabot groups updates and waits 7 days before adopting a release.
 - A red `main` blocks everyone: whoever merged last fixes it first. Never merge with `--admin` to skip checks.
 - Automated review (Codex) comments on every PR; fix valid P0/P1 findings before merging, reply with evidence when a finding doesn't hold.

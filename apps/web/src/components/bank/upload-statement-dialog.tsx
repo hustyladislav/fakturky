@@ -8,8 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@fakturky/ui/components/dialog'
-import { Input } from '@fakturky/ui/components/input'
+import { FilePicker } from '@fakturky/ui/components/file-picker'
 import { Label } from '@fakturky/ui/components/label'
+import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -122,24 +123,24 @@ export function UploadStatementDialog({
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="bank-upload-account">{t.account}</Label>
-            <select
+            <NativeSelect
               id="bank-upload-account"
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
-              className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
             >
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.label} ({a.currency})
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-2">
             <Label htmlFor="bank-upload-file">{t.file}</Label>
-            <Input
+            <FilePicker
               id="bank-upload-file"
-              type="file"
+              buttonLabel={cs.common.chooseFile}
+              emptyLabel={cs.common.noFile}
               accept=".csv,.txt,.gpc,.abo,.xml"
               onChange={async (e) => {
                 const file = e.target.files?.[0]
@@ -164,11 +165,10 @@ export function UploadStatementDialog({
               {MAP_FIELDS.map((f) => (
                 <div key={f} className="grid grid-cols-2 items-center gap-2">
                   <Label htmlFor={`map-${f}`}>{t.mapFields[f]}</Label>
-                  <select
+                  <NativeSelect
                     id={`map-${f}`}
                     value={mapping[f] ?? ''}
                     onChange={(e) => setMapping({ ...mapping, [f]: e.target.value })}
-                    className="border-input bg-background h-9 rounded-md border px-2 text-sm"
                   >
                     <option value="">{t.noColumn}</option>
                     {headers.map((h) => (
@@ -176,7 +176,7 @@ export function UploadStatementDialog({
                         {h}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </div>
               ))}
             </fieldset>

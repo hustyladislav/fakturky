@@ -7,8 +7,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@fakturky/ui/components/card'
+import { FilePicker } from '@fakturky/ui/components/file-picker'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
+import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -176,22 +178,22 @@ function FileCard() {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="file-kind">{t.fileKind}</Label>
-          <select
+          <NativeSelect
             id="file-kind"
             value={kind}
             onChange={(e) => setKind(e.target.value as FileKind)}
-            className="h-9 w-full rounded-md border bg-background px-3 text-sm"
           >
             <option value="invoices-csv">{t.kindInvoices}</option>
             <option value="contacts-csv">{t.kindContacts}</option>
             <option value="isdoc">{t.kindIsdoc}</option>
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-2">
           <Label htmlFor="file-input">{t.chooseFile}</Label>
-          <Input
+          <FilePicker
             id="file-input"
-            type="file"
+            buttonLabel={cs.common.chooseFile}
+            emptyLabel={cs.common.noFile}
             accept=".csv,.txt,.xml,.isdoc"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />

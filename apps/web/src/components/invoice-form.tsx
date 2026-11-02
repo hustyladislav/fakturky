@@ -4,6 +4,7 @@ import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
+import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Plus, Trash2 } from 'lucide-react'
@@ -381,15 +382,14 @@ export function InvoiceForm({ id }: { id?: string }) {
 
       {!id && (
         <Card title={t.documentType}>
-          <select
+          <NativeSelect
             aria-label={t.documentType}
-            className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
             value={docType}
             onChange={(e) => setDocType(e.target.value as 'invoice' | 'proforma')}
           >
             <option value="invoice">{cs.invoices.type.invoice}</option>
             <option value="proforma">{cs.invoices.type.proforma}</option>
-          </select>
+          </NativeSelect>
           {docType === 'proforma' && (
             <p className="text-muted-foreground text-sm">{t.proformaHint}</p>
           )}
@@ -671,9 +671,8 @@ export function InvoiceForm({ id }: { id?: string }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="bank">{t.bankAccount}</Label>
-            <select
+            <NativeSelect
               id="bank"
-              className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
               value={effectiveAccount}
               onChange={(e) => setBankAccountId(e.target.value)}
             >
@@ -683,13 +682,12 @@ export function InvoiceForm({ id }: { id?: string }) {
                   {a.label} · {a.accountNumber ? `${a.accountNumber}/${a.bankCode}` : a.iban}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-2">
             <Label htmlFor="method">{t.paymentMethod}</Label>
-            <select
+            <NativeSelect
               id="method"
-              className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
             >
@@ -698,7 +696,7 @@ export function InvoiceForm({ id }: { id?: string }) {
                   {v}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
         </div>
       </Card>
@@ -788,9 +786,9 @@ function VatSelect({
 }) {
   const value = line.vatTreatment === 'standard' ? line.vatRate : line.vatTreatment
   return (
-    <select
+    <NativeSelect
       aria-label={t.vatRate}
-      className="border-input bg-background h-9 max-w-44 rounded-md border px-2 text-sm"
+      className="max-w-44"
       value={value}
       onChange={(e) => {
         const v = e.target.value
@@ -808,7 +806,7 @@ function VatSelect({
           {cs.invoices.vatTreatment[x]}
         </option>
       ))}
-    </select>
+    </NativeSelect>
   )
 }
 

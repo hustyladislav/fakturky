@@ -18,7 +18,16 @@ export function wholeCrowns(amount: string): string {
  * "↗ +12 % vs. minulý měsíc": green up, muted red down. Without a base month it says what last
  * month was instead; renders nothing when both months are empty.
  */
-export function Delta({ current, previous }: { current: number; previous: number }) {
+export function Delta({
+  current,
+  previous,
+  neutral = false,
+}: {
+  current: number
+  previous: number
+  /** Grey chip: the change has an explainable, non-alarming cause (e.g. a credit note). */
+  neutral?: boolean
+}) {
   if (previous === 0) {
     return current === 0 ? null : <span>{t.lastMonthZero}</span>
   }
@@ -30,7 +39,11 @@ export function Delta({ current, previous }: { current: number; previous: number
       <span
         className={cn(
           'inline-flex h-5 items-center gap-0.5 rounded-full px-1.5 text-[11px] font-semibold tabular-nums',
-          up ? 'bg-success/12 text-success' : 'bg-destructive/10 text-destructive',
+          neutral
+            ? 'bg-muted text-muted-foreground'
+            : up
+              ? 'bg-success/12 text-success'
+              : 'bg-destructive/10 text-destructive',
         )}
       >
         <Icon className="size-3" aria-hidden />
@@ -58,7 +71,7 @@ export function KpiCard({
 }: {
   label: string
   amount: string
-  tone?: 'overdue' | 'success'
+  tone?: 'overdue' | 'success' | 'ink'
   delta?: ReactNode
   hint?: ReactNode
   spark?: number[]

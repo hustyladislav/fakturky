@@ -338,7 +338,7 @@ function InvoiceList() {
                       <div className="sticky top-14 z-10 flex items-baseline justify-between border-b bg-[color-mix(in_srgb,var(--card)_60%,var(--muted))] px-4 py-2">
                         <span className="label-caps text-foreground">{monthLabel(g.key)}</span>
                         <span className="text-xs text-muted-foreground tabular-nums">
-                          {crowns(g.sum)}
+                          {Number(g.sum) === 0 ? '' : `${cs.invoices.issuedLabel} ${crowns(g.sum)}`}
                         </span>
                       </div>
                     )}
@@ -414,7 +414,10 @@ function InvoiceList() {
                               <span className="text-xs text-muted-foreground tabular-nums">
                                 {list.hasNextPage && g === groups.at(-1)
                                   ? t.monthTotal(g.rows.length, null)
-                                  : t.monthTotal(g.rows.length, crowns(g.sum))}
+                                  : t.monthTotal(
+                                      g.rows.length,
+                                      Number(g.sum) === 0 ? null : crowns(g.sum),
+                                    )}
                               </span>
                             </span>
                           </th>
@@ -436,6 +439,11 @@ function InvoiceList() {
 
               <div className="mt-4 flex items-center justify-between gap-4 text-xs text-muted-foreground">
                 <span className="hidden md:inline">{t.keyboardHint}</span>
+                {list.hasNextPage && stats.data && (
+                  <span className="tabular-nums">
+                    {t.shown(rows.length, stats.data[filter as StripFilter].count)}
+                  </span>
+                )}
                 {list.hasNextPage && (
                   <Button
                     variant="outline"

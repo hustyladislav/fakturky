@@ -52,6 +52,9 @@ export const contactsRouter = {
           overdue: z.string().describe('Owed and past due (CZK)'),
           documentCount: z.number(),
           lastInvoiceDate: z.string().nullable(),
+          monthly: z
+            .array(z.string())
+            .describe('Net invoiced per month, last 12 calendar months, oldest first (CZK)'),
         }),
       ),
     )

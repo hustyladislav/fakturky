@@ -727,6 +727,21 @@ export const documentsRepo = {
     return this.get(db, orgId, id)
   },
 
+  /** Marks a freshly created draft as proposed by the assistant (for drafts made by duplicate/template/credit-note). */
+  async tagAssistant(db: Db, orgId: string, documentId: string) {
+    await db
+      .update(activity)
+      .set({ data: sql`coalesce(${activity.data}, '{}'::jsonb) || '{"via":"assistant"}'::jsonb` })
+      .where(
+        and(
+          eq(activity.organizationId, orgId),
+          eq(activity.entityType, 'document'),
+          eq(activity.entityId, documentId),
+          eq(activity.action, 'created'),
+        ),
+      )
+  },
+
   async duplicate(db: Db, orgId: string, actorId: string, id: string) {
     const src = await this.get(db, orgId, id)
     if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')

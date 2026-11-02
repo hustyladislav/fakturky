@@ -1,3 +1,4 @@
+import type { Db } from '@fakturky/db'
 import { generateIsdoc } from '@fakturky/domain'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
@@ -35,6 +36,16 @@ async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
   }
 }
 
+/** Drafts produced on the assistant's behalf (duplicate, credit note, …) carry the same provenance as createDraft. */
+async function assistantTag<T extends { id: string } | null>(
+  context: { db: Db; principal: { organizationId: string; via: string } },
+  doc: T,
+): Promise<T> {
+  if (!doc || context.principal.via !== 'assistant') return doc
+  await documentsRepo.tagAssistant(context.db, context.principal.organizationId, doc.id)
+  return { ...doc, viaAssistant: true } as T
+}
+
 export const documentsRouter = {
   createFinalInvoice: procedure({
     mcp: {
@@ -52,14 +63,15 @@ export const documentsRouter = {
     .input(idInput)
     .output(documentDetailSchema)
     .handler(({ context, input }) =>
-      guard(() =>
-        documentsRepo.createFinalInvoice(
+      guard(async () => {
+        const doc = await documentsRepo.createFinalInvoice(
           context.db,
           context.principal.organizationId,
           context.principal.userId,
           input.id,
-        ),
-      ),
+        )
+        return assistantTag(context, doc)
+      }),
     ),
 
   createCreditNote: procedure({
@@ -80,15 +92,16 @@ export const documentsRouter = {
     )
     .output(documentDetailSchema)
     .handler(({ context, input }) =>
-      guard(() =>
-        documentsRepo.createCreditNote(
+      guard(async () => {
+        const doc = await documentsRepo.createCreditNote(
           context.db,
           context.principal.organizationId,
           context.principal.userId,
           input.id,
           input.reason,
-        ),
-      ),
+        )
+        return assistantTag(context, doc)
+      }),
     ),
 
   send: procedure({
@@ -336,14 +349,15 @@ export const documentsRouter = {
     .input(idInput)
     .output(documentDetailSchema)
     .handler(({ context, input }) =>
-      guard(() =>
-        documentsRepo.duplicate(
+      guard(async () => {
+        const doc = await documentsRepo.duplicate(
           context.db,
           context.principal.organizationId,
           context.principal.userId,
           input.id,
-        ),
-      ),
+        )
+        return assistantTag(context, doc)
+      }),
     ),
 
   markPaid: procedure({

@@ -1,7 +1,8 @@
+import type { Db } from '@fakturky/db'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
-import { DocumentError } from '../repositories/documents'
+import { DocumentError, documentsRepo } from '../repositories/documents'
 import { recurringRepo, templatesRepo } from '../repositories/templates'
 import { documentDetailSchema } from '../schemas/document'
 
@@ -54,6 +55,15 @@ const ruleSchema = z.object({
   active: z.boolean(),
 })
 
+async function assistantTag<T extends { id: string } | null>(
+  context: { db: Db; principal: { organizationId: string; via: string } },
+  doc: T,
+): Promise<T> {
+  if (!doc || context.principal.via !== 'assistant') return doc
+  await documentsRepo.tagAssistant(context.db, context.principal.organizationId, doc.id)
+  return { ...doc, viaAssistant: true } as T
+}
+
 export const templatesRouter = {
   list: procedure({
     mcp: { name: 'list_templates', title: 'List invoice templates', readOnly: true },
@@ -97,14 +107,15 @@ export const templatesRouter = {
     .input(idInput)
     .output(documentDetailSchema)
     .handler(({ context, input }) =>
-      guard(() =>
-        templatesRepo.use(
+      guard(async () => {
+        const doc = await templatesRepo.use(
           context.db,
           context.principal.organizationId,
           context.principal.userId,
           input.id,
-        ),
-      ),
+        )
+        return assistantTag(context, doc)
+      }),
     ),
 
   delete: procedure({

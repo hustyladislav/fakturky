@@ -208,4 +208,14 @@ describe('assistant drafts', () => {
     expect(list.find((d) => d.id === byHuman.id)?.viaAssistant).toBe(false)
     expect((await human.documents.get({ id: byBot.id })).viaAssistant).toBe(true)
   })
+
+  test('duplicates made by the assistant keep the provenance', async () => {
+    const human = clientFor(handle, principal(orgA))
+    const bot = clientFor(handle, { ...principal(orgA), via: 'assistant' })
+    const c = await human.contacts.create({ name: 'Kopie s.r.o.' })
+    const src = await human.documents.createDraft({ contactId: c.id, lines: [line] })
+    const copy = await bot.documents.duplicate({ id: src.id })
+    expect((await human.documents.get({ id: copy.id })).viaAssistant).toBe(true)
+    expect((await human.documents.get({ id: src.id })).viaAssistant).toBe(false)
+  })
 })

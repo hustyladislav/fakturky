@@ -13,6 +13,7 @@ import { Label } from '@fakturky/ui/components/label'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { PageHeader } from '@fakturky/ui/components/page-header'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
+import { formatMoney } from '@fakturky/ui/lib/money'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
@@ -42,6 +43,7 @@ import {
   RelatedDocs,
   Timeline,
 } from '@/components/invoice-detail/parts'
+import { PaySplitButton, ShareButton, useShareLink } from '@/components/invoice-detail/share-pay'
 import { PromptDialog } from '@/components/prompt-dialog'
 import { cs } from '@/i18n/cs'
 import { detailToSheet } from '@/lib/document-sheet'
@@ -82,16 +84,6 @@ function InvoiceDetail() {
       onError,
     }),
   )
-  const markPaid = useMutation(
-    orpc.documents.markPaid.mutationOptions({
-      onSuccess: async () => {
-        toast.success(t.paid)
-        setPaying(false)
-        await refresh()
-      },
-      onError,
-    }),
-  )
   const markUnpaid = useMutation(
     orpc.documents.markUnpaid.mutationOptions({
       onSuccess: async () => {
@@ -101,6 +93,28 @@ function InvoiceDetail() {
       onError,
     }),
   )
+  const markPaid = useMutation(
+    orpc.documents.markPaid.mutationOptions({
+      onSuccess: async (paid, vars) => {
+        // The new payment is the one that was not on the page before; undo removes only that one.
+        const before = new Set((q.data?.payments ?? []).map((p) => p.id))
+        const added = paid.payments.find((p) => !before.has(p.id))
+        toast.success(t.paid, {
+          duration: 5000,
+          ...(added && {
+            action: {
+              label: t.undo,
+              onClick: () => markUnpaid.mutate({ id: vars.id, paymentId: added.id }),
+            },
+          }),
+        })
+        setPaying(false)
+        await refresh()
+      },
+      onError,
+    }),
+  )
+  const { share, copied } = useShareLink()
   const cancel = useMutation(
     orpc.documents.cancel.mutationOptions({
       onSuccess: async () => {
@@ -363,7 +377,7 @@ function InvoiceDetail() {
               <div className="hidden md:block">
                 <Actions part="primary" />
               </div>
-              <div className="flex gap-2 [&>*]:min-w-fit [&>*]:flex-1">
+              <div className="flex flex-wrap gap-2 [&>*]:min-w-fit [&>*]:flex-1">
                 <Actions part="secondary" />
               </div>
             </DocHero>
@@ -556,10 +570,16 @@ function InvoiceDetail() {
       doc.status === 'paid' && !(doc.type === 'invoice' && Number(doc.total) <= 0)
 
     // One primary action per status; the PDF is the primary only when nothing else is left to do.
-    const primary: 'issue' | 'pay' | 'receipt' | 'final' | 'pdf' = isDraft
+    // A fresh invoice still has to reach the customer (share); once it was sent or viewed, or is late,
+    // getting paid is the next step.
+    const reached = doc.activity.some((a) => ['sent', 'reminded', 'viewed'].includes(a.action))
+    const payFirst = !publicUrl || reached || doc.displayStatus !== 'issued'
+    const primary: 'issue' | 'share' | 'pay' | 'receipt' | 'final' | 'pdf' = isDraft
       ? 'issue'
       : open
-        ? 'pay'
+        ? payFirst
+          ? 'pay'
+          : 'share'
         : canReceipt
           ? 'receipt'
           : canFinal
@@ -585,6 +605,37 @@ function InvoiceDetail() {
       </Button>
     )
 
+    const shareTarget = publicUrl && {
+      url: publicUrl,
+      pdfUrl: `/api/documents/${id}/pdf`,
+      title:
+        `${cs.invoices.type[doc.type as keyof typeof cs.invoices.type]} ${doc.number ?? ''}`.trim(),
+      text: t.shareText(
+        `${cs.invoices.type[doc.type as keyof typeof cs.invoices.type]} ${doc.number ?? ''}`.trim(),
+        formatMoney(doc.remaining, doc.currency),
+        doc.dueDate ? formatDateCs(doc.dueDate) : null,
+      ),
+      fileName: `${doc.number ?? 'doklad'}.pdf`,
+    }
+    const shareButton = (variant: 'default' | 'outline') =>
+      shareTarget && (
+        <ShareButton
+          copied={copied}
+          variant={variant}
+          className={variant === 'default' ? big : ''}
+          onShare={() => share(shareTarget)}
+        />
+      )
+    const payButton = (variant: 'default' | 'outline') => (
+      <PaySplitButton
+        variant={variant}
+        className={variant === 'default' ? big : 'h-8'}
+        disabled={markPaid.isPending}
+        onPayNow={() => markPaid.mutate({ id })}
+        onMore={() => setPaying(true)}
+      />
+    )
+
     const primaryButton = (() => {
       switch (primary) {
         case 'issue':
@@ -593,12 +644,10 @@ function InvoiceDetail() {
               {t.issue}
             </Button>
           )
+        case 'share':
+          return shareButton('default')
         case 'pay':
-          return (
-            <Button className={big} onClick={() => setPaying(true)}>
-              {t.markPaid}
-            </Button>
-          )
+          return payButton('default')
         case 'receipt':
           return (
             <Button
@@ -635,6 +684,8 @@ function InvoiceDetail() {
             <Pencil /> {t.edit}
           </Button>
         )}
+        {primary === 'share' && payButton('outline')}
+        {primary === 'pay' && open && shareButton('outline')}
         {!isDraft && canSend && (
           <Button
             variant="outline"

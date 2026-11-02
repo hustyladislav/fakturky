@@ -1448,7 +1448,7 @@ export const documentsRepo = {
     return this.get(db, orgId, id)
   },
 
-  async markUnpaid(db: Db, orgId: string, actorId: string, id: string) {
+  async markUnpaid(db: Db, orgId: string, actorId: string, id: string, paymentId?: string) {
     await db.transaction(async (tx) => {
       const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
       if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
@@ -1489,7 +1489,13 @@ export const documentsRepo = {
       }
       const removed = await tx
         .delete(payment)
-        .where(and(eq(payment.organizationId, orgId), eq(payment.documentId, id)))
+        .where(
+          and(
+            eq(payment.organizationId, orgId),
+            eq(payment.documentId, id),
+            paymentId ? eq(payment.id, paymentId) : undefined,
+          ),
+        )
         .returning({ id: payment.id })
       // Bank transactions that were paired with this document's payments become available again.
       if (removed.length > 0) {

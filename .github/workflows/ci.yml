@@ -20,13 +20,14 @@ jobs:
           fetch-depth: 2 # a PR checks out its merge commit; HEAD^1 is the base tip
       - name: Scope
         id: scope
-        # Markdown, .claude/** and .agents/** feed no build or runtime path: report the required check as a pass.
+        # Markdown, agent config and the skills lockfile feed no build or runtime path: report the required check as a pass.
+        # Portable (BSD + GNU grep): any path NOT matching the docs pattern means code changed.
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] \
-            && files=$(git diff --name-only HEAD^1 HEAD) \
-            && [ -n "$files" ] && ! grep -qvE '(\.md$|^\.claude/|^\.agents/)' <<< "$files"; then
+          files=$(git diff --name-only HEAD^1 HEAD 2>/dev/null || true)
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "$files" ] \
+            && ! printf '%s\n' "$files" | grep -vE '(\.md$|^\.claude/|^\.agents/|^skills-lock\.json$)' | grep -q .; then
             echo "code=false" >> "$GITHUB_OUTPUT"
-            echo "Docs-only change — nothing to run." >> "$GITHUB_STEP_SUMMARY"
+            echo "Docs/agent-config-only change — nothing to run." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "code=true" >> "$GITHUB_OUTPUT"
           fi
@@ -59,11 +60,11 @@ jobs:
       - name: Scope
         id: scope
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] \
-            && files=$(git diff --name-only HEAD^1 HEAD) \
-            && [ -n "$files" ] && ! grep -qvE '(\.md$|^\.claude/|^\.agents/)' <<< "$files"; then
+          files=$(git diff --name-only HEAD^1 HEAD 2>/dev/null || true)
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "$files" ] \
+            && ! printf '%s\n' "$files" | grep -vE '(\.md$|^\.claude/|^\.agents/|^skills-lock\.json$)' | grep -q .; then
             echo "code=false" >> "$GITHUB_OUTPUT"
-            echo "Docs-only change — nothing to run." >> "$GITHUB_STEP_SUMMARY"
+            echo "Docs/agent-config-only change — nothing to run." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "code=true" >> "$GITHUB_OUTPUT"
           fi

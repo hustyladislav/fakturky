@@ -62,6 +62,13 @@ export const document = pgTable(
     roundTotal: boolean('round_total').notNull().default(false),
     /** Line prices include VAT (tax receipts for advances: VAT is extracted from the received gross). */
     pricesIncludeVat: boolean('prices_include_vat').notNull().default(false),
+    /** Look of the document frozen at issue: accent colour, brand line and the logo/signature versions. */
+    appearance: jsonb('appearance').$type<{
+      accentColor: string | null
+      showBrand: boolean
+      logoAssetId: string | null
+      signatureAssetId: string | null
+    }>(),
     relatedDocumentId: text('related_document_id').references((): AnyPgColumn => document.id),
     /** Set for documents brought in by an import ('fakturoid' | 'csv' | 'isdoc'); they keep their original number. */
     importedFrom: text('imported_from'),

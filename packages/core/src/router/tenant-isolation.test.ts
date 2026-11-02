@@ -29,6 +29,9 @@ type Case =
   | { kind: 'external' }
 
 const SECRET = 'ORG-A-ONLY-SECRET'
+// 1×1 PNG
+const PNG =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=='
 // PDF procedures check for the renderer before the lookup; give them one so the lookup is what is tested.
 const services = { renderPdf: async () => new Uint8Array([1]) }
 
@@ -89,6 +92,19 @@ const cases: Record<string, Case> = {
       const theirs = await clientFor(handle, principal(orgA)).numberSeries.list({})
       return b.numberSeries.setNext({ id: theirs[0]?.id ?? 'x', value: 5000 })
     },
+  },
+  'appearance.get': { kind: 'scoped', run: (b) => b.appearance.get({}) },
+  'appearance.update': {
+    kind: 'scoped',
+    run: (b) => b.appearance.update({ accentColor: '#112233' }),
+  },
+  'appearance.setAsset': {
+    kind: 'scoped',
+    run: (b) => b.appearance.setAsset({ kind: 'logo', dataBase64: PNG }),
+  },
+  'appearance.deleteAsset': {
+    kind: 'scoped',
+    run: (b) => b.appearance.deleteAsset({ kind: 'logo' }),
   },
   'exports.organization': { kind: 'scoped', run: (b) => b.exports.organization({}) },
   'exports.contacts': { kind: 'scoped', run: (b) => b.exports.contacts({}) },

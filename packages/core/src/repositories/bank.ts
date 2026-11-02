@@ -8,7 +8,7 @@ import {
   type ParsedStatement,
   type ParsedTransaction,
 } from '@fakturky/domain/bank'
-import { and, asc, desc, eq, gt, ilike, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, ilike, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 import { CryptoError, decryptSecret, encryptSecret } from '../crypto'
 
 const { bankAccount, bankTransaction, document } = schema
@@ -126,6 +126,7 @@ export const bankRepo = {
       }
     })
     let imported = 0
+    const insertedIds = new Map<string, string>()
     // Chunked: one statement can hold thousands of rows.
     for (let i = 0; i < values.length; i += 500) {
       const res = await db
@@ -134,10 +135,29 @@ export const bankRepo = {
         .onConflictDoNothing({
           target: [bankTransaction.bankAccountId, bankTransaction.externalId],
         })
-        .returning({ id: bankTransaction.id })
+        .returning({ id: bankTransaction.id, externalId: bankTransaction.externalId })
       imported += res.length
+      for (const r of res) insertedIds.set(r.externalId, r.id)
     }
-    return { imported, duplicates: values.length - imported }
+    return {
+      imported,
+      duplicates: values.length - imported,
+      /** Per statement row, in order: the stored transaction id, or null when it was already known. */
+      rowIds: values.map((v) => insertedIds.get(v.externalId) ?? null),
+    }
+  },
+
+  /** Stored transactions by id, with the number of the document each one is paired with. */
+  async byIds(db: Db, orgId: string, ids: string[]) {
+    if (ids.length === 0) return []
+    return db
+      .select({ tx: bankTransaction, documentNumber: document.number })
+      .from(bankTransaction)
+      .leftJoin(
+        document,
+        and(eq(document.id, bankTransaction.matchedDocumentId), eq(document.organizationId, orgId)),
+      )
+      .where(and(eq(bankTransaction.organizationId, orgId), inArray(bankTransaction.id, ids)))
   },
 
   async list(db: Db, orgId: string, f: ListFilter) {
@@ -192,9 +212,12 @@ export const bankRepo = {
       .from(bankTransaction)
       .where(and(...base))
       .groupBy(bankTransaction.matchStatus, sql`${bankTransaction.amount} > 0`)
-    const out = { unmatched: 0, matched: 0, ignored: 0 }
+    const out = { unmatched: 0, matched: 0, ignored: 0, outgoing: 0 }
     for (const r of rows) {
-      if (r.status === 'unmatched' && !r.credit) continue
+      if (r.status === 'unmatched' && !r.credit) {
+        out.outgoing += r.n
+        continue
+      }
       out[r.status] += r.n
     }
     return out

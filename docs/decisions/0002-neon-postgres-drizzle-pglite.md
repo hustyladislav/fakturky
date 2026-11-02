@@ -13,7 +13,7 @@ Postgres on Neon (Vercel Marketplace), `aws-eu-central-1` Frankfurt, next to the
 Drizzle ORM with committed drizzle-kit SQL migrations. The same schema runs on embedded PGlite for local dev (no `DATABASE_URL`),
 unit tests and e2e, so no test or worktree needs a real database or secrets.
 
-## Rejected
+## Rejected (to confirm by the owner)
 - **A shared dev/preview database on Neon:** the free plan has no branching, so any shared database is effectively production (see [0006](0006-migrations-only-on-production-builds.md)).
 - **A different local database than production's engine:** tests would not exercise the real SQL, numbering transaction or `numeric` behaviour.
 

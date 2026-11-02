@@ -1,35 +1,19 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
-import { getRate, todayPrague, type VatTreatment } from '@fakturky/domain'
+import {
+  type Frequency,
+  firstOccurrence,
+  getRate,
+  nextOccurrence,
+  todayPrague,
+  type VatTreatment,
+} from '@fakturky/domain'
 import { and, asc, desc, eq, lte } from 'drizzle-orm'
 import { DocumentError, documentsRepo } from './documents'
 
 const { template, recurringRule } = schema
 
-export type Frequency = 'monthly' | 'quarterly' | 'yearly'
-const MONTHS: Record<Frequency, number> = { monthly: 1, quarterly: 3, yearly: 12 }
-
-/** The occurrence after `from`, on `dayOfMonth` (clamped to the length of the target month). */
-export function nextOccurrence(from: string, frequency: Frequency, dayOfMonth: number): string {
-  const y = Number(from.slice(0, 4))
-  const m = Number(from.slice(5, 7)) - 1 + MONTHS[frequency]
-  const ty = y + Math.floor(m / 12)
-  const tm = ((m % 12) + 12) % 12
-  const last = new Date(Date.UTC(ty, tm + 1, 0)).getUTCDate()
-  const day = Math.min(dayOfMonth, last)
-  return `${ty}-${String(tm + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-}
-
-/** First occurrence on or after `from` for the given day of month. */
-export function firstOccurrence(from: string, dayOfMonth: number): string {
-  const y = Number(from.slice(0, 4))
-  const m = Number(from.slice(5, 7)) - 1
-  const clamp = (yy: number, mm: number) =>
-    Math.min(dayOfMonth, new Date(Date.UTC(yy, mm + 1, 0)).getUTCDate())
-  const thisMonth = `${from.slice(0, 7)}-${String(clamp(y, m)).padStart(2, '0')}`
-  if (thisMonth >= from) return thisMonth
-  return nextOccurrence(thisMonth, 'monthly', dayOfMonth)
-}
+export { type Frequency, firstOccurrence, nextOccurrence }
 
 export const templatesRepo = {
   list(db: Db, orgId: string) {

@@ -47,10 +47,24 @@ test('bank statement upload pairs the payment by variable symbol and marks the i
     mimeType: 'text/csv',
     buffer: Buffer.from(statement(vs as string)),
   })
+  // Before anything is stored the dialog shows what the file contains, including the outgoing payment.
+  const preview = dialog.getByTestId('import-preview')
+  await expect(preview).toContainText('Řádků ve výpisu: 3')
+  await expect(preview).toContainText('Neznámý plátce')
+  await expect(preview).toContainText('Odchozí platba, uloží se, nepáruje se')
   await dialog.getByRole('button', { name: 'Nahrát', exact: true }).click()
-  await expect(page.getByText('Nahráno 3 nových plateb, 1 spárováno s fakturami.')).toBeVisible()
 
-  // The unmatched tab holds only the unexplained incoming payment (the debit is not a payment to pair).
+  // Every row is accounted for: paired, unmatched, and the card payment skipped with its reason.
+  const result = dialog.getByTestId('import-result')
+  await expect(result).toContainText('Zpracováno řádků: 3')
+  await expect(result).toContainText('Spárováno: 1')
+  await expect(result).toContainText('Nespárováno: 1')
+  await expect(result).toContainText('Přeskočeno: 1')
+  await expect(result).toContainText(/Spárováno s fakturou \d{4}-\d{4}/)
+  await expect(result).toContainText('Přeskočeno: odchozí platba')
+  await dialog.getByRole('button', { name: 'Hotovo' }).click()
+
+  // The unmatched tab holds only the unexplained incoming payment; the debit lives under "Odchozí".
   const rows = page.getByTestId('bank-row')
   await expect(rows).toHaveCount(1)
   await expect(rows.first()).toContainText('Neznámý plátce')
@@ -76,7 +90,13 @@ test('bank statement upload pairs the payment by variable symbol and marks the i
       buffer: Buffer.from(statement(vs as string)),
     })
   await page.getByRole('dialog').getByRole('button', { name: 'Nahrát', exact: true }).click()
-  await expect(page.getByText('Nahráno 0 nových plateb, 3 už bylo v systému.')).toBeVisible()
+  await expect(page.getByTestId('import-result')).toContainText('Přeskočeno: 3')
+  await expect(page.getByTestId('import-result')).toContainText('Přeskočeno: už bylo nahráno')
+  await page.getByRole('dialog').getByRole('button', { name: 'Hotovo' }).click()
+  await page.getByRole('tab', { name: /^Odchozí/ }).click()
+  await expect(page.getByTestId('bank-row')).toHaveCount(1)
+  await expect(page.getByTestId('bank-row').first()).toContainText('89,90')
+  await page.getByRole('tab', { name: /^Nespárované/ }).click()
 
   // Ignore the stray payment, then undo the pairing: the invoice is open again.
   await page.getByRole('button', { name: 'Ignorovat' }).click()

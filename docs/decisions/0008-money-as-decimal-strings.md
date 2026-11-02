@@ -12,7 +12,7 @@ off-by-a-haléř totals on legal documents.
 Amounts are Postgres `numeric` and decimal strings across every boundary (API, MCP, CLI), computed with `Decimal` (decimal.js-light) in
 `packages/domain`. VAT is computed per rate on the recap and rounded to 2 decimals. JS `number` is never used for money.
 
-## Rejected
+## Rejected (to confirm by the owner)
 - **JS floats:** wrong totals on legal documents.
 
 ## Consequences

@@ -148,6 +148,18 @@ describe('documents', () => {
     expect(cancelled.displayStatus).toBe('cancelled')
   })
 
+  test('markUnpaid with a paymentId removes only that payment', async () => {
+    const api = clientFor(handle, principal(orgA))
+    const issued = await api.documents.issue({ id: (await draft(orgA)).id })
+    await api.documents.markPaid({ id: issued.id, amount: '500' })
+    const full = await api.documents.markPaid({ id: issued.id })
+    const last = full.payments.find((p) => Number(p.amount) === 1500)
+    const undone = await api.documents.markUnpaid({ id: issued.id, paymentId: last?.id })
+    expect(undone.status).toBe('issued')
+    expect(undone.payments.map((p) => Number(p.amount))).toEqual([500])
+    expect(undone.remaining).toBe('1500.00')
+  })
+
   test('overdue is derived from the due date', async () => {
     const api = clientFor(handle, principal(orgA))
     const d = await draft(orgA, { issueDate: '2020-01-01', dueDate: '2020-01-15' })

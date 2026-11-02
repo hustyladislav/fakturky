@@ -213,7 +213,7 @@ function RecapTable({
 
 /**
  * The invoice as it looks in the PDF, in HTML: same layout, labels, fonts and numbers (both are drawn from
- * `buildSheetModel`). Always a light paper, even in dark mode; scales to its container.
+ * `buildSheetModel`). Always a light paper, even in dark mode (slightly dimmed there); scales to its container.
  */
 export function InvoiceSheet({
   doc,

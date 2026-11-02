@@ -13,7 +13,7 @@ Every capability is an oRPC procedure in `packages/core/src/router`, defined onc
 The web UI, REST (`/api/v1`), MCP (`/mcp`), the CLI and the assistant's tools are adapters that read the router and its metadata.
 Auth, organization scoping and validation belong to the procedure, not the adapter. Working rules: `docs/agents/api.md`.
 
-## Rejected
+## Rejected (to confirm by the owner)
 - **A separate implementation per surface** (REST handlers, MCP tools, UI-only server functions): guaranteed drift; "done" would need four implementations.
 
 ## Consequences

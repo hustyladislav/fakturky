@@ -358,6 +358,11 @@ export const cs = {
     new: 'Nová faktura',
     empty: 'Zatím nemáte žádné faktury.',
     emptyFiltered: 'Nic neodpovídá zvolenému filtru.',
+    emptyFilteredBy: (search: string | null, filters: string[]) => {
+      const parts = [search ? `hledání „${search}“` : null, ...filters].filter(Boolean)
+      return `Nic nenalezeno: ${parts.join(' · ')}`
+    },
+    paidOn: (date: string) => `Zaplaceno ${date}`,
     emptyCta: 'Vystavit první fakturu',
     search: 'Hledat podle čísla, odběratele nebo VS…',
     subtitle: (count: number, unpaid: string | null) =>
@@ -374,7 +379,7 @@ export const cs = {
     issuedLabel: 'vystaveno',
     noMonth: 'Bez data',
     noNumber: 'Bez čísla',
-    resetFilter: 'Zrušit filtr',
+    resetFilter: 'Zrušit filtry',
     loadMore: 'Načíst další',
     sortBy: (column: string) => `Seřadit podle: ${column}`,
     keyboardHint: 'J / K pohyb · Enter otevřít · X vybrat',
@@ -485,6 +490,16 @@ export const cs = {
       taxableDate: 'DUZP (datum zdanitelného plnění)',
       taxableHint: 'Den, kdy nastalo plnění. U plátců DPH určuje, do kterého měsíce DPH patří.',
       dueIn: (days: number) => `${days} dní`,
+      dueSummary: (days: number, date: string) => {
+        const when = new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' }).format(
+          new Date(`${date}T12:00:00`),
+        )
+        if (days <= 0) return `Splatnost ihned (${when})`
+        const unit = days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'
+        return `Splatnost za ${days} ${unit} (${when})`
+      },
+      datesEdit: 'upravit',
+      datesHide: 'skrýt',
       today: 'Dnes',
       currency: 'Měna',
       exchangeRate: 'Kurz ČNB (Kč za 1 jednotku)',
@@ -506,6 +521,9 @@ export const cs = {
       payment: 'Platba',
       bankAccount: 'Bankovní účet',
       bankAccountNone: 'Žádný účet – přidejte ho v Nastavení',
+      bankAddInline: 'Přidejte účet, ať faktura ponese číslo účtu a QR platbu.',
+      noBankConfirm: 'Faktura nebude mít QR platbu ani číslo účtu — pokračovat?',
+      noBankConfirmYes: 'Vystavit i tak',
       paymentMethod: 'Forma úhrady',
       methods: { bank_transfer: 'Převodem', cash: 'Hotově', card: 'Kartou' },
       texts: 'Texty',
@@ -547,6 +565,7 @@ export const cs = {
         `Daňový doklad vyžaduje údaje odběratele. Doplňte u kontaktu: ${names.join(', ')}.`,
       registryNoteMissing:
         'V nastavení chybí zápis v rejstříku (např. „Fyzická osoba zapsaná v živnostenském rejstříku“). Podnikatelé ho mají na fakturách uvádět.',
+      registryNoteDismiss: 'Skrýt upozornění',
       needProfile: 'Než vystavíte fakturu, vyplňte prosím údaje o své firmě v Nastavení.',
     },
     detail: {
@@ -560,7 +579,15 @@ export const cs = {
       markPaidPartial: 'Přijatá částka',
       markPaidDate: 'Datum platby',
       markPaidMethod: 'Způsob platby',
-      markPaidConfirm: 'Označit jako zaplacenou',
+      markPaidConfirm: 'Uložit platbu',
+      markPaidMore: 'Další možnosti platby',
+      markPaidOther: 'Jiná částka nebo datum…',
+      undo: 'Vrátit zpět',
+      share: 'Sdílet',
+      shareCopied: 'Zkopírováno',
+      shareText: (what: string, amount: string, due: string | null) =>
+        `${what}, ${amount}${due ? `, splatnost ${due}` : ''}.`,
+      copyFailed: 'Odkaz se nepodařilo zkopírovat. Zkopírujte ho z karty Veřejný odkaz.',
       markUnpaid: 'Označit jako neuhrazenou',
       duplicate: 'Duplikovat',
       cancel: 'Stornovat',

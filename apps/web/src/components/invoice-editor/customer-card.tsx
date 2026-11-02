@@ -29,16 +29,23 @@ export function CustomerCard({
   value,
   details,
   onChange,
+  autoFocus,
 }: {
   value: PickedCustomer | null
   /** Contact data of the picked customer (address, DIČ) for the summary. */
   details?: Details | undefined
   onChange: (c: PickedCustomer | null) => void
+  /** Focus the search box on mount (a brand-new invoice starts here). */
+  autoFocus?: boolean
 }) {
   const queryClient = useQueryClient()
   const [term, setTerm] = useState('')
   const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [active, setActive] = useState(-1)
+  // Enter on a typed IČO before ARES answered: pick the result as soon as it arrives.
+  const [enterPending, setEnterPending] = useState(false)
+  const listId = useId()
   const searchRef = useRef<HTMLInputElement>(null)
   const q = term.trim()
   const isIco = /^\d{8}$/.test(q.replace(/\s/g, ''))
@@ -52,6 +59,15 @@ export function CustomerCard({
       setOpen(true)
     }
   }, [])
+
+  const hadValue = useRef(false)
+  useEffect(() => {
+    if (value) hadValue.current = true
+    else if (hadValue.current) {
+      hadValue.current = false
+      searchRef.current?.focus()
+    }
+  }, [value])
 
   const contacts = useQuery(
     orpc.contacts.list.queryOptions({ input: { search: q || undefined, limit: 8 } }),
@@ -104,6 +120,45 @@ export function CustomerCard({
     setCreating(false)
   }
 
+  const own = contacts.data ?? []
+  const aresNew = ares.data && !own.some((c) => c.ico === ares.data?.ico) ? ares.data : null
+  // One flat list so arrow keys walk "Vaši odběratelé" and then the ARES result.
+  const optionCount = own.length + (aresNew ? 1 : 0)
+  const activeIndex = active >= 0 ? Math.min(active, optionCount - 1) : q ? 0 : -1
+  const optionId = (i: number) => `${listId}-opt-${i}`
+
+  function pickOption(i: number) {
+    const c = own[i]
+    if (c) pick({ id: c.id, name: c.name, ico: c.ico })
+    else if (aresNew && i === own.length) fromAres.mutate()
+  }
+
+  // Enter pressed while ARES was still answering.
+  useEffect(() => {
+    if (!enterPending || ares.isFetching || contacts.isFetching) return
+    setEnterPending(false)
+    if (optionCount > 0) pickOption(own.length > 0 ? 0 : own.length)
+  })
+
+  function onSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.nativeEvent.isComposing) return
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (optionCount === 0) return
+      e.preventDefault()
+      setOpen(true)
+      const dir = e.key === 'ArrowDown' ? 1 : -1
+      setActive((activeIndex + dir + optionCount) % optionCount)
+    } else if (e.key === 'Enter' && !(e.metaKey || e.ctrlKey)) {
+      if (!q) return
+      e.preventDefault()
+      if (activeIndex >= 0 && optionCount > 0) pickOption(activeIndex)
+      else if (isIco) setEnterPending(true)
+    } else if (e.key === 'Escape' && open) {
+      e.preventDefault()
+      setOpen(false)
+    }
+  }
+
   if (value) {
     const a = details?.address
     const line = [a?.street, [a?.zip, a?.city].filter(Boolean).join(' ')].filter(Boolean)
@@ -136,9 +191,6 @@ export function CustomerCard({
     )
   }
 
-  const own = contacts.data ?? []
-  const aresNew = ares.data && !own.some((c) => c.ico === ares.data?.ico) ? ares.data : null
-
   return (
     <div className="space-y-3">
       <div className="relative">
@@ -148,7 +200,15 @@ export function CustomerCard({
           onChange={(e) => {
             setTerm(e.target.value)
             setOpen(true)
+            setActive(-1)
           }}
+          onKeyDown={onSearchKeyDown}
+          autoFocus={autoFocus}
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={open && activeIndex >= 0 ? optionId(activeIndex) : undefined}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder={t.customerSearch}
@@ -157,15 +217,21 @@ export function CustomerCard({
           className="h-10 bg-card"
         />
         {open && (
-          <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg bg-popover shadow-floating">
+          <div
+            id={listId}
+            className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg bg-popover shadow-floating"
+          >
             {own.length > 0 && (
               <div className="py-1">
                 <div className="label-caps px-3 pt-2 pb-1">{t.customerYours}</div>
-                {own.map((c) => (
+                {own.map((c, i) => (
                   <button
                     key={c.id}
+                    id={optionId(i)}
                     type="button"
-                    className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-muted"
+                    tabIndex={-1}
+                    data-active={i === activeIndex || undefined}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-muted data-[active]:bg-muted"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => pick({ id: c.id, name: c.name, ico: c.ico })}
                   >
@@ -180,8 +246,11 @@ export function CustomerCard({
               <div className="py-1">
                 <div className="label-caps px-3 pt-2 pb-1">{t.customerAres}</div>
                 <button
+                  id={optionId(own.length)}
                   type="button"
-                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                  tabIndex={-1}
+                  data-active={own.length === activeIndex || undefined}
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted data-[active]:bg-muted"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => fromAres.mutate()}
                 >

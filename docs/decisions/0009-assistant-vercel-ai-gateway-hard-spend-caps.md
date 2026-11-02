@@ -14,7 +14,7 @@ Before every request the server enforces, in order: global month-to-date budget 
 (`AI_ORG_MONTHLY_USD`, 2), per-user rate limits, `maxSteps` and `maxOutputTokens`, using costs recorded in `ai_usage`. A Gateway team budget is a second,
 independent backstop. Tools come from the oRPC router and run as the signed-in user; destructive tools need UI approval; prompt training is disallowed.
 
-## Rejected
+## Rejected (to confirm by the owner)
 - **Soft limits or alerts only:** a loop or abuse could spend the budget before anyone looks.
 
 ## Consequences

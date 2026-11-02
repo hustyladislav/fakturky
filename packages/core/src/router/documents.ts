@@ -294,6 +294,7 @@ export const documentsRouter = {
           .enum(['invoice', 'proforma', 'credit_note', 'payment_receipt'])
           .optional()
           .describe('Only documents of this type'),
+        contactId: z.string().min(1).optional().describe('Only documents of this contact'),
         sort: z
           .enum(['issueDate', 'dueDate', 'number', 'customer', 'total'])
           .default('issueDate')

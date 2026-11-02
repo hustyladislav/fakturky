@@ -36,6 +36,8 @@ import { Route as DocsMcpRouteImport } from './routes/docs.mcp'
 import { Route as FTokenRouteImport } from './routes/f.$token'
 import { Route as AppFakturyIndexRouteImport } from './routes/_app/faktury.index'
 import { Route as AppFakturyNovaRouteImport } from './routes/_app/faktury.nova'
+import { Route as AppKontaktyIndexRouteImport } from './routes/_app/kontakty.index'
+import { Route as AppKontaktyIdRouteImport } from './routes/_app/kontakty.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 import { Route as ApiCronBankSyncRouteImport } from './routes/api/cron.bank-sync'
 import { Route as ApiCronRecurringRouteImport } from './routes/api/cron.recurring'
@@ -185,6 +187,16 @@ const AppFakturyNovaRoute = AppFakturyNovaRouteImport.update({
   path: '/nova',
   getParentRoute: () => AppFakturyRoute,
 } as any)
+const AppKontaktyIndexRoute = AppKontaktyIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppKontaktyRoute,
+} as any)
+const AppKontaktyIdRoute = AppKontaktyIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppKontaktyRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -271,7 +283,7 @@ export interface FileRoutesByFullPath {
   '/dph': typeof AppDphRoute
   '/faktury': typeof AppFakturyRouteWithChildren
   '/import': typeof AppImportRoute
-  '/kontakty': typeof AppKontaktyRoute
+  '/kontakty': typeof AppKontaktyRouteWithChildren
   '/nastaveni': typeof AppNastaveniRoute
   '/prehled': typeof AppPrehledRoute
   '/sablony': typeof AppSablonyRoute
@@ -282,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
   '/faktury/nova': typeof AppFakturyNovaRoute
+  '/kontakty/$id': typeof AppKontaktyIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/bank-sync': typeof ApiCronBankSyncRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
@@ -294,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/f/$token/pdf': typeof FTokenPdfRoute
   '/f/$token/qr.png': typeof FTokenQrDotpngRoute
   '/faktury/': typeof AppFakturyIndexRoute
+  '/kontakty/': typeof AppKontaktyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
   '/faktury/$id/': typeof AppFakturyIdIndexRoute
@@ -312,7 +326,6 @@ export interface FileRoutesByTo {
   '/banka': typeof AppBankaRoute
   '/dph': typeof AppDphRoute
   '/import': typeof AppImportRoute
-  '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
   '/prehled': typeof AppPrehledRoute
   '/sablony': typeof AppSablonyRoute
@@ -323,6 +336,7 @@ export interface FileRoutesByTo {
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
   '/faktury/nova': typeof AppFakturyNovaRoute
+  '/kontakty/$id': typeof AppKontaktyIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/bank-sync': typeof ApiCronBankSyncRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
@@ -335,6 +349,7 @@ export interface FileRoutesByTo {
   '/f/$token/pdf': typeof FTokenPdfRoute
   '/f/$token/qr.png': typeof FTokenQrDotpngRoute
   '/faktury': typeof AppFakturyIndexRoute
+  '/kontakty': typeof AppKontaktyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
   '/faktury/$id': typeof AppFakturyIdIndexRoute
@@ -356,7 +371,7 @@ export interface FileRoutesById {
   '/_app/dph': typeof AppDphRoute
   '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/import': typeof AppImportRoute
-  '/_app/kontakty': typeof AppKontaktyRoute
+  '/_app/kontakty': typeof AppKontaktyRouteWithChildren
   '/_app/nastaveni': typeof AppNastaveniRoute
   '/_app/prehled': typeof AppPrehledRoute
   '/_app/sablony': typeof AppSablonyRoute
@@ -367,6 +382,7 @@ export interface FileRoutesById {
   '/docs/mcp': typeof DocsMcpRoute
   '/f/$token': typeof FTokenRouteWithChildren
   '/_app/faktury/nova': typeof AppFakturyNovaRoute
+  '/_app/kontakty/$id': typeof AppKontaktyIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/bank-sync': typeof ApiCronBankSyncRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
@@ -379,6 +395,7 @@ export interface FileRoutesById {
   '/f/$token/pdf': typeof FTokenPdfRoute
   '/f/$token/qr.png': typeof FTokenQrDotpngRoute
   '/_app/faktury/': typeof AppFakturyIndexRoute
+  '/_app/kontakty/': typeof AppKontaktyIndexRoute
   '/_app/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
   '/_app/faktury/$id/': typeof AppFakturyIdIndexRoute
@@ -411,6 +428,7 @@ export interface FileRouteTypes {
     | '/docs/mcp'
     | '/f/$token'
     | '/faktury/nova'
+    | '/kontakty/$id'
     | '/api/auth/$'
     | '/api/cron/bank-sync'
     | '/api/cron/recurring'
@@ -423,6 +441,7 @@ export interface FileRouteTypes {
     | '/f/$token/pdf'
     | '/f/$token/qr.png'
     | '/faktury/'
+    | '/kontakty/'
     | '/faktury/$id/upravit'
     | '/api/documents/$id/pdf'
     | '/faktury/$id/'
@@ -441,7 +460,6 @@ export interface FileRouteTypes {
     | '/banka'
     | '/dph'
     | '/import'
-    | '/kontakty'
     | '/nastaveni'
     | '/prehled'
     | '/sablony'
@@ -452,6 +470,7 @@ export interface FileRouteTypes {
     | '/docs/mcp'
     | '/f/$token'
     | '/faktury/nova'
+    | '/kontakty/$id'
     | '/api/auth/$'
     | '/api/cron/bank-sync'
     | '/api/cron/recurring'
@@ -464,6 +483,7 @@ export interface FileRouteTypes {
     | '/f/$token/pdf'
     | '/f/$token/qr.png'
     | '/faktury'
+    | '/kontakty'
     | '/faktury/$id/upravit'
     | '/api/documents/$id/pdf'
     | '/faktury/$id'
@@ -495,6 +515,7 @@ export interface FileRouteTypes {
     | '/docs/mcp'
     | '/f/$token'
     | '/_app/faktury/nova'
+    | '/_app/kontakty/$id'
     | '/api/auth/$'
     | '/api/cron/bank-sync'
     | '/api/cron/recurring'
@@ -507,6 +528,7 @@ export interface FileRouteTypes {
     | '/f/$token/pdf'
     | '/f/$token/qr.png'
     | '/_app/faktury/'
+    | '/_app/kontakty/'
     | '/_app/faktury/$id/upravit'
     | '/api/documents/$id/pdf'
     | '/_app/faktury/$id/'
@@ -732,6 +754,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFakturyNovaRouteImport
       parentRoute: typeof AppFakturyRoute
     }
+    '/_app/kontakty/': {
+      id: '/_app/kontakty/'
+      path: '/'
+      fullPath: '/kontakty/'
+      preLoaderRoute: typeof AppKontaktyIndexRouteImport
+      parentRoute: typeof AppKontaktyRoute
+    }
+    '/_app/kontakty/$id': {
+      id: '/_app/kontakty/$id'
+      path: '/$id'
+      fullPath: '/kontakty/$id'
+      preLoaderRoute: typeof AppKontaktyIdRouteImport
+      parentRoute: typeof AppKontaktyRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -851,12 +887,26 @@ const AppFakturyRouteWithChildren = AppFakturyRoute._addFileChildren(
   AppFakturyRouteChildren,
 )
 
+interface AppKontaktyRouteChildren {
+  AppKontaktyIdRoute: typeof AppKontaktyIdRoute
+  AppKontaktyIndexRoute: typeof AppKontaktyIndexRoute
+}
+
+const AppKontaktyRouteChildren: AppKontaktyRouteChildren = {
+  AppKontaktyIdRoute: AppKontaktyIdRoute,
+  AppKontaktyIndexRoute: AppKontaktyIndexRoute,
+}
+
+const AppKontaktyRouteWithChildren = AppKontaktyRoute._addFileChildren(
+  AppKontaktyRouteChildren,
+)
+
 interface AppRouteChildren {
   AppBankaRoute: typeof AppBankaRoute
   AppDphRoute: typeof AppDphRoute
   AppFakturyRoute: typeof AppFakturyRouteWithChildren
   AppImportRoute: typeof AppImportRoute
-  AppKontaktyRoute: typeof AppKontaktyRoute
+  AppKontaktyRoute: typeof AppKontaktyRouteWithChildren
   AppNastaveniRoute: typeof AppNastaveniRoute
   AppPrehledRoute: typeof AppPrehledRoute
   AppSablonyRoute: typeof AppSablonyRoute
@@ -867,7 +917,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDphRoute: AppDphRoute,
   AppFakturyRoute: AppFakturyRouteWithChildren,
   AppImportRoute: AppImportRoute,
-  AppKontaktyRoute: AppKontaktyRoute,
+  AppKontaktyRoute: AppKontaktyRouteWithChildren,
   AppNastaveniRoute: AppNastaveniRoute,
   AppPrehledRoute: AppPrehledRoute,
   AppSablonyRoute: AppSablonyRoute,

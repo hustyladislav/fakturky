@@ -4,6 +4,7 @@ import { Button } from '@fakturky/ui/components/button'
 import { EmptyState } from '@fakturky/ui/components/empty-state'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
+import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { FileStack } from 'lucide-react'
@@ -121,17 +122,13 @@ function Templates() {
               >
                 <div className="space-y-1">
                   <Label htmlFor={`fr-${tpl.id}`}>{t.repeat}</Label>
-                  <select
-                    id={`fr-${tpl.id}`}
-                    name="frequency"
-                    className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
-                  >
+                  <NativeSelect id={`fr-${tpl.id}`} name="frequency">
                     {Object.entries(t.frequency).map(([k, v]) => (
                       <option key={k} value={k}>
                         {v}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor={`d-${tpl.id}`}>{t.day}</Label>

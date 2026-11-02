@@ -13,6 +13,7 @@ const EXCLUDED = new Set([
   'export_contacts_csv',
   'export_documents_csv',
   'export_organization_json',
+  'export_vat_xml',
   'import_from_fakturoid',
   'import_from_file',
 ])

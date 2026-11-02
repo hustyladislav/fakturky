@@ -92,6 +92,20 @@
       "when": 1793593752703,
       "tag": "0012_pale_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793594484472,
+      "tag": "0013_cultured_meltdown",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793596424375,
+      "tag": "0014_outgoing_vermin",
+      "breakpoints": true
     }
   ]
 }

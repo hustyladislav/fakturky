@@ -1,6 +1,7 @@
 import type { InferRouterInputs, InferRouterOutputs } from '@orpc/server'
 import { accountRouter } from './account'
 import { appearanceRouter } from './appearance'
+import { bankRouter } from './bank'
 import { bankAccountsRouter } from './bank-accounts'
 import { businessProfileRouter } from './business-profile'
 import { contactsRouter } from './contacts'
@@ -12,10 +13,12 @@ import { lookupRouter } from './lookup'
 import { numberSeriesRouter } from './number-series'
 import { publicRouter } from './public'
 import { recurringRouter, templatesRouter } from './templates'
+import { vatRouter } from './vat'
 
 export const router = {
   account: accountRouter,
   appearance: appearanceRouter,
+  bank: bankRouter,
   bankAccounts: bankAccountsRouter,
   businessProfile: businessProfileRouter,
   contacts: contactsRouter,
@@ -28,6 +31,7 @@ export const router = {
   public: publicRouter,
   recurring: recurringRouter,
   templates: templatesRouter,
+  vat: vatRouter,
 }
 
 export type Router = typeof router

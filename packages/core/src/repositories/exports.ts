@@ -11,6 +11,7 @@ const {
   contact,
   payment,
   bankAccount,
+  bankTransaction,
   businessProfile,
   template,
   recurringRule,
@@ -34,6 +35,10 @@ export const exportsRepo = {
           .from(businessProfile)
           .where(eq(businessProfile.organizationId, orgId)),
         accounts: await tx.select().from(bankAccount).where(eq(bankAccount.organizationId, orgId)),
+        bankTransactions: await tx
+          .select()
+          .from(bankTransaction)
+          .where(eq(bankTransaction.organizationId, orgId)),
         contacts: await tx.select().from(contact).where(eq(contact.organizationId, orgId)),
         docs: await tx
           .select()
@@ -75,7 +80,8 @@ export const exportsRepo = {
         exportedAt: new Date().toISOString(),
         format: 'fakturky-export/1',
         businessProfile: profile[0] ?? null,
-        bankAccounts: accounts,
+        bankAccounts: accounts.map(({ fioTokenEncrypted: _secret, ...a }) => a),
+        bankTransactions: snap.bankTransactions,
         contacts,
         documents: docs.map(({ publicToken: _token, ...d }) => ({
           ...d,

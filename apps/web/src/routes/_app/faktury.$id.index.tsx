@@ -3,6 +3,7 @@ import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
+import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
@@ -242,6 +243,17 @@ function InvoiceDetail() {
           <Actions />
         </div>
       </div>
+      {(() => {
+        const bankPayments = d.payments.filter((p) => p.source === 'bank')
+        const last = bankPayments[bankPayments.length - 1]
+        if (!last) return null
+        const date = formatDateCs(last.paidOn)
+        return (
+          <p className="text-muted-foreground text-sm" data-testid="paid-by-transfer">
+            {d.status === 'paid' ? t.paidByTransfer(date) : t.partlyPaidByTransfer(date)}
+          </p>
+        )
+      })()}
       <div className="flex flex-wrap gap-2 sm:hidden">
         <Actions part="secondary" />
       </div>
@@ -550,16 +562,15 @@ function InvoiceDetail() {
       >
         <div className="space-y-2">
           <Label htmlFor="receipt-rate">{t.receiptRate}</Label>
-          <select
+          <NativeSelect
             id="receipt-rate"
-            className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
             value={receiptRate}
             onChange={(e) => setReceiptRate(e.target.value as '21' | '12' | 'split')}
           >
             <option value="21">21 %</option>
             <option value="12">12 %</option>
             <option value="split">{t.receiptSplit}</option>
-          </select>
+          </NativeSelect>
         </div>
         {receiptRate === 'split' && (
           <div className="space-y-2">

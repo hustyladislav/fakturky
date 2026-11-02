@@ -29,7 +29,7 @@ import { lazy, type ReactNode, Suspense, useMemo, useState } from 'react'
 import { clearAssistantStorage } from '@/components/assistant/assistant-storage'
 import { InstallHint } from '@/components/pwa/install-hint'
 import { cs } from '@/i18n/cs'
-import { NEW_INVOICE_PATH, navItems } from './nav'
+import { type NavItem, NEW_INVOICE_PATH, navItems, useNavItems } from './nav'
 import { useRecordRecent } from './recent-pages'
 import { ShellContext, type ShellState, useShell as useShellState } from './shell-context'
 import { useModKey } from './use-mod-key'
@@ -192,6 +192,7 @@ function ShellInner({
 }
 
 function Sidebar({ user }: { user: { name: string; email: string } }) {
+  const items = useNavItems()
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-16 flex-col border-r bg-sidebar text-sidebar-foreground md:flex lg:w-60">
       <div className="flex h-14 items-center px-4 max-lg:justify-center max-lg:px-0">
@@ -202,7 +203,7 @@ function Sidebar({ user }: { user: { name: string; email: string } }) {
         </Link>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-2 max-lg:px-2" aria-label={cs.shell.navigation}>
-        {navItems.map((item) => (
+        {items.map((item) => (
           <Link
             key={item.to}
             to={item.to}
@@ -284,7 +285,7 @@ function AccountMenu({ user }: { user: { name: string; email: string } }) {
 function MobileTabs() {
   const tab =
     'flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground data-[status=active]:text-primary [&_svg]:size-5'
-  const [overview, invoices, contacts] = navItems
+  const [overview, invoices, contacts] = navItems as readonly [NavItem, NavItem, NavItem]
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-stretch border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
@@ -320,6 +321,7 @@ function MoreMenu({ tabClass }: { tabClass: string }) {
   const { setAssistantOpen } = useShellState()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const vat = useNavItems().find((n) => n.payerOnly)
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={cn(tabClass, 'outline-none')} aria-label={cs.shell.more}>
@@ -331,6 +333,12 @@ function MoreMenu({ tabClass }: { tabClass: string }) {
           <Sparkles aria-hidden />
           {cs.shell.assistant}
         </DropdownMenuItem>
+        {vat && (
+          <DropdownMenuItem render={<Link to={vat.to} />}>
+            <vat.icon aria-hidden />
+            {vat.label}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem render={<Link to="/nastaveni" />}>
           <Settings aria-hidden />
           {cs.nav.settings}

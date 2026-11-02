@@ -1,0 +1,5 @@
+Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance
+TRANSFER,Current,2026-01-03 09:15:22,2026-01-03 09:15:23,Payment from ACME GmbH,1250.50,0.00,EUR,COMPLETED,2250.50
+CARD_PAYMENT,Current,2026-01-04 12:00:00,2026-01-05 03:10:00,Notion Labs,-9.99,0.00,EUR,COMPLETED,2240.51
+TRANSFER,Current,2026-01-06 08:00:00,,Payment from Pending Ltd,300.00,0.00,EUR,PENDING,
+TOPUP,Current,2026-01-07 18:30:00,2026-01-07 18:30:05,"Top-up by *1234, ""Visa""",1000,0.00,EUR,COMPLETED,3240.51

@@ -31,6 +31,16 @@ Source of truth for `packages/domain`. Researched 2026-11-01; law = zákon 235/2
   weekends/holidays (verify)). Store `exchange_rate` on the document; allow manual override.
 - SK (later): 23 %, 19 %, 5 %; IČ DPH = `SK` + 10 digits; e-invoicing (Peppol UBL) mandatory for SK payers from 2027.
 
+## VAT reporting (payers)
+
+The **DPH** page (`/dph`, payers only) previews and exports the EPO XML for the Přiznání k DPH (DPHDP3),
+Kontrolní hlášení (DPHKH1) and Souhrnné hlášení (DPHSHV) from issued tax documents by DUZP. Only output VAT is
+derived; input VAT is entered by hand (ř.40/41). Formats, row mapping, rounding rules and the open questions are
+in `docs/research/vat-reports.md`; logic is `packages/domain/src/vat-report.ts` (aggregation) and `vat-xml.ts`
+(generators, validated against the official XSDs in `packages/domain/test/fixtures/xsd/`). Filing details
+(`vat_filing`: tax office code, period, taxpayer type) live on the business profile. Always shown:
+"Kontrolujte před podáním — aplikace nenahrazuje daňového poradce."
+
 ## Document types
 
 - `invoice` — faktura / daňový doklad.
@@ -85,7 +95,13 @@ Source of truth for `packages/domain`. Researched 2026-11-01; law = zákon 235/2
 - **VIES**: `POST https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number` `{"countryCode","vatNumber"}`.
 - **ČNB rates**: `https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/kurzy-devizoveho-trhu/denni_kurz.txt?date=DD.MM.YYYY`
   (`země|měna|množství|kód|kurz`, comma decimals, divide by `množství`), or JSON `https://api.cnb.cz/cnbapi/exrates/daily`.
-- **Fio API** (later, free bank pairing for Fio users): token-based, 1 req / 30 s.
+- **Fio API** (free bank pairing for Fio users): token-based, 1 req / 30 s.
+- **Bank statements** (`@fakturky/domain/bank`, `parseStatement`): CSV (Fio, Revolut personal + Business, Raiffeisenbank,
+  ČSOB, KB — detected from the header, columns matched by name aliases; any other CSV via an explicit column mapping),
+  ABO/GPC (records 074/075/078/079, posting code 1 debit / 2 credit / 4 storno debit / 5 storno credit, Windows-1250),
+  CAMT.053 XML (VS/KS/SS from the Czech `/VS…/SS…/KS…` EndToEndId convention or `Strd/CdtrRefInf/Ref`). Amounts are
+  signed (credit > 0). Re-imports are idempotent through `external_id` (bank id, else a row fingerprint).
+  CSV exports of KB/ČSOB/Raiffeisen were modelled from their documented column names, not from real account exports.
 
 ## Exports
 

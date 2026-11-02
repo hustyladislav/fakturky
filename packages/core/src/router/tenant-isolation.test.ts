@@ -8,6 +8,7 @@
  *  - `external` calls a third party / the public token flow and touches no tenant row.
  */
 import { type DbHandle, schema } from '@fakturky/db'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { clientFor, createTestDb, seedOrg } from '../testing'
 
@@ -56,6 +57,50 @@ const cases: Record<string, Case> = {
     kind: 'foreign',
     run: (b, a) => b.bankAccounts.delete({ id: a.bankAccountId }),
   },
+
+  'bankAccounts.setFioToken': {
+    kind: 'foreign',
+    run: (b, a) => b.bankAccounts.setFioToken({ id: a.bankAccountId, token: null }),
+  },
+  'bank.list': { kind: 'scoped', run: (b) => b.bank.list({}) },
+  'bank.importStatement': {
+    kind: 'foreign',
+    run: (b, a) =>
+      b.bank.importStatement({
+        bankAccountId: a.bankAccountId,
+        content: 'Datum;Objem;Měna\n05.01.2026;100,00;CZK\n',
+      }),
+  },
+  'bank.autoMatch': { kind: 'scoped', run: (b) => b.bank.autoMatch({}) },
+  'bank.match': {
+    // Org B cannot pay org A's invoice with B's own transaction, nor book A's transaction on B's invoice.
+    kind: 'foreign',
+    run: async (b, a) => {
+      const mine = await b.bank.list({})
+      const theirs = await clientFor(handle, principal(orgA)).bank.list({})
+      const ownTx = mine.items[0]
+      expect(ownTx).toBeDefined()
+      await expect(
+        b.bank.match({ transactionId: ownTx?.id ?? '', documentId: a.issuedId }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+      return b.bank.match({ transactionId: theirs.items[0]?.id ?? 'x', documentId: a.issuedId })
+    },
+  },
+  'bank.unmatch': {
+    kind: 'foreign',
+    run: async (b) => {
+      const theirs = await clientFor(handle, principal(orgA)).bank.list({})
+      return b.bank.unmatch({ transactionId: theirs.items[0]?.id ?? 'x' })
+    },
+  },
+  'bank.setIgnored': {
+    kind: 'foreign',
+    run: async (b) => {
+      const theirs = await clientFor(handle, principal(orgA)).bank.list({})
+      return b.bank.setIgnored({ transactionId: theirs.items[0]?.id ?? 'x', ignored: true })
+    },
+  },
+  'bank.syncFio': { kind: 'foreign', run: (b, a) => b.bank.syncFio({ id: a.bankAccountId }) },
 
   'businessProfile.get': { kind: 'scoped', run: (b) => b.businessProfile.get() },
   'businessProfile.update': {
@@ -202,9 +247,36 @@ const cases: Record<string, Case> = {
   },
   'recurring.delete': { kind: 'foreign', run: (b, a) => b.recurring.delete({ id: a.ruleId }) },
 
+  // VAT reports are for payers: make org B one first (ordered last, nothing after depends on it).
+  'vat.report': {
+    kind: 'scoped',
+    run: async (b) => {
+      await makePayer(orgB)
+      return b.vat.report({ year: 2026, month: 3 })
+    },
+  },
+  'vat.exportXml': {
+    kind: 'scoped',
+    run: async (b) => {
+      await makePayer(orgB)
+      return b.vat.exportXml({ year: 2026, month: 3, kind: 'kh' })
+    },
+  },
+
   'public.invoice': { kind: 'external' },
   'public.isdoc': { kind: 'external' },
   'public.pdf': { kind: 'external' },
+}
+
+async function makePayer(org: string) {
+  await handle.db
+    .update(schema.businessProfile)
+    .set({
+      vatStatus: 'payer',
+      dic: 'CZ27082440',
+      vatFiling: { taxOfficeCode: '451', period: 'monthly', subjectType: 'P' },
+    })
+    .where(eq(schema.businessProfile.organizationId, org))
 }
 
 function procedurePaths(node: object, prefix: string[] = []): string[] {
@@ -252,6 +324,10 @@ beforeAll(async () => {
 
   const contact = await aApi.contacts.create({ name: SECRET, emails: ['a-secret@example.com'] })
   const bank = await aApi.bankAccounts.create({ label: SECRET, account: '19-2000145399/0800' })
+  await aApi.bank.importStatement({
+    bankAccountId: bank.id,
+    content: `Datum;Objem;Měna;Název protiúčtu;VS\n05.01.2026;100,00;CZK;${SECRET};424242\n`,
+  })
   const draft = await aApi.documents.createDraft({
     contactId: contact.id,
     privateNote: SECRET,
@@ -272,6 +348,11 @@ beforeAll(async () => {
     secret: SECRET,
   }
   const bContact = await bApi.contacts.create({ name: 'B client' })
+  const bBank = await bApi.bankAccounts.create({ label: 'B bank', account: '19-2000145399/0800' })
+  await bApi.bank.importStatement({
+    bankAccountId: bBank.id,
+    content: 'Datum;Objem;Měna;Název protiúčtu\n06.01.2026;77,00;CZK;B payer\n',
+  })
   bOwn = {
     draftId: (
       await bApi.documents.createDraft({
@@ -372,6 +453,10 @@ describe('tenant isolation', () => {
     const issued = await aApi.documents.get({ id: a.issuedId })
     expect(issued.status).toBe('issued')
     expect(issued.payments).toHaveLength(0)
+    // org A's statement is intact and was not duplicated or altered by B's hostile import
+    const txs = await aApi.bank.list({})
+    expect(txs.total).toBe(1)
+    expect(txs.items[0]).toMatchObject({ matchStatus: 'unmatched', counterpartyName: SECRET })
     // org A's own list is unchanged: no document appeared from B's hostile createDraft/duplicate calls
     expect((await aApi.documents.list({})).length).toBe(2)
     // …and B did not gain documents referencing A's contact or bank account

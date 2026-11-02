@@ -23,7 +23,10 @@
     "./integrations/vies": "./src/integrations/vies.ts",
     "./dic": "./src/dic.ts",
     "./qr/epc": "./src/qr/epc.ts",
-    "./isdoc": "./src/isdoc.ts"
+    "./isdoc": "./src/isdoc.ts",
+    "./vat-report": "./src/vat-report.ts",
+    "./vat-xml": "./src/vat-xml.ts",
+    "./bank": "./src/bank/index.ts"
   },
   "scripts": {
     "test": "vitest run",

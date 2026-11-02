@@ -2,6 +2,7 @@ import { formatDateCs } from '@fakturky/domain/dates'
 import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Money } from '@fakturky/ui/components/money'
+import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
@@ -74,9 +75,9 @@ function InvoiceList() {
             </Button>
           ))}
         </div>
-        <select
+        <NativeSelect
+          className="sm:w-52"
           aria-label={t.columns.type}
-          className="border-input bg-background h-9 rounded-md border px-2 text-sm"
           value={type ?? ''}
           onChange={(e) =>
             navigate({
@@ -93,7 +94,7 @@ function InvoiceList() {
               {t.type[x]}
             </option>
           ))}
-        </select>
+        </NativeSelect>
         <div className="relative sm:w-80">
           <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
           <Input

@@ -20,6 +20,8 @@ import { Route as RegistraceRouteImport } from './routes/registrace'
 import { Route as SouhlasRouteImport } from './routes/souhlas'
 import { Route as SoukromiRouteImport } from './routes/soukromi'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
+import { Route as AppBankaRouteImport } from './routes/_app/banka'
+import { Route as AppDphRouteImport } from './routes/_app/dph'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppImportRouteImport } from './routes/_app/import'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
@@ -33,6 +35,7 @@ import { Route as FTokenRouteImport } from './routes/f.$token'
 import { Route as AppFakturyIndexRouteImport } from './routes/_app/faktury.index'
 import { Route as AppFakturyNovaRouteImport } from './routes/_app/faktury.nova'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
+import { Route as ApiCronBankSyncRouteImport } from './routes/api/cron.bank-sync'
 import { Route as ApiCronRecurringRouteImport } from './routes/api/cron.recurring'
 import { Route as ApiCronRemindersRouteImport } from './routes/api/cron.reminders'
 import { Route as ApiDevDbKindRouteImport } from './routes/api/dev.db-kind'
@@ -99,6 +102,16 @@ const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
   path: '/.well-known/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppBankaRoute = AppBankaRouteImport.update({
+  id: '/banka',
+  path: '/banka',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDphRoute = AppDphRouteImport.update({
+  id: '/dph',
+  path: '/dph',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppFakturyRoute = AppFakturyRouteImport.update({
   id: '/faktury',
   path: '/faktury',
@@ -162,6 +175,11 @@ const AppFakturyNovaRoute = AppFakturyNovaRouteImport.update({
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronBankSyncRoute = ApiCronBankSyncRouteImport.update({
+  id: '/api/cron/bank-sync',
+  path: '/api/cron/bank-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCronRecurringRoute = ApiCronRecurringRouteImport.update({
@@ -231,6 +249,8 @@ export interface FileRoutesByFullPath {
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
+  '/banka': typeof AppBankaRoute
+  '/dph': typeof AppDphRoute
   '/faktury': typeof AppFakturyRouteWithChildren
   '/import': typeof AppImportRoute
   '/kontakty': typeof AppKontaktyRoute
@@ -243,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/f/$token': typeof FTokenRouteWithChildren
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/bank-sync': typeof ApiCronBankSyncRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/dev/db-kind': typeof ApiDevDbKindRoute
@@ -267,6 +288,8 @@ export interface FileRoutesByTo {
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
+  '/banka': typeof AppBankaRoute
+  '/dph': typeof AppDphRoute
   '/import': typeof AppImportRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
@@ -278,6 +301,7 @@ export interface FileRoutesByTo {
   '/f/$token': typeof FTokenRouteWithChildren
   '/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/bank-sync': typeof ApiCronBankSyncRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/dev/db-kind': typeof ApiDevDbKindRoute
@@ -304,6 +328,8 @@ export interface FileRoutesById {
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
+  '/_app/banka': typeof AppBankaRoute
+  '/_app/dph': typeof AppDphRoute
   '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/import': typeof AppImportRoute
   '/_app/kontakty': typeof AppKontaktyRoute
@@ -316,6 +342,7 @@ export interface FileRoutesById {
   '/f/$token': typeof FTokenRouteWithChildren
   '/_app/faktury/nova': typeof AppFakturyNovaRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/bank-sync': typeof ApiCronBankSyncRoute
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/dev/db-kind': typeof ApiDevDbKindRoute
@@ -342,6 +369,8 @@ export interface FileRouteTypes {
     | '/souhlas'
     | '/soukromi'
     | '/.well-known/$'
+    | '/banka'
+    | '/dph'
     | '/faktury'
     | '/import'
     | '/kontakty'
@@ -354,6 +383,7 @@ export interface FileRouteTypes {
     | '/f/$token'
     | '/faktury/nova'
     | '/api/auth/$'
+    | '/api/cron/bank-sync'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
     | '/api/dev/db-kind'
@@ -378,6 +408,8 @@ export interface FileRouteTypes {
     | '/souhlas'
     | '/soukromi'
     | '/.well-known/$'
+    | '/banka'
+    | '/dph'
     | '/import'
     | '/kontakty'
     | '/nastaveni'
@@ -389,6 +421,7 @@ export interface FileRouteTypes {
     | '/f/$token'
     | '/faktury/nova'
     | '/api/auth/$'
+    | '/api/cron/bank-sync'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
     | '/api/dev/db-kind'
@@ -414,6 +447,8 @@ export interface FileRouteTypes {
     | '/souhlas'
     | '/soukromi'
     | '/.well-known/$'
+    | '/_app/banka'
+    | '/_app/dph'
     | '/_app/faktury'
     | '/_app/import'
     | '/_app/kontakty'
@@ -426,6 +461,7 @@ export interface FileRouteTypes {
     | '/f/$token'
     | '/_app/faktury/nova'
     | '/api/auth/$'
+    | '/api/cron/bank-sync'
     | '/api/cron/recurring'
     | '/api/cron/reminders'
     | '/api/dev/db-kind'
@@ -457,6 +493,7 @@ export interface RootRouteChildren {
   DocsMcpRoute: typeof DocsMcpRoute
   FTokenRoute: typeof FTokenRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCronBankSyncRoute: typeof ApiCronBankSyncRoute
   ApiCronRecurringRoute: typeof ApiCronRecurringRoute
   ApiCronRemindersRoute: typeof ApiCronRemindersRoute
   ApiDevDbKindRoute: typeof ApiDevDbKindRoute
@@ -544,6 +581,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/.well-known/$'
       preLoaderRoute: typeof DotwellKnownSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/banka': {
+      id: '/_app/banka'
+      path: '/banka'
+      fullPath: '/banka'
+      preLoaderRoute: typeof AppBankaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dph': {
+      id: '/_app/dph'
+      path: '/dph'
+      fullPath: '/dph'
+      preLoaderRoute: typeof AppDphRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/faktury': {
       id: '/_app/faktury'
@@ -634,6 +685,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/bank-sync': {
+      id: '/api/cron/bank-sync'
+      path: '/api/cron/bank-sync'
+      fullPath: '/api/cron/bank-sync'
+      preLoaderRoute: typeof ApiCronBankSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron/recurring': {
@@ -735,6 +793,8 @@ const AppFakturyRouteWithChildren = AppFakturyRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppBankaRoute: typeof AppBankaRoute
+  AppDphRoute: typeof AppDphRoute
   AppFakturyRoute: typeof AppFakturyRouteWithChildren
   AppImportRoute: typeof AppImportRoute
   AppKontaktyRoute: typeof AppKontaktyRoute
@@ -744,6 +804,8 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppBankaRoute: AppBankaRoute,
+  AppDphRoute: AppDphRoute,
   AppFakturyRoute: AppFakturyRouteWithChildren,
   AppImportRoute: AppImportRoute,
   AppKontaktyRoute: AppKontaktyRoute,
@@ -784,6 +846,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsMcpRoute: DocsMcpRoute,
   FTokenRoute: FTokenRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCronBankSyncRoute: ApiCronBankSyncRoute,
   ApiCronRecurringRoute: ApiCronRecurringRoute,
   ApiCronRemindersRoute: ApiCronRemindersRoute,
   ApiDevDbKindRoute: ApiDevDbKindRoute,

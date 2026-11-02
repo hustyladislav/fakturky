@@ -1,12 +1,15 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
+import { bankRepo } from '../repositories/bank'
 import { bankAccountsRepo } from '../repositories/bank-accounts'
 import {
   bankAccountInputSchema,
   bankAccountPatchSchema,
   bankAccountSchema,
+  presentAccount,
 } from '../schemas/bank-account'
+import { guardBank } from './bank'
 
 const idInput = z.object({ id: z.string().min(1) })
 const notFound = () => new ORPCError('NOT_FOUND', { message: 'Bank account not found' })
@@ -35,7 +38,11 @@ export const bankAccountsRouter = {
   })
     .input(z.object({}))
     .output(z.array(bankAccountSchema))
-    .handler(({ context }) => bankAccountsRepo.list(context.db, context.principal.organizationId)),
+    .handler(async ({ context }) =>
+      (await bankAccountsRepo.list(context.db, context.principal.organizationId)).map(
+        presentAccount,
+      ),
+    ),
 
   create: procedure({
     mcp: { name: 'create_bank_account', title: 'Add a bank account' },
@@ -49,8 +56,12 @@ export const bankAccountsRouter = {
   })
     .input(bankAccountInputSchema)
     .output(bankAccountSchema)
-    .handler(({ context, input }) =>
-      guard(() => bankAccountsRepo.create(context.db, context.principal.organizationId, input)),
+    .handler(async ({ context, input }) =>
+      presentAccount(
+        await guard(() =>
+          bankAccountsRepo.create(context.db, context.principal.organizationId, input),
+        ),
+      ),
     ),
 
   update: procedure({
@@ -74,7 +85,7 @@ export const bankAccountsRouter = {
         ),
       )
       if (!row) throw notFound()
-      return row
+      return presentAccount(row)
     }),
 
   setDefault: procedure({
@@ -99,8 +110,33 @@ export const bankAccountsRouter = {
         input.id,
       )
       if (!row) throw notFound()
-      return row
+      return presentAccount(row)
     }),
+
+  setFioToken: procedure({
+    mcp: {
+      name: 'set_fio_token',
+      title: 'Connect or disconnect Fio banka (read-only API token)',
+      description:
+        'Stores the read-only Fio API token (Fio internet banking → Settings → API) encrypted for this bank account so transactions can be synchronised daily. Pass null to disconnect. Only ever use a read-only token.',
+      idempotent: true,
+    },
+    openapi: {
+      method: 'PUT',
+      path: '/bank-accounts/{id}/fio-token',
+      summary: 'Set (or with null remove) the read-only Fio API token of a bank account',
+      tags: ['Bank accounts'],
+    },
+  })
+    .input(idInput.extend({ token: z.string().trim().min(1).max(200).nullable() }))
+    .output(bankAccountSchema)
+    .handler(async ({ context, input }) =>
+      presentAccount(
+        await guardBank(() =>
+          bankRepo.setFioToken(context.db, context.principal.organizationId, input.id, input.token),
+        ),
+      ),
+    ),
 
   delete: procedure({
     mcp: { name: 'delete_bank_account', title: 'Delete a bank account', destructive: true },
@@ -120,6 +156,6 @@ export const bankAccountsRouter = {
         input.id,
       )
       if (!row) throw notFound()
-      return row
+      return presentAccount(row)
     }),
 }

@@ -1,0 +1,3 @@
+Datum splatnosti;Datum zaúčtování;Název protistrany;Číslo účtu protistrany;Kód banky protistrany;Variabilní symbol;Konstantní symbol;Specifický symbol;Částka;Měna;Zpráva pro příjemce
+10.01.2026;10.01.2026;Gama Trade;4444444444;0600;20260009;308;;1 815,00;CZK;Úhrada faktury
+11.01.2026;11.01.2026;Telefonica;123456789;0800;999;;;-499,00;CZK;

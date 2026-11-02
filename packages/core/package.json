@@ -16,6 +16,8 @@
     "./export": "./src/export.ts",
     "./appearance-repo": "./src/repositories/appearance.ts",
     "./reminders-repo": "./src/repositories/reminders.ts",
+    "./bank-repo": "./src/repositories/bank.ts",
+    "./bank-matching-repo": "./src/repositories/bank-matching.ts",
     "./templates-repo": "./src/repositories/templates.ts",
     "./documents-repo": "./src/repositories/documents.ts",
     "./public-documents": "./src/repositories/public-documents.ts"

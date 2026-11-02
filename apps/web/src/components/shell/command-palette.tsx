@@ -9,7 +9,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { FilePlus2, Keyboard, type LucideIcon, Search, Sparkles, UserPlus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cs } from '@/i18n/cs'
-import { NEW_INVOICE_PATH, navItems } from './nav'
+import { NEW_INVOICE_PATH, useNavItems } from './nav'
 import { readRecent } from './recent-pages'
 import { useShell } from './shell-context'
 
@@ -35,6 +35,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
+  const navItems = useNavItems()
 
   useEffect(() => {
     if (paletteOpen) {
@@ -95,7 +96,7 @@ export function CommandPalette() {
     } else {
       const recent = readRecent()
         .map((p) => navItems.find((n) => n.to === p))
-        .filter((n): n is (typeof navItems)[number] => Boolean(n))
+        .filter((n): n is NonNullable<typeof n> => Boolean(n))
         .map((n) => ({
           id: `recent-${n.to}`,
           group: 'recent' as const,
@@ -123,7 +124,7 @@ export function CommandPalette() {
       })
     }
     return result
-  }, [query, navigate, setPaletteOpen, setHelpOpen, askAssistant])
+  }, [query, navigate, setPaletteOpen, setHelpOpen, askAssistant, navItems])
 
   useEffect(() => {
     setActive((a) => Math.min(a, Math.max(items.length - 1, 0)))

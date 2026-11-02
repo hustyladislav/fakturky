@@ -7,13 +7,20 @@ import { z } from 'zod'
  * Inputs are closed enums so the model can only reach routes that exist.
  */
 
-export const APP_PATHS = ['/', '/faktury', '/faktury/nova', '/kontakty', '/nastaveni'] as const
+export const APP_PATHS = [
+  '/',
+  '/faktury',
+  '/faktury/nova',
+  '/kontakty',
+  '/banka',
+  '/nastaveni',
+] as const
 export const INVOICE_FILTERS = ['all', 'unpaid', 'overdue', 'paid', 'draft'] as const
 
 export const navigateTool = toolDefinition({
   name: 'navigate',
   description:
-    'Otevře stránku v aplikaci. Přehled „/“, seznam faktur „/faktury“ (volitelně s filtrem: unpaid, overdue, paid, draft), nová faktura „/faktury/nova“, kontakty „/kontakty“, nastavení „/nastaveni“.',
+    'Otevře stránku v aplikaci. Přehled „/“, seznam faktur „/faktury“ (volitelně s filtrem: unpaid, overdue, paid, draft), nová faktura „/faktury/nova“, kontakty „/kontakty“, banka a párování plateb „/banka“, nastavení „/nastaveni“.',
   inputSchema: z.object({
     to: z.enum(APP_PATHS),
     filter: z.enum(INVOICE_FILTERS).optional().describe('Jen pro /faktury'),

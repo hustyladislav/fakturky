@@ -72,6 +72,7 @@ test('cron: refuses unauthorised calls; a due recurring rule issues its invoice'
   })
   expect(wrong.status()).toBe(401)
   expect((await page.request.get('/api/cron/reminders')).status()).toBe(401)
+  expect((await page.request.get('/api/cron/bank-sync')).status()).toBe(401)
 
   // Save the invoice as a template and repeat it monthly from today, issuing automatically.
   await page.getByRole('button', { name: 'Uložit jako šablonu' }).first().click()

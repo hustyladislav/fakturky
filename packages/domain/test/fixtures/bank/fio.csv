@@ -1,0 +1,8 @@
+"accountId";"bankId";"currency";"iban";"bic";"openingBalance";"closingBalance";"dateStart";"dateEnd";"idFrom";"idTo"
+"2400123455";"2010";"CZK";"CZ8720100000002400123455";"FIOBCZPPXXX";"10000,00";"21210,00";"01.01.2026";"31.01.2026";"1001";"1004"
+
+ID operace;Datum;Objem;Měna;Protiúčet;Název protiúčtu;Kód banky;KS;VS;SS;Uživatelská identifikace;Zpráva pro příjemce;Typ;Provedl;Upřesnění;Komentář;BIC;ID pokynu
+1001;05.01.2026;12 100,00;CZK;1234567890;Novák Jan s.r.o.;0800;0308;20260001;;Faktura 2026-0001;Platba faktury;Příjem převodem uvnitř banky;Novák Petr;;;GIBACZPXXXX;
+1002;07.01.2026;-350,50;CZK;;;;;;;Nákup: Albert;;Platba kartou;Husty Ladislav;;;;
+1003;12.01.2026;"1 000,00";CZK;19-2000145399;"Dodavatel ""A""";0800;;20260002;123;;Záloha;Bezhotovostní příjem;;;;;
+1004;20.01.2026;500,00;EUR;;Foreign Payer Ltd;;;;;;INV 2026-0003;Příjem;;;;;

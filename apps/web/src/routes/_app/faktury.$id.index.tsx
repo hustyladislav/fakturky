@@ -3,6 +3,7 @@ import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
+import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Check, Copy, Download, ExternalLink, Pencil, RefreshCw, Trash2 } from 'lucide-react'
@@ -183,7 +184,14 @@ function InvoiceDetail() {
 
   const d = q.data
   if (q.isError) return <p className="text-muted-foreground">{t.notFound}</p>
-  if (!d) return <p className="text-muted-foreground">{cs.common.loading}</p>
+  if (!d) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-4" aria-busy="true">
+        <Skeleton className="h-9 w-48" />
+        <Skeleton className="h-[520px] rounded-xl" />
+      </div>
+    )
+  }
 
   const isDraft = d.status === 'draft'
   const open = d.status === 'issued' && d.type !== 'credit_note'

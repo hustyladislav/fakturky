@@ -2,6 +2,7 @@ import { formatDateCs } from '@fakturky/domain/dates'
 import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Money } from '@fakturky/ui/components/money'
+import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Plus, Search } from 'lucide-react'
@@ -81,7 +82,13 @@ function InvoiceList() {
         </div>
       </div>
 
-      {list.data?.length === 0 ? (
+      {list.isPending ? (
+        <div className="space-y-px overflow-hidden rounded-xl border" aria-busy="true">
+          {Array.from({ length: 8 }, (_, i) => (
+            <Skeleton key={i} className="h-16 rounded-none" />
+          ))}
+        </div>
+      ) : list.data?.length === 0 ? (
         <div className="text-muted-foreground flex flex-col items-start gap-3 rounded-xl border p-6">
           <p>{filter === 'all' && !q ? t.empty : t.emptyFiltered}</p>
           {filter === 'all' && !q && (

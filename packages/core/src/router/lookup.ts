@@ -2,6 +2,7 @@ import { getRate, IntegrationError, lookupByIco, normalizeIco, todayPrague } fro
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
+import { isoDate } from '../schemas/document'
 import { cached, enforceRateLimit } from '../upstream-guard'
 
 const tag = ['Lookup']
@@ -71,10 +72,7 @@ export const lookupRouter = {
     .input(
       z.object({
         currency: z.string().length(3),
-        date: z
-          .string()
-          .regex(/^\d{4}-\d{2}-\d{2}$/)
-          .optional(),
+        date: isoDate.optional(),
       }),
     )
     .output(z.object({ currency: z.string(), rate: z.string(), date: z.string() }))

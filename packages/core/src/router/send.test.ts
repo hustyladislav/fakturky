@@ -498,3 +498,34 @@ test('CZK cash drafts round by default (explicit choice wins); a receipt needs a
     code: 'CONFLICT',
   })
 })
+
+test('payments: invalid amount, impossible or future date and overpayment are client errors', async () => {
+  const org = await seedOrg(handle, 'pay-validation')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Neplátce' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({ name: 'Klient' })
+  const inv = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        contactId: c.id,
+        lines: [{ description: 'x', quantity: '1', unitPrice: '1000' }],
+      })
+    ).id,
+  })
+  await expect(api.documents.markPaid({ id: inv.id, amount: 'abc' })).rejects.toMatchObject({
+    code: 'BAD_REQUEST',
+  })
+  await expect(
+    api.documents.markPaid({ id: inv.id, amount: '1', paidOn: '2026-13-45' }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  await expect(
+    api.documents.markPaid({ id: inv.id, amount: '1', paidOn: '2999-01-01' }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  await expect(api.documents.markPaid({ id: inv.id, amount: '1000.01' })).rejects.toMatchObject({
+    code: 'BAD_REQUEST',
+  })
+  const paid = await api.documents.markPaid({ id: inv.id, amount: '1 000,00' })
+  expect(paid.status).toBe('paid')
+})

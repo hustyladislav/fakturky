@@ -99,6 +99,13 @@ const SERIES_NAMES: Record<string, string> = {
   payment_receipt: 'Doklady k přijaté platbě',
 }
 
+/** A user-supplied money string ("1500", "1 500,5"); anything else is a client error, not a 500. */
+function parseAmount(raw: string) {
+  const v = raw.replace(/[\s\u00a0]/g, '').replace(',', '.')
+  if (!/^-?\d+(\.\d+)?$/.test(v)) throw new DocumentError('BAD_REQUEST', 'Amount is not a number')
+  return parseDecimal(v)
+}
+
 const vatApplies = (profile: { vatStatus: string } | null, type: string) =>
   profile?.vatStatus === 'payer' &&
   (type === 'invoice' || type === 'credit_note' || type === 'payment_receipt')
@@ -1173,9 +1180,15 @@ export const documentsRepo = {
       }
       const already = (await paidSums(tx, orgId, [id])).get(id) ?? new Decimal(0)
       const remaining = parseDecimal(doc.total).minus(already)
-      const amount = input.amount ? parseDecimal(input.amount) : remaining
+      const amount = input.amount ? parseAmount(input.amount) : remaining
       if (amount.lte(0)) throw new DocumentError('BAD_REQUEST', 'Amount must be positive')
+      if (amount.minus(remaining).greaterThan('0.005')) {
+        throw new DocumentError('BAD_REQUEST', 'The payment exceeds the remaining balance')
+      }
       const paidOn = input.paidOn ?? todayPrague()
+      if (paidOn > todayPrague()) {
+        throw new DocumentError('BAD_REQUEST', 'The payment date cannot be in the future')
+      }
       await tx.insert(payment).values({
         organizationId: orgId,
         documentId: id,

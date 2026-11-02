@@ -17,7 +17,7 @@ import {
   type ThemePreference,
 } from '@fakturky/ui/components/theme'
 import { cn } from '@fakturky/ui/lib/utils'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate, useParams } from '@tanstack/react-router'
 import {
   Check,
@@ -26,6 +26,7 @@ import {
   ChevronsUpDown,
   Coffee,
   Ellipsis,
+  FileStack,
   FileText,
   LogOut,
   MessageSquare,
@@ -37,6 +38,7 @@ import {
   Sun,
 } from 'lucide-react'
 import { Fragment, useState } from 'react'
+import { toast } from 'sonner'
 import { clearAssistantStorage } from '@/components/assistant/assistant-storage'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
@@ -67,7 +69,6 @@ export function Sidebar({ user }: { user: { name: string; email: string } }) {
         <OrgSwitcher />
       </div>
       <nav className="flex-1 space-y-0.5 px-3 py-3 max-lg:px-2" aria-label={cs.shell.navigation}>
-        <div className={cn('label-caps mb-2 px-3', labelCls)}>{cs.shell.navigation}</div>
         {items.map((item) => {
           const count = item.to === '/faktury' ? overdue : 0
           return (
@@ -88,7 +89,7 @@ export function Sidebar({ user }: { user: { name: string; email: string } }) {
                 <>
                   <span
                     className={cn(
-                      'ml-auto rounded-full bg-destructive/12 px-1.5 text-[11px] leading-5 font-semibold text-destructive tabular-nums group-hover/nav:hidden max-lg:hidden lg:group-data-[collapsed=true]/shell:hidden',
+                      'ml-auto rounded-full bg-destructive/15 px-1.5 text-[11px] leading-5 font-semibold text-destructive tabular-nums group-hover/nav:hidden max-lg:hidden lg:group-data-[collapsed=true]/shell:hidden',
                     )}
                     title={`${count} ${cs.shell.overdueCount}`}
                   >
@@ -323,6 +324,19 @@ export function Breadcrumbs() {
 
 /** Primary action: "Nová faktura" with a split menu (Prázdná / Ze šablony). */
 export function NewInvoiceButton() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const templates = useQuery(orpc.templates.list.queryOptions({ input: {} }))
+  const use = useMutation(
+    orpc.templates.use.mutationOptions({
+      onSuccess: async (d) => {
+        toast.success(cs.templates.used)
+        await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
+        await navigate({ to: '/faktury/$id/upravit', params: { id: d.id } })
+      },
+      onError: (e) => toast.error((e as Error).message || cs.common.error),
+    }),
+  )
   return (
     <div className="ml-2 hidden items-stretch md:flex">
       <Button
@@ -349,10 +363,26 @@ export function NewInvoiceButton() {
             <FileText aria-hidden />
             {cs.shell.blankInvoice}
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link to="/sablony" />}>
-            <Plus aria-hidden />
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="label-caps !px-2 !py-1.5">
             {cs.shell.fromTemplate}
-          </DropdownMenuItem>
+          </DropdownMenuLabel>
+          {(templates.data ?? []).slice(0, 8).map((tpl) => (
+            <DropdownMenuItem
+              key={tpl.id}
+              disabled={use.isPending}
+              onClick={() => use.mutate({ id: tpl.id })}
+            >
+              <FileStack aria-hidden />
+              <span className="truncate">{tpl.name}</span>
+            </DropdownMenuItem>
+          ))}
+          {templates.data?.length === 0 && (
+            <DropdownMenuItem render={<Link to="/sablony" />}>
+              <Plus aria-hidden />
+              {cs.shell.noTemplates}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

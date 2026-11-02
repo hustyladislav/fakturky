@@ -42,6 +42,7 @@ export const cs = {
     assistant: 'Asistent',
     blankInvoice: 'Prázdná faktura',
     fromTemplate: 'Ze šablony',
+    noTemplates: 'Zatím žádné šablony',
     newInvoiceMenu: 'Další způsoby, jak založit fakturu',
     collapse: 'Sbalit panel',
     expand: 'Rozbalit panel',

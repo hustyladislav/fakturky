@@ -402,3 +402,35 @@ test('VAT payer advance: proforma → paid → tax receipt → final invoice ded
   expect(issued.status).toBe('issued')
   expect(Number(issued.total)).toBeCloseTo(2100, 2) // 12 100 − 10 000: the VAT-exclusive remainder is billed
 })
+
+test('tax receipt keeps the received gross, uses the payment date as tax point, cannot be created directly', async () => {
+  const org = await seedOrg(handle, 'receipt-fix')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'K',
+    ico: '12345678',
+    address: { street: 'A 1', city: 'Praha', zip: '11000' },
+  })
+  await expect(
+    api.documents.createDraft({ type: 'payment_receipt', contactId: c.id, lines: [] }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  const pf = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        type: 'proforma',
+        contactId: c.id,
+        lines: [{ description: 'Záloha', quantity: '1', unitPrice: '100.06' }],
+      })
+    ).id,
+  })
+  await api.documents.markPaid({ id: pf.id, paidOn: '2026-01-05' })
+  const r = await api.documents.createPaymentReceipt({ id: pf.id, vatRate: '21' })
+  expect(r.total).toBe('100.0600')
+  expect(r.taxableDate).toBe('2026-01-05')
+  const issued = await api.documents.issue({ id: r.id })
+  const xml = (await api.documents.isdoc({ id: issued.id })).xml
+  expect(xml).not.toContain('<PaymentMeans>')
+})

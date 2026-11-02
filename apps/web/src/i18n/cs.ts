@@ -218,7 +218,7 @@ export const cs = {
       'Koncept: tento text připravil provozovatel jako výchozí návrh a čeká na právní kontrolu. Do té doby berte znění jako informativní.',
   },
   authPanel: {
-    title: 'Faktury, které se píšou samy. A zdarma.',
+    title: 'Faktury, které se píší samy. A zdarma.',
     points: [
       'Neomezený počet faktur a kontaktů',
       'QR platba a údaje z ARES doplněné za vás',
@@ -1137,6 +1137,16 @@ export const cs = {
       'Tyto údaje se objeví na vašich fakturách jako dodavatel. Stačí zadat IČO a zbytek doplníme z registru ARES.',
     submit: 'Pokračovat',
     skip: 'Vyplním později',
+    progressLabel: 'Postup nastavení',
+    steps: ['Firma', 'Zkontrolujte údaje', 'Hotovo'],
+    stepOf: (n: number, total: number) => `Krok ${n} z ${total}`,
+    previewLabel: 'Tak to bude vypadat na dokladech',
+    aresHint: 'Zadejte IČO a klikněte na Načíst z ARES: název, adresu i DIČ doplníme za vás.',
+    doneTitle: 'Máte hotovo',
+    doneText: 'Firma je nastavená. Tak se bude objevovat na každé vaší faktuře.',
+    firstInvoice: 'Vystavit první fakturu',
+    toDashboard: 'Přejít na přehled',
+    redirecting: 'Za chvíli vás přesměrujeme na přehled.',
   },
   profile: {
     cardLabel: 'Náhled firmy na dokladech',
@@ -1235,6 +1245,11 @@ export const cs = {
     emptyFiltered: 'V tomto přehledu nic není.',
     emptyUnmatched: 'Všechny příchozí platby jsou vyřízené.',
     emptyUnmatchedTitle: 'Máte hotovo',
+    emptyMatchedTitle: 'Zatím žádné spárované platby',
+    emptyMatched:
+      'Jakmile platba odpovídá faktuře, objeví se tady a faktura se označí jako uhrazená.',
+    emptyIgnoredTitle: 'Nic jste neignorovali',
+    emptyIgnored: 'Platby, které k fakturám nepatří, můžete odložit sem, ať vás nerozptylují.',
     subtitleEmpty: 'Zatím žádné platby',
     subtitle: (open: number, matched: number) =>
       `${open === 0 ? 'Vše spárováno' : `${open} čeká na spárování`} · ${matched} spárováno s fakturami`,

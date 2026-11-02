@@ -8,6 +8,7 @@ import { Input } from '@fakturky/ui/components/input'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { PageHeader, PageTabs } from '@fakturky/ui/components/page-header'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@fakturky/ui/components/tooltip'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
@@ -15,6 +16,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Check,
+  CircleHelp,
   FileCheck2,
   RefreshCw,
   Search,
@@ -246,6 +248,14 @@ function BankPage() {
           <EmptyState icon={Check} title={t.emptyUnmatchedTitle}>
             {t.emptyUnmatched}
           </EmptyState>
+        ) : !q && filter === 'matched' ? (
+          <EmptyState illustration="bank" title={t.emptyMatchedTitle}>
+            {t.emptyMatched}
+          </EmptyState>
+        ) : !q && filter === 'ignored' ? (
+          <EmptyState illustration="bank" title={t.emptyIgnoredTitle}>
+            {t.emptyIgnored}
+          </EmptyState>
         ) : (
           <EmptyState illustration="search" title={t.emptyFiltered} />
         )
@@ -254,27 +264,39 @@ function BankPage() {
           {items.map((tx) => {
             const incoming = Number(tx.amount) > 0
             const name = tx.counterpartyName ?? '—'
+            const unknown = !tx.counterpartyName || /^nezn[áa]m/i.test(tx.counterpartyName)
             return (
               <li key={tx.id} className="row-hover p-3.5 sm:px-5 sm:py-4" data-testid="bank-row">
                 <div className="flex items-start gap-3 sm:gap-4">
                   <div className="relative shrink-0">
-                    <Avatar name={tx.counterpartyName ?? '?'} size="md" />
-                    <span
-                      className={cn(
-                        'absolute -right-1 -bottom-1 flex size-[18px] items-center justify-center rounded-full ring-2 ring-card',
-                        incoming
-                          ? 'bg-success text-white dark:text-background'
-                          : 'bg-muted text-muted-foreground',
-                      )}
-                      role="img"
-                      aria-label={incoming ? t.incoming : t.outgoing}
-                    >
-                      {incoming ? (
-                        <ArrowDownLeft className="size-3" strokeWidth={2.5} />
-                      ) : (
-                        <ArrowUpRight className="size-3" strokeWidth={2.5} />
-                      )}
-                    </span>
+                    {unknown ? (
+                      <span
+                        aria-hidden
+                        className="flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border ring-inset"
+                      >
+                        <CircleHelp className="size-5" strokeWidth={1.75} />
+                      </span>
+                    ) : (
+                      <Avatar name={name} size="md" />
+                    )}
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={<span role="img" aria-label={incoming ? t.incoming : t.outgoing} />}
+                        className={cn(
+                          'absolute -right-1.5 -bottom-1.5 flex size-5 cursor-default items-center justify-center rounded-full ring-2 ring-card',
+                          incoming
+                            ? 'bg-success text-white dark:text-background'
+                            : 'bg-muted-foreground text-card',
+                        )}
+                      >
+                        {incoming ? (
+                          <ArrowDownLeft className="size-3.5" strokeWidth={2.75} />
+                        ) : (
+                          <ArrowUpRight className="size-3.5" strokeWidth={2.75} />
+                        )}
+                      </TooltipTrigger>
+                      <TooltipContent>{incoming ? t.incoming : t.outgoing}</TooltipContent>
+                    </Tooltip>
                   </div>
 
                   <div className="min-w-0 flex-1">

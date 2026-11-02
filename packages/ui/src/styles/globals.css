@@ -349,3 +349,27 @@
     }
   }
 }
+
+/* Finish moments (onboarding): a stroke that draws itself, a soft pop, a progress bar that fills. */
+@keyframes draw-stroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes pop-soft {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+}
+@keyframes fill-bar {
+  from {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .finish-motion * {
+    animation-duration: 1ms !important;
+    animation-delay: 0s !important;
+  }
+}

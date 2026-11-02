@@ -9,6 +9,7 @@ const EXCLUDED = new Set([
   'export_document_pdf',
   'export_contacts_csv',
   'export_documents_csv',
+  'export_organization_json',
 ])
 
 /** Cap one tool result so a big list cannot blow up the context (and the bill). */

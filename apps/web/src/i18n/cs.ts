@@ -241,33 +241,89 @@ export const cs = {
   overview: {
     title: 'Přehled',
     greeting: 'Dobrý den',
+    summary: {
+      issued: (count: number, total: string | null) =>
+        `Tento měsíc jste vystavili ${count} ${count === 1 ? 'fakturu' : count < 5 ? 'faktury' : 'faktur'}${total ? ` za ${total}` : ''}.`,
+      none: 'Tento měsíc jste zatím nic nevystavili.',
+      awaiting: (count: number) =>
+        count === 0
+          ? 'Nic nečeká na platbu.'
+          : `${count} ${count === 1 ? 'čeká' : 'čekají'} na platbu.`,
+    },
     kpi: {
       month: 'Obrat tento měsíc',
-      monthHint: 'Vystavené faktury bez DPH',
+      monthHint: 'bez DPH, včetně dobropisů',
+      monthNegative: 'Dobropisy převyšují vystavené faktury',
       unpaid: 'Neuhrazeno',
-      unpaidHint: 'Vystavené a dosud nezaplacené',
+      unpaidHint: (count: number) =>
+        count === 0
+          ? 'Vše je zaplaceno'
+          : `${count} ${count === 1 ? 'faktura čeká' : count < 5 ? 'faktury čekají' : 'faktur čeká'} na platbu`,
       overdue: 'Po splatnosti',
-      overdueHint: (count: number) =>
-        count === 1 ? '1 faktura po splatnosti' : `${count} faktur po splatnosti`,
-      none: 'Žádné',
+      overdueHint: (count: number, days: number) =>
+        `${count} ${count === 1 ? 'faktura' : count < 5 ? 'faktury' : 'faktur'} · nejstarší ${days} ${days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}`,
+      none: 'Žádná faktura po splatnosti',
+      received: 'Zaplaceno tento měsíc',
+      receivedHint: 'přijaté platby',
+      vsLast: 'vs. minulý měsíc',
+      lastMonthZero: 'minulý měsíc 0 Kč',
     },
     vatLimit: {
-      title: 'Limit obratu pro registraci k DPH',
-      description: (year: number) =>
-        `Jste neplátce DPH. Obrat za rok ${year} nesmí překročit 2 000 000 Kč; po jeho překročení se musíte registrovat k DPH. Překročíte-li 2 536 500 Kč, stáváte se plátcem ihned.`,
+      title: 'Limit pro registraci k DPH',
+      description: (year: number) => `Obrat za rok ${year}`,
       progress: (percent: number) => `${percent} % limitu`,
+      limit: 'Limit',
+      immediateMark: 'Ihned plátce',
       warn: 'Blížíte se limitu. Zvažte registraci k DPH včas.',
       immediate:
         'Obrat překročil 2 536 500 Kč: plátcem DPH jste se stali ihned. Okamžitě se obraťte na účetní nebo správce daně.',
     },
-    chart: 'Obrat za posledních 6 měsíců',
+    chart: {
+      title: 'Obrat',
+      caption: (months: number) => `za posledních ${months} měsíců, bez DPH`,
+      range: 'Období',
+      sixMonths: '6 měsíců',
+      twelveMonths: '12 měsíců',
+      paid: 'Zaplaceno',
+      unpaid: 'Nezaplaceno',
+      turnover: 'Obrat',
+      empty: 'V tomto období zatím nemáte žádný obrat.',
+      monthsLong: [
+        'leden',
+        'únor',
+        'březen',
+        'duben',
+        'květen',
+        'červen',
+        'červenec',
+        'srpen',
+        'září',
+        'říjen',
+        'listopad',
+        'prosinec',
+      ],
+      thousand: 'tis.',
+      million: 'mil.',
+    },
+    awaiting: {
+      title: 'Čeká na platbu',
+      all: (count: number) => `Zobrazit vše (${count})`,
+      remind: 'Připomenout',
+      reminded: 'Připomínka odeslána.',
+      remindFor: (name: string) => `Připomenout platbu: ${name}`,
+      empty: 'Žádné faktury nečekají na platbu.',
+    },
+    quick: {
+      title: 'Rychlé akce',
+      newInvoice: 'Nová faktura',
+      fromTemplate: 'Ze šablony',
+      uploadStatement: 'Nahrát výpis',
+      askAssistant: 'Zeptat se asistenta',
+    },
     recent: 'Poslední doklady',
     allInvoices: 'Všechny faktury',
     emptyTitle: 'Začněte první fakturou',
     emptyText: 'Přidejte bankovní účet a vystavte první fakturu. Zabere to pár minut.',
-    nudgeOverdue: (days: number) =>
-      `Nejstarší faktura po splatnosti čeká už ${days} ${days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}.`,
-    nudgeAction: 'Zobrazit',
     months: ['led', 'úno', 'bře', 'dub', 'kvě', 'čvn', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro'],
   },
   invoices: {

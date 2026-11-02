@@ -166,7 +166,10 @@ function ShellInner({
             </Button>
           </div>
         </header>
-        <main id="obsah" className="mx-auto w-full max-w-[1200px] px-4 py-6 pb-28 md:px-8 md:pb-10">
+        <main
+          id="obsah"
+          className="vt-page mx-auto w-full max-w-[1200px] px-4 py-6 pb-28 md:px-8 md:pb-10"
+        >
           <InstallHint />
           {children}
         </main>

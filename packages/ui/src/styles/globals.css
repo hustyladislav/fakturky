@@ -66,22 +66,22 @@
 }
 
 :root {
-  --background: #f6f2ea;
+  --background: #f2ede3;
   --foreground: #1b1a17;
-  --card: #fcfaf5;
+  --card: #fffefb;
   --card-foreground: #1b1a17;
   --popover: #ffffff;
   --popover-foreground: #1b1a17;
   --primary: #1f4d3c;
   --primary-foreground: #f6f2ea;
-  --secondary: #efe9dd;
+  --secondary: #ebe5d8;
   --secondary-foreground: #1b1a17;
-  --muted: #efe9dd;
+  --muted: #ebe5d8;
   --muted-foreground: #6b665b;
   --accent: #e1ebe3;
   --accent-foreground: #1f4d3c;
   --destructive: #a12f22;
-  --border: #e2dacb;
+  --border: #e0d8c8;
   --input: #9a917d;
   --ring: color-mix(in srgb, #1f4d3c 40%, transparent);
   --chart-1: #1f4d3c;
@@ -90,21 +90,33 @@
   --chart-4: #a12f22;
   --chart-5: #8a8472;
   --radius: 0.5rem;
-  --sidebar: #efe9dd;
+  --sidebar: #f2ede3;
   --sidebar-foreground: #1b1a17;
   --sidebar-primary: #1f4d3c;
   --sidebar-primary-foreground: #f6f2ea;
-  --sidebar-accent: #e4ddcd;
+  --sidebar-accent: #fffefb;
   --sidebar-accent-foreground: #1b1a17;
-  --sidebar-border: #e2dacb;
+  --sidebar-border: #e0d8c8;
   --sidebar-ring: color-mix(in srgb, #1f4d3c 40%, transparent);
   --success: #2f6a2e;
   --warning: #9a5b0b;
+  --sheet: var(--card);
+  --shadow-sheet:
+    0 0 0 1px var(--border), 0 1px 2px rgb(40 30 10 / 0.04), 0 8px 24px -12px rgb(40 30 10 / 0.1);
+  --shadow-popover:
+    0 0 0 1px var(--border), 0 2px 4px rgb(40 30 10 / 0.05), 0 16px 40px -8px rgb(40 30 10 / 0.18);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.2 -.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.2'/%3E%3C/svg%3E");
+  --avatar-1: #1f4d3c;
+  --avatar-2: #a8660f;
+  --avatar-3: #3f6e8c;
+  --avatar-4: #a12f22;
+  --avatar-5: #6b4f8a;
+  --avatar-6: #5f6b2f;
   --info: #2f5d7c;
 }
 
 .dark {
-  --background: #121310;
+  --background: #0f100d;
   --foreground: #eee9dd;
   --card: #1a1b17;
   --card-foreground: #eee9dd;
@@ -112,9 +124,9 @@
   --popover-foreground: #eee9dd;
   --primary: #8cc4a4;
   --primary-foreground: #0f1a14;
-  --secondary: #1f201b;
+  --secondary: #22231e;
   --secondary-foreground: #eee9dd;
-  --muted: #1f201b;
+  --muted: #22231e;
   --muted-foreground: #9c978a;
   --accent: #1d2b24;
   --accent-foreground: #8cc4a4;
@@ -127,16 +139,28 @@
   --chart-3: #8fb4d1;
   --chart-4: #e27b6a;
   --chart-5: #9c978a;
-  --sidebar: #0e0f0c;
+  --sidebar: #0f100d;
   --sidebar-foreground: #eee9dd;
   --sidebar-primary: #8cc4a4;
   --sidebar-primary-foreground: #0f1a14;
-  --sidebar-accent: #1d2b24;
+  --sidebar-accent: #1a1b17;
   --sidebar-accent-foreground: #eee9dd;
   --sidebar-border: #2b2c26;
   --sidebar-ring: color-mix(in srgb, #8cc4a4 50%, transparent);
   --success: #8fcb8a;
   --warning: #e0a84f;
+  --sheet: var(--card);
+  --shadow-sheet:
+    0 0 0 1px var(--border), 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  --shadow-popover:
+    0 0 0 1px var(--border), 0 2px 4px rgb(0 0 0 / 0.35), 0 16px 40px -8px rgb(0 0 0 / 0.65);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.2 -.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
+  --avatar-1: #8cc4a4;
+  --avatar-2: #e0a84f;
+  --avatar-3: #8fb4d1;
+  --avatar-4: #e27b6a;
+  --avatar-5: #b9a3d6;
+  --avatar-6: #b8c47a;
   --info: #8fb4d1;
 }
 
@@ -152,6 +176,8 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    background-image: var(--grain);
+    background-attachment: fixed;
     font-feature-settings: "tnum", "lnum", "cv11";
   }
   h1,
@@ -184,5 +210,142 @@
   }
   .font-serif {
     font-variation-settings: "opsz" 48;
+  }
+}
+
+/* ---- Design v2 primitives ------------------------------------------------ */
+
+/** Paper sheet on the desk: hairline + soft two-layer shadow. Never nest sheets. */
+@utility sheet {
+  background-color: var(--sheet);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sheet);
+}
+
+/** Stronger depth for floating layers (popovers, menus, dialogs). */
+@utility shadow-floating {
+  box-shadow: var(--shadow-popover);
+}
+
+/** The PDF's micro-label: 11px / 600 / .08em / uppercase / muted. */
+@utility label-caps {
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+@utility hairline {
+  border-top: 1px solid var(--border);
+}
+
+@utility hairline-b {
+  border-bottom: 1px solid var(--border);
+}
+
+/** Row hover: background tint, actions nudge up 1px (see `.row-actions`). */
+@utility row-hover {
+  transition: background-color 120ms;
+  &:hover {
+    background-color: color-mix(in srgb, var(--foreground) 3.5%, transparent);
+  }
+}
+
+@utility row-actions {
+  opacity: 0;
+  transform: translateY(1px);
+  transition:
+    opacity 120ms,
+    transform 120ms;
+  :is(.row-hover:hover, .row-hover:focus-within) > &,
+  :is(.row-hover:hover, .row-hover:focus-within) & {
+    opacity: 1;
+    transform: none;
+  }
+  @media (hover: none) {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/** Skeleton shimmer; falls back to a static tint with reduced motion. */
+@utility skel-shimmer {
+  background-color: var(--muted);
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in srgb, var(--foreground) 6%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+/* Route transitions: only the content area cross-fades and slides 8px (the shell stays put). */
+@utility vt-page {
+  view-transition-name: page;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(root) {
+    animation-duration: 0s;
+  }
+  ::view-transition-old(page) {
+    animation: vt-out 110ms ease-in both;
+  }
+  ::view-transition-new(page) {
+    animation: vt-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+@keyframes vt-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Popover/dialog spring: scale .98 -> 1 in 140 ms (applied via data-starting-style). */
+@utility pop-in {
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity 140ms ease,
+    scale 140ms cubic-bezier(0.34, 1.4, 0.64, 1);
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+    scale: 0.98;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: opacity 80ms;
+    &[data-starting-style],
+    &[data-ending-style] {
+      scale: 1;
+    }
   }
 }

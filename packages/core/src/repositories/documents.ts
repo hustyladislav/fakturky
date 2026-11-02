@@ -261,6 +261,19 @@ export async function paidSums(db: Db | Tx, orgId: string, ids: string[]) {
   return map
 }
 
+/** Day of the latest payment per document: the date the user recorded, not when they clicked. */
+async function lastPaidOn(db: Db | Tx, orgId: string, ids: string[]) {
+  const map = new Map<string, string>()
+  if (ids.length === 0) return map
+  const rows = await db
+    .select({ documentId: payment.documentId, paidOn: sql<string>`max(${payment.paidOn})` })
+    .from(payment)
+    .where(and(eq(payment.organizationId, orgId), inArray(payment.documentId, ids)))
+    .groupBy(payment.documentId)
+  for (const r of rows) map.set(r.documentId, r.paidOn)
+  return map
+}
+
 export type ListSort = 'issueDate' | 'dueDate' | 'number' | 'customer' | 'total'
 
 /** WHERE for list/stats: tenant scope, filter chip, type and free-text search (joins `contact`). */
@@ -306,7 +319,8 @@ export function documentSearch(term: string) {
       sql`${document.variableSymbol}`,
       sql`${document.customerSnapshot}->>'name'`,
       sql`${contact.name}`,
-      sql`${contact.ico}`,
+      // The IČO printed on an issued document, not whatever the contact says today.
+      sql`coalesce(${document.customerSnapshot}->>'ico', ${contact.ico})`,
     ]),
     amount ? sql`${document.total}::text like ${`%${amount}%`}` : undefined,
   )
@@ -420,7 +434,13 @@ export const documentsRepo = {
           )
       : []
     const viaAssistant = new Set(viaRows.map((r) => r.id))
+    const paidOn = await lastPaidOn(
+      db,
+      orgId,
+      rows.map((r) => r.doc.id),
+    )
     return rows.map(({ doc, contactName }) => ({
+      paidOn: paidOn.get(doc.id) ?? null,
       ...decorate(
         doc,
         sums.get(doc.id) ?? new Decimal(0),

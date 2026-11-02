@@ -73,6 +73,33 @@ describe('diacritics- and case-insensitive search', () => {
     }
   })
 
+  test('documents: IČO is the one printed on the issued document, not the contact today', async () => {
+    const a = api()
+    const c = await a.contacts.create({ name: 'Přeznačená a.s.', ico: '99887766' })
+    const d = await a.documents.createDraft({
+      contactId: c.id,
+      lines: [{ description: 'X', quantity: '1', unitPrice: '7', vatRate: '0' }],
+    })
+    await a.documents.issue({ id: d.id })
+    await a.contacts.update({ id: c.id, patch: { ico: '11110000' } })
+    expect(await a.documents.list({ search: '99887766' })).toHaveLength(1)
+    expect(await a.documents.list({ search: '11110000' })).toHaveLength(0)
+  })
+
+  test('documents: a paid row exposes the recorded payment day', async () => {
+    const a = api()
+    const c = await a.contacts.create({ name: 'Zaplatil Pozdě' })
+    const d = await a.documents.createDraft({
+      contactId: c.id,
+      lines: [{ description: 'X', quantity: '1', unitPrice: '9', vatRate: '0' }],
+    })
+    await a.documents.issue({ id: d.id })
+    await a.documents.markPaid({ id: d.id, paidOn: '2026-01-15' })
+    const [row] = await a.documents.list({ search: 'Zaplatil Pozdě' })
+    expect(row?.displayStatus).toBe('paid')
+    expect(row?.paidOn).toBe('2026-01-15')
+  })
+
   test('documents: LIKE wildcards are literal and stats follow the same search', async () => {
     expect(await api().documents.list({ search: '%' })).toHaveLength(0)
     expect((await api().documents.stats({ search: 'lipa' })).all.count).toBe(1)

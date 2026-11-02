@@ -39,6 +39,15 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
    secret `NPM_TOKEN`, then `git tag cli-v0.1.0 && git push origin cli-v0.1.0`. Until then the `npx fakturky …`
    examples in the README, `/llms.txt` and `/docs/mcp` do not work.
 
+## Try it
+
+- App: https://fakturky.vercel.app (Google sign-in works for you; email+password for anyone)
+- AI assistant: ⌘J inside the app
+- MCP: `https://fakturky.vercel.app/mcp` — connect Claude/ChatGPT/Cursor per https://fakturky.vercel.app/docs/mcp
+  (OAuth sign-in or an API key from Nastavení → API klíče)
+- REST: https://fakturky.vercel.app/docs/api · CLI: `packages/cli` (until published) · https://fakturky.vercel.app/llms.txt
+- Import your Fakturoid history: Nastavení → Import
+
 ## Shipped overnight
 
 - PWA (installable on phone) #100; performance pass with lazy-loaded heavy UI #93; a11y checks (axe) in e2e #101/#102.

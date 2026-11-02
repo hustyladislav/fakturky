@@ -57,7 +57,7 @@ export function toDocumentForExport(
       vatTreatment: l.vatTreatment as VatTreatment,
       discountPercent: l.discountPercent,
     })),
-    { vatPayer, currency: doc.currency, exchangeRate },
+    { vatPayer, currency: doc.currency, exchangeRate, roundTotal: doc.roundTotal },
   )
   const bank = doc.bankSnapshot as Snapshot
   const method = METHODS.includes(doc.paymentMethod as ExportPaymentMethod)

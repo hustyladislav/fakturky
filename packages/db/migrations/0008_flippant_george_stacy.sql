@@ -1,0 +1,1 @@
+ALTER TABLE "document" ADD COLUMN "round_total" boolean DEFAULT false NOT NULL;

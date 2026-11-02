@@ -133,7 +133,7 @@ function assertVatLines(
 
 function totalsFor(
   lines: DraftInput['lines'],
-  opts: { vatPayer: boolean; currency: string; exchangeRate?: string | null },
+  opts: { vatPayer: boolean; currency: string; exchangeRate?: string | null; roundTotal?: boolean },
 ) {
   return computeDocumentTotals(
     lines.map((l) => ({
@@ -145,6 +145,7 @@ function totalsFor(
     })),
     {
       vatPayer: opts.vatPayer,
+      roundTotal: opts.roundTotal ?? false,
       currency: opts.currency,
       exchangeRate: opts.currency === 'CZK' ? 1 : (opts.exchangeRate ?? 1),
     },
@@ -375,6 +376,7 @@ export const documentsRepo = {
         doc.status === 'draft'
           ? await vatOn(db, orgId, profile, doc.type, doc.relatedDocumentId)
           : doc.vatMode !== 'none',
+      roundTotal: doc.roundTotal,
       currency: doc.currency,
       exchangeRate: doc.exchangeRate,
     })
@@ -427,6 +429,7 @@ export const documentsRepo = {
       assertVatLines(input.lines, vatPayer)
       const totals = totalsFor(input.lines, {
         vatPayer,
+        roundTotal: input.roundTotal ?? false,
         currency,
         exchangeRate: input.exchangeRate,
       })
@@ -440,6 +443,7 @@ export const documentsRepo = {
         .values({
           organizationId: orgId,
           type: input.type,
+          roundTotal: input.roundTotal ?? false,
           relatedDocumentId: opts.relatedDocumentId ?? null,
           contactId: input.contactId ?? null,
           bankAccountId: bank?.id ?? null,
@@ -500,8 +504,10 @@ export const documentsRepo = {
       const effective = (lines ?? existingLines ?? []) as DraftInput['lines']
       const vatForDraft = await vatOn(tx, orgId, profile, doc.type, doc.relatedDocumentId)
       assertVatLines(effective, vatForDraft)
+      const roundTotal = rest.roundTotal ?? doc.roundTotal
       const totals = totalsFor(effective, {
         vatPayer: vatForDraft,
+        roundTotal,
         currency,
         exchangeRate,
       })
@@ -602,6 +608,7 @@ export const documentsRepo = {
       }
       const totals = totalsFor(lines as unknown as DraftInput['lines'], {
         vatPayer: vatOnNow,
+        roundTotal: doc.roundTotal,
         currency: doc.currency,
         exchangeRate: doc.exchangeRate,
       })
@@ -802,6 +809,7 @@ export const documentsRepo = {
       bankAccountId: src.bankAccountId,
       currency: src.currency,
       exchangeRate: src.exchangeRate,
+      roundTotal: src.roundTotal,
       language: src.language as 'cs' | 'sk' | 'en',
       paymentMethod: src.paymentMethod,
       constantSymbol: src.constantSymbol,
@@ -864,6 +872,7 @@ export const documentsRepo = {
         actorId,
         {
           type: 'invoice',
+          roundTotal: src.roundTotal,
           contactId: src.contactId,
           bankAccountId: src.bankAccountId,
           currency: src.currency,
@@ -924,6 +933,7 @@ export const documentsRepo = {
       actorId,
       {
         type: 'credit_note',
+        roundTotal: src.roundTotal,
         contactId: src.contactId,
         bankAccountId: src.bankAccountId,
         currency: src.currency,

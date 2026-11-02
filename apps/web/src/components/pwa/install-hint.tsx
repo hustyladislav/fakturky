@@ -2,8 +2,7 @@ import { Button } from '@fakturky/ui/components/button'
 import { Share, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { cs } from '@/i18n/cs'
-
-type InstallPromptEvent = Event & { prompt: () => Promise<void> }
+import { useInstallPrompt } from './install-prompt'
 
 const KEY = 'install-hint-dismissed'
 
@@ -12,8 +11,9 @@ const KEY = 'install-hint-dismissed'
  * iOS Safari gets the manual Share → Add to Home Screen steps. Hidden when already installed or dismissed.
  */
 export function InstallHint() {
-  const [mode, setMode] = useState<'android' | 'ios' | null>(null)
-  const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null)
+  const [ios, setIos] = useState(false)
+  const [dismissed, setDismissed] = useState(true)
+  const promptEvent = useInstallPrompt()
 
   useEffect(() => {
     try {
@@ -23,22 +23,17 @@ export function InstallHint() {
       window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as unknown as { standalone?: boolean }).standalone === true
     if (standalone) return
-    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) setMode('ios')
-    const onPrompt = (e: Event) => {
-      e.preventDefault()
-      setPromptEvent(e as InstallPromptEvent)
-      setMode('android')
-    }
-    window.addEventListener('beforeinstallprompt', onPrompt)
-    return () => window.removeEventListener('beforeinstallprompt', onPrompt)
+    setIos(/iPhone|iPad|iPod/.test(navigator.userAgent))
+    setDismissed(false)
   }, [])
 
+  const mode = dismissed ? null : promptEvent ? 'android' : ios ? 'ios' : null
   if (!mode) return null
   const dismiss = () => {
     try {
       localStorage.setItem(KEY, '1')
     } catch {}
-    setMode(null)
+    setDismissed(true)
   }
 
   return (

@@ -1,9 +1,11 @@
 import { BRAND } from '@fakturky/core/brand'
 import { privacySections, termsSections } from './legal'
+import offline from './offline.json'
 
 /** All user-facing copy lives here. Natural Czech, correct diacritics. */
 export const cs = {
   brand: BRAND.name,
+  offline,
   pwa: {
     title: 'Přidejte si aplikaci na plochu',
     android: 'Otevře se rychleji a bez adresního řádku, jako běžná aplikace.',

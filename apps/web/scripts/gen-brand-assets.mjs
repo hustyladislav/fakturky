@@ -1,6 +1,6 @@
 // Generates favicon / app icons / OG image from BRAND.name. Run: pnpm --filter @fakturky/web gen:brand
 
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
@@ -110,4 +110,35 @@ writeFileSync(
     null,
     2,
   )}\n`,
+)
+
+// Offline fallback page (served by the service worker): copy comes from the i18n catalog.
+const offline = JSON.parse(readFileSync(resolve(here, '../src/i18n/offline.json'), 'utf8'))
+writeFileSync(
+  resolve(pub, 'offline.html'),
+  `<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>${offline.title}</title>
+    <style>
+      body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 24px; text-align: center;
+        font: 16px/1.5 system-ui, sans-serif; background: #f6f2ea; color: #1b1a17; }
+      @media (prefers-color-scheme: dark) { body { background: #121310; color: #eee9dd; } button { color: #8cc4a4; } p { color: #9c978a; } }
+      h1 { font: 500 28px/1.2 Georgia, serif; margin: 0 0 8px; }
+      p { margin: 0 0 16px; color: #6b665b; }
+      button { font: inherit; padding: 10px 18px; border-radius: 8px; border: 1px solid currentColor; background: none; color: #1f4d3c; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>${offline.title}</h1>
+      <p>${offline.text}</p>
+      <button type="button" onclick="location.reload()">${offline.retry}</button>
+    </main>
+  </body>
+</html>
+`,
 )

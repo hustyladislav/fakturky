@@ -61,7 +61,24 @@ export const documentsRouter = {
       tags: tag,
     },
   })
-    .input(idInput.extend({ vatRate: z.enum(['21', '12']).default('21') }))
+    .input(
+      idInput.extend({
+        vatRate: z.enum(['21', '12']).default('21'),
+        allocations: z
+          .array(
+            z.object({
+              vatRate: z.enum(['21', '12']),
+              amount: z.string().regex(/^\d+(\.\d{1,2})?$/),
+            }),
+          )
+          .min(1)
+          .max(2)
+          .optional()
+          .describe(
+            'Split the received amount over both VAT rates; must add up to the amount received',
+          ),
+      }),
+    )
     .output(documentDetailSchema)
     .handler(({ context, input }) =>
       guard(() =>
@@ -71,6 +88,7 @@ export const documentsRouter = {
           context.principal.userId,
           input.id,
           input.vatRate,
+          input.allocations,
         ),
       ),
     ),

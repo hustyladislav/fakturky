@@ -321,7 +321,7 @@ function MoreMenu({ tabClass }: { tabClass: string }) {
   const { setAssistantOpen } = useShellState()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const vat = useNavItems().find((n) => n.payerOnly)
+  const secondary = useNavItems().filter((n) => ['/banka', '/dph', '/sablony'].includes(n.to))
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={cn(tabClass, 'outline-none')} aria-label={cs.shell.more}>
@@ -333,12 +333,12 @@ function MoreMenu({ tabClass }: { tabClass: string }) {
           <Sparkles aria-hidden />
           {cs.shell.assistant}
         </DropdownMenuItem>
-        {vat && (
-          <DropdownMenuItem render={<Link to={vat.to} />}>
-            <vat.icon aria-hidden />
-            {vat.label}
+        {secondary.map((n) => (
+          <DropdownMenuItem key={n.to} render={<Link to={n.to} />}>
+            <n.icon aria-hidden />
+            {n.label}
           </DropdownMenuItem>
-        )}
+        ))}
         <DropdownMenuItem render={<Link to="/nastaveni" />}>
           <Settings aria-hidden />
           {cs.nav.settings}

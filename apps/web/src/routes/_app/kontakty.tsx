@@ -20,7 +20,7 @@ import {
 } from '@fakturky/ui/components/table'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Users } from 'lucide-react'
+import { Archive, Pencil, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { CountrySelect } from '@/components/country-select'
@@ -76,9 +76,15 @@ function Contacts() {
                       .join(' · ') || '—'}
                   </div>
                 </div>
-                <EditContact contact={c} />
-                <Button variant="ghost" size="sm" onClick={() => archive.mutate({ id: c.id })}>
-                  {cs.common.archive}
+                <EditContact contact={c} compact />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-10"
+                  aria-label={`${cs.common.archive}: ${c.name}`}
+                  onClick={() => archive.mutate({ id: c.id })}
+                >
+                  <Archive aria-hidden />
                 </Button>
               </li>
             ))}
@@ -218,7 +224,7 @@ function NewContact() {
 type ContactRow = Awaited<ReturnType<typeof import('@/lib/orpc').client.contacts.get>>
 
 /** Edit an existing contact, e.g. to add the address a VAT payer's tax document requires. */
-function EditContact({ contact }: { contact: ContactRow }) {
+function EditContact({ contact, compact }: { contact: ContactRow; compact?: boolean }) {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const update = useMutation(
@@ -239,7 +245,22 @@ function EditContact({ contact }: { contact: ContactRow }) {
   )
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="ghost" size="sm" />}>{cs.common.edit}</DialogTrigger>
+      <DialogTrigger
+        render={
+          compact ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-10"
+              aria-label={`${cs.common.edit}: ${contact.name}`}
+            />
+          ) : (
+            <Button variant="ghost" size="sm" />
+          )
+        }
+      >
+        {compact ? <Pencil aria-hidden /> : cs.common.edit}
+      </DialogTrigger>
       <DialogContent>
         <form
           className="space-y-4"

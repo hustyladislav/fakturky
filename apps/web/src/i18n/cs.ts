@@ -569,7 +569,7 @@ export const cs = {
       'Vzor čísla: {YYYY} rok, {YY} rok dvoumístně, {MM} měsíc a právě jedno pořadové číslo, např. {NNNN}. Každý rok se číslování začíná od jedničky. Vydaná čísla se nikdy nepoužijí znovu.',
     pattern: 'Vzor čísla',
     nextNumber: 'Další číslo',
-    continueFrom: 'Pokračovat od čísla (jen výš)',
+    continueFrom: 'Pokračovat od čísla (lze jen zvýšit)',
     set: 'Nastavit',
     saved: 'Číslování bylo uloženo.',
     types: { invoice: 'Faktury', proforma: 'Zálohové faktury', credit_note: 'Opravné doklady' },

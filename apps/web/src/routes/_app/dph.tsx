@@ -137,7 +137,7 @@ function PayerPage({ profile }: { profile: Profile }) {
         <p className="mt-1 text-sm">{t.disclaimerText}</p>
       </div>
 
-      <section className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="vat-kind">{t.period}</Label>
           <NativeSelect
@@ -192,7 +192,7 @@ function PayerPage({ profile }: { profile: Profile }) {
 
       <FilingCard profile={profile} />
 
-      <section className="grid gap-4 rounded-xl border p-4 sm:grid-cols-2">
+      <section className="grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2">
         <h2 className="font-semibold sm:col-span-2">{t.options.title}</h2>
         <div className="space-y-2">
           <Label htmlFor="eu-kind">{t.options.euKind}</Label>
@@ -275,7 +275,7 @@ function FilingCard({ profile }: { profile: Profile }) {
   const show = editing || !complete
 
   return (
-    <section className="space-y-3 rounded-xl border p-4">
+    <section className="space-y-3 rounded-xl border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold">{t.filing.title}</h2>
         {complete && !editing && (
@@ -392,7 +392,7 @@ function DocLink({ report, id }: { report: Report; id: string }) {
 function Warnings({ report }: { report: Report }) {
   if (report.warnings.length === 0) return null
   return (
-    <section className="space-y-2 rounded-xl border border-destructive/40 p-4">
+    <section className="space-y-2 rounded-xl border border-destructive/40 bg-card p-4">
       <h2 className="flex items-center gap-2 font-semibold">
         <TriangleAlert className="size-4" aria-hidden />
         {t.warnings.title}
@@ -421,28 +421,30 @@ function Drill({ report, rowKey }: { report: Report; rowKey: string }) {
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t.kh.none}</p>
       ) : (
-        <table className="w-full text-sm">
-          <tbody>
-            {rows.map((c) => {
-              const d = report.documents[c.documentId]
-              return (
-                <tr key={`${c.rowKey}-${c.documentId}`} className="border-b last:border-0">
-                  <td className="py-1 pr-3">
-                    <DocLink report={report} id={c.documentId} />
-                  </td>
-                  <td className="py-1 pr-3">{d ? formatDateCs(d.taxableDate) : ''}</td>
-                  <td className="py-1 pr-3">{d?.customerName}</td>
-                  <td className="py-1 pr-3 text-right">
-                    <Money amount={c.base} />
-                  </td>
-                  <td className="py-1 text-right">
-                    <Money amount={c.vat} />
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[30rem] text-sm">
+            <tbody>
+              {rows.map((c) => {
+                const d = report.documents[c.documentId]
+                return (
+                  <tr key={`${c.rowKey}-${c.documentId}`} className="border-b last:border-0">
+                    <td className="py-1 pr-3">
+                      <DocLink report={report} id={c.documentId} />
+                    </td>
+                    <td className="py-1 pr-3">{d ? formatDateCs(d.taxableDate) : ''}</td>
+                    <td className="py-1 pr-3">{d?.customerName}</td>
+                    <td className="py-1 pr-3 text-right">
+                      <Money amount={c.base} />
+                    </td>
+                    <td className="py-1 text-right">
+                      <Money amount={c.vat} />
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
@@ -531,13 +533,45 @@ function DphSection({
   )
 
   return (
-    <section className="space-y-4 rounded-xl border p-4">
+    <section className="space-y-4 rounded-xl border bg-card p-4">
       <div>
         <h2 className="text-lg font-semibold">{t.dph.title}</h2>
         <p className="text-sm text-muted-foreground">{t.dph.description}</p>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <ul className="divide-y border-y sm:hidden">
+        {rows.map((row) => (
+          <li key={row.key} className="space-y-1.5 py-3">
+            <div className="flex items-baseline gap-2">
+              <span className="font-medium">
+                {t.dph.row} {row.key}
+              </span>
+              <span className="text-muted-foreground text-sm">{t.dph.rows[row.key]}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="flex flex-wrap gap-x-3">
+                <span className="whitespace-nowrap">
+                  <span className="text-muted-foreground">{t.dph.base}: </span>
+                  <Money amount={row.whole} />
+                </span>
+                {row.vat !== undefined && (
+                  <span className="whitespace-nowrap">
+                    <span className="text-muted-foreground">{t.dph.vat}: </span>
+                    <Money amount={row.vat} />
+                  </span>
+                )}
+              </span>
+              <DrillButton
+                rowKey={`dp3.${row.key}`}
+                open={open}
+                setOpen={setOpen}
+                count={count(row.key)}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="-mx-4 hidden overflow-x-auto px-4 sm:block">
+        <table className="w-full min-w-[34rem] text-sm">
           <thead>
             <tr className="border-b text-left text-muted-foreground">
               <th className="py-2 pr-3 font-medium">{t.dph.row}</th>
@@ -568,13 +602,6 @@ function DphSection({
                     />
                   </td>
                 </tr>
-                {open === `dp3.${row.key}` && (
-                  <tr>
-                    <td colSpan={5} className="pb-3">
-                      <Drill report={report} rowKey={`dp3.${row.key}`} />
-                    </td>
-                  </tr>
-                )}
               </Fragment>
             ))}
             {count('exempt') > 0 && (
@@ -591,6 +618,7 @@ function DphSection({
           </tbody>
         </table>
       </div>
+      {open?.startsWith('dp3.') && <Drill report={report} rowKey={open} />}
       <p className="text-xs text-muted-foreground">{t.dph.rounding}</p>
 
       <div className="space-y-3 rounded-lg border p-3">
@@ -648,7 +676,7 @@ function KhSection({
     (k) => Number(a5[k as keyof typeof a5]) === 0,
   )
   return (
-    <section className="space-y-4 rounded-xl border p-4">
+    <section className="space-y-4 rounded-xl border bg-card p-4">
       <div>
         <h2 className="text-lg font-semibold">{t.kh.title}</h2>
         <p className="text-sm text-muted-foreground">{t.kh.description}</p>
@@ -659,8 +687,8 @@ function KhSection({
         {a1.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t.kh.none}</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="-mx-4 overflow-x-auto px-4">
+            <table className="w-full min-w-[30rem] text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
                   <th className="py-2 pr-3 font-medium">{t.kh.document}</th>
@@ -695,8 +723,8 @@ function KhSection({
         {a4.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t.kh.none}</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="-mx-4 overflow-x-auto px-4">
+            <table className="w-full min-w-[44rem] text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
                   <th className="py-2 pr-3 font-medium">{t.kh.document}</th>
@@ -760,7 +788,7 @@ function KhSection({
 
 function ShSection({ report }: { report: Report }) {
   return (
-    <section className="space-y-3 rounded-xl border p-4">
+    <section className="space-y-3 rounded-xl border bg-card p-4">
       <div>
         <h2 className="text-lg font-semibold">{t.sh.title}</h2>
         <p className="text-sm text-muted-foreground">{t.sh.description}</p>
@@ -768,8 +796,8 @@ function ShSection({ report }: { report: Report }) {
       {report.sh.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t.sh.none}</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="-mx-4 overflow-x-auto px-4">
+          <table className="w-full min-w-[26rem] text-sm">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
                 <th className="py-2 pr-3 font-medium">{t.sh.country}</th>
@@ -818,7 +846,7 @@ function Downloads({
     }
   }
   return (
-    <section className="space-y-3 rounded-xl border p-4">
+    <section className="space-y-3 rounded-xl border bg-card p-4">
       <div>
         <h2 className="text-lg font-semibold">{t.downloads.title}</h2>
         <p className="text-sm text-muted-foreground">{t.downloads.description}</p>
@@ -844,7 +872,7 @@ function Downloads({
 
 function Guide() {
   return (
-    <section className="space-y-3 rounded-xl border p-4">
+    <section className="space-y-3 rounded-xl border bg-card p-4">
       <h2 className="text-lg font-semibold">{t.guide.title}</h2>
       <ol className="list-decimal space-y-1 pl-5 text-sm">
         {t.guide.steps.map((s) => (

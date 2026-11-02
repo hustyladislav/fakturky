@@ -35,9 +35,9 @@ export const navItems: readonly NavItem[] = [
   { to: '/faktury', label: cs.nav.invoices, icon: FileText, goKey: 'f' },
   { to: '/kontakty', label: cs.nav.contacts, icon: Users, goKey: 'k' },
   { to: '/banka', label: cs.nav.bank, icon: Landmark, goKey: 'b' },
-  { to: '/nastaveni', label: cs.nav.settings, icon: Settings, goKey: 'n' },
-  { to: '/sablony', label: cs.nav.templates, icon: FileStack, goKey: 's' },
   { to: '/dph', label: cs.nav.vat, icon: Receipt, goKey: 'd', payerOnly: true },
+  { to: '/sablony', label: cs.nav.templates, icon: FileStack, goKey: 's' },
+  { to: '/nastaveni', label: cs.nav.settings, icon: Settings, goKey: 'n' },
 ]
 
 /** Navigation entries visible to this organization (the DPH page is for VAT payers only). */

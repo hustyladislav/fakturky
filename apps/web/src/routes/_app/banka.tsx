@@ -148,7 +148,10 @@ function BankPage() {
       <p className="text-muted-foreground text-sm">{t.intro}</p>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-1.5" role="tablist">
+        <div
+          className="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+          role="tablist"
+        >
           {FILTERS.map((f) => (
             <Button
               key={f}
@@ -156,6 +159,7 @@ function BankPage() {
               aria-selected={filter === f}
               variant={filter === f ? 'secondary' : 'ghost'}
               size="sm"
+              className="shrink-0"
               nativeButton={false}
               render={<Link to="/banka" search={{ filter: f, q, ucet }} />}
             >
@@ -222,7 +226,7 @@ function BankPage() {
           </div>
         )
       ) : (
-        <ul className="divide-y overflow-hidden rounded-xl border" aria-label={t.title}>
+        <ul className="divide-y overflow-hidden rounded-xl border bg-card" aria-label={t.title}>
           {items.map((tx) => (
             <li key={tx.id} className="space-y-2 p-3 sm:p-4" data-testid="bank-row">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -231,14 +235,16 @@ function BankPage() {
                     <span className="text-muted-foreground text-sm tabular-nums">
                       {formatDateCs(tx.bookedOn)}
                     </span>
-                    <span className="truncate font-medium">{tx.counterpartyName ?? '—'}</span>
+                    <span className="font-medium break-words sm:truncate">
+                      {tx.counterpartyName ?? '—'}
+                    </span>
                     {tx.overpaid && (
                       <Badge variant="destructive">
                         {t.overpaid(`${tx.overpaid} ${tx.currency}`)}
                       </Badge>
                     )}
                   </div>
-                  <div className="text-muted-foreground truncate text-sm">
+                  <div className="text-muted-foreground text-sm break-words sm:truncate">
                     {[
                       tx.counterpartyAccount,
                       tx.variableSymbol && `${t.vs} ${tx.variableSymbol}`,

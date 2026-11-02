@@ -22,6 +22,7 @@ export const dashboardRouter = {
     .output(
       z.object({
         monthTurnover: z.string(),
+        monthCreditNotes: z.string().describe('Credit notes netted into the month turnover (≤ 0)'),
         monthIssuedCount: z.number().describe('Invoices with a tax date in the current month'),
         monthReceived: z.string().describe('Payments received this month (CZK)'),
         unpaidCount: z.number(),
@@ -53,4 +54,35 @@ export const dashboardRouter = {
       }),
     )
     .handler(({ context }) => dashboardRepo.summary(context.db, context.principal.organizationId)),
+
+  activity: procedure({
+    mcp: {
+      name: 'get_recent_activity',
+      title: 'Latest document events: issued, paid, sent, reminded, matched from the bank',
+      readOnly: true,
+    },
+    openapi: {
+      method: 'GET',
+      path: '/dashboard/activity',
+      summary: 'The latest document events for the dashboard feed',
+      tags: ['Dashboard'],
+    },
+  })
+    .input(z.object({ limit: z.coerce.number().int().min(1).max(30).default(6) }))
+    .output(
+      z.array(
+        z.object({
+          id: z.string(),
+          action: z.string(),
+          createdAt: z.date(),
+          documentId: z.string(),
+          number: z.string().nullable(),
+          type: z.string(),
+          customerName: z.string().nullable(),
+        }),
+      ),
+    )
+    .handler(({ context, input }) =>
+      dashboardRepo.activity(context.db, context.principal.organizationId, input.limit),
+    ),
 }

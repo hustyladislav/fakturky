@@ -184,7 +184,7 @@ export function CommandPalette() {
           )}
           {groups.map((g) => (
             <div key={g.key} className="pb-1">
-              <div className="px-2 pt-2 pb-1 text-xs font-medium text-muted-foreground">
+              <div className="px-2 pt-2 pb-1 text-xs font-medium text-foreground/70">
                 {groupLabels[g.key]}
               </div>
               {g.items.map((c) => {

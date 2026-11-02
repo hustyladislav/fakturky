@@ -53,6 +53,10 @@ test('summary: turnover, unpaid, overdue, VAT limit for non-payers; tenant scope
   expect(s.monthReceived).toBe('1000.00')
   expect(s.monthIssuedCount).toBe(1)
   expect(s.unpaidCount).toBe(1)
+  expect(s.monthCreditNotes).toBe('0.00')
+  const feed = await api.dashboard.activity({})
+  expect(feed.map((e) => e.action)).toContain('paid')
+  expect(await clientFor(handle, principal(other)).dashboard.activity({})).toEqual([])
   expect(b.id).toBeTruthy()
 
   const empty = await clientFor(handle, principal(other)).dashboard.summary({})

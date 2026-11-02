@@ -27,9 +27,13 @@ test('bank statement upload pairs the payment by variable symbol and marks the i
   await addBankAccount(page)
   await createContact(page, 'Platící Zákazník s.r.o.')
   const invoiceId = await issueInvoice(page, 'Platící Zákazník s.r.o.', '1000')
-  const vs = (await page.getByText('Variabilní symbol').locator('..').textContent())?.match(
-    /\d{6,10}/,
-  )?.[0]
+  const vs = (
+    await page
+      .getByTestId('payment-card')
+      .getByText('Variabilní symbol')
+      .locator('..')
+      .textContent()
+  )?.match(/\d{6,10}/)?.[0]
   expect(vs).toBeTruthy()
 
   // Upload the Fio CSV.

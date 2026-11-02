@@ -1,6 +1,6 @@
 # Morning report
 
-Overnight build, 2026-11-01 22:00 → 2026-11-02 08:00. ~135 PRs merged, CI green (unit + e2e + a11y + security scans).
+Overnight build, 2026-11-01 22:00 → 2026-11-02 08:00. 109 PRs merged, CI green (unit + e2e + a11y + security scans).
 
 ## TL;DR
 

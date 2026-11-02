@@ -52,6 +52,8 @@ export const aresSubjectSchema = z.object({
   vatPayer: z.boolean(),
   /** ARES legal-form code; 101 = fyzická osoba (podnikatel). */
   legalForm: z.string().nullable().optional(),
+  /** Prefilled "zápis v rejstříku" line (živnostenský rejstřík, or spisová značka from the VR source). */
+  registryNote: z.string().nullable().optional(),
 })
 
 export type BusinessProfile = z.infer<typeof businessProfileSchema>

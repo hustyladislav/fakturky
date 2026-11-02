@@ -1149,7 +1149,8 @@ export const cs = {
     steps: ['Firma', 'Zkontrolujte údaje', 'Bankovní účet', 'Hotovo'],
     stepOf: (n: number, total: number) => `Krok ${n} z ${total}`,
     previewLabel: 'Tak to bude vypadat na dokladech',
-    aresHint: 'Zadejte IČO a klikněte na Načíst z ARES: název, adresu i DIČ doplníme za vás.',
+    aresHint:
+      'Zadejte IČO a doplníme z ARES název, adresu, DIČ, plátcovství DPH i zápis v rejstříku.',
     doneTitle: 'Máte hotovo',
     doneText: 'Firma je nastavená. Tak se bude objevovat na každé vaší faktuře.',
     firstInvoice: 'Vystavit první fakturu',
@@ -1176,7 +1177,6 @@ export const cs = {
     vatPayer: 'Plátce DPH',
     vatIdentified: 'Identifikovaná osoba',
     registryNote: 'Zápis v rejstříku',
-    registryNoteSoleTrader: 'Fyzická osoba zapsaná v živnostenském rejstříku.',
     registryNoteHint:
       'Např. „Fyzická osoba zapsaná v živnostenském rejstříku“ nebo spisová značka.',
     email: 'E-mail',

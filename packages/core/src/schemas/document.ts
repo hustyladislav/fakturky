@@ -165,6 +165,8 @@ export const documentSchema = z.object({
   publicToken: z.string().nullable(),
   importedFrom: z.string().nullable().describe('Source system when imported (read-only document)'),
   paidAt: z.date().nullable(),
+  /** Day of the latest recorded payment (YYYY-MM-DD); list only. */
+  paidOn: z.string().nullable().optional(),
   cancelledAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),

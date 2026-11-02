@@ -358,6 +358,11 @@ export const cs = {
     new: 'Nová faktura',
     empty: 'Zatím nemáte žádné faktury.',
     emptyFiltered: 'Nic neodpovídá zvolenému filtru.',
+    emptyFilteredBy: (search: string | null, filters: string[]) => {
+      const parts = [search ? `hledání „${search}“` : null, ...filters].filter(Boolean)
+      return `Nic nenalezeno: ${parts.join(' · ')}`
+    },
+    paidOn: (date: string) => `Zaplaceno ${date}`,
     emptyCta: 'Vystavit první fakturu',
     search: 'Hledat podle čísla, odběratele nebo VS…',
     subtitle: (count: number, unpaid: string | null) =>
@@ -374,7 +379,7 @@ export const cs = {
     issuedLabel: 'vystaveno',
     noMonth: 'Bez data',
     noNumber: 'Bez čísla',
-    resetFilter: 'Zrušit filtr',
+    resetFilter: 'Zrušit filtry',
     loadMore: 'Načíst další',
     sortBy: (column: string) => `Seřadit podle: ${column}`,
     keyboardHint: 'J / K pohyb · Enter otevřít · X vybrat',
@@ -1147,7 +1152,8 @@ export const cs = {
     steps: ['Firma', 'Zkontrolujte údaje', 'Bankovní účet', 'Hotovo'],
     stepOf: (n: number, total: number) => `Krok ${n} z ${total}`,
     previewLabel: 'Tak to bude vypadat na dokladech',
-    aresHint: 'Zadejte IČO a klikněte na Načíst z ARES: název, adresu i DIČ doplníme za vás.',
+    aresHint:
+      'Zadejte IČO a doplníme z ARES název, adresu, DIČ, plátcovství DPH i zápis v rejstříku.',
     doneTitle: 'Máte hotovo',
     doneText: 'Firma je nastavená. Tak se bude objevovat na každé vaší faktuře.',
     firstInvoice: 'Vystavit první fakturu',
@@ -1174,7 +1180,6 @@ export const cs = {
     vatPayer: 'Plátce DPH',
     vatIdentified: 'Identifikovaná osoba',
     registryNote: 'Zápis v rejstříku',
-    registryNoteSoleTrader: 'Fyzická osoba zapsaná v živnostenském rejstříku.',
     registryNoteHint:
       'Např. „Fyzická osoba zapsaná v živnostenském rejstříku“ nebo spisová značka.',
     email: 'E-mail',

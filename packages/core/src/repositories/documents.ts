@@ -20,12 +20,13 @@ import {
   type VatTreatment,
   variableSymbolFromNumber,
 } from '@fakturky/domain'
-import { and, asc, desc, eq, ilike, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm'
 import { MailError, type Services } from '../context'
 import { paymentQrInput } from '../payment-qr'
 import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
 import { appearanceRepo } from './appearance'
 import { bankAccountsRepo } from './bank-accounts'
+import { amountTerm, foldedWordsMatch } from './fold'
 
 const {
   bankTransaction,
@@ -260,6 +261,19 @@ export async function paidSums(db: Db | Tx, orgId: string, ids: string[]) {
   return map
 }
 
+/** Day of the latest payment per document: the date the user recorded, not when they clicked. */
+async function lastPaidOn(db: Db | Tx, orgId: string, ids: string[]) {
+  const map = new Map<string, string>()
+  if (ids.length === 0) return map
+  const rows = await db
+    .select({ documentId: payment.documentId, paidOn: sql<string>`max(${payment.paidOn})` })
+    .from(payment)
+    .where(and(eq(payment.organizationId, orgId), inArray(payment.documentId, ids)))
+    .groupBy(payment.documentId)
+  for (const r of rows) map.set(r.documentId, r.paidOn)
+  return map
+}
+
 export type ListSort = 'issueDate' | 'dueDate' | 'number' | 'customer' | 'total'
 
 /** WHERE for list/stats: tenant scope, filter chip, type and free-text search (joins `contact`). */
@@ -292,14 +306,23 @@ function listWhere(
     statusWhere,
     opts.type ? eq(document.type, opts.type) : undefined,
     opts.contactId ? eq(document.contactId, opts.contactId) : undefined,
-    term
-      ? or(
-          ilike(sql`coalesce(${document.number}, '')`, `%${term}%`),
-          ilike(sql`coalesce(${document.variableSymbol}, '')`, `%${term}%`),
-          ilike(sql`coalesce(${document.customerSnapshot}->>'name', '')`, `%${term}%`),
-          ilike(sql`coalesce(${contact.name}, '')`, `%${term}%`),
-        )
-      : undefined,
+    term ? documentSearch(term) : undefined,
+  )
+}
+
+/** Number, VS, customer (snapshot or live contact) and amount; case- and diacritics-insensitive. */
+export function documentSearch(term: string) {
+  const amount = amountTerm(term)
+  return or(
+    foldedWordsMatch(term, [
+      sql`${document.number}`,
+      sql`${document.variableSymbol}`,
+      sql`${document.customerSnapshot}->>'name'`,
+      sql`${contact.name}`,
+      // The IČO printed on an issued document, not whatever the contact says today.
+      sql`coalesce(${document.customerSnapshot}->>'ico', ${contact.ico})`,
+    ]),
+    amount ? sql`${document.total}::text like ${`%${amount}%`}` : undefined,
   )
 }
 
@@ -411,7 +434,13 @@ export const documentsRepo = {
           )
       : []
     const viaAssistant = new Set(viaRows.map((r) => r.id))
+    const paidOn = await lastPaidOn(
+      db,
+      orgId,
+      rows.map((r) => r.doc.id),
+    )
     return rows.map(({ doc, contactName }) => ({
+      paidOn: paidOn.get(doc.id) ?? null,
       ...decorate(
         doc,
         sums.get(doc.id) ?? new Decimal(0),

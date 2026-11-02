@@ -172,14 +172,14 @@ export function ItemsTable({
 
   const hasRegime = vatPayer && lines.some((l) => l.vatTreatment !== 'standard')
   const cols = vatPayer
-    ? `1.25rem minmax(8rem,1fr) 4.25rem 2.75rem 5.5rem ${hasRegime ? '11rem' : '5rem'} 6rem 1.75rem`
-    : '1.25rem minmax(8rem,1fr) 4.25rem 2.75rem 5.5rem 6rem 1.75rem'
+    ? `1.25rem minmax(8rem,1fr) 4rem 2.75rem 5.5rem ${hasRegime ? '11rem' : '5.25rem'} 6rem 1.75rem`
+    : '1.25rem minmax(8rem,1fr) 4rem 2.75rem 5.5rem 6rem 1.75rem'
 
   return (
     <div className="@container" role="group" aria-label={t.items}>
       <div
         aria-hidden
-        className="label-caps hidden gap-x-1.5 pb-2 @[38rem]:grid"
+        className="label-caps hidden gap-x-2 pb-2 @[38rem]:grid"
         style={{ gridTemplateColumns: cols }}
       >
         <span />
@@ -187,7 +187,7 @@ export function ItemsTable({
         <span className="text-right">{t.quantity}</span>
         <span className="pl-1.5">{t.unit}</span>
         <span className="text-right">{t.unitPriceShort}</span>
-        {vatPayer && <span>{t.vatRate}</span>}
+        {vatPayer && <span className="pl-1">{t.vatRate}</span>}
         <span className="text-right">{vatPayer ? t.subtotal : t.lineTotal}</span>
         <span />
       </div>
@@ -217,7 +217,7 @@ export function ItemsTable({
                 setOverKey(null)
               }}
               className={cn(
-                'relative grid grid-cols-6 gap-x-1.5 gap-y-2 py-3 transition-colors @[38rem]:items-center @[38rem]:py-2 @[38rem]:[grid-template-columns:var(--cols)]',
+                'relative grid scroll-mb-32 grid-cols-6 gap-x-2 gap-y-2 py-3 transition-colors @[38rem]:items-center @[38rem]:py-2 @[38rem]:[grid-template-columns:var(--cols)]',
                 dragKey === l.key && 'opacity-40',
                 overKey === l.key &&
                   dragKey !== l.key &&
@@ -336,7 +336,13 @@ export function ItemsTable({
         })}
       </ol>
 
-      <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={addLine}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="mt-2 scroll-mb-32"
+        onClick={addLine}
+      >
         <Plus /> {t.addLine}
       </Button>
     </div>

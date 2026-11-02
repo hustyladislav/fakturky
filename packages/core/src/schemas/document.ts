@@ -171,6 +171,13 @@ export const documentSchema = z.object({
 })
 
 export const documentDetailSchema = documentSchema.extend({
+  /** Document look: frozen at issue, the organization's current one for drafts. */
+  look: z.object({
+    accentColor: z.string().nullable(),
+    showBrand: z.boolean(),
+    logo: z.string().nullable(),
+    signature: z.string().nullable(),
+  }),
   /** QR Platba (CZK) / EPC (EUR) for the amount still due; null when nothing is payable by bank transfer. */
   paymentQr: z
     .object({ kind: z.enum(['spayd', 'epc']), viewBox: z.number(), path: z.string() })

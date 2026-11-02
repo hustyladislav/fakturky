@@ -314,7 +314,10 @@ function InvoiceList() {
           ) : filteredEmpty ? (
             <EmptyState
               illustration="search"
-              title={t.emptyFiltered}
+              title={t.emptyFilteredBy(q ?? null, [
+                ...(filter !== 'all' ? [String(t.filters[filter])] : []),
+                ...(type ? [String(t.type[type])] : []),
+              ])}
               className="bg-card"
               action={
                 <Button

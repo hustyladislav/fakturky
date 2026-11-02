@@ -538,7 +538,20 @@ export function InvoiceForm({ id }: { id?: string }) {
             </div>
             <div>
               <SectionTitle>{t.customer}</SectionTitle>
-              <CustomerCard value={customer} details={customerRow.data} onChange={setCustomer} />
+              <CustomerCard
+                value={customer}
+                details={customerRow.data}
+                autoFocus={!id}
+                onChange={(c) => {
+                  setCustomer(c)
+                  // Next thing to type is what you bill: land on the first description.
+                  if (c)
+                    setTimeout(
+                      () => document.querySelector<HTMLElement>('[data-line-desc]')?.focus(),
+                      0,
+                    )
+                }}
+              />
               {euReverseDomestic && (
                 <p role="alert" className="mt-3 text-destructive text-sm">
                   {cs.contacts.euReverseChargeDomestic}

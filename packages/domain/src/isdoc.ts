@@ -60,6 +60,8 @@ export interface DocumentForExport {
   /** DUZP; omitted for non-VAT-payers unless set. */
   taxableDate?: string | null
   vatPayer: boolean
+  /** The supplier is registered for VAT even if this document carries none (a proforma). Defaults to `vatPayer`. */
+  supplierVatPayer?: boolean
   supplier: ExportParty
   customer: ExportParty
   lines: ExportLine[]

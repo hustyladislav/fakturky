@@ -232,6 +232,9 @@ function totalColumns(totals: ReturnType<typeof computeDocumentTotals>, currency
   }
 }
 
+/** `payment.method` of the settlement a credit note makes on its invoice (the note holds the credit note number). */
+export const CREDIT_NOTE_METHOD = 'credit_note'
+
 async function paidSums(db: Db | Tx, orgId: string, ids: string[]) {
   const map = new Map<string, Decimal>()
   if (ids.length === 0) return map
@@ -624,7 +627,8 @@ export const documentsRepo = {
         .from(contact)
         .where(and(eq(contact.organizationId, orgId), eq(contact.id, doc.contactId)))
       if (!customer) throw new DocumentError('NOT_FOUND', 'Contact not found')
-      // §29 ZDPH: a tax document needs the customer's name, address and (if registered) identification.
+      // §29 ZDPH: a tax document needs the customer's name and address; the DIČ only if the customer is registered
+      // (a consumer has none), so a missing IČO/DIČ must not block issuing.
       if (vatOnNow) {
         const exempt = lines.filter((l) => l.vatTreatment === 'exempt')
         if (exempt.some((l) => !l.vatNote?.trim())) {
@@ -642,9 +646,6 @@ export const documentsRepo = {
         ) {
           missing.push('address')
         }
-        if (!customer.ico?.trim() && !customer.dic?.trim() && !customer.icDph?.trim()) {
-          missing.push('taxId')
-        }
         // EU reverse charge needs the customer's VAT ID (IČ DPH / DIČ), not just an IČO.
         if (
           lines.some((l) => l.vatTreatment === 'eu_reverse_charge') &&
@@ -652,6 +653,13 @@ export const documentsRepo = {
           !customer.dic?.trim()
         ) {
           missing.push('vatId')
+        }
+        // The EU reverse charge applies to supplies to another member state, not to a domestic customer.
+        if (
+          lines.some((l) => l.vatTreatment === 'eu_reverse_charge') &&
+          (customer.country ?? 'CZ').toUpperCase() === 'CZ'
+        ) {
+          missing.push('country')
         }
         if (missing.length > 0) {
           throw new DocumentError(
@@ -680,6 +688,38 @@ export const documentsRepo = {
         exchangeRate: doc.exchangeRate,
       })
       assertVatLines(lines as unknown as DraftInput['lines'], vatOnNow)
+      if (doc.type === 'credit_note' && doc.relatedDocumentId) {
+        // Corrections may be partial and repeated, but together they cannot refund more than the invoice.
+        const originalId = doc.relatedDocumentId
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`credit:${originalId}`}))`)
+        const [orig] = await tx
+          .select({ total: document.total })
+          .from(document)
+          .where(scoped(orgId, originalId))
+        const others = await tx
+          .select({ total: document.total })
+          .from(document)
+          .where(
+            and(
+              eq(document.organizationId, orgId),
+              eq(document.relatedDocumentId, originalId),
+              eq(document.type, 'credit_note'),
+              inArray(document.status, ['issued', 'paid']),
+              isNull(document.deletedAt),
+              ne(document.id, id),
+            ),
+          )
+        const credited = others.reduce(
+          (sum, o) => sum.plus(parseDecimal(o.total)),
+          parseDecimal(totals.total),
+        )
+        if (orig && credited.abs().greaterThan(parseDecimal(orig.total).abs())) {
+          throw new DocumentError(
+            'CONFLICT',
+            'The credit notes would refund more than the invoice total',
+          )
+        }
+      }
       await writeLines(tx, orgId, id, lines as unknown as DraftInput['lines'], totals, vatOnNow)
 
       // Number allocation: lazily created default series + atomic counter bump.
@@ -780,6 +820,39 @@ export const documentsRepo = {
           .update(document)
           .set({ status: 'paid', paidAt: new Date() })
           .where(scoped(orgId, id))
+      }
+      // A credit note settles the corrected invoice's open balance (never beyond it: a refund of money
+      // already received is a separate payment out).
+      if (doc.type === 'credit_note' && doc.relatedDocumentId) {
+        const [orig] = await tx
+          .select()
+          .from(document)
+          .where(scoped(orgId, doc.relatedDocumentId))
+          .for('update')
+        if (orig && orig.status === 'issued') {
+          const open = parseDecimal(orig.total).minus(
+            (await paidSums(tx, orgId, [orig.id])).get(orig.id) ?? new Decimal(0),
+          )
+          const creditTotal = parseDecimal(totals.total).abs()
+          const credit = creditTotal.lt(open) ? creditTotal : open
+          if (credit.gt(0)) {
+            await tx.insert(payment).values({
+              organizationId: orgId,
+              documentId: orig.id,
+              paidOn: doc.issueDate ?? todayPrague(),
+              amount: toFixed(credit, 2),
+              currency: orig.currency,
+              method: CREDIT_NOTE_METHOD,
+              note: number,
+            })
+            if (credit.gte(open)) {
+              await tx
+                .update(document)
+                .set({ status: 'paid', paidAt: new Date() })
+                .where(scoped(orgId, orig.id))
+            }
+          }
+        }
       }
       await logActivity(tx, orgId, actorId, id, 'issued', { number })
     })
@@ -911,6 +984,8 @@ export const documentsRepo = {
     actorId: string,
     id: string,
     vatRate: '21' | '12',
+    /** Splits the received amount over several VAT rates (must add up to the amount received). */
+    allocations?: { vatRate: '21' | '12'; amount: string }[],
   ) {
     const src = await this.get(db, orgId, id)
     if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
@@ -929,6 +1004,17 @@ export const documentsRepo = {
       )
     }
     const paid = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
+    const split = allocations?.length ? allocations : [{ vatRate, amount: toFixed(paid, 2) }]
+    if (
+      new Set(split.map((a) => a.vatRate)).size !== split.length ||
+      split.some((a) => parseDecimal(a.amount).lte(0)) ||
+      !split.reduce((s, a) => s.plus(parseDecimal(a.amount)), new Decimal(0)).eq(paid)
+    ) {
+      throw new DocumentError(
+        'BAD_REQUEST',
+        `The allocations must use each VAT rate once and add up to the amount received (${toFixed(paid, 2)})`,
+      )
+    }
     // The received amount is VAT-inclusive: the draft is priced gross and VAT is extracted (A × r / (100 + r)).
     // The tax point is the day the payment was received; foreign advances use the ČNB rate of that day.
     const paidOn =
@@ -975,18 +1061,19 @@ export const documentsRepo = {
           language: src.language as 'cs' | 'sk' | 'en',
           paymentMethod: src.paymentMethod,
           introText: `Přijatá záloha na základě zálohové faktury ${src.number}`,
-          lines: [
-            {
-              description: `Přijatá záloha (zálohová faktura ${src.number})`,
-              quantity: '1',
-              unit: null,
-              unitPrice: toFixed(paid, 2),
-              vatRate,
-              vatTreatment: 'standard' as const,
-              vatNote: null,
-              discountPercent: '0',
-            },
-          ],
+          lines: split.map((a) => ({
+            description:
+              split.length > 1
+                ? `Přijatá záloha ${a.vatRate} % (zálohová faktura ${src.number})`
+                : `Přijatá záloha (zálohová faktura ${src.number})`,
+            quantity: '1',
+            unit: null,
+            unitPrice: toFixed(parseDecimal(a.amount), 2),
+            vatRate: a.vatRate,
+            vatTreatment: 'standard' as const,
+            vatNote: null,
+            discountPercent: '0',
+          })),
         },
         { relatedDocumentId: id, pricesIncludeVat: true },
       )
@@ -1006,7 +1093,7 @@ export const documentsRepo = {
     const profile = await loadProfile(db, orgId)
     const payer = vatApplies(profile, 'invoice')
     // A VAT payer deducts the advance as shown on the tax receipt (base and VAT per rate).
-    let receipt: { number: string | null; rate: string; base: string } | null = null
+    let receipt: { number: string | null; parts: { rate: string; base: string }[] } | null = null
     if (payer) {
       const [r] = await db
         .select()
@@ -1020,19 +1107,23 @@ export const documentsRepo = {
             isNull(document.deletedAt),
           ),
         )
-      const [rl] = r
+      const rls = r
         ? await db
             .select()
             .from(documentLine)
             .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, r.id)))
+            .orderBy(asc(documentLine.position))
         : []
-      if (!r || !rl) {
+      if (!r || rls.length === 0) {
         throw new DocumentError(
           'PRECONDITION_FAILED',
           'Issue the tax receipt for the received advance first',
         )
       }
-      receipt = { number: r.number, rate: rl.vatRate, base: rl.lineSubtotal }
+      receipt = {
+        number: r.number,
+        parts: rls.map((rl) => ({ rate: rl.vatRate, base: rl.lineSubtotal })),
+      }
     }
     const advance = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
     const draft = await db.transaction(async (txn) => {
@@ -1075,31 +1166,36 @@ export const documentsRepo = {
               unit: l.unit,
               unitPrice: l.unitPrice,
               // Proforma lines carry no VAT rate; a payer's final invoice uses the receipt's rate.
-              vatRate: receipt && Number(l.vatRate) === 0 ? receipt.rate : l.vatRate,
+              vatRate:
+                receipt && Number(l.vatRate) === 0
+                  ? (receipt.parts[0]?.rate ?? l.vatRate)
+                  : l.vatRate,
               vatTreatment: l.vatTreatment as VatTreatment,
               vatNote: l.vatNote,
               discountPercent: l.discountPercent,
             })),
-            receipt
-              ? {
-                  description: `Odpočet zálohy (daňový doklad k přijaté platbě ${receipt.number})`,
+            ...(receipt
+              ? receipt.parts.map((part) => ({
+                  description: `Odpočet zálohy ${part.rate} % (daňový doklad k přijaté platbě ${receipt.number})`,
                   quantity: '1',
                   unit: null,
-                  unitPrice: parseDecimal(receipt.base).negated().toString(),
-                  vatRate: receipt.rate,
+                  unitPrice: parseDecimal(part.base).negated().toString(),
+                  vatRate: part.rate,
                   vatTreatment: 'standard' as const,
                   vatNote: null,
                   discountPercent: '0',
-                }
-              : {
-                  description: `Uhrazená záloha (zálohová faktura ${src.number})`,
-                  quantity: '1',
-                  unit: null,
-                  unitPrice: advance.negated().toString(),
-                  vatRate: '0',
-                  vatTreatment: 'standard' as const,
-                  discountPercent: '0',
-                },
+                }))
+              : [
+                  {
+                    description: `Uhrazená záloha (zálohová faktura ${src.number})`,
+                    quantity: '1',
+                    unit: null,
+                    unitPrice: advance.negated().toString(),
+                    vatRate: '0',
+                    vatTreatment: 'standard' as const,
+                    discountPercent: '0',
+                  },
+                ]),
           ],
         },
         { relatedDocumentId: id },
@@ -1255,10 +1351,58 @@ export const documentsRepo = {
       if (doc.status !== 'issued' && doc.status !== 'paid') {
         throw new DocumentError('CONFLICT', 'Only issued documents can be cancelled')
       }
+      const [credit] = await tx
+        .select({ id: document.id })
+        .from(document)
+        .where(
+          and(
+            eq(document.organizationId, orgId),
+            eq(document.relatedDocumentId, id),
+            eq(document.type, 'credit_note'),
+            inArray(document.status, ['issued', 'paid']),
+            isNull(document.deletedAt),
+          ),
+        )
+      if (credit) {
+        throw new DocumentError(
+          'CONFLICT',
+          'This invoice already has a credit note; cancelling it too would correct it twice',
+        )
+      }
       await tx
         .update(document)
         .set({ status: 'cancelled', cancelledAt: new Date() })
         .where(scoped(orgId, id))
+      // Cancelling a credit note takes back the settlement it made on the corrected invoice.
+      if (doc.type === 'credit_note' && doc.relatedDocumentId && doc.number) {
+        const removed = await tx
+          .delete(payment)
+          .where(
+            and(
+              eq(payment.organizationId, orgId),
+              eq(payment.documentId, doc.relatedDocumentId),
+              eq(payment.method, CREDIT_NOTE_METHOD),
+              eq(payment.note, doc.number),
+            ),
+          )
+          .returning({ id: payment.id })
+        if (removed.length > 0) {
+          const [orig] = await tx
+            .select()
+            .from(document)
+            .where(scoped(orgId, doc.relatedDocumentId))
+            .for('update')
+          if (orig?.status === 'paid') {
+            const paid = (await paidSums(tx, orgId, [orig.id])).get(orig.id) ?? new Decimal(0)
+            if (paid.lt(parseDecimal(orig.total))) {
+              await tx
+                .update(document)
+                .set({ status: 'issued', paidAt: null })
+                .where(scoped(orgId, orig.id))
+            }
+          }
+        }
+      }
       await logActivity(tx, orgId, actorId, id, 'cancelled')
     })
     return this.get(db, orgId, id)

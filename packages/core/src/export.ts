@@ -85,6 +85,7 @@ export function toDocumentForExport(
     issueDate: doc.issueDate ?? '',
     taxableDate: vatPayer ? doc.taxableDate : null,
     vatPayer,
+    supplierVatPayer: (doc.supplierSnapshot as Snapshot)?.vatStatus === 'payer' || vatPayer,
     supplier: party(doc.supplierSnapshot),
     customer: party(doc.customerSnapshot),
     lines: lines.map((l) => ({
@@ -100,9 +101,9 @@ export function toDocumentForExport(
     currency: doc.currency,
     exchangeRate,
     note: [doc.introText, doc.footerText].filter(Boolean).join('\n') || null,
-    // A receipt documents money already received: no payment request, bank details or QR.
+    // A receipt documents money already received and a credit note reverses a claim: neither asks for payment.
     payment:
-      doc.type === 'payment_receipt'
+      doc.type === 'payment_receipt' || doc.type === 'credit_note'
         ? null
         : {
             method,

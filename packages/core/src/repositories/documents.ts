@@ -20,12 +20,13 @@ import {
   type VatTreatment,
   variableSymbolFromNumber,
 } from '@fakturky/domain'
-import { and, asc, desc, eq, ilike, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm'
 import { MailError, type Services } from '../context'
 import { paymentQrInput } from '../payment-qr'
 import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
 import { appearanceRepo } from './appearance'
 import { bankAccountsRepo } from './bank-accounts'
+import { amountTerm, foldedWordsMatch } from './fold'
 
 const {
   bankTransaction,
@@ -292,14 +293,22 @@ function listWhere(
     statusWhere,
     opts.type ? eq(document.type, opts.type) : undefined,
     opts.contactId ? eq(document.contactId, opts.contactId) : undefined,
-    term
-      ? or(
-          ilike(sql`coalesce(${document.number}, '')`, `%${term}%`),
-          ilike(sql`coalesce(${document.variableSymbol}, '')`, `%${term}%`),
-          ilike(sql`coalesce(${document.customerSnapshot}->>'name', '')`, `%${term}%`),
-          ilike(sql`coalesce(${contact.name}, '')`, `%${term}%`),
-        )
-      : undefined,
+    term ? documentSearch(term) : undefined,
+  )
+}
+
+/** Number, VS, customer (snapshot or live contact) and amount; case- and diacritics-insensitive. */
+export function documentSearch(term: string) {
+  const amount = amountTerm(term)
+  return or(
+    foldedWordsMatch(term, [
+      sql`${document.number}`,
+      sql`${document.variableSymbol}`,
+      sql`${document.customerSnapshot}->>'name'`,
+      sql`${contact.name}`,
+      sql`${contact.ico}`,
+    ]),
+    amount ? sql`${document.total}::text like ${`%${amount}%`}` : undefined,
   )
 }
 

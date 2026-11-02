@@ -402,6 +402,7 @@ export const cs = {
       issue: 'Vystavit',
       issued: (n: string) => `Faktura ${n} byla vystavena.`,
       downloadPdf: 'Stáhnout PDF',
+      more: 'Více',
       markPaid: 'Označit jako zaplacenou',
       markPaidPartial: 'Přijatá částka',
       markPaidDate: 'Datum platby',

@@ -113,3 +113,9 @@ export async function issueInvoice(page: Page, customerName: string, unitPrice =
 /** Today in Europe/Prague as YYYY-MM-DD (the date the app uses for "today"). */
 export const todayPrague = () =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Prague' }).format(new Date())
+
+/** Invoice detail: run a secondary action from the "Více" menu (desktop layout; the mobile copy is hidden). */
+export async function clickMoreAction(page: Page, name: string) {
+  await page.getByRole('button', { name: 'Více', exact: true }).first().click()
+  await page.getByRole('menuitem', { name }).click()
+}

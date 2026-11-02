@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   addBankAccount,
   amountRe,
+  clickMoreAction,
   createContact,
   ICO,
   issueInvoice,
@@ -21,7 +22,7 @@ test('credit note: dialog → draft → issue; links both ways, invoice settled,
   const invoiceId = await issueInvoice(page, 'Dobropis s.r.o.', '1000')
   const invoiceNumber = (await page.getByRole('heading', { level: 1 }).textContent()) ?? ''
 
-  await page.getByRole('button', { name: 'Vytvořit opravný doklad' }).first().click()
+  await clickMoreAction(page, 'Vytvořit opravný doklad')
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('Důvod opravy').fill('Storno služby')
   await dialog.getByRole('button', { name: 'Vytvořit opravný doklad' }).click()
@@ -75,7 +76,7 @@ test('cron: refuses unauthorised calls; a due recurring rule issues its invoice'
   expect((await page.request.get('/api/cron/bank-sync')).status()).toBe(401)
 
   // Save the invoice as a template and repeat it monthly from today, issuing automatically.
-  await page.getByRole('button', { name: 'Uložit jako šablonu' }).first().click()
+  await clickMoreAction(page, 'Uložit jako šablonu')
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('Název šablony').fill('Měsíční služba')
   await dialog.getByRole('button', { name: 'Uložit' }).click()

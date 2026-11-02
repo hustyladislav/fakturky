@@ -1,5 +1,6 @@
 export * from './ai-usage'
 export * from './auth'
+export * from './bank'
 export * from './business'
 export * from './documents'
 export * from './enums'

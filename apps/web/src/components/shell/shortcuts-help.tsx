@@ -1,17 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@fakturky/ui/components/dialog'
 import { Kbd } from '@fakturky/ui/components/kbd'
-import { useEffect, useState } from 'react'
 import { cs } from '@/i18n/cs'
 import { useShell } from './shell-context'
 
-/** SSR-stable: starts as "Ctrl" and switches to "⌘" after mount on Apple platforms. */
-export function useModKey() {
-  const [key, setKey] = useState('Ctrl')
-  useEffect(() => {
-    if (/Mac|iPhone|iPad/.test(navigator.platform)) setKey('⌘')
-  }, [])
-  return key
-}
+import { useModKey } from './use-mod-key'
 
 export function ShortcutsHelp() {
   const { helpOpen, setHelpOpen } = useShell()

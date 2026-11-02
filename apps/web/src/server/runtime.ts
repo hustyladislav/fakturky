@@ -36,6 +36,8 @@ export function getRuntime(): Promise<Runtime> {
       db: handle.db,
       secret: authSecret(),
       baseURL: baseURL(),
+      // Local PGlite (dev, e2e journeys) signs up many throw-away accounts from one IP.
+      signUpRateLimitMax: handle.kind === 'pglite' ? 1000 : undefined,
       trustedOrigins: [
         baseURL(),
         ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),

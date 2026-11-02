@@ -86,9 +86,16 @@ test('a11y: signed-in pages, dialogs and the public invoice', async ({ page }) =
     // Overlays: command palette and shortcuts help.
     await page.goto('/prehled')
     await setTheme(page, theme)
+    // Clicking before hydration would hit inert server-rendered markup.
+    await page.waitForLoadState('networkidle')
     await page.getByRole('button', { name: 'Hledat nebo spustit akci…' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await expectNoViolations(page, `command palette ${theme}`)
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog')).toBeHidden()
+    // The keyboard path opens the (lazy) palette too; the keypress must not be lost while the chunk loads.
+    await page.keyboard.press('Control+k')
+    await expect(page.getByRole('dialog')).toBeVisible()
     await page.keyboard.press('Escape')
     if (publicUrl) {
       await page.goto(publicUrl)

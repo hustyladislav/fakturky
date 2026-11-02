@@ -8,6 +8,10 @@ export interface Labels {
   creditNoteTax: string
   paymentReceipt: string
   numberPrefix: string
+  /** Shown instead of the number on a draft that has none yet. */
+  numberPending: string
+  /** Accessible name of the whole document. */
+  document: string
   supplier: string
   customer: string
   ico: string
@@ -77,6 +81,8 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     creditNoteTax: 'Opravný daňový doklad',
     paymentReceipt: 'Daňový doklad k přijaté platbě',
     numberPrefix: 'č.',
+    numberPending: 'bude přiděleno',
+    document: 'Doklad',
     supplier: 'Dodavatel',
     customer: 'Odběratel',
     ico: 'IČO',
@@ -153,6 +159,8 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     creditNoteTax: 'Opravný daňový doklad',
     paymentReceipt: 'Daňový doklad k prijatej platbe',
     numberPrefix: 'č.',
+    numberPending: 'bude pridelené',
+    document: 'Doklad',
     supplier: 'Dodávateľ',
     customer: 'Odberateľ',
     ico: 'IČO',
@@ -229,6 +237,8 @@ export const LABELS: Record<DocumentLanguage, Labels> = {
     creditNoteTax: 'Credit note – tax document',
     paymentReceipt: 'Tax document for received payment',
     numberPrefix: 'No.',
+    numberPending: 'to be assigned',
+    document: 'Document',
     supplier: 'Supplier',
     customer: 'Customer',
     ico: 'Company ID',

@@ -1,12 +1,4 @@
 import {
-  type ExportParty,
-  type MoneyInput,
-  parseDecimal,
-  round,
-  type VatTreatment,
-  vatTreatmentText,
-} from '@fakturky/domain'
-import {
   Document,
   type DocumentProps,
   Image,
@@ -17,25 +9,14 @@ import {
   Text,
   View,
 } from '@react-pdf/renderer'
-import type { ReactElement } from 'react'
-import {
-  amount,
-  countryName,
-  currencyLabel,
-  exchangeRate,
-  formatDate,
-  groupIban,
-  percent,
-  quantity,
-} from './format.ts'
-import { LABELS, type Labels } from './i18n.ts'
-import { amountDue } from './qr.ts'
+import type { ComponentProps, ReactElement } from 'react'
+import { buildSheetModel, DEFAULT_ACCENT, type PartyModel, type RecapRow } from './model.ts'
 import type { ImageBytes, InvoicePdfInput, QrData } from './types.ts'
 
 const INK = '#1B1A17'
 const MUTED = '#6B665B'
 const RULE = '#D6CDBA'
-const ACCENT = '#1F4D3C'
+const ACCENT = DEFAULT_ACCENT
 
 // No `lineHeight` anywhere: react-pdf 4.9 drops `render` (page number) texts or doubles line gaps when it is set.
 const s = StyleSheet.create({
@@ -175,30 +156,6 @@ const s = StyleSheet.create({
   },
 })
 
-/** Tax documents state the unit price without VAT; derive it from the line base when prices were entered gross. */
-function unitPriceNet(
-  qty: MoneyInput,
-  entered: MoneyInput,
-  base: string | undefined,
-  gross?: boolean,
-) {
-  const q = parseDecimal(qty)
-  return gross && base && !q.isZero() ? round(parseDecimal(base).div(q), 2) : entered
-}
-
-function titleFor(doc: InvoicePdfInput, t: Labels): string {
-  switch (doc.type) {
-    case 'proforma':
-      return t.proforma
-    case 'credit_note':
-      return doc.vatPayer ? t.creditNoteTax : t.creditNote
-    case 'payment_receipt':
-      return t.paymentReceipt
-    default:
-      return doc.vatPayer ? t.invoiceTax : t.invoice
-  }
-}
-
 function imageSource(bytes: NonNullable<ImageBytes>) {
   const isPng = bytes[0] === 0x89 && bytes[1] === 0x50
   return { data: Buffer.from(bytes), format: (isPng ? 'png' : 'jpg') as 'png' | 'jpg' }
@@ -206,54 +163,41 @@ function imageSource(bytes: NonNullable<ImageBytes>) {
 
 function PartyBlock({
   p,
-  title,
-  t,
-  lang,
-  vatPayer,
   customer,
   accent,
+  idKeyWidth,
 }: {
-  p: ExportParty
-  title: string
-  t: Labels
-  lang: InvoicePdfInput['language']
-  vatPayer?: boolean
+  p: PartyModel
   customer?: boolean
   accent: string
+  idKeyWidth: number
 }) {
-  const cc = (p.country ?? 'CZ').toUpperCase()
   return (
     <View style={customer ? [s.party, s.partyCustomer, { borderLeftColor: accent }] : s.party}>
-      <Text style={s.label}>{title}</Text>
+      <Text style={s.label}>{p.label}</Text>
       <Text style={s.partyName}>{p.name}</Text>
       <Text>{p.street}</Text>
-      <Text>{`${p.zip} ${p.city}`}</Text>
-      <Text>{countryName(cc, lang)}</Text>
+      <Text>{p.cityLine}</Text>
+      <Text>{p.country}</Text>
       <View style={{ marginTop: 6 }}>
         {p.ico ? (
           <View style={s.idRow}>
-            <Text style={[s.idKey, { width: lang === 'en' ? 58 : 34 }]}>{t.ico}</Text>
+            <Text style={[s.idKey, { width: idKeyWidth }]}>{p.icoLabel}</Text>
             <Text style={s.bold}>{p.ico}</Text>
           </View>
         ) : null}
         {p.dic ? (
           <View style={s.idRow}>
-            <Text style={[s.idKey, { width: lang === 'en' ? 58 : 34 }]}>{t.dic}</Text>
+            <Text style={[s.idKey, { width: idKeyWidth }]}>{p.dicLabel}</Text>
             <Text style={s.bold}>{p.dic}</Text>
           </View>
         ) : null}
       </View>
-      {vatPayer !== undefined ? (
-        <Text style={[s.bold, { marginTop: 5 }]}>{vatPayer ? t.vatPayer : t.nonVatPayer}</Text>
-      ) : null}
+      {p.vatStatus ? <Text style={[s.bold, { marginTop: 5 }]}>{p.vatStatus}</Text> : null}
       {p.registerNote ? (
         <Text style={[s.muted, { marginTop: 3, fontSize: 7.6 }]}>{p.registerNote}</Text>
       ) : null}
-      {p.email || p.phone ? (
-        <Text style={[s.muted, { marginTop: 3 }]}>
-          {[p.email, p.phone].filter(Boolean).join('  ·  ')}
-        </Text>
-      ) : null}
+      {p.contact ? <Text style={[s.muted, { marginTop: 3 }]}>{p.contact}</Text> : null}
     </View>
   )
 }
@@ -273,79 +217,29 @@ export interface InvoiceDocumentProps {
 }
 
 export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement<DocumentProps> {
-  const accent = /^#[0-9a-fA-F]{6}$/.test(doc.accentColor ?? '')
-    ? (doc.accentColor as string)
-    : ACCENT
-  const lang = doc.language
-  const t = LABELS[lang]
-  const cur = doc.currency.toUpperCase()
-  const cl = currencyLabel(cur)
-  const money = (v: string | number) => `${amount(v, lang)} ${cl}`
-  const payer = doc.vatPayer
-  const isProforma = doc.type === 'proforma'
-  const showVatCols = payer
-  const showRecap = payer && !isProforma && doc.totals.recap.length > 0
-  const foreign = cur !== 'CZK'
-  const rate = parseDecimal(doc.exchangeRate ?? doc.totals.exchangeRate)
-  const title = titleFor(doc, t)
-  const pay = doc.payment
-  const acct = pay?.bankAccount
-  const due = amountDue(doc)
-  const deposits = parseDecimal(doc.paidDeposits ?? 0)
-  const hasRounding = !parseDecimal(doc.totals.rounding).isZero()
-
-  const priceHeader = t.unitPrice
-  const totalHeader = !payer
-    ? t.lineTotal
-    : doc.pricesIncludeVat
-      ? t.lineTotalIncVat
-      : t.lineTotalExVat
-
-  const legalTexts: { treatment: VatTreatment; text: string }[] = []
-  for (const r of doc.totals.recap) {
-    if (r.vatTreatment !== 'standard' && !legalTexts.some((l) => l.treatment === r.vatTreatment)) {
-      legalTexts.push({ treatment: r.vatTreatment, text: vatTreatmentText(r.vatTreatment, lang) })
-    }
-  }
-
-  const methodLabel = pay ? (t.methods[pay.method] ?? pay.method) : null
-  const meta: { label: string; value: string }[] = [
-    { label: t.issueDate, value: formatDate(doc.issueDate, lang) },
-  ]
-  if (payer && doc.taxableDate)
-    meta.push({ label: t.taxableDate, value: formatDate(doc.taxableDate, lang) })
-  if (pay) meta.push({ label: t.dueDate, value: formatDate(pay.dueDate, lang) })
-  if (methodLabel) meta.push({ label: t.paymentMethod, value: methodLabel })
-
-  const accountLine = acct?.accountNumber
-    ? `${acct.accountNumber}${acct.bankCode ? `/${acct.bankCode}` : ''}`
-    : null
+  const m = buildSheetModel(doc)
+  const { accent, lang, t } = m
+  const idKeyWidth = lang === 'en' ? 58 : 34
 
   return (
     <Document
-      title={`${title} ${doc.number}`}
+      title={m.documentName}
       author={doc.supplier.name}
-      subject={title}
+      subject={m.title}
       creator={doc.brandName}
       producer={doc.brandName}
       language={lang}
     >
       <Page size="A4" style={s.page}>
         <View fixed style={s.footer}>
-          <Text style={[s.footText, { flex: 1 }]}>
-            {[doc.supplier.name, doc.supplier.registerNote]
-              .filter(Boolean)
-              .map((part) => String(part).replace(/\.+$/, ''))
-              .join(', ')}
-            .
-          </Text>
+          <Text style={[s.footText, { flex: 1 }]}>{m.footer.supplierLine}</Text>
           <View style={{ alignItems: 'flex-end' }}>
-            {doc.showBrand === false ? null : (
-              <Text style={s.footText}>{`${t.issuedIn} ${doc.brandName}`}</Text>
-            )}
+            {m.footer.brand ? <Text style={s.footText}>{m.footer.brand}</Text> : null}
             <Text
               style={s.footText}
-              render={({ pageNumber, totalPages }) => `${t.page} ${pageNumber} / ${totalPages}`}
+              render={({ pageNumber, totalPages }) =>
+                `${m.footer.pageLabel} ${pageNumber} / ${totalPages}`
+              }
             />
           </View>
         </View>
@@ -365,12 +259,12 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
                 letterSpacing: -0.15,
               }}
             >
-              {doc.supplier.name}
+              {m.supplierName}
             </Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ fontSize: 8.6, fontWeight: 500, color: MUTED, marginBottom: 3 }}>
-              {title}
+              {m.title}
             </Text>
             <Text
               style={{
@@ -381,128 +275,80 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
                 letterSpacing: -0.5,
                 paddingBottom: 2,
               }}
-            >{`${t.numberPrefix} ${doc.number}`}</Text>
+            >
+              {m.number ?? m.pendingNumberText}
+            </Text>
           </View>
         </View>
         <View style={[s.rule, { borderTopColor: accent }]} />
         <View style={s.rule2} />
 
         <View style={s.meta}>
-          {meta.map((m, i) => (
-            <View key={m.label} style={i === 0 ? s.metaCell : [s.metaCell, s.metaCellSep]}>
-              <Text style={s.label}>{m.label}</Text>
-              <Text style={s.metaValue}>{m.value}</Text>
+          {m.meta.map((x, i) => (
+            <View key={x.label} style={i === 0 ? s.metaCell : [s.metaCell, s.metaCellSep]}>
+              <Text style={s.label}>{x.label}</Text>
+              <Text style={s.metaValue}>{x.value}</Text>
             </View>
           ))}
         </View>
 
         <View style={s.parties}>
-          <PartyBlock
-            p={doc.supplier}
-            title={t.supplier}
-            t={t}
-            lang={lang}
-            vatPayer={doc.supplierVatPayer ?? payer}
-            accent={accent}
-          />
-          <PartyBlock
-            p={doc.customer}
-            title={t.customer}
-            t={t}
-            lang={lang}
-            customer
-            accent={accent}
-          />
+          <PartyBlock p={m.supplier} accent={accent} idKeyWidth={idKeyWidth} />
+          <PartyBlock p={m.customer} customer accent={accent} idKeyWidth={idKeyWidth} />
         </View>
 
-        {doc.type === 'credit_note' && doc.originalDocument ? (
+        {m.correction ? (
           <View style={{ marginBottom: 10 }}>
-            <Text style={s.bold}>
-              {t.corrects
-                .replace('{number}', doc.originalDocument.number)
-                .replace('{date}', formatDate(doc.originalDocument.issueDate, lang))}
-            </Text>
-            {doc.correctionReason ? (
-              <Text style={s.muted}>{`${t.correctionReason}: ${doc.correctionReason}`}</Text>
-            ) : null}
+            <Text style={s.bold}>{m.correction.line}</Text>
+            {m.correction.reason ? <Text style={s.muted}>{m.correction.reason}</Text> : null}
           </View>
         ) : null}
-        {doc.headerText ? <Text style={{ marginBottom: 10 }}>{doc.headerText}</Text> : null}
+        {m.headerText ? <Text style={{ marginBottom: 10 }}>{m.headerText}</Text> : null}
 
         <View fixed style={s.thead}>
           <Text style={[s.th, s.cDesc]}>{t.description}</Text>
           <Text style={[s.th, s.cQty]}>{t.quantity}</Text>
           <Text style={[s.th, s.cUnit]}>{t.unit}</Text>
-          <Text style={[s.th, s.cPrice]}>{priceHeader}</Text>
-          {showVatCols ? <Text style={[s.th, s.cVat]}>{t.vatRate}</Text> : null}
-          <Text style={[s.th, s.cTotal]}>{totalHeader}</Text>
+          <Text style={[s.th, s.cPrice]}>{m.columns.priceHeader}</Text>
+          {m.columns.showVat ? <Text style={[s.th, s.cVat]}>{t.vatRate}</Text> : null}
+          <Text style={[s.th, s.cTotal]}>{m.columns.totalHeader}</Text>
         </View>
-        {doc.lines.map((line, i) => {
-          const lt = doc.totals.lines[i]
-          const discount =
-            line.discountPercent !== undefined && line.discountPercent !== null
-              ? parseDecimal(line.discountPercent)
-              : null
-          return (
-            <View key={`${i}-${line.description}`} style={s.tr} wrap={false}>
-              <View style={s.cDesc}>
-                <Text style={s.rowTitle}>{line.description}</Text>
-                {line.detail ? <Text style={s.rowDetail}>{line.detail}</Text> : null}
-                {discount && !discount.isZero() ? (
-                  <Text style={s.rowDetail}>{`${t.discount} ${percent(discount.toString())}`}</Text>
-                ) : null}
-              </View>
-              <Text style={s.cQty}>{quantity(line.quantity, lang)}</Text>
-              <Text style={s.cUnit}>{line.unit ?? ''}</Text>
-              <Text style={s.cPrice}>
-                {amount(
-                  unitPriceNet(line.quantity, line.unitPrice, lt?.base, doc.pricesIncludeVat),
-                  lang,
-                )}
-              </Text>
-              {showVatCols ? (
-                <Text style={s.cVat}>
-                  {lt && lt.vatTreatment === 'standard' ? percent(lt.vatRate) : '–'}
-                </Text>
-              ) : null}
-              <Text style={[s.cTotal, s.bold]}>{lt ? amount(lt.base, lang) : ''}</Text>
+        {m.lines.map((line, i) => (
+          <View key={`${i}-${line.title}`} style={s.tr} wrap={false}>
+            <View style={s.cDesc}>
+              <Text style={s.rowTitle}>{line.title}</Text>
+              {line.detail ? <Text style={s.rowDetail}>{line.detail}</Text> : null}
+              {line.discount ? <Text style={s.rowDetail}>{line.discount}</Text> : null}
             </View>
-          )
-        })}
+            <Text style={s.cQty}>{line.quantity}</Text>
+            <Text style={s.cUnit}>{line.unit}</Text>
+            <Text style={s.cPrice}>{line.unitPrice}</Text>
+            {m.columns.showVat ? <Text style={s.cVat}>{line.vat}</Text> : null}
+            <Text style={[s.cTotal, s.bold]}>{line.total}</Text>
+          </View>
+        ))}
 
         <View wrap={false} style={s.bottom}>
           <View style={s.left}>
-            {pay && (acct || pay.variableSymbol) ? (
+            {m.payment ? (
               <View style={s.pay}>
                 {qr ? (
                   <View style={s.qrBox}>
                     <View style={s.qrFrame}>
                       <Qr qr={qr} />
                     </View>
-                    <Text style={[s.label, { marginTop: 4 }]}>
-                      {qr.kind === 'spayd' ? t.qrSpayd : t.qrEpc}
-                    </Text>
+                    <Text style={[s.label, { marginTop: 4 }]}>{m.payment.qrLabel(qr.kind)}</Text>
                   </View>
                 ) : null}
                 <View style={{ flex: 1 }}>
-                  <Text style={s.label}>{t.paymentDetails}</Text>
-                  {acct?.bankName ? <PayRow k={t.bank} v={acct.bankName} /> : null}
-                  {accountLine ? <PayRow k={t.accountNumber} v={accountLine} bold /> : null}
-                  {acct ? <PayRow k={t.iban} v={groupIban(acct.iban)} /> : null}
-                  {acct?.bic ? <PayRow k={t.bic} v={acct.bic} /> : null}
-                  {pay.variableSymbol ? (
-                    <PayRow k={t.variableSymbol} v={pay.variableSymbol} bold />
-                  ) : null}
-                  {pay.constantSymbol ? (
-                    <PayRow k={t.constantSymbol} v={pay.constantSymbol} />
-                  ) : null}
-                  {pay.specificSymbol ? (
-                    <PayRow k={t.specificSymbol} v={pay.specificSymbol} />
-                  ) : null}
+                  <Text style={s.label}>{m.payment.heading}</Text>
+                  {m.payment.rows.map((r) => (
+                    <PayRow key={r.key} k={r.key} v={r.value} bold={r.bold ?? false} />
+                  ))}
                 </View>
               </View>
             ) : null}
-            {doc.footerText ? (
+            {m.footerText ? (
               <Text
                 style={{
                   fontFamily: 'Fraunces',
@@ -512,12 +358,14 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
                   color: accent,
                 }}
               >
-                {doc.footerText}
+                {m.footerText}
               </Text>
             ) : null}
-            {isProforma ? <Text style={[s.bold, { marginTop: 8 }]}>{t.notTaxDocument}</Text> : null}
+            {m.proformaNotice ? (
+              <Text style={[s.bold, { marginTop: 8 }]}>{m.proformaNotice}</Text>
+            ) : null}
 
-            {doc.signature || doc.issuedBy ? (
+            {m.signature ? (
               <View style={{ marginTop: 22, alignItems: 'flex-start' }}>
                 {doc.signature ? (
                   <View style={{ width: 150, height: 44 }}>
@@ -527,138 +375,105 @@ export function InvoiceDocument({ doc, qr }: InvoiceDocumentProps): ReactElement
                     />
                   </View>
                 ) : null}
-                <Text style={s.sigLine}>
-                  {doc.issuedBy ? `${t.issuedBy}: ${doc.issuedBy}` : t.issuedBy}
-                </Text>
+                <Text style={s.sigLine}>{m.signature.issuedBy}</Text>
               </View>
             ) : null}
           </View>
 
           <View style={s.right}>
-            {showRecap ? (
+            {m.recap ? (
               <View>
                 <View style={[s.row, { paddingBottom: 4 }]}>
-                  <Text style={[s.th, { flex: 1 }]}>{`${t.vatRecap} (${cl})`}</Text>
+                  <Text style={[s.th, { flex: 1 }]}>{m.recap.heading}</Text>
                 </View>
                 <View style={[s.row, { paddingBottom: 4 }]}>
-                  <Text style={[s.th, { width: 58 }]}>{t.rate}</Text>
-                  <Text style={[s.th, { flex: 1, textAlign: 'right' }]}>{t.base}</Text>
-                  <Text style={[s.th, { width: 62, textAlign: 'right' }]}>{t.vat}</Text>
-                  <Text style={[s.th, { width: 68, textAlign: 'right' }]}>{t.total}</Text>
+                  <Text style={[s.th, { width: 58 }]}>{m.recap.heads.rate}</Text>
+                  <Text style={[s.th, { flex: 1, textAlign: 'right' }]}>{m.recap.heads.base}</Text>
+                  <Text style={[s.th, { width: 62, textAlign: 'right' }]}>{m.recap.heads.vat}</Text>
+                  <Text style={[s.th, { width: 68, textAlign: 'right' }]}>
+                    {m.recap.heads.total}
+                  </Text>
                 </View>
-                {doc.totals.recap.map((r) => (
-                  <View key={`${r.vatTreatment}-${r.vatRate}`} style={s.recapRow}>
-                    <Text style={{ width: 58 }}>
-                      {r.vatTreatment === 'standard'
-                        ? percent(r.vatRate)
-                        : t.treatments[r.vatTreatment]}
-                    </Text>
-                    <Text style={{ flex: 1, textAlign: 'right' }}>{amount(r.base, lang)}</Text>
-                    <Text style={{ width: 62, textAlign: 'right' }}>{amount(r.vat, lang)}</Text>
-                    <Text style={{ width: 68, textAlign: 'right' }}>{amount(r.total, lang)}</Text>
-                  </View>
+                {m.recap.rows.map((r) => (
+                  <RecapLine key={r.key} r={r} style={s.recapRow} />
                 ))}
-                <View
-                  style={[
-                    s.recapRow,
-                    { borderTopColor: INK, borderTopWidth: 0.6, fontWeight: 600 },
-                  ]}
-                >
-                  <Text style={[s.bold, { width: 58 }]}>{t.sum}</Text>
-                  <Text style={[s.bold, { flex: 1, textAlign: 'right' }]}>
-                    {amount(doc.totals.subtotal, lang)}
-                  </Text>
-                  <Text style={[s.bold, { width: 62, textAlign: 'right' }]}>
-                    {amount(doc.totals.vatTotal, lang)}
-                  </Text>
-                  <Text style={[s.bold, { width: 68, textAlign: 'right' }]}>
-                    {amount(doc.totals.totalBeforeRounding, lang)}
-                  </Text>
-                </View>
+                <RecapLine
+                  r={m.recap.sum}
+                  bold
+                  style={[s.recapRow, { borderTopColor: INK, borderTopWidth: 0.6 }]}
+                />
               </View>
             ) : (
               <View>
-                {payer ? (
-                  <>
-                    <SumRow k={t.base} v={money(doc.totals.subtotal)} />
-                    <SumRow k={t.vat} v={money(doc.totals.vatTotal)} />
-                  </>
-                ) : null}
+                {m.plainSums.map((r) => (
+                  <SumRow key={r.key} k={r.key} v={r.value} />
+                ))}
               </View>
             )}
 
-            {foreign && payer && showRecap ? (
+            {m.czkRecap ? (
               <View style={{ marginTop: 12 }}>
-                <Text style={[s.th, { paddingBottom: 4 }]}>{`${t.recapCzk} (Kč)`}</Text>
-                {doc.totals.recap.map((r) => (
-                  <View key={`czk-${r.vatTreatment}-${r.vatRate}`} style={s.recapRow}>
-                    <Text style={{ width: 58 }}>
-                      {r.vatTreatment === 'standard'
-                        ? percent(r.vatRate)
-                        : t.treatments[r.vatTreatment]}
-                    </Text>
-                    <Text style={{ flex: 1, textAlign: 'right' }}>
-                      {amount(r.baseCzk ?? '0', lang)}
-                    </Text>
-                    <Text style={{ width: 62, textAlign: 'right' }}>
-                      {amount(r.vatCzk ?? '0', lang)}
-                    </Text>
-                    <Text style={{ width: 68, textAlign: 'right' }}>
-                      {amount(r.totalCzk ?? '0', lang)}
-                    </Text>
-                  </View>
+                <Text style={[s.th, { paddingBottom: 4 }]}>{m.czkRecap.heading}</Text>
+                {m.czkRecap.rows.map((r) => (
+                  <RecapLine key={r.key} r={r} style={s.recapRow} />
                 ))}
-                <Text style={[s.muted, { marginTop: 5, fontSize: 7.6 }]}>
-                  {`${t.exchangeRate}: 1 ${cur} = ${exchangeRate(rate, lang)} Kč`}
-                </Text>
+                <Text style={[s.muted, { marginTop: 5, fontSize: 7.6 }]}>{m.exchangeRateLine}</Text>
               </View>
-            ) : foreign ? (
-              <Text
-                style={[s.muted, { marginTop: 8 }]}
-              >{`${t.exchangeRate}: 1 ${cur} = ${exchangeRate(rate, lang)} Kč`}</Text>
+            ) : m.exchangeRateLine ? (
+              <Text style={[s.muted, { marginTop: 8 }]}>{m.exchangeRateLine}</Text>
             ) : null}
 
             <View style={{ marginTop: 8 }}>
-              {hasRounding ? <SumRow k={t.rounding} v={money(doc.totals.rounding)} /> : null}
-              {!deposits.isZero() ? (
-                <SumRow k={t.deposits} v={money(`-${deposits.abs().toString()}`)} />
-              ) : null}
+              {m.adjustments.map((r) => (
+                <SumRow key={r.key} k={r.key} v={r.value} />
+              ))}
             </View>
 
             <View style={s.total}>
-              <Text style={s.label}>
-                {doc.type === 'credit_note'
-                  ? t.creditTotal
-                  : deposits.isZero()
-                    ? t.amountDue
-                    : t.remaining}
-              </Text>
-              <Text style={s.totalValue}>{money(due)}</Text>
+              <Text style={s.label}>{m.total.label}</Text>
+              <Text style={s.totalValue}>{m.total.value}</Text>
             </View>
           </View>
         </View>
 
-        {doc.note ? (
+        {m.note ? (
           <View style={{ marginTop: 14 }}>
-            <Text style={s.muted}>{doc.note}</Text>
+            <Text style={s.muted}>{m.note}</Text>
           </View>
         ) : null}
 
-        {legalTexts.length > 0 ? (
+        {m.legal ? (
           <View style={s.legal} wrap={false}>
-            <Text style={[s.label, { marginBottom: 3 }]}>{t.taxNote}</Text>
-            {legalTexts.map((l) => (
-              <Text key={l.treatment} style={{ fontSize: 8.2 }}>
-                {l.text}
-                {l.treatment === 'eu_reverse_charge' && doc.customer.dic
-                  ? ` — ${t.customerVatId}: ${doc.customer.dic}`
-                  : ''}
+            <Text style={[s.label, { marginBottom: 3 }]}>{m.legal.heading}</Text>
+            {m.legal.items.map((text) => (
+              <Text key={text} style={{ fontSize: 8.2 }}>
+                {text}
               </Text>
             ))}
           </View>
         ) : null}
       </Page>
     </Document>
+  )
+}
+
+function RecapLine({
+  r,
+  bold,
+  style,
+}: {
+  r: RecapRow
+  bold?: boolean
+  style: ComponentProps<typeof View>['style']
+}) {
+  const b = bold ? s.bold : undefined
+  return (
+    <View style={style}>
+      <Text style={[b ?? {}, { width: 58 }]}>{r.rate}</Text>
+      <Text style={[b ?? {}, { flex: 1, textAlign: 'right' }]}>{r.base}</Text>
+      <Text style={[b ?? {}, { width: 62, textAlign: 'right' }]}>{r.vat}</Text>
+      <Text style={[b ?? {}, { width: 68, textAlign: 'right' }]}>{r.total}</Text>
+    </View>
   )
 }
 

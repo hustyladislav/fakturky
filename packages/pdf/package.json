@@ -3,10 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Server-side invoice PDF rendering (react-pdf) and the shared InvoiceDocument component.",
+  "description": "Invoice rendering: server-side PDF (react-pdf) and its browser-safe HTML twin (@fakturky/pdf/html), sharing one document model.",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./html": "./src/html/index.ts",
+    "./fixtures": "./src/fixtures.ts"
   },
   "scripts": {
     "test": "vitest run",
@@ -21,6 +23,8 @@
     "@napi-rs/canvas": "1.1.0",
     "@types/node": "catalog:",
     "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "react-dom": "19.3.1",
     "typescript": "catalog:",
     "unpdf": "2.1.0",
     "vitest": "catalog:"

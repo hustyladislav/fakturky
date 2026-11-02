@@ -358,6 +358,11 @@ export const cs = {
     new: 'Nová faktura',
     empty: 'Zatím nemáte žádné faktury.',
     emptyFiltered: 'Nic neodpovídá zvolenému filtru.',
+    emptyFilteredBy: (search: string | null, filters: string[]) => {
+      const parts = [search ? `hledání „${search}“` : null, ...filters].filter(Boolean)
+      return `Nic nenalezeno: ${parts.join(' · ')}`
+    },
+    paidOn: (date: string) => `Zaplaceno ${date}`,
     emptyCta: 'Vystavit první fakturu',
     search: 'Hledat podle čísla, odběratele nebo VS…',
     subtitle: (count: number, unpaid: string | null) =>
@@ -374,7 +379,7 @@ export const cs = {
     issuedLabel: 'vystaveno',
     noMonth: 'Bez data',
     noNumber: 'Bez čísla',
-    resetFilter: 'Zrušit filtr',
+    resetFilter: 'Zrušit filtry',
     loadMore: 'Načíst další',
     sortBy: (column: string) => `Seřadit podle: ${column}`,
     keyboardHint: 'J / K pohyb · Enter otevřít · X vybrat',

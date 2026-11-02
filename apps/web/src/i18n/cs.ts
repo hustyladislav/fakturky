@@ -901,6 +901,13 @@ export const cs = {
   templates: {
     title: 'Šablony',
     emptyTitle: 'Zatím žádné šablony',
+    subtitle: (n: number, active: number) =>
+      `${n} ${n === 1 ? 'šablona' : n < 5 ? 'šablony' : 'šablon'} · ${active === 0 ? 'nic se neopakuje' : `${active} se opakuje`}`,
+    net: 'bez DPH',
+    nextShort: 'další',
+    today: 'Dnes',
+    autoIssueShort: 'vystaví se samo',
+    autoSendShort: 'vystaví a odešle',
     empty:
       'Otevřete vystavenou fakturu a zvolte „Uložit jako šablonu“. Příště ji vytvoříte jedním klikem.',
     use: 'Použít',

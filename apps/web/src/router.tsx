@@ -12,7 +12,8 @@ const requestNonce = createIsomorphicFn()
 
 export function getRouter() {
   const queryClient = new QueryClient({
-    defaultOptions: { queries: { staleTime: 30_000 } },
+    // One quick retry, then show the error state (the default 3 retries leave skeletons up for ~7 s offline).
+    defaultOptions: { queries: { staleTime: 30_000, retry: 1, retryDelay: 1000 } },
   })
   const router = createRouter({
     routeTree,

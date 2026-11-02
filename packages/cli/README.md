@@ -16,3 +16,13 @@ npx fakturky documents issue <id>
 - `--data` takes JSON, `@file.json` or `-` (stdin); individual body fields are also flags.
 - Environment: `FAKTURKY_API_KEY`, `FAKTURKY_URL` (default `https://fakturky.vercel.app`).
 - Config: `$XDG_CONFIG_HOME/fakturky/config.json` (default `~/.config/fakturky/`).
+
+## Releasing (maintainers)
+
+`.github/workflows/publish-cli.yml` publishes to npm with provenance when a tag `cli-v<version>` is pushed
+(the tag must match `package.json`). It needs the repository secret `NPM_TOKEN`.
+
+```bash
+# bump packages/cli/package.json "version", merge to main, then:
+git tag cli-v0.1.1 && git push origin cli-v0.1.1
+```

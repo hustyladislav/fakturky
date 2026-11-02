@@ -157,6 +157,12 @@ const cases: Record<string, Case> = {
   },
   'documents.delete': { kind: 'foreign', run: (b, a) => b.documents.delete({ id: a.draftId }) },
 
+  // Fakturoid import calls a third party; its tenant isolation is covered in import/import.test.ts.
+  'import.fakturoid': { kind: 'external' },
+  'import.file': {
+    kind: 'scoped',
+    run: (b) => b.import.file({ format: 'csv', kind: 'contacts', content: 'name\nB contact' }),
+  },
   'lookup.ares': { kind: 'external' },
   'lookup.exchangeRate': { kind: 'external' },
 

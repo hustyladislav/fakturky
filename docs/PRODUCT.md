@@ -42,3 +42,17 @@ mark paid. Deployed to production. Everything else below lands in small follow-u
 Expenses + receipt OCR, price list, estimates, Fio/CSV bank pairing, Pohoda XML export, VAT reports
 (přiznání, kontrolní hlášení), Slovak market (Pay by square, SK VAT, Peppol), multi-user roles, GoPay/Stripe
 payment links, webhooks, accountant portal.
+
+## Import (migration from other tools)
+
+Settings → Import (`/import`, procedures `import.fakturoid` / `import.file`, REST `/api/v1/import/*`, MCP tools
+`import_from_fakturoid` / `import_from_file`, CLI `fakturky import …`).
+
+- **Fakturoid API v3** with the user's own client id/secret + account slug (used once, never stored or logged).
+- **CSV** (contacts; invoices, one row per line grouped by number) and **ISDOC** (one invoice) as fallback.
+- Invoices are imported as issued documents with their **original numbers**, flagged `importedFrom`
+  ("importováno"); paid/cancelled state and payments carry over; per-document rounding is preserved.
+- Number series counters are raised so the next issued number continues after the highest imported one
+  (when the imported numbers follow the series pattern).
+- Idempotent (re-runs skip known records) and previewable (`dryRun` rolls everything back).
+- Corrections/credit notes from Fakturoid are skipped with a note (not modelled yet).

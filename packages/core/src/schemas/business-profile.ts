@@ -3,6 +3,18 @@ import { addressSchema } from './contact'
 
 export const vatStatusSchema = z.enum(['non_payer', 'payer', 'identified_person'])
 
+/** Data for the VAT filings (EPO). Czech tax office codes are 3 digits, workplaces 4. */
+export const vatFilingSchema = z.object({
+  taxOfficeCode: z.string().regex(/^\d{3}$/, 'Kód finančního úřadu má 3 číslice'),
+  workplaceCode: z
+    .string()
+    .regex(/^\d{4}$/, 'Kód pracoviště má 4 číslice')
+    .nullish(),
+  period: z.enum(['monthly', 'quarterly']),
+  subjectType: z.enum(['F', 'P']),
+})
+export type VatFilingInput = z.infer<typeof vatFilingSchema>
+
 const fields = {
   legalName: z.string().trim().min(1).max(200),
   ico: z.string().trim().max(20).nullish(),
@@ -10,6 +22,7 @@ const fields = {
   address: addressSchema,
   vatStatus: vatStatusSchema,
   registryNote: z.string().trim().max(500).nullish(),
+  vatFiling: vatFilingSchema.nullish(),
   email: z.email().nullish(),
   phone: z.string().trim().max(50).nullish(),
   website: z.string().trim().max(200).nullish(),

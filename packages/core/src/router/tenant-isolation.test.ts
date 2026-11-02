@@ -8,6 +8,7 @@
  *  - `external` calls a third party / the public token flow and touches no tenant row.
  */
 import { type DbHandle, schema } from '@fakturky/db'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { clientFor, createTestDb, seedOrg } from '../testing'
 
@@ -246,9 +247,36 @@ const cases: Record<string, Case> = {
   },
   'recurring.delete': { kind: 'foreign', run: (b, a) => b.recurring.delete({ id: a.ruleId }) },
 
+  // VAT reports are for payers: make org B one first (ordered last, nothing after depends on it).
+  'vat.report': {
+    kind: 'scoped',
+    run: async (b) => {
+      await makePayer(orgB)
+      return b.vat.report({ year: 2026, month: 3 })
+    },
+  },
+  'vat.exportXml': {
+    kind: 'scoped',
+    run: async (b) => {
+      await makePayer(orgB)
+      return b.vat.exportXml({ year: 2026, month: 3, kind: 'kh' })
+    },
+  },
+
   'public.invoice': { kind: 'external' },
   'public.isdoc': { kind: 'external' },
   'public.pdf': { kind: 'external' },
+}
+
+async function makePayer(org: string) {
+  await handle.db
+    .update(schema.businessProfile)
+    .set({
+      vatStatus: 'payer',
+      dic: 'CZ27082440',
+      vatFiling: { taxOfficeCode: '451', period: 'monthly', subjectType: 'P' },
+    })
+    .where(eq(schema.businessProfile.organizationId, org))
 }
 
 function procedurePaths(node: object, prefix: string[] = []): string[] {

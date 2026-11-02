@@ -258,3 +258,12 @@ describe('computeDp3', () => {
     expect(f.r46).toBe('0')
   })
 })
+
+describe('foreign currency', () => {
+  it('a missing exchange rate is a blocking warning', () => {
+    const r = buildVatReport(march, [
+      { id: 'e', type: 'invoice', number: '1', taxableDate: '2026-03-01', customer: A, missingExchangeRate: true, recap: [std('21', '100.00', '21.00')] },
+    ])
+    expect(r.warnings).toEqual([{ code: 'missing_exchange_rate', blocking: true, documentId: 'e', number: '1' }])
+  })
+})

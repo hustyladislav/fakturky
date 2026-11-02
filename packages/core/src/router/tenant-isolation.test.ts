@@ -119,6 +119,7 @@ const cases: Record<string, Case> = {
   },
   'contacts.archive': { kind: 'foreign', run: (b, a) => b.contacts.archive({ id: a.contactId }) },
 
+  'dashboard.activity': { kind: 'scoped', run: (b) => b.dashboard.activity({}) },
   'dashboard.summary': { kind: 'scoped', run: (b) => b.dashboard.summary({}) },
 
   'exports.documents': { kind: 'scoped', run: (b) => b.exports.documents({}) },

@@ -9,6 +9,7 @@ import { moneyParts } from '@fakturky/ui/lib/money'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { FilePlus2, Landmark, Layers, Sparkles } from 'lucide-react'
+import { ActivityFeed } from '@/components/dashboard/activity-feed'
 import { AwaitingList } from '@/components/dashboard/awaiting-list'
 import { Delta, KpiCard, wholeCrowns } from '@/components/dashboard/kpi-card'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
@@ -45,12 +46,15 @@ function QuickActions() {
   const shell = useShell()
   const mod = useModKey()
   return (
-    <nav aria-label={t.quick.title} className="mb-6 flex flex-wrap gap-2">
+    <nav
+      aria-label={t.quick.title}
+      className="-mx-4 mb-6 flex scroll-px-4 gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden"
+    >
       <Button
         nativeButton={false}
         render={<Link to="/faktury/nova" />}
         size="lg"
-        className="px-3.5"
+        className="shrink-0 px-3.5"
       >
         <FilePlus2 />
         {t.quick.newInvoice}
@@ -60,7 +64,7 @@ function QuickActions() {
         size="lg"
         nativeButton={false}
         render={<Link to="/sablony" />}
-        className="bg-card px-3.5"
+        className="shrink-0 bg-card px-3.5"
       >
         <Layers />
         {t.quick.fromTemplate}
@@ -70,7 +74,7 @@ function QuickActions() {
         size="lg"
         nativeButton={false}
         render={<Link to="/banka" />}
-        className="bg-card px-3.5"
+        className="shrink-0 bg-card px-3.5"
       >
         <Landmark />
         {t.quick.uploadStatement}
@@ -79,7 +83,7 @@ function QuickActions() {
         variant="outline"
         size="lg"
         onClick={() => shell.setAssistantOpen(true)}
-        className="bg-card px-3.5"
+        className="shrink-0 bg-card px-3.5"
       >
         <Sparkles />
         {t.quick.askAssistant}
@@ -95,6 +99,7 @@ function Overview() {
   const unpaid = useQuery(
     orpc.documents.list.queryOptions({ input: { filter: 'unpaid', limit: 200 } }),
   )
+  const activity = useQuery(orpc.dashboard.activity.queryOptions({ input: { limit: 6 } }))
   const s = summary.data
   const hasDocs = (recent.data?.length ?? 0) > 0
 
@@ -148,23 +153,34 @@ function Overview() {
       {s && (
         <div className="space-y-5">
           {/* KPIs: 4 across on desktop, 2x2 on tablet, a snap carousel on phones */}
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-4 flex scroll-px-4 snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
             <KpiCard
-              className="w-[78%] shrink-0 snap-start md:w-auto"
+              className="w-[calc(100%-3.25rem)] shrink-0 snap-start md:w-auto"
               label={t.kpi.month}
               amount={s.monthTurnover}
-              delta={<Delta current={monthN} previous={Number(prev?.turnover ?? 0)} />}
-              hint={monthN < 0 ? t.kpi.monthNegative : t.kpi.monthHint}
+              tone="ink"
+              delta={
+                <Delta
+                  current={monthN}
+                  previous={Number(prev?.turnover ?? 0)}
+                  neutral={Number(s.monthCreditNotes) < 0}
+                />
+              }
+              hint={
+                Number(s.monthCreditNotes) < 0
+                  ? t.kpi.monthCredit(`−${crowns(s.monthCreditNotes.replace('-', ''))}`)
+                  : t.kpi.monthHint
+              }
               spark={spark?.map((m) => Number(m.turnover))}
             />
             <KpiCard
-              className="w-[78%] shrink-0 snap-start md:w-auto"
+              className="w-[calc(100%-3.25rem)] shrink-0 snap-start md:w-auto"
               label={t.kpi.unpaid}
               amount={s.unpaid}
               hint={t.kpi.unpaidHint(s.unpaidCount)}
             />
             <KpiCard
-              className="w-[78%] shrink-0 snap-start md:w-auto"
+              className="w-[calc(100%-3.25rem)] shrink-0 snap-start md:w-auto"
               label={t.kpi.overdue}
               amount={s.overdue}
               tone={s.overdueCount > 0 ? 'overdue' : undefined}
@@ -175,7 +191,7 @@ function Overview() {
               }
             />
             <KpiCard
-              className="w-[78%] shrink-0 snap-start md:w-auto"
+              className="w-[calc(100%-3.25rem)] shrink-0 snap-start md:w-auto"
               label={t.kpi.received}
               amount={s.monthReceived}
               delta={
@@ -219,11 +235,19 @@ function Overview() {
                               {d.customerName ?? '—'}
                             </div>
                             <div className="truncate text-xs text-muted-foreground tabular-nums">
-                              {d.number ?? cs.invoices.draftNumber}
+                              {d.number ??
+                                (d.type === 'credit_note'
+                                  ? t.draftCreditNote
+                                  : cs.invoices.draftNumber)}
                             </div>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-4">
-                            <Amount value={d.total} currency={d.currency} hideZeroFraction />
+                            <Amount
+                              value={d.total}
+                              currency={d.currency}
+                              hideZeroFraction
+                              tone={d.status === 'draft' ? 'muted' : 'default'}
+                            />
                             <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
                           </div>
                         </Link>
@@ -236,7 +260,11 @@ function Overview() {
 
             <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-5">
               <AwaitingList docs={unpaid.data ?? []} total={s.unpaidCount} className="order-1" />
-              {s.vatLimit && <VatLimitCard vat={s.vatLimit} className="order-3" />}
+              {s.vatLimit ? (
+                <VatLimitCard vat={s.vatLimit} className="order-3" />
+              ) : (
+                <ActivityFeed events={activity.data ?? []} className="order-3" />
+              )}
             </div>
           </div>
         </div>

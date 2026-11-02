@@ -17,6 +17,8 @@ const amountVariants = cva('whitespace-nowrap tabular-nums', {
     tone: {
       default: '',
       muted: 'text-muted-foreground',
+      /** Plain ink even when negative (net figures such as turnover with credit notes). */
+      ink: '',
       /** Overdue: full destructive, the only alarming red. */
       overdue: 'text-destructive',
       success: 'text-success',

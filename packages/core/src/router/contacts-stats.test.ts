@@ -48,6 +48,8 @@ test('contact stats: invoiced, outstanding, overdue, last invoice; per-contact f
     documentCount: 3,
   })
   expect(all[0]?.lastInvoiceDate).toBe(paid.issueDate)
+  expect(all[0]?.monthly).toHaveLength(12)
+  expect(all[0]?.monthly.at(-1)).toBe('500.00')
   expect(await api.contacts.stats({ contactId: b.id })).toEqual([])
 
   const mine = await api.documents.list({ contactId: a.id })

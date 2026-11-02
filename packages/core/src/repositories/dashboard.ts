@@ -1,9 +1,9 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
 import { Decimal, parseDecimal, todayPrague, toFixed } from '@fakturky/domain'
-import { and, eq, gte, inArray, isNull, or } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, isNull, or, sql } from 'drizzle-orm'
 
-const { document, payment, businessProfile } = schema
+const { document, payment, businessProfile, activity } = schema
 
 /** Annual turnover (without VAT) above which a non-payer must register for VAT. */
 export const VAT_REGISTRATION_LIMIT = '2000000'
@@ -104,6 +104,7 @@ export const dashboardRepo = {
 
     let monthTurnover = new Decimal(0)
     let monthIssuedCount = 0
+    let monthCreditNotes = new Decimal(0)
     let unpaidCount = 0
     let yearTurnover = new Decimal(0)
     let unpaid = new Decimal(0)
@@ -142,6 +143,7 @@ export const dashboardRepo = {
         if (key === month) {
           monthTurnover = monthTurnover.plus(net)
           if (d.type === 'invoice') monthIssuedCount++
+          else monthCreditNotes = monthCreditNotes.plus(net)
         }
         if (issue.startsWith(year)) yearTurnover = yearTurnover.plus(net)
       }
@@ -165,6 +167,7 @@ export const dashboardRepo = {
     return {
       monthTurnover: toFixed(monthTurnover, 2),
       monthIssuedCount,
+      monthCreditNotes: toFixed(monthCreditNotes, 2),
       monthReceived: toFixed(received.get(month) ?? new Decimal(0), 2),
       unpaidCount,
       unpaid: toFixed(unpaid, 2),
@@ -191,5 +194,42 @@ export const dashboardRepo = {
         received: toFixed(received.get(key) ?? new Decimal(0), 2),
       })),
     }
+  },
+
+  /** The latest document events (issued, paid, sent, reminded, bank-matched) for the dashboard feed. */
+  async activity(db: Db, orgId: string, limit: number) {
+    const rows = await db
+      .select({
+        id: activity.id,
+        action: activity.action,
+        createdAt: activity.createdAt,
+        documentId: document.id,
+        number: document.number,
+        type: document.type,
+        customerName: sql<string | null>`${document.customerSnapshot}->>'name'`,
+      })
+      .from(activity)
+      .innerJoin(
+        document,
+        and(eq(document.id, activity.entityId), eq(document.organizationId, orgId)),
+      )
+      .where(
+        and(
+          eq(activity.organizationId, orgId),
+          eq(activity.entityType, 'document'),
+          isNull(document.deletedAt),
+          inArray(activity.action, [
+            'issued',
+            'paid',
+            'partially_paid',
+            'sent',
+            'reminded',
+            'bank_matched',
+          ]),
+        ),
+      )
+      .orderBy(desc(activity.createdAt), desc(activity.id))
+      .limit(limit)
+    return rows
   },
 }

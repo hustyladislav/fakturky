@@ -40,6 +40,11 @@ export const contactsRepo = {
    */
   async stats(db: Db, orgId: string, opts: { contactId?: string }) {
     const today = todayPrague()
+    const [y, mo] = [Number(today.slice(0, 4)), Number(today.slice(5, 7))]
+    // The last 12 calendar months, oldest first.
+    const months = Array.from({ length: 12 }, (_, i) =>
+      new Date(Date.UTC(y, mo - 12 + i, 1)).toISOString().slice(0, 7),
+    )
     const rows = await db
       .select({
         id: document.id,
@@ -47,6 +52,7 @@ export const contactsRepo = {
         type: document.type,
         status: document.status,
         issueDate: document.issueDate,
+        taxableDate: document.taxableDate,
         dueDate: document.dueDate,
         total: document.total,
         subtotal: document.subtotal,
@@ -77,6 +83,7 @@ export const contactsRepo = {
         overdue: Decimal
         count: number
         last: string | null
+        monthly: Map<string, Decimal>
       }
     >()
     for (const r of rows) {
@@ -87,6 +94,7 @@ export const contactsRepo = {
         overdue: new Decimal(0),
         count: 0,
         last: null,
+        monthly: new Map(),
       }
       out.set(r.contactId, e)
       const total = parseDecimal(r.total)
@@ -96,6 +104,12 @@ export const contactsRepo = {
           : amount.times(parseDecimal(r.totalCzk)).div(total)
       e.invoiced = e.invoiced.plus(czk(total))
       e.count++
+      const key = (r.taxableDate ?? r.issueDate ?? '').slice(0, 7)
+      if (key)
+        e.monthly.set(
+          key,
+          (e.monthly.get(key) ?? new Decimal(0)).plus(czk(parseDecimal(r.subtotal ?? r.total))),
+        )
       if (r.issueDate && (!e.last || r.issueDate > e.last)) e.last = r.issueDate
       if (r.status === 'issued' && r.type === 'invoice') {
         const left = total.minus(paid.get(r.id) ?? 0)
@@ -112,6 +126,7 @@ export const contactsRepo = {
       overdue: toFixed(e.overdue, 2),
       documentCount: e.count,
       lastInvoiceDate: e.last,
+      monthly: months.map((m) => toFixed(e.monthly.get(m) ?? new Decimal(0), 2)),
     }))
   },
 

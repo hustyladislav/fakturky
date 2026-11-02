@@ -265,7 +265,7 @@ export const cs = {
     kpi: {
       month: 'Obrat tento měsíc',
       monthHint: 'bez DPH, včetně dobropisů',
-      monthNegative: 'Dobropisy převyšují vystavené faktury',
+      monthCredit: (amount: string) => `včetně dobropisů ${amount}`,
       unpaid: 'Neuhrazeno',
       unpaidHint: (count: number) =>
         count === 0
@@ -333,6 +333,17 @@ export const cs = {
       askAssistant: 'Zeptat se asistenta',
     },
     recent: 'Poslední doklady',
+    draftCreditNote: 'Dobropis · koncept',
+    activity: {
+      title: 'Aktivita',
+      empty: 'Zatím se nic nestalo.',
+      issued: 'Vystaveno',
+      paid: 'Zaplaceno',
+      partially_paid: 'Částečná platba',
+      sent: 'Odesláno',
+      reminded: 'Upomínka odeslána',
+      bank_matched: 'Spárováno z banky',
+    },
     allInvoices: 'Všechny faktury',
     emptyTitle: 'Začněte první fakturou',
     emptyText: 'Přidejte bankovní účet a vystavte první fakturu. Zabere to pár minut.',
@@ -349,13 +360,15 @@ export const cs = {
     subtitle: (count: number, unpaid: string | null) =>
       `${count} ${count === 1 ? 'doklad' : count < 5 && count > 0 ? 'doklady' : 'dokladů'}${unpaid ? ` · ${unpaid} neuhrazeno` : ''}`,
     monthTotal: (count: number, sum: string | null) =>
-      `${count} ${count === 1 ? 'doklad' : count < 5 ? 'doklady' : 'dokladů'}${sum ? ` · ${sum}` : ''}`,
+      `${count} ${count === 1 ? 'doklad' : count < 5 ? 'doklady' : 'dokladů'}${sum ? ` · vystaveno ${sum}` : ''}`,
+    shown: (shown: number, total: number) => `Zobrazeno ${shown} z ${total}`,
     typeShort: {
       invoice: 'Faktura',
       proforma: 'Zálohová',
       credit_note: 'Dobropis',
       payment_receipt: 'Doklad k platbě',
     },
+    issuedLabel: 'vystaveno',
     noMonth: 'Bez data',
     noNumber: 'Bez čísla',
     resetFilter: 'Zrušit filtr',
@@ -1020,11 +1033,13 @@ export const cs = {
     },
     never: 'Zatím žádná',
     noMatch: 'Nikdo neodpovídá hledání.',
+    notFilled: 'Nevyplněno',
     menu: 'Další akce',
     newInvoiceFor: 'Nová faktura',
     back: 'Všechny kontakty',
     stats: {
       invoiced: 'Vyfakturováno celkem',
+      invoicedMonths: 'Posledních 12 měsíců',
       invoicedHint: (count: number) =>
         `${count} ${count === 1 ? 'doklad' : count < 5 ? 'doklady' : 'dokladů'}`,
       outstanding: 'Neuhrazeno',
@@ -1122,6 +1137,16 @@ export const cs = {
       'Tyto údaje se objeví na vašich fakturách jako dodavatel. Stačí zadat IČO a zbytek doplníme z registru ARES.',
     submit: 'Pokračovat',
     skip: 'Vyplním později',
+    progressLabel: 'Postup nastavení',
+    steps: ['Firma', 'Zkontrolujte údaje', 'Hotovo'],
+    stepOf: (n: number, total: number) => `Krok ${n} z ${total}`,
+    previewLabel: 'Tak to bude vypadat na dokladech',
+    aresHint: 'Zadejte IČO a klikněte na Načíst z ARES: název, adresu i DIČ doplníme za vás.',
+    doneTitle: 'Máte hotovo',
+    doneText: 'Firma je nastavená. Tak se bude objevovat na každé vaší faktuře.',
+    firstInvoice: 'Vystavit první fakturu',
+    toDashboard: 'Přejít na přehled',
+    redirecting: 'Za chvíli vás přesměrujeme na přehled.',
   },
   profile: {
     cardLabel: 'Náhled firmy na dokladech',
@@ -1404,6 +1429,7 @@ export const cs = {
       cancel_document: 'Stornuji doklad',
       delete_document_draft: 'Mažu koncept',
       get_dashboard_summary: 'Načítám přehled',
+      get_recent_activity: 'Načítám poslední aktivitu',
       get_document_stats: 'Počítám doklady podle stavu',
       get_contact_stats: 'Počítám obrat odběratelů',
       get_business_profile: 'Načítám profil firmy',

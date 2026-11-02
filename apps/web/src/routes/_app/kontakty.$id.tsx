@@ -6,6 +6,7 @@ import { PageHeader, SectionLabel } from '@fakturky/ui/components/page-header'
 import { RelativeDate } from '@fakturky/ui/components/relative-date'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { formatDate, parseIsoDate } from '@fakturky/ui/lib/dates'
+import { cn } from '@fakturky/ui/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, FilePlus2 } from 'lucide-react'
@@ -42,11 +43,37 @@ function Stat({
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children?: React.ReactNode }) {
   return (
     <div>
       <dt className="label-caps !text-[10px]">{label}</dt>
-      <dd className="mt-1 text-sm whitespace-pre-line">{children}</dd>
+      <dd className="mt-1 text-sm whitespace-pre-line">
+        {children || <span className="text-muted-foreground">{t.notFilled}</span>}
+      </dd>
+    </div>
+  )
+}
+
+/** Twelve tiny bars: net invoiced per month, the current month last. */
+function MonthBars({ values }: { values: string[] }) {
+  const nums = values.map((v) => Math.max(0, Number(v)))
+  const max = Math.max(...nums, 1)
+  return (
+    <div
+      role="img"
+      aria-label={t.stats.invoicedMonths}
+      className="mt-3 flex h-8 items-end gap-[3px]"
+    >
+      {nums.map((n, i) => (
+        <span
+          key={i}
+          className={cn(
+            'min-h-[2px] flex-1 rounded-[2px]',
+            n === 0 ? 'bg-border' : i === nums.length - 1 ? 'bg-primary' : 'bg-primary/45',
+          )}
+          style={{ height: `${Math.max(6, (n / max) * 100)}%` }}
+        />
+      ))}
     </div>
   )
 }
@@ -118,6 +145,7 @@ function ContactDetail() {
       <div className="mb-5 grid gap-4 md:grid-cols-3">
         <Stat label={t.stats.invoiced} hint={s ? t.stats.invoicedHint(s.documentCount) : undefined}>
           <Amount value={s?.invoiced ?? '0.00'} size="lg" hideZeroFraction animate />
+          {s && <MonthBars values={s.monthly} />}
         </Stat>
         <Stat
           label={t.stats.outstanding}
@@ -202,11 +230,11 @@ function ContactDetail() {
           <section className="sheet p-5">
             <SectionLabel>{t.detail.info}</SectionLabel>
             <dl className="mt-4 space-y-4">
-              <Field label={t.detail.address}>{address || '—'}</Field>
+              <Field label={t.detail.address}>{address}</Field>
               <Field label={t.email}>
-                {c.emails.length ? <span className="break-all">{c.emails.join('\n')}</span> : '—'}
+                {c.emails.length ? <span className="break-all">{c.emails.join('\n')}</span> : null}
               </Field>
-              <Field label={t.phone}>{c.phone || '—'}</Field>
+              <Field label={t.phone}>{c.phone}</Field>
               {c.defaultDueDays != null && (
                 <Field label={t.detail.defaults}>{t.detail.dueDays(c.defaultDueDays)}</Field>
               )}

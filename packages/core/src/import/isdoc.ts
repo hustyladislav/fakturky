@@ -51,6 +51,12 @@ function party(xml: string | null): ImportContact {
   }
 }
 
+const PAYMENT_METHODS: Record<string, string> = {
+  '10': 'cash',
+  '48': 'card',
+  '50': 'cash_on_delivery',
+}
+
 export type IsdocParseResult =
   | { ok: true; document: ImportDocument }
   | { ok: false; number: string; reason: string }
@@ -105,7 +111,7 @@ export function parseIsdoc(xml: string): IsdocParseResult {
     ok: true,
     document: {
       externalId: text(xml, 'UUID') ?? undefined,
-      type: code === 4 || code === 5 ? 'proforma' : 'invoice',
+      type: code === 4 ? 'proforma' : code === 5 ? 'payment_receipt' : 'invoice',
       number,
       issueDate,
       taxableDate: text(xml, 'TaxPointDate'),
@@ -113,13 +119,20 @@ export function parseIsdoc(xml: string): IsdocParseResult {
       currency,
       exchangeRate: foreignCurrency && rate ? rate : null,
       language: 'cs',
-      paymentMethod: 'bank_transfer',
+      paymentMethod: PAYMENT_METHODS[text(xml, 'PaymentMeansCode') ?? ''] ?? 'bank_transfer',
       variableSymbol: text(details, 'VariableSymbol'),
       constantSymbol: text(details, 'ConstantSymbol'),
       introText: text(xml.replace(/<InvoiceLines>[\s\S]*<\/InvoiceLines>/, ''), 'Note'),
       customer,
       supplier: { ...party(block(xml, 'AccountingSupplierParty')) },
-      bank: details ? { accountNumber: text(details, 'ID'), iban: text(details, 'IBAN') } : null,
+      bank: details
+        ? {
+            accountNumber: text(details, 'ID'),
+            bankCode: text(details, 'BankCode'),
+            iban: text(details, 'IBAN'),
+            bic: text(details, 'BIC'),
+          }
+        : null,
       lines,
       payments: [],
       cancelled: false,

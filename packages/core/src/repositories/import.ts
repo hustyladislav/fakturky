@@ -165,7 +165,7 @@ async function importDocument(
     (await upsertContact(tx, orgId, d.customer)).id
 
   const vatPayer =
-    d.type === 'invoice' && !d.reverseCharge && d.lines.some((l) => parseDecimal(l.vatRate).gt(0))
+    d.type !== 'proforma' && !d.reverseCharge && d.lines.some((l) => parseDecimal(l.vatRate).gt(0))
   const totals = computeDocumentTotals(
     d.lines.map((l) => ({
       quantity: l.quantity,
@@ -235,18 +235,17 @@ async function importDocument(
                 vatStatus: profile.vatStatus,
               }
             : null,
-      customerSnapshot: customer
-        ? {
-            name: customer.name,
-            ico: customer.ico,
-            dic: customer.dic,
-            icDph: customer.icDph,
-            address: customer.address,
-            country: customer.country,
-            emails: customer.emails,
-            phone: customer.phone,
-          }
-        : null,
+      // Historical data from the source document, not the (possibly since-changed) contact row.
+      customerSnapshot: {
+        name: d.customer.name,
+        ico: d.customer.ico ?? null,
+        dic: d.customer.dic ?? null,
+        icDph: d.customer.icDph ?? null,
+        address: d.customer.address,
+        country: d.customer.country,
+        emails: d.customer.emails.length > 0 ? d.customer.emails : (customer?.emails ?? []),
+        phone: d.customer.phone ?? null,
+      },
       bankSnapshot: d.bank ? { ...d.bank, currency: d.currency } : null,
       issueDate: d.issueDate,
       taxableDate: d.taxableDate ?? d.issueDate,
@@ -258,14 +257,25 @@ async function importDocument(
       variableSymbol: d.variableSymbol ?? variableSymbolFromNumber(d.number),
       constantSymbol: d.constantSymbol ?? null,
       orderNumber: d.orderNumber ?? null,
-      vatMode: d.reverseCharge ? 'reverse_charge' : vatPayer ? 'standard' : 'none',
+      vatMode: d.reverseCharge
+        ? 'reverse_charge'
+        : d.oss && vatPayer
+          ? 'oss'
+          : vatPayer
+            ? 'standard'
+            : 'none',
       introText: d.introText ?? null,
       footerText: d.footerText ?? null,
       privateNote: d.privateNote ?? null,
       subtotal: totals.subtotal,
       vatTotal: totals.vatTotal,
       total,
-      totalCzk: d.currency === 'CZK' ? total : totals.totalCzk,
+      totalCzk:
+        d.currency === 'CZK'
+          ? total
+          : total === totals.total
+            ? totals.totalCzk
+            : toFixed(parseDecimal(total).times(parseDecimal(d.exchangeRate ?? 1)), 2),
       rounding,
       importedFrom: source,
       externalId: d.externalId ?? null,

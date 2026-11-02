@@ -154,6 +154,13 @@ const PAYMENT_METHODS: Record<string, string> = {
   card: 'card',
 }
 
+/** Fakturoid sends domestic accounts as "1234/2010". */
+function bankFrom(account: string | null, iban: string | null) {
+  if (!account && !iban) return null
+  const [number, code] = account?.split('/') ?? []
+  return { accountNumber: number ?? null, bankCode: code ?? null, iban }
+}
+
 /** Null for document types the app does not model (corrections, tax documents for received payments). */
 export function mapInvoice(i: Json): ImportDocument | null {
   const type = str(i.document_type) ?? 'invoice'
@@ -228,11 +235,12 @@ export function mapInvoice(i: Json): ImportDocument | null {
         country: str(i.your_country),
       },
     },
-    bank: { accountNumber: str(i.bank_account), iban: str(i.iban) },
+    bank: bankFrom(str(i.bank_account), str(i.iban)),
     lines,
     payments,
     cancelled: status === 'cancelled',
     reverseCharge: i.transferred_tax_liability === true,
+    oss: i.oss === 'service' || i.oss === 'goods',
     sourceTotal: total,
   }
 }

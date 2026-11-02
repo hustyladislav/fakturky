@@ -92,10 +92,16 @@ function indexer(header: string[]) {
 /** Accepts YYYY-MM-DD and the Czech D. M. YYYY forms; returns null when unparseable. */
 export function normalizeDate(value: string): string | null {
   const v = value.trim()
-  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10)
-  const m = /^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})$/.exec(v)
-  if (!m) return null
-  return `${m[3]}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`
+  let iso: string | null = null
+  if (/^\d{4}-\d{2}-\d{2}/.test(v)) iso = v.slice(0, 10)
+  else {
+    const m = /^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})$/.exec(v)
+    if (m) iso = `${m[3]}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`
+  }
+  if (!iso) return null
+  // Reject impossible calendar dates (2024-02-30): the round trip must be lossless.
+  const date = new Date(`${iso}T00:00:00Z`)
+  return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== iso ? null : iso
 }
 
 /** Normalizes a decimal cell (`1 234,50` → `1234.50`); null when not a number. */
@@ -151,10 +157,13 @@ export function invoicesFromCsv(input: string): CsvInvoiceResult {
   for (const r of rows) {
     const number = get(r, 'number')
     if (!number) continue
+    if (invalid.has(number)) continue
     let doc = documents.get(number)
     if (!doc) {
       const issueDate = normalizeDate(get(r, 'issue_date'))
       if (!issueDate) {
+        // A malformed document-level field rejects every row of the invoice.
+        invalid.add(number)
         problems.push({ number, message: 'Missing or invalid issue date' })
         continue
       }

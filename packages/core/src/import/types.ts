@@ -30,7 +30,7 @@ export type ImportPayment = { paidOn: string; amount: string }
 
 export type ImportDocument = {
   externalId?: string
-  type: 'invoice' | 'proforma'
+  type: 'invoice' | 'proforma' | 'payment_receipt'
   /** The original number; kept verbatim. */
   number: string
   issueDate: string
@@ -50,11 +50,18 @@ export type ImportDocument = {
   customerExternalId?: string
   customer: ImportContact
   supplier?: Record<string, unknown>
-  bank?: { accountNumber?: string | null; iban?: string | null } | null
+  bank?: {
+    accountNumber?: string | null
+    bankCode?: string | null
+    iban?: string | null
+    bic?: string | null
+  } | null
   lines: ImportLine[]
   payments: ImportPayment[]
   cancelled: boolean
   reverseCharge: boolean
+  /** One-Stop-Shop treatment (EU consumers). */
+  oss?: boolean
   /** Total according to the source system; used to carry over rounding differences. */
   sourceTotal?: string | null
 }

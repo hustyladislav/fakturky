@@ -198,7 +198,7 @@ describe('CSV import', () => {
     expect(list.find((d) => d.number === '2024-0001')).toMatchObject({
       status: 'paid',
       importedFrom: 'csv',
-      customerName: 'Novák, s.r.o.',
+      customerName: 'Novák s.r.o.', // invoice-time name, not the contact's current one
     })
     // Existing contact reused, not duplicated.
     expect(
@@ -354,5 +354,81 @@ describe('review hardening', () => {
       total: '1000.0000',
       vatMode: 'none',
     })
+  })
+})
+
+describe('review hardening 2', () => {
+  test('impossible calendar dates are rejected; an invalid date rejects every row of the invoice', () => {
+    expect(normalizeDate('2024-02-30')).toBeNull()
+    expect(normalizeDate('31. 4. 2024')).toBeNull()
+    expect(normalizeDate('29. 2. 2024')).toBe('2024-02-29')
+    const { documents, problems } = invoicesFromCsv(
+      'number;issue_date;description;unit_price\nB1;2024-99-99;a;1\nB1;2024-01-01;b;2\n',
+    )
+    expect(documents).toHaveLength(0)
+    expect(problems).toHaveLength(1)
+  })
+
+  test('ISDOC keeps payment method, payment-receipt type and the full domestic bank account', () => {
+    const xml = `<Invoice><DocumentType>5</DocumentType><ID>P1</ID><IssueDate>2025-01-01</IssueDate>
+      <InvoiceLines><InvoiceLine><InvoicedQuantity>1</InvoicedQuantity><LineExtensionAmount>100</LineExtensionAmount>
+      <ClassifiedTaxCategory><Percent>21</Percent></ClassifiedTaxCategory><Item><Description>d</Description></Item></InvoiceLine></InvoiceLines>
+      <PaymentMeans><Payment><PaymentMeansCode>48</PaymentMeansCode><Details><PaymentDueDate>2025-01-15</PaymentDueDate>
+      <ID>123456789</ID><BankCode>0800</BankCode><Name>ČS</Name><IBAN>CZ6508000000000123456789</IBAN><BIC>GIBACZPX</BIC></Details></Payment></PaymentMeans></Invoice>`
+    const parsed = parseIsdoc(xml)
+    if (!parsed.ok) throw new Error('parse failed')
+    expect(parsed.document).toMatchObject({
+      type: 'payment_receipt',
+      paymentMethod: 'card',
+      bank: { accountNumber: '123456789', bankCode: '0800', bic: 'GIBACZPX' },
+    })
+  })
+
+  test('foreign source rounding keeps totalCzk consistent; snapshot keeps the invoice-time customer; OSS is kept', async () => {
+    const org = await seedOrg(handle, 'review2')
+    const api = clientFor(handle, principal(org), { fetch: fakturoidFetch() })
+    // The contact already exists under a newer name.
+    await api.contacts.create({ name: 'Nová Firma GmbH (nový název)', ico: '99999999' })
+    const { mapInvoice } = await import('./fakturoid')
+    const row = {
+      ...invoices[4],
+      id: 90,
+      number: '2023-0090',
+      status: 'sent',
+      oss: 'service',
+      total: '100.5',
+      lines: [
+        { name: 'S', quantity: '1', unit_price: '100', vat_rate: 0, unit_price_without_vat: '100' },
+      ],
+    }
+    const mapped = mapInvoice(row)
+    expect(mapped).toMatchObject({ oss: true, bank: { accountNumber: '1234', bankCode: '2010' } })
+    const { importRepo } = await import('../repositories/import')
+    const out = await importRepo.run(
+      handle.db,
+      org,
+      'u',
+      'fakturoid',
+      {
+        contacts: [],
+        documents: mapped
+          ? [
+              {
+                ...mapped,
+                customer: { ...mapped.customer, ico: '99999999', name: 'Nová Firma GmbH' },
+              },
+            ]
+          : [],
+      },
+      { dryRun: false },
+    )
+    expect(out.documents.created).toBe(1)
+    const [doc] = await handle.db
+      .select()
+      .from(schema.document)
+      .where(eq(schema.document.organizationId, org))
+    expect(doc?.total).toBe('100.5000')
+    expect(doc?.totalCzk).toBe('2462.2500')
+    expect(doc?.customerSnapshot).toMatchObject({ name: 'Nová Firma GmbH' })
   })
 })

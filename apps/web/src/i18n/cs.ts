@@ -984,6 +984,8 @@ export const cs = {
     saveAs: 'Uložit jako šablonu',
     saved: 'Šablona byla uložena.',
     namePrompt: 'Název šablony',
+    defaultName: (service: string, client: string | null) =>
+      client ? `${service} · ${client}` : service,
     recurringTitle: 'Opakované faktury',
     recurringEmpty: 'Žádná faktura se zatím neopakuje.',
     frequency: { monthly: 'Měsíčně', quarterly: 'Čtvrtletně', yearly: 'Ročně' },
@@ -996,6 +998,14 @@ export const cs = {
     resume: 'Obnovit',
     createRule: 'Nastavit opakování',
     ruleCreated: 'Opakování bylo nastaveno.',
+    ruleCreatedOn: (date: string) => `Opakování je nastaveno, první faktura vznikne ${date}.`,
+    firstRunOn: (date: string) =>
+      `První automatická faktura vznikne ${date} ráno, do té doby faktury vystavujete sami.`,
+    firstRunNext: 'První automatická faktura vznikne při nejbližším ranním spuštění.',
+    runIssueSend: 'Vystaví se sama a pošle e-mailem odběrateli.',
+    runIssueOnly: 'Vystaví se sama, e-mail neodešleme.',
+    runDraftOnly: 'Vznikne jen koncept, vystavíte ho vy.',
+    setUpRepeat: 'Nastavit opakování',
     ruleDeleted: 'Opakování bylo zrušeno.',
     lines: (n: number) => (n === 1 ? '1 položka' : n < 5 ? `${n} položky` : `${n} položek`),
     active: 'Aktivní',

@@ -178,8 +178,14 @@ function InvoiceDetail() {
   )
   const saveTemplate = useMutation(
     orpc.templates.createFromDocument.mutationOptions({
-      onSuccess: async () => {
-        toast.success(cs.templates.saved)
+      onSuccess: async (tpl) => {
+        toast.success(cs.templates.saved, {
+          duration: 8000,
+          action: {
+            label: cs.templates.setUpRepeat,
+            onClick: () => navigate({ to: '/sablony', search: { opakovat: tpl.id } }),
+          },
+        })
         await queryClient.invalidateQueries({ queryKey: orpc.templates.key() })
       },
       onError,
@@ -445,7 +451,7 @@ function InvoiceDetail() {
         pending={saveTemplate.isPending}
         input={{
           label: cs.templates.namePrompt,
-          defaultValue: d.customerName ?? '',
+          defaultValue: templateName(d),
           required: true,
         }}
         onConfirm={(name) => {
@@ -712,6 +718,15 @@ function InvoiceDetail() {
       </>
     )
   }
+}
+
+/** "<service> · <client>": the first line says what is billed, which tells two retainers of one client apart. */
+function templateName(d: { lines: { description: string }[]; customerName: string | null }) {
+  const service = (d.lines[0]?.description ?? '').trim().slice(0, 50)
+  return cs.templates.defaultName(
+    service || (d.customerName ?? ''),
+    service ? d.customerName : null,
+  )
 }
 
 /** Inline panel that scrolls into view when it opens (it can render below the fold on small screens). */

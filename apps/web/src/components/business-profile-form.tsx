@@ -1,10 +1,11 @@
+import { isValidIco } from '@fakturky/domain/ico'
 import { Button } from '@fakturky/ui/components/button'
 import { FieldError } from '@fakturky/ui/components/field-error'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
 import { client, orpc } from '@/lib/orpc'
@@ -57,7 +58,7 @@ export function BusinessProfileForm({
   }
 
   const lookup = useMutation({
-    mutationFn: () => client.businessProfile.lookupIco({ ico: values.ico }),
+    mutationFn: (ico: string) => client.businessProfile.lookupIco({ ico }),
     onSuccess: (s) => {
       setValues((v) => ({
         ...v,
@@ -67,18 +68,28 @@ export function BusinessProfileForm({
         street: s.address.street,
         city: s.address.city,
         zip: s.address.zip,
-        vatStatus: s.vatPayer ? 'payer' : v.vatStatus,
-        // OZ §435: sole traders are "Fyzická osoba zapsaná v živnostenském rejstříku"; companies add their court entry.
-        registryNote:
-          s.legalForm === '101' && !v.registryNote
-            ? cs.profile.registryNoteSoleTrader
-            : v.registryNote,
+        // ARES is the source of truth for the VAT register; keep only a manually chosen "identified person".
+        vatStatus: s.vatPayer
+          ? 'payer'
+          : v.vatStatus === 'identified_person'
+            ? v.vatStatus
+            : 'non_payer',
+        registryNote: s.registryNote ?? v.registryNote,
       }))
       setIcoError(null)
       toast.success(cs.profile.icoFound)
     },
     onError: () => setIcoError(cs.profile.icoNotFound),
   })
+
+  // A complete, valid IČO looks itself up; the button stays as a fallback for short or padded numbers.
+  const lastAuto = useRef('')
+  useEffect(() => {
+    const ico = values.ico.replace(/\s/g, '')
+    if (!isValidIco(ico) || ico.length !== 8 || ico === lastAuto.current) return
+    lastAuto.current = ico
+    lookup.mutate(ico)
+  }, [values.ico, lookup.mutate])
 
   const save = useMutation({
     mutationFn: () =>
@@ -121,7 +132,7 @@ export function BusinessProfileForm({
             onKeyDown={(e) => {
               if (e.key === 'Enter' && values.ico) {
                 e.preventDefault()
-                lookup.mutate()
+                lookup.mutate(values.ico)
               }
             }}
           />
@@ -129,7 +140,7 @@ export function BusinessProfileForm({
             type="button"
             variant="outline"
             disabled={!values.ico || lookup.isPending}
-            onClick={() => lookup.mutate()}
+            onClick={() => lookup.mutate(values.ico)}
           >
             {lookup.isPending ? cs.common.loading : cs.profile.icoLookup}
           </Button>

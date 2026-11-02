@@ -2,6 +2,7 @@ import { type DbHandle, schema } from '@fakturky/db'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { MailError, type SendInvoiceArgs } from '../context'
+import { documentsRepo } from '../repositories/documents'
 import { clientFor, createTestDb, seedOrg } from '../testing'
 
 let handle: DbHandle
@@ -136,10 +137,51 @@ test('credit note reverses an invoice, numbered in its own series, exported with
   await expect(api.documents.createCreditNote({ id: draft.id })).rejects.toMatchObject({
     code: 'CONFLICT',
   })
+  // A second full credit note would refund twice; the corrected invoice cannot also be cancelled.
+  const again = await api.documents.createCreditNote({ id: inv.id, reason: 'Znovu' })
+  await expect(api.documents.issue({ id: again.id })).rejects.toMatchObject({ code: 'CONFLICT' })
+  await expect(api.documents.cancel({ id: inv.id })).rejects.toMatchObject({ code: 'CONFLICT' })
   const unpaid = await api.documents.list({ filter: 'unpaid' })
   expect(unpaid.some((d) => d.id === cn.id)).toBe(false)
   const dash = await api.dashboard.summary({})
   expect(dash.monthTurnover).toBe('0.00')
+})
+
+test('a credit note settles the invoice balance and asks for no payment; cancelling it reopens the invoice', async () => {
+  const org = await seedOrg(handle, 'cn-balance')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Neplátce' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({ name: 'Odběratel' })
+  const inv = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        contactId: c.id,
+        lines: [{ description: 'Práce', quantity: '1', unitPrice: '1000' }],
+      })
+    ).id,
+  })
+  const cn = await api.documents.issue({
+    id: (await api.documents.createCreditNote({ id: inv.id, reason: 'Storno služby' })).id,
+  })
+  const after = await api.documents.get({ id: inv.id })
+  expect(after.status).toBe('paid')
+  expect(after.remaining).toBe('0.00')
+  expect(after.payments.map((p) => [p.method, p.note, p.amount])).toEqual([
+    ['credit_note', cn.number, '1000.0000'],
+  ])
+  expect((await api.documents.list({ filter: 'unpaid' })).some((d) => d.id === inv.id)).toBe(false)
+  // The credit note is exported without a payment request (no due date, bank details or QR).
+  const { toDocumentForExport } = await import('../export')
+  const found = await documentsRepo.forExport(handle.db, org, cn.id)
+  expect(toDocumentForExport(found!.doc, found!.lines).payment).toBeNull()
+
+  await api.documents.cancel({ id: cn.id })
+  const reopened = await api.documents.get({ id: inv.id })
+  expect(reopened.status).toBe('issued')
+  expect(reopened.remaining).toBe('1000.00')
+  expect(reopened.payments).toHaveLength(0)
 })
 
 test('proforma → paid → final invoice with the advance deducted; settled on issue', async () => {
@@ -428,6 +470,53 @@ test('VAT payer advance: proforma → paid → tax receipt → final invoice ded
   const issued = await api.documents.issue({ id: fin.id })
   expect(issued.status).toBe('issued')
   expect(Number(issued.total)).toBeCloseTo(2100, 2) // 12 100 − 10 000: the VAT-exclusive remainder is billed
+})
+
+test('a receipt can split the advance over 21 % and 12 %; the final invoice deducts each rate', async () => {
+  const org = await seedOrg(handle, 'advance-mixed')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'K',
+    ico: '12345678',
+    address: { street: 'A 1', city: 'Praha', zip: '11000' },
+  })
+  const pf = await api.documents.issue({
+    id: (
+      await api.documents.createDraft({
+        type: 'proforma',
+        contactId: c.id,
+        lines: [{ description: 'Dílo', quantity: '1', unitPrice: '10000' }],
+      })
+    ).id,
+  })
+  await api.documents.markPaid({ id: pf.id })
+  // The split must add up to the money received.
+  await expect(
+    api.documents.createPaymentReceipt({
+      id: pf.id,
+      allocations: [
+        { vatRate: '21', amount: '6000' },
+        { vatRate: '12', amount: '3000' },
+      ],
+    }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  const r = await api.documents.createPaymentReceipt({
+    id: pf.id,
+    allocations: [
+      { vatRate: '21', amount: '6050' },
+      { vatRate: '12', amount: '3950' },
+    ],
+  })
+  expect(r.lines.map((l) => l.vatRate)).toEqual(['21.00', '12.00'])
+  expect(r.total).toBe('10000.0000')
+  expect(r.vatTotal).toBe('1473.2100') // 6 050 × 21/121 + 3 950 × 12/112
+  await api.documents.issue({ id: r.id })
+  const fin = await api.documents.createFinalInvoice({ id: pf.id })
+  const deductions = fin.lines.filter((l) => Number(l.unitPrice) < 0)
+  expect(deductions.map((l) => l.vatRate)).toEqual(['21.00', '12.00'])
 })
 
 test('tax receipt keeps the received gross, uses the payment date as tax point, cannot be created directly', async () => {

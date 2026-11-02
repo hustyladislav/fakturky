@@ -139,6 +139,7 @@ export const documentSchema = z.object({
   currency: z.string(),
   exchangeRate: z.string().nullable(),
   roundTotal: z.boolean(),
+  pricesIncludeVat: z.boolean(),
   rounding: z.string(),
   language: z.string(),
   paymentMethod: z.string(),

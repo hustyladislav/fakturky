@@ -9,9 +9,9 @@ import {
   formatDateCs,
   formatDocumentNumber,
   formatMoney,
+  getRate,
   parseDecimal,
   periodKey,
-  round,
   todayPrague,
   toFixed,
   VAT_RATES,
@@ -136,7 +136,13 @@ function assertVatLines(
 
 function totalsFor(
   lines: DraftInput['lines'],
-  opts: { vatPayer: boolean; currency: string; exchangeRate?: string | null; roundTotal?: boolean },
+  opts: {
+    vatPayer: boolean
+    currency: string
+    exchangeRate?: string | null
+    roundTotal?: boolean
+    pricesIncludeVat?: boolean
+  },
 ) {
   return computeDocumentTotals(
     lines.map((l) => ({
@@ -149,6 +155,7 @@ function totalsFor(
     {
       vatPayer: opts.vatPayer,
       roundTotal: opts.roundTotal ?? false,
+      pricesIncludeVat: opts.pricesIncludeVat ?? false,
       currency: opts.currency,
       exchangeRate: opts.currency === 'CZK' ? 1 : (opts.exchangeRate ?? 1),
     },
@@ -380,6 +387,7 @@ export const documentsRepo = {
           ? await vatOn(db, orgId, profile, doc.type, doc.relatedDocumentId)
           : doc.vatMode !== 'none',
       roundTotal: doc.roundTotal,
+      pricesIncludeVat: doc.pricesIncludeVat,
       currency: doc.currency,
       exchangeRate: doc.exchangeRate,
     })
@@ -421,9 +429,15 @@ export const documentsRepo = {
     orgId: string,
     actorId: string,
     input: DraftInput,
-    opts: { relatedDocumentId?: string } = {},
+    opts: { relatedDocumentId?: string; pricesIncludeVat?: boolean } = {},
     via?: 'assistant',
   ) {
+    if (input.type === 'payment_receipt' && !opts.relatedDocumentId) {
+      throw new DocumentError(
+        'BAD_REQUEST',
+        'Tax receipts are created from a paid proforma (createPaymentReceipt)',
+      )
+    }
     if (input.type === 'credit_note' && !opts.relatedDocumentId) {
       throw new DocumentError(
         'BAD_REQUEST',
@@ -448,6 +462,7 @@ export const documentsRepo = {
       const totals = totalsFor(input.lines, {
         vatPayer,
         roundTotal: input.roundTotal ?? false,
+        pricesIncludeVat: opts.pricesIncludeVat,
         currency,
         exchangeRate: input.exchangeRate,
       })
@@ -462,6 +477,7 @@ export const documentsRepo = {
           organizationId: orgId,
           type: input.type,
           roundTotal: input.roundTotal ?? false,
+          pricesIncludeVat: opts.pricesIncludeVat ?? false,
           relatedDocumentId: opts.relatedDocumentId ?? null,
           contactId: input.contactId ?? null,
           bankAccountId: bank?.id ?? null,
@@ -526,6 +542,7 @@ export const documentsRepo = {
       const totals = totalsFor(effective, {
         vatPayer: vatForDraft,
         roundTotal,
+        pricesIncludeVat: doc.pricesIncludeVat,
         currency,
         exchangeRate,
       })
@@ -627,6 +644,7 @@ export const documentsRepo = {
       const totals = totalsFor(lines as unknown as DraftInput['lines'], {
         vatPayer: vatOnNow,
         roundTotal: doc.roundTotal,
+        pricesIncludeVat: doc.pricesIncludeVat,
         currency: doc.currency,
         exchangeRate: doc.exchangeRate,
       })
@@ -873,9 +891,19 @@ export const documentsRepo = {
       throw new DocumentError('CONFLICT', 'Only VAT payers issue a tax receipt for an advance')
     }
     const paid = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
-    // VAT inside a gross amount: A × r / (100 + r), the base is the rest.
-    const vat = round(paid.times(vatRate).div(parseDecimal(vatRate).plus(100)), 2)
-    const base = paid.minus(vat)
+    // The received amount is VAT-inclusive: the draft is priced gross and VAT is extracted (A × r / (100 + r)).
+    // The tax point is the day the payment was received; foreign advances use the ČNB rate of that day.
+    const paidOn =
+      src.payments
+        .map((p) => p.paidOn)
+        .sort()
+        .at(-1) ?? todayPrague()
+    let receiptRate: string | undefined = src.exchangeRate ?? undefined
+    if (src.currency !== 'CZK') {
+      receiptRate = await getRate(src.currency, paidOn)
+        .then((r) => r.rate)
+        .catch(() => src.exchangeRate ?? undefined)
+    }
     return db.transaction(async (txn) => {
       const tx = txn as unknown as Db
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`receipt:${id}`}))`)
@@ -901,10 +929,11 @@ export const documentsRepo = {
         {
           type: 'payment_receipt',
           roundTotal: false,
+          taxableDate: paidOn,
           contactId: src.contactId,
           bankAccountId: src.bankAccountId,
           currency: src.currency,
-          exchangeRate: src.exchangeRate,
+          exchangeRate: receiptRate,
           language: src.language as 'cs' | 'sk' | 'en',
           paymentMethod: src.paymentMethod,
           introText: `Přijatá záloha na základě zálohové faktury ${src.number}`,
@@ -913,7 +942,7 @@ export const documentsRepo = {
               description: `Přijatá záloha (zálohová faktura ${src.number})`,
               quantity: '1',
               unit: null,
-              unitPrice: toFixed(base, 2),
+              unitPrice: toFixed(paid, 2),
               vatRate,
               vatTreatment: 'standard' as const,
               vatNote: null,
@@ -921,7 +950,7 @@ export const documentsRepo = {
             },
           ],
         },
-        { relatedDocumentId: id },
+        { relatedDocumentId: id, pricesIncludeVat: true },
       )
     })
   },

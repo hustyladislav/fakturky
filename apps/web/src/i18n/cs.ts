@@ -61,6 +61,7 @@ export const cs = {
   common: {
     save: 'Uložit',
     exportCsv: 'Export do CSV',
+    edit: 'Upravit',
     cancel: 'Zrušit',
     close: 'Zavřít',
     create: 'Vytvořit',
@@ -242,6 +243,8 @@ export const cs = {
         `Jste neplátce DPH. Obrat za rok ${year} nesmí překročit 2 000 000 Kč; po jeho překročení se musíte registrovat k DPH. Překročíte-li 2 536 500 Kč, stáváte se plátcem ihned.`,
       progress: (percent: number) => `${percent} % limitu`,
       warn: 'Blížíte se limitu. Zvažte registraci k DPH včas.',
+      immediate:
+        'Obrat překročil 2 536 500 Kč: plátcem DPH jste se stali ihned. Okamžitě se obraťte na účetní nebo správce daně.',
     },
     chart: 'Obrat za posledních 6 měsíců',
     recent: 'Poslední doklady',
@@ -324,6 +327,7 @@ export const cs = {
       unitPrice: 'Cena za MJ',
       vatRate: 'DPH',
       lineTotal: 'Celkem',
+      lineTotalNet: 'Celkem bez DPH',
       payment: 'Platba',
       bankAccount: 'Bankovní účet',
       bankAccountNone: 'Žádný účet – přidejte ho v Nastavení',
@@ -348,6 +352,14 @@ export const cs = {
       weekendHint: (day: string) =>
         `Splatnost vychází na ${day}. Platba dorazí nejdřív v pracovní den.`,
       weekdays: ['neděli', 'pondělí', 'úterý', 'středu', 'čtvrtek', 'pátek', 'sobotu'],
+      missingFields: {
+        'customer.address': 'adresu (ulice, město, PSČ)',
+        'customer.taxId': 'IČO nebo DIČ',
+      },
+      missingCustomer: (names: string[]) =>
+        `Daňový doklad vyžaduje údaje odběratele. Doplňte u kontaktu: ${names.join(', ')}.`,
+      registryNoteMissing:
+        'V nastavení chybí zápis v rejstříku (např. „Fyzická osoba zapsaná v živnostenském rejstříku“). Podnikatelé ho mají na fakturách uvádět.',
       needProfile: 'Než vystavíte fakturu, vyplňte prosím údaje o své firmě v Nastavení.',
     },
     detail: {
@@ -460,6 +472,11 @@ export const cs = {
     base: 'Základ',
     vat: 'DPH',
     total: 'Celkem',
+    rate: 'Sazba',
+    paymentMethod: 'Forma úhrady',
+    methods: { bank_transfer: 'Převodem', cash: 'Hotově', card: 'Kartou' },
+    qrPlatba: 'QR Platba',
+    qrEpc: 'QR platba (EPC)',
     vatRecap: 'Rekapitulace DPH',
     exchangeRate: 'Kurz ČNB',
     notPayer: 'Neplátce DPH',
@@ -526,6 +543,12 @@ export const cs = {
     dic: 'DIČ',
     email: 'E-mail',
     phone: 'Telefon',
+    street: 'Ulice a číslo',
+    city: 'Město',
+    zip: 'PSČ',
+    edit: 'Upravit kontakt',
+    updated: 'Kontakt byl uložen.',
+    taxDocHint: 'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a jeho IČO nebo DIČ.',
     created: 'Kontakt byl vytvořen.',
     archived: 'Kontakt byl archivován.',
   },
@@ -564,6 +587,7 @@ export const cs = {
     vatPayer: 'Plátce DPH',
     vatIdentified: 'Identifikovaná osoba',
     registryNote: 'Zápis v rejstříku',
+    registryNoteSoleTrader: 'Fyzická osoba zapsaná v živnostenském rejstříku.',
     registryNoteHint:
       'Např. „Fyzická osoba zapsaná v živnostenském rejstříku“ nebo spisová značka.',
     email: 'E-mail',

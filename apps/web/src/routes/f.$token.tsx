@@ -171,17 +171,39 @@ function PublicInvoice() {
           </table>
         </div>
 
+        {d.vatPayer && (
+          <div className="ml-auto max-w-md overflow-x-auto">
+            <table className="w-full text-sm">
+              <caption className="pb-1 text-left text-xs text-neutral-500">{t.vatRecap}</caption>
+              <thead>
+                <tr className="border-b border-neutral-400 text-xs text-neutral-500">
+                  <th className="py-1 text-left font-medium">{t.rate}</th>
+                  <th className="py-1 text-right font-medium">{t.base}</th>
+                  <th className="py-1 text-right font-medium">{t.vat}</th>
+                  <th className="py-1 text-right font-medium">{t.total}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {d.recap.map((r) => (
+                  <tr key={r.vatRate} className="border-b border-neutral-200">
+                    <td className="py-1 tabular-nums">{Number(r.vatRate)} %</td>
+                    <td className="py-1 text-right">
+                      <Money amount={r.base} currency={d.currency} />
+                    </td>
+                    <td className="py-1 text-right">
+                      <Money amount={r.vat} currency={d.currency} />
+                    </td>
+                    <td className="py-1 text-right">
+                      <Money amount={r.total} currency={d.currency} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         <div className="ml-auto max-w-xs space-y-1 text-sm">
-          {d.vatPayer &&
-            d.recap.map((r) => (
-              <div key={r.vatRate} className="flex justify-between text-neutral-600">
-                <span>
-                  {t.vatRecap} {Number(r.vatRate)} %: {t.base}{' '}
-                  <Money amount={r.base} currency={d.currency} />
-                </span>
-                <Money amount={r.vat} currency={d.currency} />
-              </div>
-            ))}
           {d.exchangeRate && (
             <div className="text-xs text-neutral-500">
               {t.exchangeRate}: {Number(d.exchangeRate)}
@@ -195,18 +217,49 @@ function PublicInvoice() {
           </div>
         </div>
 
-        {d.bank && d.status === 'issued' && (
-          <section className="space-y-1 text-sm">
-            <h2 className="text-xs text-neutral-500">{t.payment}</h2>
-            {d.bank.account && (
+        {d.status !== 'cancelled' && (
+          <section className="flex flex-wrap items-start justify-between gap-4 text-sm">
+            <div className="space-y-1">
+              <h2 className="text-xs text-neutral-500">{t.payment}</h2>
               <div>
-                {t.account}: <span className="tabular-nums">{d.bank.account}</span>
+                {t.paymentMethod}:{' '}
+                {t.methods[d.paymentMethod as keyof typeof t.methods] ?? d.paymentMethod}
               </div>
-            )}
-            <div>
-              {t.iban}: <span className="tabular-nums">{d.bank.iban}</span>
-              {d.bank.bic ? ` · ${t.bic}: ${d.bank.bic}` : ''}
+              {d.variableSymbol && (
+                <div>
+                  {t.variableSymbol}: <span className="tabular-nums">{d.variableSymbol}</span>
+                </div>
+              )}
+              {d.bank && d.status === 'issued' && (
+                <>
+                  {d.bank.account && (
+                    <div>
+                      {t.account}: <span className="tabular-nums">{d.bank.account}</span>
+                    </div>
+                  )}
+                  <div>
+                    {t.iban}: <span className="tabular-nums">{d.bank.iban}</span>
+                    {d.bank.bic ? ` · ${t.bic}: ${d.bank.bic}` : ''}
+                  </div>
+                </>
+              )}
             </div>
+            {d.qr && (
+              <figure className="space-y-1 text-center">
+                <svg
+                  role="img"
+                  aria-label={d.qr.kind === 'spayd' ? t.qrPlatba : t.qrEpc}
+                  viewBox={`0 0 ${d.qr.viewBox} ${d.qr.viewBox}`}
+                  className="size-32 bg-white"
+                  shapeRendering="crispEdges"
+                >
+                  <path d={d.qr.path} stroke="#000" fill="none" />
+                </svg>
+                <figcaption className="text-xs text-neutral-500">
+                  {d.qr.kind === 'spayd' ? t.qrPlatba : t.qrEpc}
+                </figcaption>
+              </figure>
+            )}
           </section>
         )}
 

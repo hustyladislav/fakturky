@@ -30,6 +30,8 @@ export const dashboardRouter = {
             year: z.number(),
             turnover: z.string(),
             limit: z.string(),
+            immediateLimit: z.string(),
+            immediateExceeded: z.boolean(),
             percent: z.number(),
           })
           .nullable(),

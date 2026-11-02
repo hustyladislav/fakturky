@@ -22,7 +22,12 @@ async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
     if (out === null) throw new ORPCError('NOT_FOUND', { message: 'Document not found' })
     return out
   } catch (e) {
-    if (e instanceof DocumentError) throw new ORPCError(e.code, { message: e.message })
+    if (e instanceof DocumentError) {
+      throw new ORPCError(e.code, {
+        message: e.message,
+        ...(e.fields ? { data: { fields: e.fields } } : {}),
+      })
+    }
     if (e instanceof MailError) {
       throw new ORPCError('SERVICE_UNAVAILABLE', { message: e.reason, data: { reason: e.reason } })
     }
@@ -204,6 +209,7 @@ export const documentsRouter = {
       z.object({
         vatPayer: z.boolean(),
         hasProfile: z.boolean(),
+        registryNoteMissing: z.boolean(),
         currency: z.string(),
         dueDays: z.number(),
         language: z.string(),

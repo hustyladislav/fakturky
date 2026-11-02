@@ -23,6 +23,8 @@
     "./integrations/vies": "./src/integrations/vies.ts",
     "./dic": "./src/dic.ts",
     "./qr/epc": "./src/qr/epc.ts",
+    "./qr/payment": "./src/qr/payment.ts",
+    "./qr/png": "./src/qr/png.ts",
     "./isdoc": "./src/isdoc.ts",
     "./vat-report": "./src/vat-report.ts",
     "./vat-xml": "./src/vat-xml.ts",
@@ -42,6 +44,7 @@
     "@types/node": "26.6.5",
     "@types/qrcode": "1.5.6",
     "@vitest/coverage-v8": "5.0.5",
+    "jsqr": "1.4.0",
     "typescript": "catalog:",
     "vitest": "5.0.5"
   }

@@ -439,6 +439,7 @@ export const cs = {
       dueDate: 'Splatnost',
       taxableDate: 'DUZP',
       payment: 'Platba',
+      amountDue: 'Částka k úhradě',
       variableSymbol: 'Variabilní symbol',
       iban: 'IBAN',
       account: 'Účet',
@@ -501,6 +502,11 @@ export const cs = {
       },
     },
   },
+  paymentQr: {
+    platba: 'QR Platba',
+    epc: 'QR platba (EPC)',
+    hint: 'Naskenujte v bankovní aplikaci',
+  },
   publicInvoice: {
     titleInvoice: 'Faktura',
     titleTaxInvoice: 'Faktura – daňový doklad',
@@ -532,8 +538,6 @@ export const cs = {
     regime: 'Režim DPH',
     paymentMethod: 'Forma úhrady',
     methods: { bank_transfer: 'Převodem', cash: 'Hotově', card: 'Kartou' },
-    qrPlatba: 'QR Platba',
-    qrEpc: 'QR platba (EPC)',
     vatRecap: 'Rekapitulace DPH',
     exchangeRate: 'Kurz ČNB',
     rounding: 'Zaokrouhlení',

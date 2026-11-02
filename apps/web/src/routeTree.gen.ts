@@ -45,6 +45,7 @@ import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
 import { Route as FTokenIsdocRouteImport } from './routes/f.$token.isdoc'
 import { Route as FTokenPdfRouteImport } from './routes/f.$token.pdf'
+import { Route as FTokenQrDotpngRouteImport } from './routes/f.$token.qr[.]png'
 import { Route as AppFakturyIdIndexRouteImport } from './routes/_app/faktury.$id.index'
 import { Route as AppFakturyIdUpravitRouteImport } from './routes/_app/faktury.$id.upravit'
 import { Route as ApiDocumentsIdPdfRouteImport } from './routes/api/documents.$id.pdf'
@@ -228,6 +229,11 @@ const FTokenPdfRoute = FTokenPdfRouteImport.update({
   path: '/pdf',
   getParentRoute: () => FTokenRoute,
 } as any)
+const FTokenQrDotpngRoute = FTokenQrDotpngRouteImport.update({
+  id: '/qr.png',
+  path: '/qr.png',
+  getParentRoute: () => FTokenRoute,
+} as any)
 const AppFakturyIdIndexRoute = AppFakturyIdIndexRouteImport.update({
   id: '/$id/',
   path: '/$id/',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/f/$token/isdoc': typeof FTokenIsdocRoute
   '/f/$token/pdf': typeof FTokenPdfRoute
+  '/f/$token/qr.png': typeof FTokenQrDotpngRoute
   '/faktury/': typeof AppFakturyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
@@ -318,6 +325,7 @@ export interface FileRoutesByTo {
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/f/$token/isdoc': typeof FTokenIsdocRoute
   '/f/$token/pdf': typeof FTokenPdfRoute
+  '/f/$token/qr.png': typeof FTokenQrDotpngRoute
   '/faktury': typeof AppFakturyIndexRoute
   '/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
@@ -360,6 +368,7 @@ export interface FileRoutesById {
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
   '/f/$token/isdoc': typeof FTokenIsdocRoute
   '/f/$token/pdf': typeof FTokenPdfRoute
+  '/f/$token/qr.png': typeof FTokenQrDotpngRoute
   '/_app/faktury/': typeof AppFakturyIndexRoute
   '/_app/faktury/$id/upravit': typeof AppFakturyIdUpravitRoute
   '/api/documents/$id/pdf': typeof ApiDocumentsIdPdfRoute
@@ -402,6 +411,7 @@ export interface FileRouteTypes {
     | '/api/v1/openapi.json'
     | '/f/$token/isdoc'
     | '/f/$token/pdf'
+    | '/f/$token/qr.png'
     | '/faktury/'
     | '/faktury/$id/upravit'
     | '/api/documents/$id/pdf'
@@ -441,6 +451,7 @@ export interface FileRouteTypes {
     | '/api/v1/openapi.json'
     | '/f/$token/isdoc'
     | '/f/$token/pdf'
+    | '/f/$token/qr.png'
     | '/faktury'
     | '/faktury/$id/upravit'
     | '/api/documents/$id/pdf'
@@ -482,6 +493,7 @@ export interface FileRouteTypes {
     | '/api/v1/openapi.json'
     | '/f/$token/isdoc'
     | '/f/$token/pdf'
+    | '/f/$token/qr.png'
     | '/_app/faktury/'
     | '/_app/faktury/$id/upravit'
     | '/api/documents/$id/pdf'
@@ -770,6 +782,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FTokenPdfRouteImport
       parentRoute: typeof FTokenRoute
     }
+    '/f/$token/qr.png': {
+      id: '/f/$token/qr.png'
+      path: '/qr.png'
+      fullPath: '/f/$token/qr.png'
+      preLoaderRoute: typeof FTokenQrDotpngRouteImport
+      parentRoute: typeof FTokenRoute
+    }
     '/_app/faktury/$id/': {
       id: '/_app/faktury/$id/'
       path: '/$id'
@@ -839,11 +858,13 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 interface FTokenRouteChildren {
   FTokenIsdocRoute: typeof FTokenIsdocRoute
   FTokenPdfRoute: typeof FTokenPdfRoute
+  FTokenQrDotpngRoute: typeof FTokenQrDotpngRoute
 }
 
 const FTokenRouteChildren: FTokenRouteChildren = {
   FTokenIsdocRoute: FTokenIsdocRoute,
   FTokenPdfRoute: FTokenPdfRoute,
+  FTokenQrDotpngRoute: FTokenQrDotpngRoute,
 }
 
 const FTokenRouteWithChildren =

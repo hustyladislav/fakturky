@@ -101,7 +101,9 @@ export function AppearanceCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t.title}</CardTitle>
+        <CardTitle role="heading" aria-level={2}>
+          {t.title}
+        </CardTitle>
         <CardDescription>{t.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

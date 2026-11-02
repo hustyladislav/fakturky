@@ -1,5 +1,13 @@
 import { Button } from '@fakturky/ui/components/button'
 import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@fakturky/ui/components/card'
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -61,7 +69,7 @@ export function ApiKeys() {
   })
 
   return (
-    <section className="space-y-4">
+    <Card>
       <PromptDialog
         open={revoking !== null}
         onOpenChange={(o) => !o && setRevoking(null)}
@@ -75,53 +83,59 @@ export function ApiKeys() {
           setRevoking(null)
         }}
       />
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-xl font-semibold">{cs.apiKeys.title}</h2>
-          <p className="max-w-2xl text-sm text-muted-foreground">{cs.apiKeys.description}</p>
-          <p className="text-sm">
-            <a className="underline" href="/docs/api">
-              {cs.apiKeys.docsLink}
-            </a>
-            {' · '}
-            <a className="underline" href="/docs/mcp">
-              {cs.apiKeys.mcpLink}
-            </a>
-          </p>
-        </div>
-        {organizationId && <NewKey organizationId={organizationId} />}
-      </div>
-      {list.data?.length === 0 ? (
-        <p className="text-muted-foreground">{cs.apiKeys.empty}</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{cs.apiKeys.name}</TableHead>
-              <TableHead>{cs.apiKeys.prefix}</TableHead>
-              <TableHead>{cs.apiKeys.created}</TableHead>
-              <TableHead>{cs.apiKeys.lastUsed}</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {list.data?.map((k) => (
-              <TableRow key={k.id}>
-                <TableCell className="font-medium">{k.name}</TableCell>
-                <TableCell className="font-mono text-sm">{k.start}…</TableCell>
-                <TableCell>{formatDate(k.createdAt)}</TableCell>
-                <TableCell>{formatDate(k.lastRequest)}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" onClick={() => setRevoking(k.id)}>
-                    {cs.apiKeys.revoke}
-                  </Button>
-                </TableCell>
+      <CardHeader>
+        <CardTitle role="heading" aria-level={2}>
+          {cs.apiKeys.title}
+        </CardTitle>
+        <CardDescription>
+          {cs.apiKeys.description}{' '}
+          <a className="underline" href="/docs/api">
+            {cs.apiKeys.docsLink}
+          </a>
+          {' · '}
+          <a className="underline" href="/docs/mcp">
+            {cs.apiKeys.mcpLink}
+          </a>
+        </CardDescription>
+        {organizationId && (
+          <CardAction>
+            <NewKey organizationId={organizationId} />
+          </CardAction>
+        )}
+      </CardHeader>
+      <CardContent>
+        {list.data?.length === 0 ? (
+          <p className="text-muted-foreground">{cs.apiKeys.empty}</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{cs.apiKeys.name}</TableHead>
+                <TableHead>{cs.apiKeys.prefix}</TableHead>
+                <TableHead>{cs.apiKeys.created}</TableHead>
+                <TableHead>{cs.apiKeys.lastUsed}</TableHead>
+                <TableHead />
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </section>
+            </TableHeader>
+            <TableBody>
+              {list.data?.map((k) => (
+                <TableRow key={k.id}>
+                  <TableCell className="font-medium">{k.name}</TableCell>
+                  <TableCell className="font-mono text-sm">{k.start}…</TableCell>
+                  <TableCell>{formatDate(k.createdAt)}</TableCell>
+                  <TableCell>{formatDate(k.lastRequest)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => setRevoking(k.id)}>
+                      {cs.apiKeys.revoke}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

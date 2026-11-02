@@ -6,8 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@fakturky/ui/components/card'
+import { cn } from '@fakturky/ui/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 import { ApiKeys } from '@/components/api-keys'
 import { AppearanceCard } from '@/components/appearance-card'
 import { BankAccountsCard } from '@/components/bank-accounts-card'
@@ -25,31 +27,164 @@ export const Route = createFileRoute('/_app/nastaveni')({
   component: Settings,
 })
 
+/** Anchor ids double as deep links: /nastaveni#banka. */
+const SECTIONS = [
+  { id: 'firma', label: cs.settings.nav.company },
+  { id: 'banka', label: cs.settings.nav.bank },
+  { id: 'rady', label: cs.settings.nav.series },
+  { id: 'vzhled', label: cs.settings.nav.appearance },
+  { id: 'emaily', label: cs.settings.nav.emails },
+  { id: 'api', label: cs.settings.nav.api },
+  { id: 'import', label: cs.settings.nav.import },
+  { id: 'ucet', label: cs.settings.nav.account },
+] as const
+
+type SectionId = (typeof SECTIONS)[number]['id']
+
+/** Highlights the section currently under the sticky header. */
+function useActiveSection(): SectionId {
+  const [active, setActive] = useState<SectionId>('firma')
+  useEffect(() => {
+    const visible = new Map<string, number>()
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) visible.set(e.target.id, e.boundingClientRect.top)
+          else visible.delete(e.target.id)
+        }
+        const first = SECTIONS.find((s) => visible.has(s.id))
+        if (first) setActive(first.id)
+      },
+      { rootMargin: '-120px 0px -55% 0px' },
+    )
+    for (const s of SECTIONS) {
+      const el = document.getElementById(s.id)
+      if (el) observer.observe(el)
+    }
+    return () => observer.disconnect()
+  }, [])
+  return active
+}
+
+/** Cards load data after first paint, so an initial #hash must be re-applied once layout settles. */
+function useInitialHashScroll() {
+  useEffect(() => {
+    const id = window.location.hash.slice(1)
+    if (!id) return
+    const go = () => document.getElementById(id)?.scrollIntoView({ block: 'start' })
+    const timers = [setTimeout(go, 150), setTimeout(go, 700)]
+    return () => {
+      for (const t of timers) clearTimeout(t)
+    }
+  }, [])
+}
+
+function SettingsNav({ active, onPick }: { active: SectionId; onPick: (id: SectionId) => void }) {
+  return (
+    <nav
+      aria-label={cs.settings.navLabel}
+      className="sticky top-14 z-20 -mx-4 overflow-x-auto border-b bg-background/90 px-4 backdrop-blur lg:top-20 lg:mx-0 lg:self-start lg:overflow-visible lg:border-b-0 lg:bg-transparent lg:px-0 lg:backdrop-blur-none"
+    >
+      <ul className="flex gap-1 py-2 lg:flex-col lg:py-0">
+        {SECTIONS.map((s) => (
+          <li key={s.id} className="shrink-0">
+            <Link
+              to="/nastaveni"
+              hash={s.id}
+              replace
+              aria-current={active === s.id ? 'location' : undefined}
+              onClick={() => onPick(s.id)}
+              className={cn(
+                'flex h-9 items-center whitespace-nowrap rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+                active === s.id && 'bg-accent text-accent-foreground hover:bg-accent',
+              )}
+            >
+              {s.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+function Section({ id, children }: { id: SectionId; children: React.ReactNode }) {
+  return (
+    <section id={id} className="scroll-mt-32 lg:scroll-mt-20">
+      {children}
+    </section>
+  )
+}
+
 function Settings() {
   const { data: profile } = useQuery(orpc.businessProfile.get.queryOptions())
+  const observed = useActiveSection()
+  const [picked, setPicked] = useState<SectionId | null>(null)
+  useInitialHashScroll()
+  // A click wins until the user scrolls on by hand (programmatic scrolling fires no wheel/touch events).
+  useEffect(() => {
+    if (!picked) return
+    const clear = () => setPicked(null)
+    window.addEventListener('wheel', clear, { once: true })
+    window.addEventListener('touchmove', clear, { once: true })
+    return () => {
+      window.removeEventListener('wheel', clear)
+      window.removeEventListener('touchmove', clear)
+    }
+  }, [picked])
+  const active = picked ?? observed
+
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-4">
       <h1 className="text-2xl font-semibold">{cs.settings.title}</h1>
-      <section className="space-y-4 rounded-xl border bg-card p-5">
-        <h2 className="text-lg font-medium">{cs.settings.profileTitle}</h2>
-        {profile && <BusinessProfileForm profile={profile} submitLabel={cs.common.save} />}
-      </section>
-      <BankAccountsCard />
-      <AppearanceCard />
-      <NumberSeriesCard />
-      <ReminderSettings />
-      <DataExport />
-      <Card>
-        <CardHeader>
-          <CardTitle>{cs.import.settingsCardTitle}</CardTitle>
-          <CardDescription>{cs.import.settingsCardDescription}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button render={<Link to="/import" />}>{cs.import.open}</Button>
-        </CardContent>
-      </Card>
-      <div className="rounded-xl border bg-card p-5">
-        <ApiKeys />
+      <div className="grid gap-4 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10">
+        <SettingsNav active={active} onPick={setPicked} />
+        <div className="min-w-0 max-w-3xl space-y-6">
+          <Section id="firma">
+            <Card>
+              <CardHeader>
+                <CardTitle role="heading" aria-level={2}>
+                  {cs.settings.profileTitle}
+                </CardTitle>
+                <CardDescription>{cs.settings.profileDescription}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {profile && <BusinessProfileForm profile={profile} submitLabel={cs.common.save} />}
+              </CardContent>
+            </Card>
+          </Section>
+          <Section id="banka">
+            <BankAccountsCard />
+          </Section>
+          <Section id="rady">
+            <NumberSeriesCard />
+          </Section>
+          <Section id="vzhled">
+            <AppearanceCard />
+          </Section>
+          <Section id="emaily">
+            <ReminderSettings />
+          </Section>
+          <Section id="api">
+            <ApiKeys />
+          </Section>
+          <Section id="import">
+            <Card>
+              <CardHeader>
+                <CardTitle role="heading" aria-level={2}>
+                  {cs.import.settingsCardTitle}
+                </CardTitle>
+                <CardDescription>{cs.import.settingsCardDescription}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button render={<Link to="/import" />}>{cs.import.open}</Button>
+              </CardContent>
+            </Card>
+          </Section>
+          <Section id="ucet">
+            <DataExport />
+          </Section>
+        </div>
       </div>
     </div>
   )

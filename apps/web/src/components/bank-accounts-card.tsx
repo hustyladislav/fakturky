@@ -2,6 +2,7 @@ import { Badge } from '@fakturky/ui/components/badge'
 import { Button } from '@fakturky/ui/components/button'
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -56,12 +57,14 @@ export function BankAccountsCard() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
-        <div className="space-y-1.5">
-          <CardTitle>{t.title}</CardTitle>
-          <CardDescription>{t.description}</CardDescription>
-        </div>
-        <NewBankAccount onCreated={refresh} />
+      <CardHeader>
+        <CardTitle role="heading" aria-level={2}>
+          {t.title}
+        </CardTitle>
+        <CardDescription>{t.description}</CardDescription>
+        <CardAction>
+          <NewBankAccount onCreated={refresh} />
+        </CardAction>
       </CardHeader>
       <CardContent className="space-y-3">
         {list.data?.length === 0 && <p className="text-muted-foreground text-sm">{t.empty}</p>}

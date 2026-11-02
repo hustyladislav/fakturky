@@ -874,6 +874,18 @@ export const cs = {
     remindersToggle: 'Automaticky posílat upomínky po splatnosti',
     title: 'Nastavení',
     profileTitle: 'Firemní údaje',
+    profileDescription: 'Objeví se na vašich fakturách jako dodavatel.',
+    navLabel: 'Sekce nastavení',
+    nav: {
+      company: 'Firma',
+      bank: 'Bankovní účty',
+      series: 'Číselné řady',
+      appearance: 'Vzhled dokladů',
+      emails: 'E-maily',
+      api: 'API klíče',
+      import: 'Import',
+      account: 'Účet',
+    },
     profileSaved: 'Údaje byly uloženy.',
   },
   onboarding: {

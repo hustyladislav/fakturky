@@ -10,11 +10,13 @@ import { z } from 'zod'
 import { CsvDownload } from '@/components/csv-download'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 const FILTERS = ['all', 'unpaid', 'overdue', 'paid', 'draft'] as const
 
 export const Route = createFileRoute('/_app/faktury/')({
+  head: pageHead(cs.invoices.title),
   validateSearch: z.object({
     filter: z.enum(FILTERS).catch('all').default('all'),
     q: z.string().optional(),

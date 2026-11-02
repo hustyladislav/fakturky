@@ -6,9 +6,11 @@ import { BusinessProfileForm } from '@/components/business-profile-form'
 import { NumberSeriesCard } from '@/components/number-series-card'
 import { DataExport, ReminderSettings } from '@/components/reminder-settings'
 import { cs } from '@/i18n/cs'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/nastaveni')({
+  head: pageHead(cs.settings.title),
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(orpc.businessProfile.get.queryOptions()),
   component: Settings,

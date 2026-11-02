@@ -11,9 +11,11 @@ import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage } from '@/lib/errors'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/faktury/$id/')({
+  head: pageHead(cs.invoices.title),
   component: InvoiceDetail,
 })
 

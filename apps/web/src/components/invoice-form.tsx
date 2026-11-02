@@ -1,6 +1,7 @@
 import { addDays, isoWeekday, isWeekend, todayPrague } from '@fakturky/domain/dates'
 import { computeDocumentTotals } from '@fakturky/domain/vat'
 import { Button } from '@fakturky/ui/components/button'
+import { FieldError } from '@fakturky/ui/components/field-error'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
@@ -227,6 +228,7 @@ export function InvoiceForm({ id }: { id?: string }) {
 
   const save = useMutation({
     mutationFn: async (andIssue: boolean) => {
+      setFormError(null)
       const body = payload()
       if (andIssue && !customer) throw new Error(t.needCustomer)
       if (andIssue && body.lines.length === 0) throw new Error(t.needLines)
@@ -250,10 +252,12 @@ export function InvoiceForm({ id }: { id?: string }) {
       else if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
     },
     onError: (e) => {
+      setFormError(apiErrorMessage(e))
       toast.error(apiErrorMessage(e))
     },
   })
 
+  const [formError, setFormError] = useState<string | null>(null)
   const weekend = dueDate && isWeekend(dueDate)
   const setLine = (key: number, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)))
@@ -596,6 +600,12 @@ export function InvoiceForm({ id }: { id?: string }) {
           />
         </div>
       </Card>
+
+      {formError && (
+        <FieldError className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
+          {formError}
+        </FieldError>
+      )}
 
       <div className="from-background bg-gradient-to-t fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex gap-2 p-4 sm:static sm:justify-end sm:p-0">
         <Button

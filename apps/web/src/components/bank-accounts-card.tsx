@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@fakturky/ui/components/dialog'
+import { FieldError } from '@fakturky/ui/components/field-error'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -93,6 +94,7 @@ export function BankAccountsCard() {
 
 function NewBankAccount({ onCreated }: { onCreated: () => unknown }) {
   const [open, setOpen] = useState(false)
+  const [accountError, setAccountError] = useState<string | null>(null)
   const create = useMutation(
     orpc.bankAccounts.create.mutationOptions({
       onSuccess: async () => {
@@ -100,8 +102,10 @@ function NewBankAccount({ onCreated }: { onCreated: () => unknown }) {
         setOpen(false)
         await onCreated()
       },
-      onError: (e) =>
-        toast.error((e as { code?: string }).code === 'BAD_REQUEST' ? t.invalid : cs.common.error),
+      onError: (e) => {
+        if ((e as { code?: string }).code === 'BAD_REQUEST') setAccountError(t.invalid)
+        else toast.error(cs.common.error)
+      },
     }),
   )
 
@@ -133,7 +137,16 @@ function NewBankAccount({ onCreated }: { onCreated: () => unknown }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="ba-account">{t.account}</Label>
-            <Input id="ba-account" name="account" placeholder={t.accountPlaceholder} required />
+            <Input
+              id="ba-account"
+              name="account"
+              placeholder={t.accountPlaceholder}
+              required
+              aria-invalid={accountError ? true : undefined}
+              aria-describedby={accountError ? 'ba-account-error' : undefined}
+              onChange={() => setAccountError(null)}
+            />
+            <FieldError id="ba-account-error">{accountError}</FieldError>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

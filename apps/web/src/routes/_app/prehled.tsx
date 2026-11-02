@@ -4,9 +4,11 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/prehled')({
+  head: pageHead(cs.nav.overview),
   component: Overview,
 })
 

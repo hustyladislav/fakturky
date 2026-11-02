@@ -495,11 +495,14 @@ export const documentsRouter = {
     openapi: {
       method: 'POST',
       path: '/documents/{id}/unpaid',
-      summary: 'Remove recorded payments and reopen the invoice',
+      summary:
+        'Remove recorded payments and reopen the invoice. With `paymentId`, remove only that payment.',
       tags: tag,
     },
   })
-    .input(idInput)
+    .input(
+      idInput.extend({ paymentId: z.string().optional().describe('Remove just this payment') }),
+    )
     .output(documentDetailSchema)
     .handler(({ context, input }) =>
       guard(() =>
@@ -508,6 +511,7 @@ export const documentsRouter = {
           context.principal.organizationId,
           context.principal.userId,
           input.id,
+          input.paymentId,
         ),
       ),
     ),

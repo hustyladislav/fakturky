@@ -225,21 +225,47 @@ export function InvoiceForm({ id }: { id?: string }) {
       })),
   })
 
+  const [createdId, setCreatedId] = useState<string | undefined>()
+  const [issueError, setIssueError] = useState<string | null>(null)
+  // A refused issue on a brand-new invoice moves to the saved draft's URL; carry the message across.
+  useEffect(() => {
+    if (!id) return
+    try {
+      const kept = sessionStorage.getItem(`issueError:${id}`)
+      if (kept) {
+        setIssueError(kept)
+        sessionStorage.removeItem(`issueError:${id}`)
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, [id])
+  const draftId = id ?? createdId
+
   const save = useMutation({
     mutationFn: async (andIssue: boolean) => {
+      setIssueError(null)
       const body = payload()
       if (andIssue && !customer) throw new Error(t.needCustomer)
       if (andIssue && body.lines.length === 0) throw new Error(t.needLines)
-      const doc = id
-        ? await client.documents.updateDraft({ id, patch: body })
+      const doc = draftId
+        ? await client.documents.updateDraft({ id: draftId, patch: body })
         : await client.documents.createDraft({ ...body, type: docType })
       if (!andIssue) return doc
       try {
         return await client.documents.issue({ id: doc.id })
       } catch (e) {
-        // Keep the saved draft: continue on its edit page so a retry does not create a second one.
+        // Keep the saved draft: a retry updates it instead of creating a second one.
         await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
-        if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+        setCreatedId(doc.id)
+        if (!id) {
+          try {
+            sessionStorage.setItem(`issueError:${doc.id}`, apiErrorMessage(e))
+          } catch {
+            /* storage unavailable */
+          }
+          navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+        }
         throw e
       }
     },
@@ -247,10 +273,15 @@ export function InvoiceForm({ id }: { id?: string }) {
       await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
       toast.success(andIssue ? cs.invoices.detail.issued(doc.number ?? '') : t.saved)
       if (andIssue) navigate({ to: '/faktury/$id', params: { id: doc.id } })
-      else if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+      else if (!draftId) {
+        setCreatedId(doc.id)
+        navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+      }
     },
     onError: (e) => {
-      toast.error(apiErrorMessage(e))
+      const message = apiErrorMessage(e)
+      setIssueError(message)
+      toast.error(message)
     },
   })
 
@@ -309,6 +340,14 @@ export function InvoiceForm({ id }: { id?: string }) {
 
       <Card title={t.customer}>
         <CustomerPicker value={customer} onChange={setCustomer} />
+        {issueError && (
+          <p role="alert" className="text-destructive text-sm">
+            {issueError}{' '}
+            <Link to="/kontakty" className="underline">
+              {cs.nav.contacts}
+            </Link>
+          </p>
+        )}
       </Card>
 
       <Card title={t.details}>
@@ -602,7 +641,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           type="button"
           variant="outline"
           className="flex-1 sm:flex-none"
-          disabled={save.isPending}
+          disabled={save.isPending || !ready}
           onClick={() => save.mutate(false)}
         >
           {t.saveDraft}
@@ -610,7 +649,7 @@ export function InvoiceForm({ id }: { id?: string }) {
         <Button
           type="button"
           className="flex-[2] sm:flex-none"
-          disabled={save.isPending}
+          disabled={save.isPending || !ready}
           onClick={() => save.mutate(true)}
         >
           {t.issue}

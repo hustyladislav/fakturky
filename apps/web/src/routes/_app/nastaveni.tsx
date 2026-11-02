@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { ApiKeys } from '@/components/api-keys'
+import { AppearanceCard } from '@/components/appearance-card'
 import { BankAccountsCard } from '@/components/bank-accounts-card'
 import { BusinessProfileForm } from '@/components/business-profile-form'
 import { NumberSeriesCard } from '@/components/number-series-card'
@@ -26,6 +27,7 @@ function Settings() {
         {profile && <BusinessProfileForm profile={profile} submitLabel={cs.common.save} />}
       </section>
       <BankAccountsCard />
+      <AppearanceCard />
       <NumberSeriesCard />
       <ReminderSettings />
       <DataExport />

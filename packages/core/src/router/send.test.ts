@@ -320,3 +320,40 @@ test('rounding to whole units is a separate line; foreign currency keeps CZK VAT
   expect(off.rounding).toBe('0.0000')
   expect(off.total).toBe('121.4800')
 })
+
+test('appearance: accent colour, private logo/signature validated by content, included in the export', async () => {
+  const org = await seedOrg(handle, 'look-a')
+  const other = await seedOrg(handle, 'look-b')
+  for (const id of [org, other]) {
+    await handle.db
+      .insert(schema.businessProfile)
+      .values({ organizationId: id, legalName: 'Firma' })
+  }
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const png =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=='
+  expect((await api.appearance.get({})).logo).toBeNull()
+  await expect(api.appearance.update({ accentColor: 'red' })).rejects.toBeTruthy()
+  expect(
+    (await api.appearance.update({ accentColor: '#112233', showBrand: false })).accentColor,
+  ).toBe('#112233')
+  await expect(
+    api.appearance.setAsset({
+      kind: 'logo',
+      dataBase64: Buffer.from('<svg onload=alert(1)>').toString('base64') + 'AAAA',
+    }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  const withLogo = await api.appearance.setAsset({ kind: 'logo', dataBase64: png })
+  expect(withLogo.logo?.startsWith('data:image/png;base64,')).toBe(true)
+  // Another organization never sees it.
+  const theirs = await clientFor(handle, {
+    userId: 'u',
+    organizationId: other,
+    via: 'session',
+  }).appearance.get({})
+  expect(theirs.logo).toBeNull()
+  expect(theirs.accentColor).toBeNull()
+  const exported = JSON.parse((await api.exports.organization({})).json)
+  expect(exported.images[0]).toMatchObject({ kind: 'logo', contentType: 'image/png' })
+  expect((await api.appearance.deleteAsset({ kind: 'logo' })).logo).toBeNull()
+})

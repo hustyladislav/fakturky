@@ -41,6 +41,16 @@ export async function renderDocumentPdf(
   original?: Parameters<typeof toDocumentForExport>[2],
 ): Promise<Uint8Array> {
   await loadFonts()
+  const [{ getRuntime }, { appearanceRepo }] = await Promise.all([
+    import('./runtime'),
+    import('@fakturky/core/appearance-repo'),
+  ])
+  const { handle } = await getRuntime()
+  const look = await appearanceRepo.get(handle.db, doc.organizationId)
+  const [logo, signature] = await Promise.all([
+    appearanceRepo.bytes(handle.db, doc.organizationId, 'logo'),
+    appearanceRepo.bytes(handle.db, doc.organizationId, 'signature'),
+  ])
   const base = toDocumentForExport(doc, lines, original)
   return renderInvoicePdf({
     ...base,
@@ -52,6 +62,10 @@ export async function renderDocumentPdf(
     })),
     language: doc.language as DocumentLanguage,
     brandName: BRAND.name,
+    showBrand: look.showBrand,
+    accentColor: look.accentColor ?? undefined,
+    logo,
+    signature,
     headerText: doc.introText,
     footerText: doc.footerText,
   })

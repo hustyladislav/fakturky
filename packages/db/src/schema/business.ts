@@ -45,10 +45,29 @@ export const businessProfile = pgTable('business_profile', {
   defaultNote: text('default_note'),
   /** Opt-in: e-mail payment reminders for overdue invoices (3, 10 and 17 days after the due date). */
   autoRemind: boolean('auto_remind').notNull().default(false),
+  /** Hex colour (#RRGGBB) of the document accent; null = brand default. */
+  accentColor: text('accent_color'),
+  /** Print the small "issued with …" line on documents. */
+  showBrand: boolean('show_brand').notNull().default(true),
   /** Set when the user finishes (or skips) onboarding; null sends them to the onboarding screen. */
   onboardedAt: timestamp('onboarded_at', { withTimezone: true }),
   ...timestamps(),
 })
+
+/** Private per-organization images (logo, signature). Stored in the database, only ever served through the app. */
+export const orgAsset = pgTable(
+  'org_asset',
+  {
+    id: idColumn(),
+    organizationId: orgColumn(),
+    kind: text('kind').notNull(),
+    contentType: text('content_type').notNull(),
+    /** Base64 of the PNG/JPEG bytes (size-limited at the procedure boundary). */
+    data: text('data').notNull(),
+    ...timestamps(),
+  },
+  (t) => [uniqueIndex('org_asset_org_kind_uq').on(t.organizationId, t.kind)],
+)
 
 export const bankAccount = pgTable(
   'bank_account',

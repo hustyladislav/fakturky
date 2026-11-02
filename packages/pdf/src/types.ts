@@ -16,6 +16,8 @@ export interface InvoicePdfInput extends Omit<DocumentForExport, 'lines'> {
   brandName: string
   /** Hide the "Vystaveno ve …" line (user setting). Default true. */
   showBrand?: boolean
+  /** Hex colour (#RRGGBB) for the header rule, the customer bar and the closing text. Default: brand green. */
+  accentColor?: string
   /** Name printed under "Vystavil(a)". */
   issuedBy?: string | null
   /** Intro text above the items table. */

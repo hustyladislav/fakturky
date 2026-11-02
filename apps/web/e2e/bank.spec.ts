@@ -50,8 +50,8 @@ test('bank statement upload pairs the payment by variable symbol and marks the i
   const rows = page.getByTestId('bank-row')
   await expect(rows).toHaveCount(1)
   await expect(rows.first()).toContainText('Neznámý plátce')
-  await expect(page.getByRole('tab', { name: 'Nespárované (1)', exact: true })).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Spárované (1)', exact: true })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Nespárované 1', exact: true })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Spárované 1', exact: true })).toBeVisible()
 
   // The invoice is paid by bank transfer.
   await page.goto(`/faktury/${invoiceId}`)

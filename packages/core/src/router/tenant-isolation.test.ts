@@ -110,6 +110,7 @@ const cases: Record<string, Case> = {
   'businessProfile.lookupIco': { kind: 'external' },
 
   'contacts.list': { kind: 'scoped', run: (b) => b.contacts.list({ includeArchived: true }) },
+  'contacts.stats': { kind: 'scoped', run: (b) => b.contacts.stats({}) },
   'contacts.get': { kind: 'foreign', run: (b, a) => b.contacts.get({ id: a.contactId }) },
   'contacts.create': { kind: 'scoped', run: (b) => b.contacts.create({ name: 'B client' }) },
   'contacts.update': {

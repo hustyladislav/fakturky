@@ -89,10 +89,10 @@ test('credit note reverses an invoice, numbered in its own series, exported with
     contactId: bare.id,
     lines: [{ description: 'x', quantity: '1', unitPrice: '1', vatRate: '21' }],
   })
-  // §29 ZDPH: a tax invoice needs the customer's address and IČO/DIČ (field-level error).
+  // §29 ZDPH: a tax invoice needs the customer's address (field-level error); a consumer without IČO/DIČ is fine.
   await expect(api.documents.issue({ id: incomplete.id })).rejects.toMatchObject({
     code: 'PRECONDITION_FAILED',
-    data: { fields: ['customer.address', 'customer.taxId'] },
+    data: { fields: ['customer.address'] },
   })
   const c = await api.contacts.create({
     name: 'Odběratel',
@@ -497,4 +497,26 @@ test('CZK cash drafts round by default (explicit choice wins); a receipt needs a
   await expect(api.documents.createPaymentReceipt({ id: pf.id })).rejects.toMatchObject({
     code: 'CONFLICT',
   })
+})
+
+test('a VAT payer can issue a tax invoice to a consumer without IČO/DIČ (address is enough)', async () => {
+  const org = await seedOrg(handle, 'consumer-a')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const consumer = await api.contacts.create({
+    name: 'Marie Svobodová',
+    address: { street: 'Dlouhá 5', city: 'České Budějovice', zip: '37001' },
+  })
+  await expect(
+    api.documents.issue({
+      id: (
+        await api.documents.createDraft({
+          contactId: consumer.id,
+          lines: [{ description: 'x', quantity: '1', unitPrice: '1', vatRate: '21' }],
+        })
+      ).id,
+    }),
+  ).resolves.toMatchObject({ status: 'issued' })
 })

@@ -624,7 +624,8 @@ export const documentsRepo = {
         .from(contact)
         .where(and(eq(contact.organizationId, orgId), eq(contact.id, doc.contactId)))
       if (!customer) throw new DocumentError('NOT_FOUND', 'Contact not found')
-      // §29 ZDPH: a tax document needs the customer's name, address and (if registered) identification.
+      // §29 ZDPH: a tax document needs the customer's name and address; the DIČ only if the customer is registered
+      // (a consumer has none), so a missing IČO/DIČ must not block issuing.
       if (vatOnNow) {
         const exempt = lines.filter((l) => l.vatTreatment === 'exempt')
         if (exempt.some((l) => !l.vatNote?.trim())) {
@@ -641,9 +642,6 @@ export const documentsRepo = {
           !customer.address.zip?.trim()
         ) {
           missing.push('address')
-        }
-        if (!customer.ico?.trim() && !customer.dic?.trim() && !customer.icDph?.trim()) {
-          missing.push('taxId')
         }
         // EU reverse charge needs the customer's VAT ID (IČ DPH / DIČ), not just an IČO.
         if (

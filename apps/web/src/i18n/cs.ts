@@ -379,7 +379,6 @@ export const cs = {
         'line.vatRate': 'sazbu DPH 21 / 12 % nebo režim DPH u každé položky',
         'customer.vatId': 'DIČ / IČ DPH (nutné pro přenesení daňové povinnosti v rámci EU)',
         'customer.address': 'adresu (ulice, město, PSČ)',
-        'customer.taxId': 'IČO nebo DIČ',
       },
       missingLines: (names: string[]) => `U položek doplňte: ${names.join(', ')}.`,
       missingCustomer: (names: string[]) =>
@@ -599,7 +598,8 @@ export const cs = {
     zip: 'PSČ',
     edit: 'Upravit kontakt',
     updated: 'Kontakt byl uložen.',
-    taxDocHint: 'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a jeho IČO nebo DIČ.',
+    taxDocHint:
+      'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a – je-li plátcem DPH – i jeho DIČ.',
     created: 'Kontakt byl vytvořen.',
     archived: 'Kontakt byl archivován.',
   },

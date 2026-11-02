@@ -255,33 +255,89 @@ export const cs = {
   overview: {
     title: 'Přehled',
     greeting: 'Dobrý den',
+    summary: {
+      issued: (count: number, total: string | null) =>
+        `Tento měsíc jste vystavili ${count} ${count === 1 ? 'fakturu' : count < 5 ? 'faktury' : 'faktur'}${total ? ` za ${total}` : ''}.`,
+      none: 'Tento měsíc jste zatím nic nevystavili.',
+      awaiting: (count: number) =>
+        count === 0
+          ? 'Nic nečeká na platbu.'
+          : `${count} ${count === 1 ? 'čeká' : 'čekají'} na platbu.`,
+    },
     kpi: {
       month: 'Obrat tento měsíc',
-      monthHint: 'Vystavené faktury bez DPH',
+      monthHint: 'bez DPH, včetně dobropisů',
+      monthNegative: 'Dobropisy převyšují vystavené faktury',
       unpaid: 'Neuhrazeno',
-      unpaidHint: 'Vystavené a dosud nezaplacené',
+      unpaidHint: (count: number) =>
+        count === 0
+          ? 'Vše je zaplaceno'
+          : `${count} ${count === 1 ? 'faktura čeká' : count < 5 ? 'faktury čekají' : 'faktur čeká'} na platbu`,
       overdue: 'Po splatnosti',
-      overdueHint: (count: number) =>
-        count === 1 ? '1 faktura po splatnosti' : `${count} faktur po splatnosti`,
-      none: 'Žádné',
+      overdueHint: (count: number, days: number) =>
+        `${count} ${count === 1 ? 'faktura' : count < 5 ? 'faktury' : 'faktur'} · nejstarší ${days} ${days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}`,
+      none: 'Žádná faktura po splatnosti',
+      received: 'Zaplaceno tento měsíc',
+      receivedHint: 'přijaté platby',
+      vsLast: 'vs. minulý měsíc',
+      lastMonthZero: 'minulý měsíc 0 Kč',
     },
     vatLimit: {
-      title: 'Limit obratu pro registraci k DPH',
-      description: (year: number) =>
-        `Jste neplátce DPH. Obrat za rok ${year} nesmí překročit 2 000 000 Kč; po jeho překročení se musíte registrovat k DPH. Překročíte-li 2 536 500 Kč, stáváte se plátcem ihned.`,
+      title: 'Limit pro registraci k DPH',
+      description: (year: number) => `Obrat za rok ${year}`,
       progress: (percent: number) => `${percent} % limitu`,
+      limit: 'Limit',
+      immediateMark: 'Ihned plátce',
       warn: 'Blížíte se limitu. Zvažte registraci k DPH včas.',
       immediate:
         'Obrat překročil 2 536 500 Kč: plátcem DPH jste se stali ihned. Okamžitě se obraťte na účetní nebo správce daně.',
     },
-    chart: 'Obrat za posledních 6 měsíců',
+    chart: {
+      title: 'Obrat',
+      caption: (months: number) => `za posledních ${months} měsíců, bez DPH`,
+      range: 'Období',
+      sixMonths: '6 měsíců',
+      twelveMonths: '12 měsíců',
+      paid: 'Zaplaceno',
+      unpaid: 'Nezaplaceno',
+      turnover: 'Obrat',
+      empty: 'V tomto období zatím nemáte žádný obrat.',
+      monthsLong: [
+        'leden',
+        'únor',
+        'březen',
+        'duben',
+        'květen',
+        'červen',
+        'červenec',
+        'srpen',
+        'září',
+        'říjen',
+        'listopad',
+        'prosinec',
+      ],
+      thousand: 'tis.',
+      million: 'mil.',
+    },
+    awaiting: {
+      title: 'Čeká na platbu',
+      all: (count: number) => `Zobrazit vše (${count})`,
+      remind: 'Připomenout',
+      reminded: 'Připomínka odeslána.',
+      remindFor: (name: string) => `Připomenout platbu: ${name}`,
+      empty: 'Žádné faktury nečekají na platbu.',
+    },
+    quick: {
+      title: 'Rychlé akce',
+      newInvoice: 'Nová faktura',
+      fromTemplate: 'Ze šablony',
+      uploadStatement: 'Nahrát výpis',
+      askAssistant: 'Zeptat se asistenta',
+    },
     recent: 'Poslední doklady',
     allInvoices: 'Všechny faktury',
     emptyTitle: 'Začněte první fakturou',
     emptyText: 'Přidejte bankovní účet a vystavte první fakturu. Zabere to pár minut.',
-    nudgeOverdue: (days: number) =>
-      `Nejstarší faktura po splatnosti čeká už ${days} ${days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}.`,
-    nudgeAction: 'Zobrazit',
     months: ['led', 'úno', 'bře', 'dub', 'kvě', 'čvn', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro'],
   },
   invoices: {
@@ -292,6 +348,44 @@ export const cs = {
     emptyFiltered: 'Nic neodpovídá zvolenému filtru.',
     emptyCta: 'Vystavit první fakturu',
     search: 'Hledat podle čísla, odběratele nebo VS…',
+    subtitle: (count: number, unpaid: string | null) =>
+      `${count} ${count === 1 ? 'doklad' : count < 5 && count > 0 ? 'doklady' : 'dokladů'}${unpaid ? ` · ${unpaid} neuhrazeno` : ''}`,
+    monthTotal: (count: number, sum: string | null) =>
+      `${count} ${count === 1 ? 'doklad' : count < 5 ? 'doklady' : 'dokladů'}${sum ? ` · ${sum}` : ''}`,
+    typeShort: {
+      invoice: 'Faktura',
+      proforma: 'Zálohová',
+      credit_note: 'Dobropis',
+      payment_receipt: 'Doklad k platbě',
+    },
+    noMonth: 'Bez data',
+    noNumber: 'Bez čísla',
+    resetFilter: 'Zrušit filtr',
+    loadMore: 'Načíst další',
+    sortBy: (column: string) => `Seřadit podle: ${column}`,
+    keyboardHint: 'J / K pohyb · Enter otevřít · X vybrat',
+    rowActions: {
+      pdf: 'Stáhnout PDF',
+      markPaid: 'Označit jako zaplacenou',
+      duplicate: 'Duplikovat',
+      markedPaid: 'Faktura je označená jako zaplacená.',
+      undo: 'Vrátit',
+    },
+    bulk: {
+      selected: (n: number) => `Vybráno: ${n}`,
+      selectAll: 'Vybrat všechny',
+      selectRow: (name: string) => `Vybrat doklad: ${name}`,
+      exportCsv: 'Exportovat CSV',
+      markPaid: 'Označit jako zaplacené',
+      remind: 'Poslat upomínky',
+      clear: 'Zrušit výběr',
+      paidDone: (n: number) =>
+        `Označeno jako zaplacené: ${n} ${n === 1 ? 'faktura' : n < 5 ? 'faktury' : 'faktur'}.`,
+      remindDone: (ok: number, failed: number) =>
+        failed === 0
+          ? `Upomínky odeslány: ${ok}.`
+          : `Upomínky odeslány: ${ok}, nepodařilo se: ${failed} (chybí e-mail odběratele?).`,
+    },
     filters: {
       all: 'Vše',
       unpaid: 'Neuhrazené',
@@ -1210,6 +1304,7 @@ export const cs = {
       cancel_document: 'Stornuji doklad',
       delete_document_draft: 'Mažu koncept',
       get_dashboard_summary: 'Načítám přehled',
+      get_document_stats: 'Počítám doklady podle stavu',
       get_business_profile: 'Načítám profil firmy',
       update_business_profile: 'Upravuji profil firmy',
       list_bank_accounts: 'Načítám bankovní účty',

@@ -1,8 +1,14 @@
-import { formatDateCs } from '@fakturky/domain/dates'
+import { InvoiceSheet, type InvoiceSheetInput } from '@fakturky/pdf/html'
+import { Amount } from '@fakturky/ui/components/amount'
+import { Avatar } from '@fakturky/ui/components/avatar'
 import { Button } from '@fakturky/ui/components/button'
-import { Money } from '@fakturky/ui/components/money'
+import { LogoMark } from '@fakturky/ui/components/logo'
+import { RelativeDate } from '@fakturky/ui/components/relative-date'
+import { type DocumentStatus, StatusBadge } from '@fakturky/ui/components/status-badge'
+import { diffDays, formatDate, parseIsoDate, startOfDay } from '@fakturky/ui/lib/dates'
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { Download, Printer } from 'lucide-react'
+import { Check, Copy, Download, FileCode2, Printer } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { PaymentQr } from '@/components/payment-qr'
 import { cs } from '@/i18n/cs'
 import { client } from '@/lib/orpc'
@@ -31,30 +37,53 @@ export const Route = createFileRoute('/f/$token')({
   component: PublicInvoice,
 })
 
-type Party = {
-  name: string
-  ico: string | null
-  dic: string | null
-  street: string
-  city: string
-  zip: string
-  registerNote: string | null
+/** Copies `value` and flips the icon to a check for a moment. */
+function CopyButton({ value, label }: { value: string; label: string }) {
+  const [done, setDone] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(timer.current), [])
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        navigator.clipboard
+          ?.writeText(value)
+          .then(() => {
+            setDone(true)
+            clearTimeout(timer.current)
+            timer.current = setTimeout(() => setDone(false), 1600)
+          })
+          .catch(() => {})
+      }}
+      className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      aria-label={done ? t.copied : `${t.copy}: ${label}`}
+      title={done ? t.copied : t.copy}
+    >
+      {done ? <Check className="size-4 text-success" /> : <Copy className="size-4" />}
+    </button>
+  )
 }
 
-function PartyBlock({ title, p }: { title: string; p: Party }) {
+function PayRow({
+  label,
+  value,
+  copy,
+  strong,
+}: {
+  label: string
+  value: string
+  copy?: string
+  strong?: boolean
+}) {
   return (
-    <div className="space-y-0.5 text-sm">
-      <div className="text-xs text-neutral-500">{title}</div>
-      <div className="font-semibold">{p.name}</div>
-      {p.street && <div>{p.street}</div>}
-      {(p.zip || p.city) && (
-        <div>
-          {p.zip} {p.city}
-        </div>
-      )}
-      {p.ico && <div>IČO {p.ico}</div>}
-      {p.dic && <div>DIČ {p.dic}</div>}
-      {p.registerNote && <div className="text-xs text-neutral-500">{p.registerNote}</div>}
+    <div className="py-2.5">
+      <dt className="label-caps">{label}</dt>
+      <dd className="mt-0.5 flex items-center justify-between gap-3">
+        <span className={`min-w-0 text-sm tabular-nums break-all ${strong ? 'font-semibold' : ''}`}>
+          {value}
+        </span>
+        {copy ? <CopyButton value={copy} label={label} /> : null}
+      </dd>
     </div>
   )
 }
@@ -62,276 +91,200 @@ function PartyBlock({ title, p }: { title: string; p: Party }) {
 function PublicInvoice() {
   const d = Route.useLoaderData()
   const { token } = Route.useParams()
-  const title =
-    d.type === 'proforma'
-      ? t.titleProforma
-      : d.type === 'payment_receipt'
-        ? t.titleReceipt
-        : d.type === 'credit_note'
-          ? d.vatPayer
-            ? t.titleCreditNoteTax
-            : t.titleCreditNote
-          : d.vatPayer
-            ? t.titleTaxInvoice
-            : t.titleInvoice
-  const label = (k: string, v: React.ReactNode) => (
-    <div>
-      <div className="text-xs text-neutral-500">{k}</div>
-      <div className="text-sm">{v}</div>
-    </div>
-  )
+  const supplierName = d.supplier.name
+  const open = d.status === 'issued' && Number(d.remaining) > 0
+  const due = parseIsoDate(d.dueDate)
+  const overdueDays =
+    d.overdue && due ? Math.max(1, diffDays(startOfDay(new Date()), due)) : undefined
+  const status: DocumentStatus =
+    d.status === 'paid'
+      ? 'paid'
+      : d.status === 'cancelled'
+        ? 'cancelled'
+        : d.overdue
+          ? 'overdue'
+          : 'issued'
+  const statusLabel =
+    d.status === 'paid'
+      ? t.paid
+      : d.status === 'cancelled'
+        ? t.cancelled
+        : d.overdue
+          ? t.overdue
+          : open
+            ? t.awaiting
+            : t.issued
+  const payable = open && d.bank !== null
+  const heroValue = open ? d.remaining : d.total
+  const sheet = d.sheet as unknown as InvoiceSheetInput
 
   return (
-    <div className="min-h-screen bg-neutral-100 p-3 sm:p-8 dark:bg-neutral-900">
-      <div className="mx-auto mb-3 flex max-w-3xl flex-wrap justify-end gap-2 print:hidden">
-        <Button variant="outline" size="sm" onClick={() => window.print()}>
-          <Printer /> {t.print}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          nativeButton={false}
-          render={<a href={`/f/${token}/pdf`} download />}
-        >
-          <Download /> {t.downloadPdf}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          nativeButton={false}
-          render={<a href={`/f/${token}/isdoc`} download />}
-        >
-          <Download /> {t.downloadIsdoc}
-        </Button>
-      </div>
-
-      <article className="mx-auto max-w-3xl space-y-6 bg-white p-6 text-neutral-900 shadow-sm sm:p-10 print:shadow-none">
-        <header
-          className="flex items-start justify-between gap-4 border-b-2 pb-4"
-          style={{ borderColor: d.appearance.accentColor ?? '#1F4D3C' }}
-        >
-          <div>
-            {d.appearance.logo && (
-              <img src={d.appearance.logo} alt="" className="mb-2 h-12 max-w-48 object-contain" />
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto w-full max-w-[1180px] px-4 pt-5 pb-12 sm:px-6 lg:pt-9">
+        <header className="mb-5 flex items-center justify-between gap-4 lg:mb-7 print:hidden">
+          <div className="flex min-w-0 items-center gap-3">
+            {d.appearance.logo ? (
+              <img
+                src={d.appearance.logo}
+                alt=""
+                className="h-9 max-w-36 rounded-md object-contain"
+              />
+            ) : (
+              <Avatar name={supplierName} size="md" shape="square" />
             )}
-            <h1 className="font-serif text-3xl font-medium">{title}</h1>
-            <div className="font-serif text-xl tabular-nums">{d.number}</div>
-            {d.original && (
-              <div className="text-sm text-neutral-600">
-                {t.corrects(d.original.number, formatDateCs(d.original.issueDate))}
-              </div>
-            )}
+            <div className="min-w-0">
+              <p className="label-caps">{t.from}</p>
+              <p className="truncate font-serif text-lg leading-6 font-medium">{supplierName}</p>
+            </div>
           </div>
-          {d.status !== 'issued' || d.overdue ? (
-            <span className="rounded border border-neutral-400 px-2 py-0.5 text-sm font-medium">
-              {d.status === 'paid' ? t.paid : d.status === 'cancelled' ? t.cancelled : t.overdue}
-            </span>
-          ) : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hidden sm:inline-flex"
+            onClick={() => window.print()}
+          >
+            <Printer /> {t.print}
+          </Button>
         </header>
-
-        <div className="grid gap-6 sm:grid-cols-2">
-          <PartyBlock title={t.supplier} p={d.supplier} />
-          <PartyBlock title={t.customer} p={d.customer} />
-        </div>
-        <p className="text-xs text-neutral-500">{d.vatPayer ? t.payer : t.notPayer}</p>
-
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {label(t.issueDate, formatDateCs(d.issueDate))}
-          {d.taxableDate && label(t.taxableDate, formatDateCs(d.taxableDate))}
-          {label(t.dueDate, formatDateCs(d.dueDate))}
-          {d.variableSymbol && label(t.variableSymbol, d.variableSymbol)}
-        </div>
-
-        {d.introText && <p className="text-sm whitespace-pre-line">{d.introText}</p>}
-
-        <ul className="divide-y divide-neutral-200 border-y border-neutral-300 sm:hidden">
-          {d.lines.map((l) => (
-            <li
-              key={`m-${l.description}-${l.unitPrice}-${l.quantity}-${l.total}`}
-              className="flex items-start justify-between gap-3 py-3 text-sm"
-            >
-              <div className="min-w-0">
-                <div>{l.description}</div>
-                <div className="text-xs text-neutral-500">
-                  {Number(l.quantity)} {l.unit} ×{' '}
-                  <Money amount={l.unitPrice} currency={d.currency} />
-                  {d.vatPayer && <> · {Number(l.vatRate)} %</>}
-                  {Number(l.discountPercent) > 0 && (
-                    <>
-                      {' · '}
-                      {t.discount} {Number(l.discountPercent)} %
-                    </>
-                  )}
+        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1fr)_368px] lg:gap-9">
+          <aside className="order-first space-y-4 lg:sticky lg:top-6 lg:order-last print:hidden">
+            <section className="sheet p-5 sm:p-6" aria-label={t.payHeading}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="label-caps">
+                    {open ? t.toPay : d.status === 'paid' ? t.paidAmount : t.totalLabel}
+                  </p>
+                  <div className="mt-1.5">
+                    <Amount value={heroValue} currency={d.currency} size="hero" />
+                  </div>
                 </div>
+                <StatusBadge status={status} overdueDays={overdueDays} className="mt-0.5">
+                  {statusLabel}
+                </StatusBadge>
               </div>
-              <Money amount={l.total} currency={d.currency} className="shrink-0" />
-            </li>
-          ))}
-        </ul>
-        <div className="hidden overflow-x-auto sm:block">
-          <table className="w-full min-w-[34rem] text-sm">
-            <thead>
-              <tr className="border-b border-neutral-400 text-left text-xs text-neutral-500">
-                <th className="py-2 font-medium">{t.description}</th>
-                <th className="py-2 text-right font-medium">{t.quantity}</th>
-                <th className="py-2 text-right font-medium">{t.unitPrice}</th>
-                {d.vatPayer && <th className="py-2 text-right font-medium">{t.vatRate}</th>}
-                <th className="py-2 text-right font-medium">{t.lineTotal}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {d.lines.map((l) => (
-                <tr
-                  key={`${l.description}-${l.unitPrice}-${l.quantity}-${l.total}`}
-                  className="border-b border-neutral-200"
-                >
-                  <td className="py-2">
-                    {l.description}
-                    {l.vatNote && <div className="text-xs text-neutral-500">{l.vatNote}</div>}
-                    {Number(l.discountPercent) > 0 && (
-                      <div className="text-xs text-neutral-500">
-                        {t.discount} {Number(l.discountPercent)} %
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-2 text-right tabular-nums">
-                    {Number(l.quantity)} {l.unit}
-                  </td>
-                  <td className="py-2 text-right">
-                    <Money amount={l.unitPrice} currency={d.currency} />
-                  </td>
-                  {d.vatPayer && (
-                    <td className="py-2 text-right tabular-nums">
-                      {l.vatTreatment === 'standard' ? `${Number(l.vatRate)} %` : t.regime}
-                    </td>
-                  )}
-                  <td className="py-2 text-right">
-                    <Money amount={l.total} currency={d.currency} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
 
-        {d.vatPayer && (
-          <div className="ml-auto max-w-md overflow-x-auto">
-            <table className="w-full text-sm">
-              <caption className="pb-1 text-left text-xs text-neutral-500">{t.vatRecap}</caption>
-              <thead>
-                <tr className="border-b border-neutral-400 text-xs text-neutral-500">
-                  <th className="py-1 text-left font-medium">{t.rate}</th>
-                  <th className="py-1 text-right font-medium">{t.base}</th>
-                  <th className="py-1 text-right font-medium">{t.vat}</th>
-                  <th className="py-1 text-right font-medium">{t.total}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {d.recap.map((r) => (
-                  <tr
-                    key={`${r.vatTreatment}-${r.vatRate}`}
-                    className="border-b border-neutral-200"
-                  >
-                    <td className="py-1 tabular-nums">
-                      {r.vatTreatment === 'standard' ? `${Number(r.vatRate)} %` : t.regime}
-                    </td>
-                    <td className="py-1 text-right">
-                      <Money amount={r.base} currency={d.currency} />
-                    </td>
-                    <td className="py-1 text-right">
-                      <Money amount={r.vat} currency={d.currency} />
-                    </td>
-                    <td className="py-1 text-right">
-                      <Money amount={r.total} currency={d.currency} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {d.recap
-          .filter((r) => r.note)
-          .map((r) => (
-            <p key={`${r.vatTreatment}-note`} className="text-sm text-neutral-700">
-              {r.note}
-            </p>
-          ))}
-
-        <div className="ml-auto max-w-xs space-y-1 text-sm">
-          {Number(d.rounding) !== 0 && (
-            <div className="flex justify-between text-neutral-600">
-              <span>{t.rounding}</span>
-              <Money amount={d.rounding} currency={d.currency} />
-            </div>
-          )}
-          {d.exchangeRate && (
-            <div className="text-xs text-neutral-500">
-              {t.exchangeRate}: {Number(d.exchangeRate)}
-            </div>
-          )}
-          <div className="flex items-baseline justify-between border-t border-b border-neutral-400 py-2">
-            <span className="font-medium">{d.status === 'paid' ? t.lineTotal : t.amountDue}</span>
-            <span className="font-serif text-3xl font-medium">
-              <Money amount={d.status === 'paid' ? d.total : d.remaining} currency={d.currency} />
-            </span>
-          </div>
-        </div>
-
-        {d.status !== 'cancelled' && (
-          <section className="flex flex-wrap items-start justify-between gap-4 text-sm">
-            <div className="space-y-1">
-              <h2 className="text-xs text-neutral-500">{t.payment}</h2>
-              <div>
-                {t.paymentMethod}:{' '}
-                {t.methods[d.paymentMethod as keyof typeof t.methods] ?? d.paymentMethod}
-              </div>
-              {d.variableSymbol && (
+              <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 text-sm">
                 <div>
-                  {t.variableSymbol}: <span className="tabular-nums">{d.variableSymbol}</span>
+                  <dt className="label-caps">{t.documentHeading}</dt>
+                  <dd className="mt-0.5 font-serif text-base tabular-nums">{d.number}</dd>
+                </div>
+                {d.type !== 'credit_note' && (
+                  <div>
+                    <dt className="label-caps">{t.dueOn}</dt>
+                    <dd className="mt-0.5">
+                      {open ? (
+                        <>
+                          <RelativeDate date={d.dueDate} tone="due" />
+                          <span className="block text-xs text-muted-foreground tabular-nums">
+                            {due ? formatDate(due) : ''}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="tabular-nums">{due ? formatDate(due) : '—'}</span>
+                      )}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+
+              {d.status === 'paid' && (
+                <p className="mt-4 flex items-start gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success">
+                  <Check className="mt-0.5 size-4 shrink-0" />
+                  {t.paidNote}
+                </p>
+              )}
+              {d.status === 'cancelled' && (
+                <p className="mt-4 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+                  {t.cancelledNote}
+                </p>
+              )}
+              {d.status === 'issued' && !payable && (
+                <p className="mt-4 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+                  {t.noPaymentNote}
+                </p>
+              )}
+
+              {payable && (
+                <div className="mt-5 border-t pt-5">
+                  <h2 className="label-caps mb-4 text-center">{t.payHeading}</h2>
+                  {d.qr && (
+                    <figure
+                      className="mb-5 flex flex-col items-center gap-3"
+                      data-testid="public-qr"
+                    >
+                      <div className="rounded-xl border bg-white p-1.5">
+                        <PaymentQr qr={d.qr} className="size-52 rounded-lg sm:size-56" />
+                      </div>
+                      <figcaption className="max-w-[17rem] text-center text-xs text-muted-foreground">
+                        <span className="label-caps block text-foreground">
+                          {d.qr.kind === 'spayd' ? cs.paymentQr.platba : cs.paymentQr.epc}
+                        </span>
+                        <span className="mt-1 block">{t.scanHint}</span>
+                      </figcaption>
+                    </figure>
+                  )}
+                  <dl className="divide-y">
+                    {d.bank?.account && (
+                      <PayRow
+                        label={t.account}
+                        value={d.bank.account}
+                        copy={d.bank.account}
+                        strong
+                      />
+                    )}
+                    {d.variableSymbol && (
+                      <PayRow
+                        label={t.variableSymbol}
+                        value={d.variableSymbol}
+                        copy={d.variableSymbol}
+                        strong
+                      />
+                    )}
+                    <PayRow
+                      label={t.amountField}
+                      value={`${Number(d.remaining).toLocaleString('cs-CZ', { minimumFractionDigits: 2 })} ${d.currency === 'CZK' ? 'Kč' : d.currency}`}
+                      copy={d.remaining}
+                    />
+                    {d.bank && <PayRow label={t.iban} value={d.bank.iban} copy={d.bank.iban} />}
+                  </dl>
                 </div>
               )}
-              {d.bank && d.status === 'issued' && (
-                <>
-                  {d.bank.account && (
-                    <div>
-                      {t.account}: <span className="tabular-nums">{d.bank.account}</span>
-                    </div>
-                  )}
-                  <div>
-                    {t.iban}: <span className="tabular-nums">{d.bank.iban}</span>
-                    {d.bank.bic ? ` · ${t.bic}: ${d.bank.bic}` : ''}
-                  </div>
-                </>
-              )}
-            </div>
-            {d.qr && (
-              <figure className="mx-auto space-y-1.5 text-center sm:mx-0" data-testid="public-qr">
-                <PaymentQr qr={d.qr} className="mx-auto sm:size-48" />
-                <figcaption className="text-xs">
-                  <div className="font-medium text-neutral-800">
-                    {d.qr.kind === 'spayd' ? cs.paymentQr.platba : cs.paymentQr.epc}
-                  </div>
-                  <div className="text-neutral-500">{cs.paymentQr.hint}</div>
-                </figcaption>
-              </figure>
-            )}
-          </section>
-        )}
+            </section>
 
-        {d.footerText && (
-          <p className="text-sm whitespace-pre-line text-neutral-600">{d.footerText}</p>
-        )}
-        {d.appearance.signature && (
-          <img src={d.appearance.signature} alt="" className="h-14 max-w-48 object-contain" />
-        )}
+            <div className="grid grid-cols-2 gap-2" aria-label={t.files}>
+              <Button
+                size="lg"
+                className="h-10"
+                nativeButton={false}
+                render={<a href={`/f/${token}/pdf`} download />}
+              >
+                <Download /> {t.downloadPdf}
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-10"
+                nativeButton={false}
+                render={<a href={`/f/${token}/isdoc`} download />}
+              >
+                <FileCode2 /> ISDOC
+              </Button>
+            </div>
+          </aside>
+
+          <main>
+            <div className="overflow-hidden rounded-[3px] shadow-[0_0_0_1px_var(--border),0_2px_4px_rgb(0_0_0/0.05),0_24px_48px_-20px_rgb(0_0_0/0.22)] print:shadow-none">
+              <InvoiceSheet doc={sheet} qr={d.qr} maxScale={1.4} headingLevel={2} />
+            </div>
+          </main>
+        </div>
         {d.appearance.showBrand && (
-          <footer className="border-t border-neutral-200 pt-3 text-xs text-neutral-500">
+          <footer className="mt-10 flex items-center justify-center gap-2 text-xs text-muted-foreground print:hidden">
+            <LogoMark letter={cs.brand} className="size-4" />
             {t.issuedIn(cs.brand)}
           </footer>
-        )}
-      </article>
+        )}{' '}
+      </div>
     </div>
   )
 }

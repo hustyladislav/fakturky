@@ -20,7 +20,7 @@ import { Textarea } from '@fakturky/ui/components/textarea'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Loader2 } from 'lucide-react'
+import { ChevronDown, Loader2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { QuickAccountForm } from '@/components/bank/quick-account-form'
@@ -62,6 +62,8 @@ function Row({
     </div>
   )
 }
+
+const REGISTRY_DISMISS_KEY = 'registryNoteBannerDismissed'
 
 export function InvoiceForm({ id }: { id?: string }) {
   const navigate = useNavigate()
@@ -454,6 +456,23 @@ export function InvoiceForm({ id }: { id?: string }) {
     ],
   )
 
+  const [registryDismissed, setRegistryDismissed] = useState(false)
+  useEffect(() => {
+    try {
+      setRegistryDismissed(localStorage.getItem(REGISTRY_DISMISS_KEY) === '1')
+    } catch {
+      /* storage unavailable: the banner just stays */
+    }
+  }, [])
+  function dismissRegistry() {
+    setRegistryDismissed(true)
+    try {
+      localStorage.setItem(REGISTRY_DISMISS_KEY, '1')
+    } catch {
+      /* storage unavailable */
+    }
+  }
+
   const supplier = profile.data
   const supplierAddress = supplier?.address
   const totalValue = totals?.total ?? '0'
@@ -463,7 +482,8 @@ export function InvoiceForm({ id }: { id?: string }) {
       <PageHeader
         eyebrow={cs.invoices.type[type]}
         title={id ? t.titleEdit : t.titleNew}
-        subtitle={dirty ? t.unsaved : draftId ? t.savedState : undefined}
+        // A non-breaking space keeps the line, so the form does not jump when "unsaved" appears.
+        subtitle={dirty ? t.unsaved : draftId ? t.savedState : '\u00a0'}
         className="mb-5"
       />
       {defaults.data && !defaults.data.hasProfile && (
@@ -475,13 +495,25 @@ export function InvoiceForm({ id }: { id?: string }) {
         </p>
       )}
 
-      {defaults.data?.hasProfile && defaults.data.registryNoteMissing && (
-        <p className="mb-4 rounded-lg border border-warning/50 bg-warning/14 p-3 text-foreground text-sm max-sm:hidden">
-          {t.registryNoteMissing}{' '}
-          <Link to="/nastaveni" className="underline">
-            {cs.nav.settings}
-          </Link>
-        </p>
+      {defaults.data?.hasProfile && defaults.data.registryNoteMissing && !registryDismissed && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-warning/50 bg-warning/14 p-3 text-foreground text-sm max-sm:hidden">
+          <p className="min-w-0 flex-1">
+            {t.registryNoteMissing}{' '}
+            <Link to="/nastaveni" className="underline">
+              {cs.nav.settings}
+            </Link>
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t.registryNoteDismiss}
+            className="-my-1 -mr-1 shrink-0"
+            onClick={dismissRegistry}
+          >
+            <X />
+          </Button>
+        </div>
       )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">

@@ -565,6 +565,7 @@ export const cs = {
         `Daňový doklad vyžaduje údaje odběratele. Doplňte u kontaktu: ${names.join(', ')}.`,
       registryNoteMissing:
         'V nastavení chybí zápis v rejstříku (např. „Fyzická osoba zapsaná v živnostenském rejstříku“). Podnikatelé ho mají na fakturách uvádět.',
+      registryNoteDismiss: 'Skrýt upozornění',
       needProfile: 'Než vystavíte fakturu, vyplňte prosím údaje o své firmě v Nastavení.',
     },
     detail: {

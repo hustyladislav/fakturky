@@ -267,7 +267,13 @@ function InvoiceDetail() {
                     <Money amount={l.unitPrice} currency={d.currency} />
                   </td>
                   {d.vatMode !== 'none' && (
-                    <td className="py-2 text-right tabular-nums">{Number(l.vatRate)} %</td>
+                    <td className="py-2 text-right tabular-nums">
+                      {l.vatTreatment === 'standard'
+                        ? `${Number(l.vatRate)} %`
+                        : (cs.invoices.vatTreatment[
+                            l.vatTreatment as keyof typeof cs.invoices.vatTreatment
+                          ] ?? l.vatTreatment)}
+                    </td>
                   )}
                   <td className="py-2 text-right">
                     <Money amount={l.lineSubtotal} currency={d.currency} />
@@ -281,9 +287,17 @@ function InvoiceDetail() {
         <div className="ml-auto max-w-xs space-y-1 text-sm">
           {d.vatMode !== 'none' &&
             d.vatRecap.map((r) => (
-              <div key={r.vatRate} className="text-muted-foreground flex justify-between">
+              <div
+                key={`${r.vatTreatment}-${r.vatRate}`}
+                className="text-muted-foreground flex justify-between"
+              >
                 <span>
-                  {cs.invoices.form.vat} {Number(r.vatRate)} %
+                  {cs.invoices.form.vat}{' '}
+                  {r.vatTreatment === 'standard'
+                    ? `${Number(r.vatRate)} %`
+                    : (cs.invoices.vatTreatment[
+                        r.vatTreatment as keyof typeof cs.invoices.vatTreatment
+                      ] ?? r.vatTreatment)}
                 </span>
                 <Money amount={r.vat} currency={d.currency} />
               </div>

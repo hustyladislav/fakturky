@@ -1,5 +1,5 @@
 import { addDays, isoWeekday, isWeekend, todayPrague } from '@fakturky/domain/dates'
-import { computeDocumentTotals } from '@fakturky/domain/vat'
+import { computeDocumentTotals, type VatTreatment } from '@fakturky/domain/vat'
 import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
@@ -23,9 +23,17 @@ type Line = {
   unit: string
   unitPrice: string
   vatRate: string
+  vatTreatment: VatTreatment
 }
 
-const VAT_RATES = ['21', '12', '0']
+const VAT_RATES = ['21', '12']
+const TREATMENTS = [
+  'exempt',
+  'reverse_charge',
+  'eu_reverse_charge',
+  'export',
+  'outside_scope',
+] as const
 let lineKey = 1
 const emptyLine = (vatRate = '21'): Line => ({
   key: lineKey++,
@@ -34,6 +42,7 @@ const emptyLine = (vatRate = '21'): Line => ({
   unit: 'ks',
   unitPrice: '',
   vatRate,
+  vatTreatment: 'standard',
 })
 /** Czech input: "1 500,5" (space or NBSP thousands, comma decimal) -> "1500.5". */
 const num = (v: string) => {
@@ -117,6 +126,7 @@ export function InvoiceForm({ id }: { id?: string }) {
             unit: l.unit ?? '',
             unitPrice: trimDecimal(l.unitPrice),
             vatRate: trimDecimal(l.vatRate),
+            vatTreatment: (l.vatTreatment as VatTreatment) ?? 'standard',
           }))
         : [emptyLine()],
     )
@@ -149,6 +159,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           quantity: validNum(l.quantity) ? num(l.quantity) : '0',
           unitPrice: validNum(l.unitPrice) ? num(l.unitPrice) : '0',
           vatRate: validNum(l.vatRate) ? num(l.vatRate) : '0',
+          vatTreatment: l.vatTreatment,
         })),
         {
           vatPayer,
@@ -180,7 +191,8 @@ export function InvoiceForm({ id }: { id?: string }) {
         quantity: num(l.quantity),
         unit: l.unit || null,
         unitPrice: num(l.unitPrice),
-        vatRate: vatPayer ? num(l.vatRate) : '0',
+        vatRate: vatPayer && l.vatTreatment === 'standard' ? num(l.vatRate) : '0',
+        vatTreatment: vatPayer ? l.vatTreatment : ('standard' as const),
       })),
   })
 
@@ -402,9 +414,7 @@ export function InvoiceForm({ id }: { id?: string }) {
                   value={l.unitPrice}
                   onChange={(e) => setLine(l.key, { unitPrice: e.target.value })}
                 />
-                {vatPayer && (
-                  <VatSelect value={l.vatRate} onChange={(v) => setLine(l.key, { vatRate: v })} />
-                )}
+                {vatPayer && <VatSelect line={l} onChange={(patch) => setLine(l.key, patch)} />}
                 <RemoveButton
                   disabled={lines.length === 1}
                   onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
@@ -440,7 +450,7 @@ export function InvoiceForm({ id }: { id?: string }) {
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   {vatPayer ? (
-                    <VatSelect value={l.vatRate} onChange={(v) => setLine(l.key, { vatRate: v })} />
+                    <VatSelect line={l} onChange={(patch) => setLine(l.key, patch)} />
                   ) : (
                     <span />
                   )}
@@ -598,17 +608,34 @@ function Row({
   )
 }
 
-function VatSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+/** Standard rates plus the VAT regimes; there is no 0 % rate in Czech VAT. */
+function VatSelect({
+  line,
+  onChange,
+}: {
+  line: Line
+  onChange: (patch: Pick<Line, 'vatRate' | 'vatTreatment'>) => void
+}) {
+  const value = line.vatTreatment === 'standard' ? line.vatRate : line.vatTreatment
   return (
     <select
       aria-label={t.vatRate}
-      className="border-input bg-background h-9 rounded-md border px-2 text-sm"
+      className="border-input bg-background h-9 max-w-44 rounded-md border px-2 text-sm"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        const v = e.target.value
+        if (VAT_RATES.includes(v)) onChange({ vatRate: v, vatTreatment: 'standard' })
+        else onChange({ vatRate: '0', vatTreatment: v as VatTreatment })
+      }}
     >
       {VAT_RATES.map((r) => (
         <option key={r} value={r}>
           {r} %
+        </option>
+      ))}
+      {TREATMENTS.map((x) => (
+        <option key={x} value={x}>
+          {cs.invoices.vatTreatment[x]}
         </option>
       ))}
     </select>

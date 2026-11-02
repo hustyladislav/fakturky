@@ -287,6 +287,14 @@ export const cs = {
       status: 'Stav',
     },
     draftNumber: 'Koncept',
+    vatTreatment: {
+      standard: 'Základní sazba',
+      exempt: 'Osvobozeno od DPH',
+      reverse_charge: 'Přenesená daňová povinnost (tuzemsko)',
+      eu_reverse_charge: 'Přenesená daň. povinnost (EU)',
+      export: 'Vývoz (osvobozeno)',
+      outside_scope: 'Mimo předmět daně',
+    },
     type: {
       invoice: 'Faktura',
       proforma: 'Zálohová faktura',
@@ -473,6 +481,7 @@ export const cs = {
     vat: 'DPH',
     total: 'Celkem',
     rate: 'Sazba',
+    regime: 'Režim DPH',
     paymentMethod: 'Forma úhrady',
     methods: { bank_transfer: 'Převodem', cash: 'Hotově', card: 'Kartou' },
     qrPlatba: 'QR Platba',

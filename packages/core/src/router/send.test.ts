@@ -200,3 +200,36 @@ test('proforma → paid → final invoice with the advance deducted; settled on 
     code: 'CONFLICT',
   })
 })
+
+test('VAT payers use regimes instead of 0 %; regime legal text reaches the public view', async () => {
+  const org = await seedOrg(handle, 'vat-regime')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'Odběratel',
+    ico: '12345678',
+    address: { street: 'Hlavní 1', city: 'Praha', zip: '11000' },
+  })
+  await expect(
+    api.documents.createDraft({
+      contactId: c.id,
+      lines: [{ description: 'x', quantity: '1', unitPrice: '100', vatRate: '0' }],
+    }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST', data: { fields: ['line.vatRate'] } })
+  const draft = await api.documents.createDraft({
+    contactId: c.id,
+    lines: [
+      { description: 'Služba 21', quantity: '1', unitPrice: '1000', vatRate: '21' },
+      { description: 'Služba osvobozená', quantity: '1', unitPrice: '500', vatTreatment: 'exempt' },
+    ],
+  })
+  expect(draft.total).toBe('1710.0000') // 1000 + 210 VAT + 500 exempt
+  expect(draft.vatRecap.map((r) => r.vatTreatment).sort()).toEqual(['exempt', 'standard'])
+  const issued = await api.documents.issue({ id: draft.id })
+  const view = await clientFor(handle, null).public.invoice({ token: issued.publicToken as string })
+  expect(view.recap.find((r) => r.vatTreatment === 'exempt')?.note).toBe('Osvobozeno od DPH')
+  const dup = await api.documents.duplicate({ id: issued.id })
+  expect(dup.lines.map((l) => l.vatTreatment).sort()).toEqual(['exempt', 'standard'])
+})

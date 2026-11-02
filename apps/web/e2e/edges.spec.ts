@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test'
-import { addBankAccount, ICO, onboardByIco, PASSWORD, signUp, testEmail } from './helpers'
+import {
+  addBankAccount,
+  clickMoreAction,
+  ICO,
+  onboardByIco,
+  PASSWORD,
+  signUp,
+  testEmail,
+} from './helpers'
 
 test('anonymous visitors are sent to the login page', async ({ page }) => {
   await page.goto('/faktury')
@@ -85,13 +93,13 @@ test('issued invoice can be duplicated into a draft and cancelled (number stays 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^\d{4}-0001$/)
 
   // Duplicate -> new draft without a number.
-  await page.getByRole('button', { name: 'Duplikovat' }).first().click()
+  await clickMoreAction(page, 'Duplikovat')
   await expect(page.getByRole('heading', { name: 'Upravit koncept' })).toBeVisible()
 
   // Cancel the original; the confirmation dialog is accepted.
   await page.goto('/faktury')
   await page.getByRole('link', { name: /-0001/ }).first().click()
-  await page.getByRole('button', { name: 'Stornovat' }).first().click()
+  await clickMoreAction(page, 'Stornovat')
   await page.getByRole('dialog').getByRole('button', { name: 'Stornovat' }).click()
   await expect(page.getByText('Stornovaná', { exact: true }).first()).toBeVisible()
 

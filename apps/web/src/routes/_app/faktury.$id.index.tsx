@@ -1,5 +1,12 @@
 import { formatDateCs, todayPrague } from '@fakturky/domain/dates'
-import { Button } from '@fakturky/ui/components/button'
+import { Button, buttonVariants } from '@fakturky/ui/components/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@fakturky/ui/components/dropdown-menu'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
@@ -7,7 +14,24 @@ import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Check, Copy, Download, ExternalLink, Pencil, RefreshCw, Trash2 } from 'lucide-react'
+import {
+  Ban,
+  BookmarkPlus,
+  Check,
+  ChevronDown,
+  Copy,
+  CopyPlus,
+  Download,
+  ExternalLink,
+  FileCheck,
+  FileMinus,
+  Pencil,
+  Receipt,
+  RefreshCw,
+  Send,
+  Trash2,
+  Undo2,
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
@@ -210,6 +234,7 @@ function InvoiceDetail() {
     )
   }
 
+  const doc = d
   const isDraft = d.status === 'draft'
   const open = d.status === 'issued' && d.type !== 'credit_note'
   const bank = d.bankSnapshot as Record<string, string | null> | null
@@ -707,112 +732,163 @@ function InvoiceDetail() {
     part?: 'all' | 'primary' | 'secondary'
   }) {
     const full = mobile ? 'w-full' : ''
-    const showSecondary = part !== 'primary'
-    const showPrimary = part !== 'secondary'
-    if (isDraft) {
-      return (
-        <>
-          {showSecondary && (
-            <>
-              <Button
-                variant="outline"
-                className={full}
-                nativeButton={false}
-                render={<Link to="/faktury/$id/upravit" params={{ id }} />}
-              >
-                <Pencil /> {t.edit}
-              </Button>
-              <Button variant="ghost" className={full} onClick={() => setDialog('delete')}>
-                <Trash2 /> {t.delete}
-              </Button>
-            </>
-          )}
-          {showPrimary && (
+    const isProforma = doc.type === 'proforma'
+    const hasReceipt = doc.related.some(
+      (r) => r.type === 'payment_receipt' && r.status !== 'cancelled',
+    )
+    const canReceipt =
+      isProforma && doc.status === 'paid' && !!defaults.data?.vatPayer && !hasReceipt
+    const canFinal =
+      isProforma &&
+      doc.status === 'paid' &&
+      (!defaults.data?.vatPayer ||
+        doc.related.some((r) => r.type === 'payment_receipt' && r.status === 'paid'))
+    const canSend =
+      open || doc.status === 'paid' || (doc.type === 'credit_note' && doc.status === 'issued')
+    const canCredit = doc.type === 'invoice' && (open || doc.status === 'paid')
+    const canMarkUnpaid =
+      doc.status === 'paid' && !(doc.type === 'invoice' && Number(doc.total) <= 0)
+
+    // One primary action per status; the PDF is the primary only when nothing else is left to do.
+    const primary: 'issue' | 'pay' | 'receipt' | 'final' | 'pdf' = isDraft
+      ? 'issue'
+      : open
+        ? 'pay'
+        : canReceipt
+          ? 'receipt'
+          : canFinal
+            ? 'final'
+            : 'pdf'
+
+    const pdfButton = (variant: 'default' | 'outline') => (
+      <Button
+        variant={variant}
+        className={full}
+        nativeButton={false}
+        render={<a href={`/api/documents/${id}/pdf`} download />}
+      >
+        <Download /> {t.downloadPdf}
+      </Button>
+    )
+
+    const primaryButton = (() => {
+      switch (primary) {
+        case 'issue':
+          return (
             <Button className={full} disabled={busy} onClick={() => issue.mutate({ id })}>
               {t.issue}
             </Button>
-          )}
-        </>
-      )
-    }
-    return (
+          )
+        case 'pay':
+          return (
+            <Button className={full} onClick={() => setPaying(true)}>
+              {t.markPaid}
+            </Button>
+          )
+        case 'receipt':
+          return (
+            <Button
+              className={full}
+              disabled={receipt.isPending}
+              onClick={() => setDialog('receipt')}
+            >
+              {t.receipt}
+            </Button>
+          )
+        case 'final':
+          return (
+            <Button
+              className={full}
+              disabled={finalInvoice.isPending}
+              onClick={() => finalInvoice.mutate({ id })}
+            >
+              {t.finalInvoice}
+            </Button>
+          )
+        default:
+          return pdfButton('default')
+      }
+    })()
+
+    const secondary = (
       <>
-        {showSecondary && (
-          <>
-            {!isDraft && (
-              <Button
-                variant="outline"
-                className={full}
-                nativeButton={false}
-                render={<a href={`/api/documents/${id}/pdf`} download />}
-              >
-                <Download /> {t.downloadPdf}
-              </Button>
-            )}
-            {d?.status === 'cancelled' ? null : (
-              <Button
-                variant="ghost"
-                className={full}
-                disabled={busy}
-                onClick={() => setDialog('cancel')}
-              >
-                {t.cancel}
-              </Button>
-            )}
-            <Button variant="outline" className={full} onClick={() => setDialog('template')}>
-              {cs.templates.saveAs}
-            </Button>
-            {d?.type === 'proforma' &&
-              d.status === 'paid' &&
-              defaults.data?.vatPayer &&
-              !d.related.some((r) => r.type === 'payment_receipt' && r.status !== 'cancelled') && (
-                <Button
-                  className={full}
-                  disabled={receipt.isPending}
-                  onClick={() => setDialog('receipt')}
-                >
-                  {t.receipt}
-                </Button>
-              )}
-            {d?.type === 'proforma' &&
-              d.status === 'paid' &&
-              (!defaults.data?.vatPayer ||
-                d.related.some((r) => r.type === 'payment_receipt' && r.status === 'paid')) && (
-                <Button
-                  className={full}
-                  disabled={finalInvoice.isPending}
-                  onClick={() => finalInvoice.mutate({ id })}
-                >
-                  {t.finalInvoice}
-                </Button>
-              )}
-            {d?.type === 'invoice' && (open || d.status === 'paid') && (
-              <Button variant="outline" className={full} onClick={() => setDialog('credit')}>
-                {t.creditNote}
-              </Button>
-            )}
-            <Button variant="outline" className={full} onClick={() => duplicate.mutate({ id })}>
-              {t.duplicate}
-            </Button>
-            {d?.status === 'paid' && !(d.type === 'invoice' && Number(d.total) <= 0) && (
-              <Button variant="outline" className={full} onClick={() => markUnpaid.mutate({ id })}>
-                {t.markUnpaid}
-              </Button>
-            )}
-            {(open ||
-              d?.status === 'paid' ||
-              (d?.type === 'credit_note' && d.status === 'issued')) && (
-              <Button variant="outline" className={full} onClick={() => setSending(true)}>
-                {d?.displayStatus === 'overdue' ? t.remind : t.send}
-              </Button>
-            )}
-          </>
-        )}
-        {showPrimary && open && (
-          <Button className={full} onClick={() => setPaying(true)}>
-            {t.markPaid}
+        {isDraft && (
+          <Button
+            variant="outline"
+            className={full}
+            nativeButton={false}
+            render={<Link to="/faktury/$id/upravit" params={{ id }} />}
+          >
+            <Pencil /> {t.edit}
           </Button>
         )}
+        {!isDraft && canSend && (
+          <Button variant="outline" className={full} onClick={() => setSending(true)}>
+            <Send /> {doc.displayStatus === 'overdue' ? t.remind : t.send}
+          </Button>
+        )}
+        {!isDraft && primary !== 'pdf' && pdfButton('outline')}
+        <DropdownMenu>
+          <DropdownMenuTrigger className={buttonVariants({ variant: 'outline', className: full })}>
+            {t.more}
+            <ChevronDown aria-hidden />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="bottom" align="end">
+            {isDraft ? (
+              <DropdownMenuItem onClick={() => setDialog('delete')}>
+                <Trash2 aria-hidden /> {t.delete}
+              </DropdownMenuItem>
+            ) : (
+              <>
+                {canMarkUnpaid && (
+                  <DropdownMenuItem onClick={() => markUnpaid.mutate({ id })}>
+                    <Undo2 aria-hidden /> {t.markUnpaid}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => duplicate.mutate({ id })}>
+                  <CopyPlus aria-hidden /> {t.duplicate}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDialog('template')}>
+                  <BookmarkPlus aria-hidden /> {cs.templates.saveAs}
+                </DropdownMenuItem>
+                {canCredit && (
+                  <DropdownMenuItem onClick={() => setDialog('credit')}>
+                    <FileMinus aria-hidden /> {t.creditNote}
+                  </DropdownMenuItem>
+                )}
+                {primary !== 'receipt' && canReceipt && (
+                  <DropdownMenuItem onClick={() => setDialog('receipt')}>
+                    <Receipt aria-hidden /> {t.receipt}
+                  </DropdownMenuItem>
+                )}
+                {primary !== 'final' && canFinal && (
+                  <DropdownMenuItem onClick={() => finalInvoice.mutate({ id })}>
+                    <FileCheck aria-hidden /> {t.finalInvoice}
+                  </DropdownMenuItem>
+                )}
+                {doc.status !== 'cancelled' && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive [&_svg]:text-destructive"
+                      disabled={busy}
+                      onClick={() => setDialog('cancel')}
+                    >
+                      <Ban aria-hidden /> {t.cancel}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </>
+    )
+
+    return (
+      <>
+        {part !== 'primary' && secondary}
+        {part !== 'secondary' && primaryButton}
       </>
     )
   }

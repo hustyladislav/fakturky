@@ -206,7 +206,6 @@ for (const v of variants) {
     await test.step('mark paid', async () => {
       await page.goto(`/faktury/${id}`)
       await page.getByRole('button', { name: 'Označit jako zaplacenou' }).first().click()
-      await page.getByRole('button', { name: 'Označit jako zaplacenou' }).last().click()
       await expect(page.getByText('Zaplacená', { exact: true }).first()).toBeVisible()
       // Nothing left to pay: no QR on the detail page.
       await expect(page.getByRole('img', { name: 'QR Platba' })).toHaveCount(0)

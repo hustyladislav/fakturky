@@ -62,6 +62,7 @@ describe('automatic pairing by variable symbol', () => {
     const inv = await invoice('1000')
     const { res } = await pay('1000,00', { vs: inv.variableSymbol as string, message: 'full' })
     expect(res.autoMatched).toBe(1)
+    expect(res.rows).toMatchObject([{ outcome: 'matched', documentNumber: inv.number }])
     const doc = await api.documents.get({ id: inv.id })
     expect(doc.status).toBe('paid')
     expect(doc.payments).toHaveLength(1)

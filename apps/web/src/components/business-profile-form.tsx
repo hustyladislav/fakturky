@@ -1,4 +1,5 @@
 import { Button } from '@fakturky/ui/components/button'
+import { FieldError } from '@fakturky/ui/components/field-error'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -34,8 +35,11 @@ export function BusinessProfileForm({
     email: profile.email ?? '',
     phone: profile.phone ?? '',
   })
-  const set = (key: keyof typeof values) => (e: { target: { value: string } }) =>
+  const [icoError, setIcoError] = useState<string | null>(null)
+  const set = (key: keyof typeof values) => (e: { target: { value: string } }) => {
+    if (key === 'ico') setIcoError(null)
     setValues((v) => ({ ...v, [key]: e.target.value }))
+  }
 
   const lookup = useMutation({
     mutationFn: () => client.businessProfile.lookupIco({ ico: values.ico }),
@@ -49,10 +53,16 @@ export function BusinessProfileForm({
         city: s.address.city,
         zip: s.address.zip,
         vatStatus: s.vatPayer ? 'payer' : v.vatStatus,
+        // OZ §435: sole traders are "Fyzická osoba zapsaná v živnostenském rejstříku"; companies add their court entry.
+        registryNote:
+          s.legalForm === '101' && !v.registryNote
+            ? cs.profile.registryNoteSoleTrader
+            : v.registryNote,
       }))
+      setIcoError(null)
       toast.success(cs.profile.icoFound)
     },
-    onError: () => toast.error(cs.profile.icoNotFound),
+    onError: () => setIcoError(cs.profile.icoNotFound),
   })
 
   const save = useMutation({
@@ -89,6 +99,8 @@ export function BusinessProfileForm({
           <Input
             id="ico"
             inputMode="numeric"
+            aria-invalid={icoError ? true : undefined}
+            aria-describedby={icoError ? 'ico-error' : undefined}
             value={values.ico}
             onChange={set('ico')}
             onKeyDown={(e) => {
@@ -107,6 +119,7 @@ export function BusinessProfileForm({
             {lookup.isPending ? cs.common.loading : cs.profile.icoLookup}
           </Button>
         </div>
+        <FieldError id="ico-error">{icoError}</FieldError>
       </div>
       <div className="space-y-2">
         <Label htmlFor="legalName">{cs.profile.legalName}</Label>

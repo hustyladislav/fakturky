@@ -43,6 +43,20 @@
       "when": 1793575479587,
       "tag": "0005_chief_ghost_rider",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793577557810,
+      "tag": "0006_opposite_ultron",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793580249262,
+      "tag": "0007_slimy_preak",
+      "breakpoints": true
     }
   ]
 }

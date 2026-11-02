@@ -1,3 +1,4 @@
+import { VAT_TREATMENTS } from '@fakturky/domain'
 import { z } from 'zod'
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD')
@@ -14,6 +15,20 @@ export const lineInputSchema = z.object({
   quantity: decimal.default('1').describe('Decimal string, e.g. "2.5"'),
   unit: z.string().trim().max(20).nullish().describe('e.g. "ks", "hod"'),
   unitPrice: decimal.default('0').describe('Unit price without VAT, decimal string'),
+  vatTreatment: z
+    .enum(VAT_TREATMENTS)
+    .default('standard')
+    .describe(
+      'standard = the VAT rate applies; otherwise a regime: exempt, reverse_charge, eu_reverse_charge, export, outside_scope (VAT payers only; there is no 0 % rate)',
+    ),
+  vatNote: z
+    .string()
+    .trim()
+    .max(300)
+    .nullish()
+    .describe(
+      'Statutory basis of an exempt line, e.g. "§ 51 odst. 1 zákona o DPH"; required to issue exempt lines',
+    ),
   vatRate: decimal
     .default('0')
     .describe('VAT rate in percent (21, 12, 0). Ignored for VAT non-payers.'),
@@ -66,6 +81,8 @@ export const lineSchema = z.object({
   unit: z.string().nullable(),
   unitPrice: z.string(),
   vatRate: z.string(),
+  vatTreatment: z.string(),
+  vatNote: z.string().nullable(),
   discountPercent: z.string(),
   lineSubtotal: z.string(),
   lineVat: z.string(),
@@ -108,6 +125,8 @@ export const documentSchema = z.object({
   customerSnapshot: snapshot,
   bankSnapshot: snapshot,
   customerName: z.string().nullable(),
+  /** Draft was created by the in-app assistant (activity `via`). */
+  viaAssistant: z.boolean().optional(),
   issueDate: z.string().nullable(),
   taxableDate: z.string().nullable(),
   dueDate: z.string().nullable(),
@@ -139,7 +158,13 @@ export const documentDetailSchema = documentSchema.extend({
   lines: z.array(lineSchema),
   payments: z.array(paymentSchema),
   vatRecap: z.array(
-    z.object({ vatRate: z.string(), base: z.string(), vat: z.string(), total: z.string() }),
+    z.object({
+      vatRate: z.string(),
+      vatTreatment: z.string(),
+      base: z.string(),
+      vat: z.string(),
+      total: z.string(),
+    }),
   ),
   activity: z.array(
     z.object({ id: z.string(), action: z.string(), data: z.unknown(), createdAt: z.date() }),

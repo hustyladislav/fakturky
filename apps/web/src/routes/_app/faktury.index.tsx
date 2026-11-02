@@ -2,6 +2,7 @@ import { formatDateCs } from '@fakturky/domain/dates'
 import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Money } from '@fakturky/ui/components/money'
+import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Plus, Search } from 'lucide-react'
@@ -10,11 +11,13 @@ import { z } from 'zod'
 import { CsvDownload } from '@/components/csv-download'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 const FILTERS = ['all', 'unpaid', 'overdue', 'paid', 'draft'] as const
 
 export const Route = createFileRoute('/_app/faktury/')({
+  head: pageHead(cs.invoices.title),
   validateSearch: z.object({
     filter: z.enum(FILTERS).catch('all').default('all'),
     q: z.string().optional(),
@@ -79,7 +82,13 @@ function InvoiceList() {
         </div>
       </div>
 
-      {list.data?.length === 0 ? (
+      {list.isPending ? (
+        <div className="space-y-px overflow-hidden rounded-xl border" aria-busy="true">
+          {Array.from({ length: 8 }, (_, i) => (
+            <Skeleton key={i} className="h-16 rounded-none" />
+          ))}
+        </div>
+      ) : list.data?.length === 0 ? (
         <div className="text-muted-foreground flex flex-col items-start gap-3 rounded-xl border p-6">
           <p>{filter === 'all' && !q ? t.empty : t.emptyFiltered}</p>
           {filter === 'all' && !q && (
@@ -109,7 +118,7 @@ function InvoiceList() {
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <Money amount={d.total} currency={d.currency} />
-                    <InvoiceStatus status={d.displayStatus} />
+                    <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
                   </div>
                 </Link>
               </li>
@@ -146,7 +155,7 @@ function InvoiceList() {
                       <Money amount={d.total} currency={d.currency} />
                     </Cell>
                     <Cell id={d.id} draft={d.status === 'draft'}>
-                      <InvoiceStatus status={d.displayStatus} />
+                      <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
                     </Cell>
                   </tr>
                 ))}

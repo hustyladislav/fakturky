@@ -3,11 +3,14 @@ import { createFileRoute } from '@tanstack/react-router'
 import { ApiKeys } from '@/components/api-keys'
 import { BankAccountsCard } from '@/components/bank-accounts-card'
 import { BusinessProfileForm } from '@/components/business-profile-form'
+import { NumberSeriesCard } from '@/components/number-series-card'
 import { DataExport, ReminderSettings } from '@/components/reminder-settings'
 import { cs } from '@/i18n/cs'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/nastaveni')({
+  head: pageHead(cs.settings.title),
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(orpc.businessProfile.get.queryOptions()),
   component: Settings,
@@ -16,16 +19,19 @@ export const Route = createFileRoute('/_app/nastaveni')({
 function Settings() {
   const { data: profile } = useQuery(orpc.businessProfile.get.queryOptions())
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-2xl font-semibold">{cs.settings.title}</h1>
-      <section className="space-y-4">
+      <section className="space-y-4 rounded-xl border bg-card p-5">
         <h2 className="text-lg font-medium">{cs.settings.profileTitle}</h2>
         {profile && <BusinessProfileForm profile={profile} submitLabel={cs.common.save} />}
       </section>
       <BankAccountsCard />
+      <NumberSeriesCard />
       <ReminderSettings />
       <DataExport />
-      <ApiKeys />
+      <div className="rounded-xl border bg-card p-5">
+        <ApiKeys />
+      </div>
     </div>
   )
 }

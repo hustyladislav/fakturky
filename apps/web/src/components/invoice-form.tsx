@@ -1,5 +1,5 @@
 import { addDays, isoWeekday, isWeekend, todayPrague } from '@fakturky/domain/dates'
-import { computeDocumentTotals } from '@fakturky/domain/vat'
+import { computeDocumentTotals, type VatTreatment } from '@fakturky/domain/vat'
 import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
@@ -7,9 +7,11 @@ import { Money } from '@fakturky/ui/components/money'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Plus, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
+import { apiErrorMessage } from '@/lib/errors'
+import { type InvoicePrefill, onInvoicePrefill, takeInvoicePrefill } from '@/lib/invoice-prefill'
 import { client, orpc } from '@/lib/orpc'
 import { CustomerPicker, type PickedCustomer } from './customer-picker'
 
@@ -22,9 +24,18 @@ type Line = {
   unit: string
   unitPrice: string
   vatRate: string
+  vatTreatment: VatTreatment
+  vatNote: string
 }
 
-const VAT_RATES = ['21', '12', '0']
+const VAT_RATES = ['21', '12']
+const TREATMENTS = [
+  'exempt',
+  'reverse_charge',
+  'eu_reverse_charge',
+  'export',
+  'outside_scope',
+] as const
 let lineKey = 1
 const emptyLine = (vatRate = '21'): Line => ({
   key: lineKey++,
@@ -33,6 +44,8 @@ const emptyLine = (vatRate = '21'): Line => ({
   unit: 'ks',
   unitPrice: '',
   vatRate,
+  vatTreatment: 'standard',
+  vatNote: '',
 })
 /** Czech input: "1 500,5" (space or NBSP thousands, comma decimal) -> "1500.5". */
 const num = (v: string) => {
@@ -80,6 +93,49 @@ export function InvoiceForm({ id }: { id?: string }) {
   const [ready, setReady] = useState(false)
   const [dueTouched, setDueTouched] = useState(false)
 
+  const vatPayerDefault = defaults.data?.vatPayer ?? false
+  const applyPrefill = useCallback(
+    (prefill: InvoicePrefill) => {
+      if (prefill.dueDate) {
+        setDueDate(prefill.dueDate)
+        setDueTouched(true)
+      }
+      if (prefill.lines.length) {
+        setLines(
+          prefill.lines.map((l) => ({
+            key: lineKey++,
+            description: l.description,
+            quantity: l.quantity || '1',
+            unit: 'ks',
+            unitPrice: l.unitPrice,
+            // A VAT payer has no 0 % rate: unspecified/zero falls back to the base rate.
+            vatRate:
+              vatPayerDefault && (!l.vatRate || Number(l.vatRate) === 0)
+                ? '21'
+                : (l.vatRate ?? '0'),
+            vatTreatment: 'standard',
+            vatNote: '',
+          })),
+        )
+      }
+      if (prefill.contactId) {
+        client.contacts
+          .get({ id: prefill.contactId })
+          .then((c) => setCustomer({ id: c.id, name: c.name, ico: c.ico }))
+          .catch(() => undefined)
+      }
+    },
+    [vatPayerDefault],
+  )
+  // An assistant prefill that arrives while this form is already open (no remount happens).
+  useEffect(() => {
+    if (id || !ready) return
+    return onInvoicePrefill(() => {
+      const p = takeInvoicePrefill()
+      if (p) applyPrefill(p)
+    })
+  }, [id, ready, applyPrefill])
+
   // Seed from defaults (new) or from the stored draft (edit), once.
   useEffect(() => {
     if (id || ready || !defaults.data) return
@@ -89,8 +145,11 @@ export function InvoiceForm({ id }: { id?: string }) {
     setPaymentMethod(d.paymentMethod)
     setFooterText(d.footerText ?? '')
     setLines([emptyLine(d.vatPayer ? '21' : '0')])
+    // Hand-off from the assistant (`prefillInvoiceForm`): applied once, on top of the defaults.
+    const prefill = takeInvoicePrefill()
+    if (prefill) applyPrefill(prefill)
     setReady(true)
-  }, [defaults.data, ready, today, id])
+  }, [defaults.data, ready, today, id, applyPrefill])
   useEffect(() => {
     const d = existing.data
     if (!id || !d || ready || !defaults.data) return
@@ -116,13 +175,19 @@ export function InvoiceForm({ id }: { id?: string }) {
             unit: l.unit ?? '',
             unitPrice: trimDecimal(l.unitPrice),
             vatRate: trimDecimal(l.vatRate),
+            vatTreatment: (l.vatTreatment as VatTreatment) ?? 'standard',
+            vatNote: l.vatNote ?? '',
           }))
         : [emptyLine()],
     )
     setReady(true)
   }, [existing.data, defaults.data, id, ready, today])
 
-  const vatPayer = defaults.data?.vatPayer ?? false
+  // A credit note keeps the VAT treatment of the invoice it corrects, whatever the profile says now.
+  const vatPayer =
+    existing.data?.type === 'credit_note'
+      ? existing.data.vatMode !== 'none'
+      : (defaults.data?.vatPayer ?? false)
   const foreign = currency !== 'CZK'
 
   const currencyAccounts = (accounts.data ?? []).filter((a) => a.currency === currency)
@@ -148,6 +213,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           quantity: validNum(l.quantity) ? num(l.quantity) : '0',
           unitPrice: validNum(l.unitPrice) ? num(l.unitPrice) : '0',
           vatRate: validNum(l.vatRate) ? num(l.vatRate) : '0',
+          vatTreatment: l.vatTreatment,
         })),
         {
           vatPayer,
@@ -179,25 +245,53 @@ export function InvoiceForm({ id }: { id?: string }) {
         quantity: num(l.quantity),
         unit: l.unit || null,
         unitPrice: num(l.unitPrice),
-        vatRate: vatPayer ? num(l.vatRate) : '0',
+        vatRate: vatPayer && l.vatTreatment === 'standard' ? num(l.vatRate) : '0',
+        vatTreatment: vatPayer ? l.vatTreatment : ('standard' as const),
+        vatNote: vatPayer && l.vatTreatment === 'exempt' ? l.vatNote.trim() || null : null,
       })),
   })
 
+  const [createdId, setCreatedId] = useState<string | undefined>()
+  const [issueError, setIssueError] = useState<string | null>(null)
+  // A refused issue on a brand-new invoice moves to the saved draft's URL; carry the message across.
+  useEffect(() => {
+    if (!id) return
+    try {
+      const kept = sessionStorage.getItem(`issueError:${id}`)
+      if (kept) {
+        setIssueError(kept)
+        sessionStorage.removeItem(`issueError:${id}`)
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, [id])
+  const draftId = id ?? createdId
+
   const save = useMutation({
     mutationFn: async (andIssue: boolean) => {
+      setIssueError(null)
       const body = payload()
       if (andIssue && !customer) throw new Error(t.needCustomer)
       if (andIssue && body.lines.length === 0) throw new Error(t.needLines)
-      const doc = id
-        ? await client.documents.updateDraft({ id, patch: body })
+      const doc = draftId
+        ? await client.documents.updateDraft({ id: draftId, patch: body })
         : await client.documents.createDraft({ ...body, type: docType })
       if (!andIssue) return doc
       try {
         return await client.documents.issue({ id: doc.id })
       } catch (e) {
-        // Keep the saved draft: continue on its edit page so a retry does not create a second one.
+        // Keep the saved draft: a retry updates it instead of creating a second one.
         await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
-        if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+        setCreatedId(doc.id)
+        if (!id) {
+          try {
+            sessionStorage.setItem(`issueError:${doc.id}`, apiErrorMessage(e))
+          } catch {
+            /* storage unavailable */
+          }
+          navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+        }
         throw e
       }
     },
@@ -205,15 +299,15 @@ export function InvoiceForm({ id }: { id?: string }) {
       await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
       toast.success(andIssue ? cs.invoices.detail.issued(doc.number ?? '') : t.saved)
       if (andIssue) navigate({ to: '/faktury/$id', params: { id: doc.id } })
-      else if (!id) navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+      else if (!draftId) {
+        setCreatedId(doc.id)
+        navigate({ to: '/faktury/$id/upravit', params: { id: doc.id }, replace: true })
+      }
     },
     onError: (e) => {
-      const code = (e as { code?: string }).code
-      toast.error(
-        code === 'PRECONDITION_FAILED'
-          ? (e as Error).message
-          : (e as Error).message || cs.common.error,
-      )
+      const message = apiErrorMessage(e)
+      setIssueError(message)
+      toast.error(message)
     },
   })
 
@@ -244,6 +338,15 @@ export function InvoiceForm({ id }: { id?: string }) {
         </p>
       )}
 
+      {defaults.data?.hasProfile && defaults.data.registryNoteMissing && (
+        <p className="bg-warning/14 text-warning rounded-lg p-3 text-sm">
+          {t.registryNoteMissing}{' '}
+          <Link to="/nastaveni" className="underline">
+            {cs.nav.settings}
+          </Link>
+        </p>
+      )}
+
       {!id && (
         <Card title={t.documentType}>
           <select
@@ -263,6 +366,14 @@ export function InvoiceForm({ id }: { id?: string }) {
 
       <Card title={t.customer}>
         <CustomerPicker value={customer} onChange={setCustomer} />
+        {issueError && (
+          <p role="alert" className="text-destructive text-sm">
+            {issueError}{' '}
+            <Link to="/kontakty" className="underline">
+              {cs.nav.contacts}
+            </Link>
+          </p>
+        )}
       </Card>
 
       <Card title={t.details}>
@@ -397,14 +508,20 @@ export function InvoiceForm({ id }: { id?: string }) {
                   value={l.unitPrice}
                   onChange={(e) => setLine(l.key, { unitPrice: e.target.value })}
                 />
-                {vatPayer && (
-                  <VatSelect value={l.vatRate} onChange={(v) => setLine(l.key, { vatRate: v })} />
-                )}
+                {vatPayer && <VatSelect line={l} onChange={(patch) => setLine(l.key, patch)} />}
                 <RemoveButton
                   disabled={lines.length === 1}
                   onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
                 />
               </div>
+              {vatPayer && l.vatTreatment === 'exempt' && (
+                <Input
+                  aria-label={t.vatNote}
+                  placeholder={t.vatNotePlaceholder}
+                  value={l.vatNote}
+                  onChange={(e) => setLine(l.key, { vatNote: e.target.value })}
+                />
+              )}
               {/* mobile: stacked */}
               <div className="space-y-2 sm:hidden">
                 <Input
@@ -435,7 +552,7 @@ export function InvoiceForm({ id }: { id?: string }) {
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   {vatPayer ? (
-                    <VatSelect value={l.vatRate} onChange={(v) => setLine(l.key, { vatRate: v })} />
+                    <VatSelect line={l} onChange={(patch) => setLine(l.key, patch)} />
                   ) : (
                     <span />
                   )}
@@ -556,7 +673,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           type="button"
           variant="outline"
           className="flex-1 sm:flex-none"
-          disabled={save.isPending}
+          disabled={save.isPending || !ready}
           onClick={() => save.mutate(false)}
         >
           {t.saveDraft}
@@ -564,7 +681,7 @@ export function InvoiceForm({ id }: { id?: string }) {
         <Button
           type="button"
           className="flex-[2] sm:flex-none"
-          disabled={save.isPending}
+          disabled={save.isPending || !ready}
           onClick={() => save.mutate(true)}
         >
           {t.issue}
@@ -593,17 +710,34 @@ function Row({
   )
 }
 
-function VatSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+/** Standard rates plus the VAT regimes; there is no 0 % rate in Czech VAT. */
+function VatSelect({
+  line,
+  onChange,
+}: {
+  line: Line
+  onChange: (patch: Pick<Line, 'vatRate' | 'vatTreatment'>) => void
+}) {
+  const value = line.vatTreatment === 'standard' ? line.vatRate : line.vatTreatment
   return (
     <select
       aria-label={t.vatRate}
-      className="border-input bg-background h-9 rounded-md border px-2 text-sm"
+      className="border-input bg-background h-9 max-w-44 rounded-md border px-2 text-sm"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        const v = e.target.value
+        if (VAT_RATES.includes(v)) onChange({ vatRate: v, vatTreatment: 'standard' })
+        else onChange({ vatRate: '0', vatTreatment: v as VatTreatment })
+      }}
     >
       {VAT_RATES.map((r) => (
         <option key={r} value={r}>
           {r} %
+        </option>
+      ))}
+      {TREATMENTS.map((x) => (
+        <option key={x} value={x}>
+          {cs.invoices.vatTreatment[x]}
         </option>
       ))}
     </select>

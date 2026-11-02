@@ -13,6 +13,8 @@ import {
   periodKey,
   todayPrague,
   toFixed,
+  VAT_RATES,
+  type VatTreatment,
   variableSymbolFromNumber,
 } from '@fakturky/domain'
 import { and, asc, desc, eq, ilike, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm'
@@ -30,6 +32,7 @@ export class DocumentError extends Error {
   constructor(
     readonly code: 'NOT_FOUND' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'BAD_REQUEST',
     message: string,
+    readonly fields?: string[],
   ) {
     super(message)
   }
@@ -108,6 +111,26 @@ async function vatOn(
   return !!o && o.vatMode !== 'none'
 }
 
+/** A VAT payer's standard-rated line needs a real rate (there is no 0 % in Czech VAT: use a regime). */
+function assertVatLines(
+  lines: Array<{ vatRate: string; vatTreatment?: string }>,
+  vatPayer: boolean,
+) {
+  if (!vatPayer) return
+  const bad = lines.find(
+    (l) =>
+      (l.vatTreatment ?? 'standard') === 'standard' &&
+      !(VAT_RATES.CZ as readonly string[]).includes(String(Number(l.vatRate))),
+  )
+  if (bad) {
+    throw new DocumentError(
+      'BAD_REQUEST',
+      'Use a VAT rate of 21 or 12, or choose a VAT regime (exempt, reverse charge, …) for the line',
+      ['line.vatRate'],
+    )
+  }
+}
+
 function totalsFor(
   lines: DraftInput['lines'],
   opts: { vatPayer: boolean; currency: string; exchangeRate?: string | null },
@@ -117,6 +140,7 @@ function totalsFor(
       quantity: l.quantity,
       unitPrice: l.unitPrice,
       vatRate: l.vatRate,
+      vatTreatment: l.vatTreatment as VatTreatment | undefined,
       discountPercent: l.discountPercent,
     })),
     {
@@ -133,6 +157,7 @@ async function writeLines(
   documentId: string,
   lines: DraftInput['lines'],
   totals: ReturnType<typeof computeDocumentTotals>,
+  vatOn: boolean,
 ) {
   await tx
     .delete(documentLine)
@@ -148,6 +173,9 @@ async function writeLines(
       unit: l.unit ?? null,
       unitPrice: l.unitPrice,
       vatRate: totals.lines[i]?.vatRate ?? '0',
+      vatTreatment: vatOn ? (totals.lines[i]?.vatTreatment ?? 'standard') : 'standard',
+      vatNote:
+        vatOn && totals.lines[i]?.vatTreatment === 'exempt' ? l.vatNote?.trim() || null : null,
       discountPercent: l.discountPercent,
       lineSubtotal: totals.lines[i]?.base ?? '0',
       lineVat: totals.lines[i]?.vat ?? '0',
@@ -224,6 +252,7 @@ export const documentsRepo = {
       language: p?.defaultLanguage ?? 'cs',
       paymentMethod: p?.defaultPaymentMethod ?? 'bank_transfer',
       footerText: p?.defaultFooter ?? null,
+      registryNoteMissing: !p?.registryNote?.trim(),
     }
   },
 
@@ -278,13 +307,33 @@ export const documentsRepo = {
       orgId,
       rows.map((r) => r.doc.id),
     )
-    return rows.map(({ doc, contactName }) =>
-      decorate(
+    // Drafts the assistant created are flagged so the UI can show "Koncept · navrhl asistent".
+    const viaRows = rows.length
+      ? await db
+          .select({ id: activity.entityId })
+          .from(activity)
+          .where(
+            and(
+              eq(activity.organizationId, orgId),
+              eq(activity.entityType, 'document'),
+              eq(activity.action, 'created'),
+              sql`${activity.data}->>'via' = 'assistant'`,
+              inArray(
+                activity.entityId,
+                rows.map((r) => r.doc.id),
+              ),
+            ),
+          )
+      : []
+    const viaAssistant = new Set(viaRows.map((r) => r.id))
+    return rows.map(({ doc, contactName }) => ({
+      ...decorate(
         doc,
         sums.get(doc.id) ?? new Decimal(0),
         (doc.customerSnapshot?.name as string | undefined) ?? contactName,
       ),
-    )
+      viaAssistant: viaAssistant.has(doc.id),
+    }))
   },
 
   async get(db: Db | Tx, orgId: string, id: string) {
@@ -335,11 +384,15 @@ export const documentsRepo = {
       payments,
       vatRecap: totals.recap.map((r) => ({
         vatRate: r.vatRate,
+        vatTreatment: r.vatTreatment,
         base: r.base,
         vat: r.vat,
         total: r.total,
       })),
       activity: acts,
+      viaAssistant: acts.some(
+        (a) => a.action === 'created' && (a.data as { via?: string } | null)?.via === 'assistant',
+      ),
     }
   },
 
@@ -371,6 +424,7 @@ export const documentsRepo = {
       }
       const currency = input.currency ?? profile?.defaultCurrency ?? 'CZK'
       const vatPayer = await vatOn(tx, orgId, profile, input.type, opts.relatedDocumentId)
+      assertVatLines(input.lines, vatPayer)
       const totals = totalsFor(input.lines, {
         vatPayer,
         currency,
@@ -406,7 +460,7 @@ export const documentsRepo = {
         })
         .returning({ id: document.id })
       if (!row) throw new Error('insert returned no row')
-      await writeLines(tx, orgId, row.id, input.lines, totals)
+      await writeLines(tx, orgId, row.id, input.lines, totals, vatPayer)
       await logActivity(tx, orgId, actorId, row.id, 'created', via ? { via } : undefined)
       return row.id
     })
@@ -444,8 +498,10 @@ export const documentsRepo = {
             .from(documentLine)
             .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, id)))
       const effective = (lines ?? existingLines ?? []) as DraftInput['lines']
+      const vatForDraft = await vatOn(tx, orgId, profile, doc.type, doc.relatedDocumentId)
+      assertVatLines(effective, vatForDraft)
       const totals = totalsFor(effective, {
-        vatPayer: vatApplies(profile, doc.type),
+        vatPayer: vatForDraft,
         currency,
         exchangeRate,
       })
@@ -455,11 +511,11 @@ export const documentsRepo = {
           ...rest,
           currency,
           exchangeRate,
-          vatMode: vatApplies(profile, doc.type) ? 'standard' : 'none',
+          vatMode: vatForDraft ? 'standard' : 'none',
           ...totalColumns(totals, currency),
         })
         .where(scoped(orgId, id))
-      if (lines) await writeLines(tx, orgId, id, lines, totals)
+      if (lines) await writeLines(tx, orgId, id, lines, totals, vatForDraft)
       await logActivity(tx, orgId, actorId, id, 'updated')
     })
     return this.get(db, orgId, id)
@@ -490,11 +546,49 @@ export const documentsRepo = {
           'Exchange rate is required for foreign currency',
         )
       }
+      const vatOnNow = await vatOn(tx, orgId, profile, doc.type, doc.relatedDocumentId)
       const [customer] = await tx
         .select()
         .from(contact)
         .where(and(eq(contact.organizationId, orgId), eq(contact.id, doc.contactId)))
       if (!customer) throw new DocumentError('NOT_FOUND', 'Contact not found')
+      // §29 ZDPH: a tax document needs the customer's name, address and (if registered) identification.
+      if (vatOnNow) {
+        const exempt = lines.filter((l) => l.vatTreatment === 'exempt')
+        if (exempt.some((l) => !l.vatNote?.trim())) {
+          throw new DocumentError(
+            'PRECONDITION_FAILED',
+            'Exempt lines need the statutory basis (§ of the VAT act)',
+            ['line.vatNote'],
+          )
+        }
+        const missing: string[] = []
+        if (
+          !customer.address.street?.trim() ||
+          !customer.address.city?.trim() ||
+          !customer.address.zip?.trim()
+        ) {
+          missing.push('address')
+        }
+        if (!customer.ico?.trim() && !customer.dic?.trim() && !customer.icDph?.trim()) {
+          missing.push('taxId')
+        }
+        // EU reverse charge needs the customer's VAT ID (IČ DPH / DIČ), not just an IČO.
+        if (
+          lines.some((l) => l.vatTreatment === 'eu_reverse_charge') &&
+          !customer.icDph?.trim() &&
+          !customer.dic?.trim()
+        ) {
+          missing.push('vatId')
+        }
+        if (missing.length > 0) {
+          throw new DocumentError(
+            'PRECONDITION_FAILED',
+            `The customer is missing: ${missing.join(', ')}`,
+            missing.map((f) => `customer.${f}`),
+          )
+        }
+      }
       const bank = doc.bankAccountId
         ? await bankAccountsRepo.get(tx, orgId, doc.bankAccountId)
         : await bankAccountsRepo.defaultFor(tx, orgId, doc.currency)
@@ -506,13 +600,13 @@ export const documentsRepo = {
           'A credit note needs the corrected invoice and a reason',
         )
       }
-      const vatOnNow = await vatOn(tx, orgId, profile, doc.type, doc.relatedDocumentId)
       const totals = totalsFor(lines as unknown as DraftInput['lines'], {
         vatPayer: vatOnNow,
         currency: doc.currency,
         exchangeRate: doc.exchangeRate,
       })
-      await writeLines(tx, orgId, id, lines as unknown as DraftInput['lines'], totals)
+      assertVatLines(lines as unknown as DraftInput['lines'], vatOnNow)
+      await writeLines(tx, orgId, id, lines as unknown as DraftInput['lines'], totals, vatOnNow)
 
       // Number allocation: lazily created default series + atomic counter bump.
       // Serialize per (org, type) so concurrent first issues cannot create two default series.
@@ -681,6 +775,21 @@ export const documentsRepo = {
     return this.get(db, orgId, id)
   },
 
+  /** Marks a freshly created draft as proposed by the assistant (for drafts made by duplicate/template/credit-note). */
+  async tagAssistant(db: Db, orgId: string, documentId: string) {
+    await db
+      .update(activity)
+      .set({ data: sql`coalesce(${activity.data}, '{}'::jsonb) || '{"via":"assistant"}'::jsonb` })
+      .where(
+        and(
+          eq(activity.organizationId, orgId),
+          eq(activity.entityType, 'document'),
+          eq(activity.entityId, documentId),
+          eq(activity.action, 'created'),
+        ),
+      )
+  },
+
   async duplicate(db: Db, orgId: string, actorId: string, id: string) {
     const src = await this.get(db, orgId, id)
     if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
@@ -706,6 +815,8 @@ export const documentsRepo = {
         unit: l.unit,
         unitPrice: l.unitPrice,
         vatRate: l.vatRate,
+        vatTreatment: l.vatTreatment as VatTreatment,
+        vatNote: l.vatNote,
         discountPercent: l.discountPercent,
       })),
     })
@@ -768,6 +879,8 @@ export const documentsRepo = {
               unit: l.unit,
               unitPrice: l.unitPrice,
               vatRate: l.vatRate,
+              vatTreatment: l.vatTreatment as VatTreatment,
+              vatNote: l.vatNote,
               discountPercent: l.discountPercent,
             })),
             {
@@ -776,6 +889,7 @@ export const documentsRepo = {
               unit: null,
               unitPrice: advance.negated().toString(),
               vatRate: '0',
+              vatTreatment: 'standard' as const,
               discountPercent: '0',
             },
           ],
@@ -823,6 +937,8 @@ export const documentsRepo = {
           unit: l.unit,
           unitPrice: l.unitPrice,
           vatRate: l.vatRate,
+          vatTreatment: l.vatTreatment as VatTreatment,
+          vatNote: l.vatNote,
           discountPercent: l.discountPercent,
         })),
       },

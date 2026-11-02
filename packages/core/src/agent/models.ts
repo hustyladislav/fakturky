@@ -45,4 +45,7 @@ export const ALWAYS_APPROVE_TOOLS: ReadonlySet<string> = new Set([
   // Recurring rules can later issue numbered invoices and email customers without the user present.
   'create_recurring_invoice',
   'update_recurring_invoice',
+  // Document numbering must stay gap-free and never be reused.
+  'update_number_series',
+  'set_next_document_number',
 ])

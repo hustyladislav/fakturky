@@ -1,6 +1,6 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
-import { getRate, todayPrague } from '@fakturky/domain'
+import { getRate, todayPrague, type VatTreatment } from '@fakturky/domain'
 import { and, asc, desc, eq, lte } from 'drizzle-orm'
 import { DocumentError, documentsRepo } from './documents'
 
@@ -69,6 +69,8 @@ export const templatesRepo = {
             unit: l.unit,
             unitPrice: l.unitPrice,
             vatRate: l.vatRate,
+            vatTreatment: l.vatTreatment as VatTreatment,
+            vatNote: l.vatNote,
             discountPercent: l.discountPercent,
           })),
         },
@@ -112,6 +114,8 @@ export const templatesRepo = {
         unit: l.unit ?? null,
         unitPrice: l.unitPrice,
         vatRate: l.vatRate,
+        vatTreatment: (l.vatTreatment ?? 'standard') as VatTreatment,
+        vatNote: l.vatNote ?? null,
         discountPercent: l.discountPercent ?? '0',
       })),
     })

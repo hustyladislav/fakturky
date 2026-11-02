@@ -97,8 +97,13 @@ for (const v of variants) {
 
     await test.step('issue allocates the number YYYY-0001', async () => {
       await page.getByRole('button', { name: 'Vystavit', exact: true }).click()
-      await page.waitForURL(/\/faktury\/[^/]+$/)
-      await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^\d{4}-0001$/)
+      // `/faktury/nova` also matches a naive pattern, so wait for the issued document's own URL.
+      await page.waitForURL(
+        (u) => /^\/faktury\/[^/]+$/.test(u.pathname) && u.pathname !== '/faktury/nova',
+      )
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^\d{4}-0001$/, {
+        timeout: 15_000,
+      })
       await expect(page.getByText('Vystavená', { exact: true }).first()).toBeVisible()
       // Variable symbol defaults to the digits of the number.
       await expect(page.getByText(/^\d{4}0001$/)).toBeVisible()

@@ -286,7 +286,9 @@ export const cs = {
       paid: 'Zaplacená',
       cancelled: 'Stornovaná',
     },
+    allTypes: 'Všechny typy',
     columns: {
+      type: 'Typ',
       number: 'Číslo',
       customer: 'Odběratel',
       issued: 'Vystaveno',
@@ -450,7 +452,14 @@ export const cs = {
       },
       notFound: 'Faktura nebyla nalezena.',
       receipt: 'Vystavit doklad k přijaté platbě',
-      receiptRatePrompt: 'Sazba DPH přijaté zálohy (21 nebo 12):',
+      receiptDescription: (amount: string, currency: string) =>
+        `Přijatá částka ${amount} ${currency} je vč. DPH. Vyberte sazbu DPH, nebo ji rozdělte mezi 21 % a 12 %.`,
+      receiptRate: 'Sazba DPH přijaté zálohy',
+      receiptSplit: 'Rozdělit mezi 21 % a 12 %',
+      receiptAmount12: 'Částka v sazbě 12 % (vč. DPH)',
+      receiptAmount21: (amount: string) => `Zbytek v sazbě 21 %: ${amount}`,
+      relatedTitle: 'Související doklady',
+      relatedParent: 'Vychází z dokladu',
       receiptCreated:
         'Vytvořili jsme koncept dokladu k přijaté platbě. Zkontrolujte ho a vystavte.',
       finalInvoice: 'Vystavit konečnou fakturu',

@@ -10,6 +10,7 @@ import { Check, Copy, Download, ExternalLink, Pencil, RefreshCw, Trash2 } from '
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
+import { PromptDialog } from '@/components/prompt-dialog'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage } from '@/lib/errors'
 import { pageHead } from '@/lib/head'
@@ -64,6 +65,11 @@ function InvoiceDetail() {
   const queryClient = useQueryClient()
   const q = useQuery(orpc.documents.get.queryOptions({ input: { id } }))
   const [paying, setPaying] = useState(false)
+  const [dialog, setDialog] = useState<
+    'cancel' | 'delete' | 'rotate' | 'template' | 'credit' | 'receipt' | null
+  >(null)
+  const [rate12, setRate12] = useState('')
+  const [receiptRate, setReceiptRate] = useState<'21' | '12' | 'split'>('21')
   const [amount, setAmount] = useState('')
   const [paidOn, setPaidOn] = useState('')
 
@@ -359,6 +365,46 @@ function InvoiceDetail() {
         )}
       </section>
 
+      {(d.parent || d.related.length > 0) && (
+        <section className="space-y-2 rounded-xl border p-4 text-sm" aria-label={t.relatedTitle}>
+          <h2 className="font-semibold">{t.relatedTitle}</h2>
+          <ul className="space-y-1">
+            {d.parent && (
+              <li>
+                <span className="text-muted-foreground">{t.relatedParent}: </span>
+                <Link
+                  to="/faktury/$id"
+                  params={{ id: d.parent.id }}
+                  className="underline underline-offset-2"
+                >
+                  {d.parent.number ?? cs.invoices.draftNumber}
+                </Link>{' '}
+                <span className="text-muted-foreground">
+                  ({cs.invoices.type[d.parent.type as keyof typeof cs.invoices.type]})
+                </span>
+              </li>
+            )}
+            {d.related.map((r) => (
+              <li key={r.id}>
+                <span className="text-muted-foreground">
+                  {cs.invoices.type[r.type as keyof typeof cs.invoices.type]}:{' '}
+                </span>
+                <Link
+                  to="/faktury/$id"
+                  params={{ id: r.id }}
+                  className="underline underline-offset-2"
+                >
+                  {r.number ?? cs.invoices.draftNumber}
+                </Link>
+                {r.status === 'cancelled' && (
+                  <span className="text-muted-foreground"> ({cs.invoices.status.cancelled})</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {sending && (
         <section className="space-y-3 rounded-xl border p-4">
           <h2 className="font-semibold">{t.sendTitle}</h2>
@@ -403,6 +449,127 @@ function InvoiceDetail() {
           </div>
         </section>
       )}
+
+      <PromptDialog
+        open={dialog === 'cancel'}
+        onOpenChange={(o) => !o && setDialog(null)}
+        title={t.cancel}
+        description={t.cancelConfirm}
+        confirmLabel={t.cancel}
+        destructive
+        pending={cancel.isPending}
+        onConfirm={() => {
+          setDialog(null)
+          cancel.mutate({ id })
+        }}
+      />
+      <PromptDialog
+        open={dialog === 'delete'}
+        onOpenChange={(o) => !o && setDialog(null)}
+        title={t.delete}
+        description={t.deleteConfirm}
+        confirmLabel={t.delete}
+        destructive
+        pending={remove.isPending}
+        onConfirm={() => {
+          setDialog(null)
+          remove.mutate({ id })
+        }}
+      />
+      <PromptDialog
+        open={dialog === 'rotate'}
+        onOpenChange={(o) => !o && setDialog(null)}
+        title={t.rotateLink}
+        description={t.rotateLinkConfirm}
+        confirmLabel={t.rotateLink}
+        pending={rotateLink.isPending}
+        onConfirm={() => {
+          setDialog(null)
+          rotateLink.mutate({ id })
+        }}
+      />
+      <PromptDialog
+        open={dialog === 'template'}
+        onOpenChange={(o) => !o && setDialog(null)}
+        title={cs.templates.saveAs}
+        confirmLabel={cs.common.save}
+        pending={saveTemplate.isPending}
+        input={{
+          label: cs.templates.namePrompt,
+          defaultValue: d.customerName ?? '',
+          required: true,
+        }}
+        onConfirm={(name) => {
+          setDialog(null)
+          saveTemplate.mutate({ documentId: id, name })
+        }}
+      />
+      <PromptDialog
+        open={dialog === 'credit'}
+        onOpenChange={(o) => !o && setDialog(null)}
+        title={t.creditNote}
+        confirmLabel={t.creditNote}
+        pending={creditNote.isPending}
+        input={{ label: t.creditNotePrompt }}
+        onConfirm={(reason) => {
+          setDialog(null)
+          creditNote.mutate({ id, reason: reason || undefined })
+        }}
+      />
+      <PromptDialog
+        open={dialog === 'receipt'}
+        onOpenChange={(o) => !o && setDialog(null)}
+        title={t.receipt}
+        description={t.receiptDescription(d.paidAmount, d.currency)}
+        confirmLabel={t.receipt}
+        pending={receipt.isPending}
+        onConfirm={() => {
+          setDialog(null)
+          if (receiptRate === 'split') {
+            const reduced = Number(rate12.replace(',', '.') || 0)
+            const total = Number(d.paidAmount)
+            receipt.mutate({
+              id,
+              allocations: [
+                { vatRate: '21', amount: (total - reduced).toFixed(2) },
+                { vatRate: '12', amount: reduced.toFixed(2) },
+              ],
+            })
+          } else {
+            receipt.mutate({ id, vatRate: receiptRate })
+          }
+        }}
+      >
+        <div className="space-y-2">
+          <Label htmlFor="receipt-rate">{t.receiptRate}</Label>
+          <select
+            id="receipt-rate"
+            className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
+            value={receiptRate}
+            onChange={(e) => setReceiptRate(e.target.value as '21' | '12' | 'split')}
+          >
+            <option value="21">21 %</option>
+            <option value="12">12 %</option>
+            <option value="split">{t.receiptSplit}</option>
+          </select>
+        </div>
+        {receiptRate === 'split' && (
+          <div className="space-y-2">
+            <Label htmlFor="receipt-12">{t.receiptAmount12}</Label>
+            <Input
+              id="receipt-12"
+              inputMode="decimal"
+              value={rate12}
+              onChange={(e) => setRate12(e.target.value)}
+            />
+            <p className="text-muted-foreground text-xs">
+              {t.receiptAmount21(
+                (Number(d.paidAmount) - Number(rate12.replace(',', '.') || 0)).toFixed(2),
+              )}
+            </p>
+          </div>
+        )}
+      </PromptDialog>
 
       {paying && (
         <section className="space-y-3 rounded-xl border p-4">
@@ -465,7 +632,7 @@ function InvoiceDetail() {
               variant="outline"
               size="sm"
               disabled={rotateLink.isPending}
-              onClick={() => window.confirm(t.rotateLinkConfirm) && rotateLink.mutate({ id })}
+              onClick={() => setDialog('rotate')}
             >
               <RefreshCw /> {t.rotateLink}
             </Button>
@@ -536,11 +703,7 @@ function InvoiceDetail() {
               >
                 <Pencil /> {t.edit}
               </Button>
-              <Button
-                variant="ghost"
-                className={full}
-                onClick={() => window.confirm(t.deleteConfirm) && remove.mutate({ id })}
-              >
+              <Button variant="ghost" className={full} onClick={() => setDialog('delete')}>
                 <Trash2 /> {t.delete}
               </Button>
             </>
@@ -572,19 +735,12 @@ function InvoiceDetail() {
                 variant="ghost"
                 className={full}
                 disabled={busy}
-                onClick={() => window.confirm(t.cancelConfirm) && cancel.mutate({ id })}
+                onClick={() => setDialog('cancel')}
               >
                 {t.cancel}
               </Button>
             )}
-            <Button
-              variant="outline"
-              className={full}
-              onClick={() => {
-                const name = window.prompt(cs.templates.namePrompt, d?.customerName ?? '')
-                if (name?.trim()) saveTemplate.mutate({ documentId: id, name: name.trim() })
-              }}
-            >
+            <Button variant="outline" className={full} onClick={() => setDialog('template')}>
               {cs.templates.saveAs}
             </Button>
             {d?.type === 'proforma' &&
@@ -594,10 +750,7 @@ function InvoiceDetail() {
                 <Button
                   className={full}
                   disabled={receipt.isPending}
-                  onClick={() => {
-                    const rate = window.prompt(t.receiptRatePrompt, '21')
-                    if (rate === '21' || rate === '12') receipt.mutate({ id, vatRate: rate })
-                  }}
+                  onClick={() => setDialog('receipt')}
                 >
                   {t.receipt}
                 </Button>
@@ -615,14 +768,7 @@ function InvoiceDetail() {
                 </Button>
               )}
             {d?.type === 'invoice' && (open || d.status === 'paid') && (
-              <Button
-                variant="outline"
-                className={full}
-                onClick={() => {
-                  const reason = window.prompt(t.creditNotePrompt, '')
-                  if (reason !== null) creditNote.mutate({ id, reason: reason.trim() || undefined })
-                }}
-              >
+              <Button variant="outline" className={full} onClick={() => setDialog('credit')}>
                 {t.creditNote}
               </Button>
             )}

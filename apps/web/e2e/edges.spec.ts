@@ -88,11 +88,11 @@ test('issued invoice can be duplicated into a draft and cancelled (number stays 
   await page.getByRole('button', { name: 'Duplikovat' }).first().click()
   await expect(page.getByRole('heading', { name: 'Upravit koncept' })).toBeVisible()
 
-  // Cancel the original; confirm dialog is accepted.
+  // Cancel the original; the confirmation dialog is accepted.
   await page.goto('/faktury')
   await page.getByRole('link', { name: /-0001/ }).first().click()
-  page.once('dialog', (d) => d.accept())
   await page.getByRole('button', { name: 'Stornovat' }).first().click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Stornovat' }).click()
   await expect(page.getByText('Stornovaná', { exact: true }).first()).toBeVisible()
 
   // The cancelled number stays taken: the next invoice must get -0002, not reuse -0001.

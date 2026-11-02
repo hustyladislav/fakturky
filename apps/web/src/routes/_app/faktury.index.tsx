@@ -13,6 +13,7 @@ import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
+const TYPES = ['invoice', 'proforma', 'credit_note', 'payment_receipt'] as const
 const FILTERS = ['all', 'unpaid', 'overdue', 'paid', 'draft'] as const
 
 export const Route = createFileRoute('/_app/faktury/')({
@@ -20,15 +21,16 @@ export const Route = createFileRoute('/_app/faktury/')({
   // Plain validation (no zod): keeps the schema library out of the client bundle.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { filter?: (typeof FILTERS)[number]; q?: string } => ({
+  ): { filter?: (typeof FILTERS)[number]; q?: string; type?: (typeof TYPES)[number] } => ({
     filter: FILTERS.find((f) => f === search.filter),
+    type: TYPES.find((x) => x === search.type),
     q: typeof search.q === 'string' && search.q ? search.q : undefined,
   }),
   component: InvoiceList,
 })
 
 function InvoiceList() {
-  const { filter = 'all', q } = Route.useSearch()
+  const { filter = 'all', q, type } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const [term, setTerm] = useState(q ?? '')
   useEffect(() => {
@@ -40,7 +42,7 @@ function InvoiceList() {
   }, [term, q, navigate])
 
   const list = useQuery(
-    orpc.documents.list.queryOptions({ input: { filter, search: q || undefined } }),
+    orpc.documents.list.queryOptions({ input: { filter, search: q || undefined, type } }),
   )
   const t = cs.invoices
 
@@ -66,12 +68,32 @@ function InvoiceList() {
               variant={filter === f ? 'secondary' : 'ghost'}
               size="sm"
               nativeButton={false}
-              render={<Link to="/faktury" search={{ filter: f, q }} />}
+              render={<Link to="/faktury" search={{ filter: f, q, type }} />}
             >
               {t.filters[f]}
             </Button>
           ))}
         </div>
+        <select
+          aria-label={t.columns.type}
+          className="border-input bg-background h-9 rounded-md border px-2 text-sm"
+          value={type ?? ''}
+          onChange={(e) =>
+            navigate({
+              search: (s) => ({
+                ...s,
+                type: TYPES.find((x) => x === e.target.value),
+              }),
+            })
+          }
+        >
+          <option value="">{t.allTypes}</option>
+          {TYPES.map((x) => (
+            <option key={x} value={x}>
+              {t.type[x]}
+            </option>
+          ))}
+        </select>
         <div className="relative sm:w-80">
           <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
           <Input
@@ -115,6 +137,7 @@ function InvoiceList() {
                       {d.number ?? t.draftNumber}
                     </div>
                     <div className="text-muted-foreground truncate text-sm">
+                      {d.type !== 'invoice' && `${t.type[d.type as keyof typeof t.type]} · `}
                       {d.customerName ?? '—'}
                     </div>
                   </div>
@@ -131,6 +154,7 @@ function InvoiceList() {
               <thead className="bg-muted/40 text-muted-foreground hidden text-left text-xs sm:table-header-group">
                 <tr>
                   <th className="px-4 py-2 font-medium">{t.columns.number}</th>
+                  <th className="px-4 py-2 font-medium">{t.columns.type}</th>
                   <th className="px-4 py-2 font-medium">{t.columns.customer}</th>
                   <th className="px-4 py-2 font-medium">{t.columns.issued}</th>
                   <th className="px-4 py-2 font-medium">{t.columns.due}</th>
@@ -143,6 +167,9 @@ function InvoiceList() {
                   <tr key={d.id} className="hover:bg-muted/30 border-t [&>td]:p-0">
                     <Cell id={d.id} draft={d.status === 'draft'} strong>
                       {d.number ?? t.draftNumber}
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'}>
+                      {t.type[d.type as keyof typeof t.type] ?? d.type}
                     </Cell>
                     <Cell id={d.id} draft={d.status === 'draft'}>
                       {d.customerName ?? '—'}

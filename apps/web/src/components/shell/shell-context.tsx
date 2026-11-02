@@ -7,6 +7,8 @@ export interface ShellState {
   setHelpOpen: (open: boolean) => void
   assistantOpen: boolean
   setAssistantOpen: (open: boolean) => void
+  sidebarCollapsed: boolean
+  toggleSidebar: () => void
   /** Opens the assistant panel and sends the question typed into ⌘K. */
   askAssistant: (question: string) => void
 }

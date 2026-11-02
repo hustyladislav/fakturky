@@ -15,7 +15,9 @@ export function DataExport() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{cs.settings.exportTitle}</CardTitle>
+        <CardTitle role="heading" aria-level={2}>
+          {cs.settings.exportTitle}
+        </CardTitle>
         <CardDescription>{cs.settings.exportDescription}</CardDescription>
       </CardHeader>
       <CardContent>
@@ -57,7 +59,9 @@ export function ReminderSettings() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{cs.settings.remindersTitle}</CardTitle>
+        <CardTitle role="heading" aria-level={2}>
+          {cs.settings.remindersTitle}
+        </CardTitle>
         <CardDescription>{cs.settings.remindersDescription}</CardDescription>
       </CardHeader>
       <CardContent>

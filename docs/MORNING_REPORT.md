@@ -41,6 +41,7 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Shipped overnight
 
+- PWA (installable on phone) #100; performance pass with lazy-loaded heavy UI #93; a11y checks (axe) in e2e #101/#102.
 - **Late night batch**: proforma → tax receipt for received advance → final invoice #94/#96; ČNB rate follows DUZP,
   CZK VAT amounts, rounding line #92/#98; document appearance (accent colour, logo, signature) #95; JSON export +
   e2e #97; VAT treatments per line instead of "0 %" #89/#91; legal QA fixes (registry note, required customer data

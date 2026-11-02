@@ -28,6 +28,37 @@ export const contactsRouter = {
       contactsRepo.list(context.db, context.principal.organizationId, input),
     ),
 
+  stats: procedure({
+    mcp: {
+      name: 'get_contact_stats',
+      title: 'Billing figures per contact: invoiced, outstanding, overdue, last invoice (CZK)',
+      readOnly: true,
+    },
+    openapi: {
+      method: 'GET',
+      path: '/contacts/stats',
+      summary:
+        'Invoiced total, amount still owed, overdue amount, document count and last invoice date per contact (CZK). Omit contactId for all contacts.',
+      tags: ['Contacts'],
+    },
+  })
+    .input(z.object({ contactId: z.string().min(1).optional() }))
+    .output(
+      z.array(
+        z.object({
+          contactId: z.string(),
+          invoiced: z.string().describe('Issued + paid invoices, credit notes netted (CZK)'),
+          outstanding: z.string().describe('Still owed (CZK)'),
+          overdue: z.string().describe('Owed and past due (CZK)'),
+          documentCount: z.number(),
+          lastInvoiceDate: z.string().nullable(),
+        }),
+      ),
+    )
+    .handler(({ context, input }) =>
+      contactsRepo.stats(context.db, context.principal.organizationId, input),
+    ),
+
   get: procedure({
     mcp: { name: 'get_contact', title: 'Get a contact', readOnly: true },
     openapi: {

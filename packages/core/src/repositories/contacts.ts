@@ -1,9 +1,11 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
-import { and, asc, eq, ilike, isNull, or, sql } from 'drizzle-orm'
+import { Decimal, parseDecimal, todayPrague, toFixed } from '@fakturky/domain'
+import { and, asc, eq, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import type { ContactInput, ContactPatch } from '../schemas/contact'
+import { paidSums } from './documents'
 
-const { contact } = schema
+const { contact, document } = schema
 
 /** Every function takes `orgId` and scopes by it. No exceptions. */
 export const contactsRepo = {
@@ -30,6 +32,87 @@ export const contactsRepo = {
       .orderBy(asc(contact.name), asc(contact.id))
       .limit(opts.limit)
       .offset(opts.offset)
+  },
+
+  /**
+   * Per-contact billing figures in CZK: invoiced (issued + paid invoices, credit notes netted),
+   * still owed, overdue, document count and the latest issue date. Contacts without documents are omitted.
+   */
+  async stats(db: Db, orgId: string, opts: { contactId?: string }) {
+    const today = todayPrague()
+    const rows = await db
+      .select({
+        id: document.id,
+        contactId: document.contactId,
+        type: document.type,
+        status: document.status,
+        issueDate: document.issueDate,
+        dueDate: document.dueDate,
+        total: document.total,
+        subtotal: document.subtotal,
+        totalCzk: document.totalCzk,
+        currency: document.currency,
+      })
+      .from(document)
+      .where(
+        and(
+          eq(document.organizationId, orgId),
+          isNull(document.deletedAt),
+          isNotNull(document.contactId),
+          inArray(document.type, ['invoice', 'credit_note']),
+          inArray(document.status, ['issued', 'paid']),
+          opts.contactId ? eq(document.contactId, opts.contactId) : undefined,
+        ),
+      )
+    const paid = await paidSums(
+      db,
+      orgId,
+      rows.filter((r) => r.status === 'issued' && r.type === 'invoice').map((r) => r.id),
+    )
+    const out = new Map<
+      string,
+      {
+        invoiced: Decimal
+        outstanding: Decimal
+        overdue: Decimal
+        count: number
+        last: string | null
+      }
+    >()
+    for (const r of rows) {
+      if (!r.contactId) continue
+      const e = out.get(r.contactId) ?? {
+        invoiced: new Decimal(0),
+        outstanding: new Decimal(0),
+        overdue: new Decimal(0),
+        count: 0,
+        last: null,
+      }
+      out.set(r.contactId, e)
+      const total = parseDecimal(r.total)
+      const czk = (amount: Decimal) =>
+        r.currency === 'CZK' || total.isZero() || !r.totalCzk
+          ? amount
+          : amount.times(parseDecimal(r.totalCzk)).div(total)
+      e.invoiced = e.invoiced.plus(czk(total))
+      e.count++
+      if (r.issueDate && (!e.last || r.issueDate > e.last)) e.last = r.issueDate
+      if (r.status === 'issued' && r.type === 'invoice') {
+        const left = total.minus(paid.get(r.id) ?? 0)
+        if (left.gt(0)) {
+          e.outstanding = e.outstanding.plus(czk(left))
+          if (r.dueDate && r.dueDate < today) e.overdue = e.overdue.plus(czk(left))
+        }
+      }
+    }
+    return [...out.entries()].map(([contactId, e]) => ({
+      contactId,
+      invoiced: toFixed(e.invoiced, 2),
+      outstanding: toFixed(e.outstanding, 2),
+      overdue: toFixed(e.overdue, 2),
+      documentCount: e.count,
+      lastInvoiceDate: e.last,
+    }))
   },
 
   async get(db: Db, orgId: string, id: string) {

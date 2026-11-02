@@ -56,8 +56,15 @@ export const bankListOutputSchema = z.object({
   items: z.array(bankTransactionSchema),
   total: z.number(),
   counts: z
-    .object({ unmatched: z.number(), matched: z.number(), ignored: z.number() })
-    .describe('Per status; unmatched counts incoming payments only'),
+    .object({
+      unmatched: z.number(),
+      matched: z.number(),
+      ignored: z.number(),
+      outgoing: z.number(),
+    })
+    .describe(
+      'Per status; unmatched counts incoming payments only, outgoing counts stored debits (never paired)',
+    ),
 })
 
 export const importStatementInputSchema = z.object({
@@ -78,12 +85,38 @@ export const importStatementInputSchema = z.object({
     .describe('CSV only: header name for each field, for exports that are not recognised'),
 })
 
+export const IMPORT_OUTCOMES = [
+  'matched',
+  'suggested',
+  'unmatched',
+  'outgoing',
+  'duplicate',
+] as const
+
+const importRowSchema = z.object({
+  bookedOn: z.string(),
+  amount: money,
+  currency: z.string(),
+  counterpartyName: z.string().nullable(),
+  variableSymbol: z.string().nullable(),
+  outcome: z
+    .enum(IMPORT_OUTCOMES)
+    .describe(
+      'matched = paired with an invoice; suggested = a likely invoice awaits confirmation; unmatched = incoming, nothing found; outgoing = debit, stored but never paired; duplicate = already imported',
+    ),
+  documentNumber: z.string().nullable().describe('Paired or suggested invoice'),
+})
+
 export const importStatementOutputSchema = z.object({
   format: z.string(),
   imported: z.number().describe('New transactions stored'),
   duplicates: z.number().describe('Transactions already known (skipped)'),
-  warnings: z.array(z.string()),
+  warnings: z.array(z.string()).describe('Rows that could not be read and were not stored'),
   autoMatched: z.number().describe('Incoming payments paired with invoices automatically'),
+  rows: z
+    .array(importRowSchema)
+    .describe('What happened to every statement row, in file order (first 500)'),
+  rowsTruncated: z.boolean(),
 })
 
 export const matchInputSchema = z.object({

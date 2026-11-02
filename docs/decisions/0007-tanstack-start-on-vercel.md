@@ -12,7 +12,7 @@ and must stay fast on mobile. Hosting is Vercel with Git deploys.
 TanStack Start (React 19, Vite, Nitro → Vercel output) with TanStack Router/Query, in a pnpm workspace monorepo (`apps/web`, `packages/*`) on Node 24.
 One deployable hosts UI and API routes in `fra1`.
 
-## Rejected
+## Rejected (to confirm by the owner)
 - **A separate API service:** a second deployment (and deploy quota) for no benefit at this size; the oRPC router is hosted by the same app ([0004](0004-one-orpc-router-single-operation-layer.md)).
 
 ## Consequences

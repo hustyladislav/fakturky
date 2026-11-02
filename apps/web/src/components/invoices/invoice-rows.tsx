@@ -228,7 +228,7 @@ export function InvoiceRow({
           </div>
         </div>
       </td>
-      <td className="hidden border-b border-border/60 px-3 text-sm whitespace-nowrap text-muted-foreground tabular-nums lg:table-cell">
+      <td className="hidden border-b border-border/60 px-3 text-sm whitespace-nowrap text-muted-foreground tabular-nums @4xl:table-cell">
         {d.issueDate ? formatDateCs(d.issueDate) : '—'}
       </td>
       <td className="border-b border-border/60 px-3 text-sm whitespace-nowrap">

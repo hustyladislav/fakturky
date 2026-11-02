@@ -39,7 +39,7 @@ export function SummaryStrip({
     <div
       role="group"
       aria-label={cs.invoices.title}
-      className="-mx-4 mb-6 flex scroll-px-4 snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden"
+      className="-mx-4 mb-6 flex scroll-px-4 snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] @4xl:mx-0 @4xl:grid @4xl:grid-cols-5 @4xl:overflow-visible @4xl:px-0 @4xl:pb-0 [&::-webkit-scrollbar]:hidden"
     >
       {STRIP_FILTERS.map((f) => {
         const b = stats?.[f]
@@ -52,7 +52,7 @@ export function SummaryStrip({
             aria-pressed={active}
             onClick={() => onChange(f)}
             className={cn(
-              'sheet group relative min-w-[8.5rem] shrink-0 snap-start px-4 py-3.5 text-left outline-none transition-[box-shadow,transform] md:min-w-0',
+              'sheet group relative min-w-[8.5rem] shrink-0 snap-start px-4 py-3.5 text-left outline-none transition-[box-shadow,transform] @4xl:min-w-0',
               'focus-visible:ring-3 focus-visible:ring-ring/50 motion-safe:hover:-translate-y-px',
               active &&
                 'shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_rgb(40_30_10/0.04),0_8px_24px_-12px_rgb(40_30_10/0.12)]',

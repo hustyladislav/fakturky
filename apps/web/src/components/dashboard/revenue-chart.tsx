@@ -68,7 +68,7 @@ export function RevenueChart({ months, className }: { months: Month[]; className
   const currentKey = months.at(-1)?.month
 
   return (
-    <section className={cn('sheet p-5 sm:p-6', className)} aria-labelledby={headingId}>
+    <section className={cn('sheet @container p-5 sm:p-6', className)} aria-labelledby={headingId}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h2 id={headingId} className="label-caps">
@@ -200,7 +200,7 @@ export function RevenueChart({ months, className }: { months: Month[]; className
                         'pointer-events-none absolute top-full mt-2 inset-x-0 text-center text-xs tabular-nums',
                         current ? 'font-semibold text-foreground' : 'text-muted-foreground',
                         // On narrow screens only every second month is labelled (the last always).
-                        (rows.length - 1 - i) % 2 === 1 && 'max-sm:invisible',
+                        (rows.length - 1 - i) % 2 === 1 && '@max-xl:invisible',
                       )}
                     >
                       {cs.overview.months[index]}

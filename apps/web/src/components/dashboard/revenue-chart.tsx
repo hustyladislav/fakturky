@@ -38,7 +38,10 @@ function monthParts(key: string) {
  * highlighted, empty months as a faint baseline, 6/12 month toggle.
  */
 export function RevenueChart({ months, className }: { months: Month[]; className?: string }) {
-  const [range, setRange] = useState<6 | 12>(12)
+  // Start the axis at the first month with data (at least 6 months); new accounts default to 6.
+  const firstData = months.findIndex((m) => Number(m.turnover) !== 0 || Number(m.received) !== 0)
+  const history = firstData < 0 ? 0 : months.length - firstData
+  const [range, setRange] = useState<6 | 12>(history > 6 ? 12 : 6)
   const [grown, setGrown] = useState(false)
   const headingId = useId()
   useEffect(() => {
@@ -46,7 +49,8 @@ export function RevenueChart({ months, className }: { months: Month[]; className
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  const shown = useMemo(() => months.slice(-range), [months, range])
+  const span = Math.min(range, Math.max(history, 6))
+  const shown = useMemo(() => months.slice(-span), [months, span])
   const rows = useMemo(
     () =>
       shown.map((m) => {
@@ -73,30 +77,32 @@ export function RevenueChart({ months, className }: { months: Month[]; className
           <div className="mt-2.5">
             <Amount value={wholeCrowns(total.toFixed(2))} size="lg" hideZeroFraction />
           </div>
-          <div className="mt-1 text-xs text-muted-foreground">{t.caption(range)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{t.caption(span)}</div>
         </div>
-        <div
-          role="group"
-          aria-label={t.range}
-          className="inline-flex shrink-0 rounded-lg bg-muted p-0.5"
-        >
-          {([6, 12] as const).map((r) => (
-            <button
-              key={r}
-              type="button"
-              aria-pressed={range === r}
-              onClick={() => setRange(r)}
-              className={cn(
-                'h-7 rounded-md px-2.5 text-xs font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                range === r
-                  ? 'bg-card text-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.06)]'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {r === 6 ? t.sixMonths : t.twelveMonths}
-            </button>
-          ))}
-        </div>
+        {history > 6 && (
+          <div
+            role="group"
+            aria-label={t.range}
+            className="inline-flex shrink-0 rounded-lg bg-muted p-0.5"
+          >
+            {([6, 12] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                aria-pressed={range === r}
+                onClick={() => setRange(r)}
+                className={cn(
+                  'h-7 rounded-md px-2.5 text-xs font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+                  range === r
+                    ? 'bg-card text-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.06)]'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {r === 6 ? t.sixMonths : t.twelveMonths}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mt-6 grid grid-cols-[3rem_minmax(0,1fr)] gap-x-2">

@@ -39,7 +39,7 @@ export function SummaryStrip({
     <div
       role="group"
       aria-label={cs.invoices.title}
-      className="-mx-4 mb-6 flex snap-x gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden"
+      className="-mx-4 mb-6 flex scroll-px-4 snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden"
     >
       {STRIP_FILTERS.map((f) => {
         const b = stats?.[f]

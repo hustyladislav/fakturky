@@ -21,6 +21,7 @@ import { Route as SouhlasRouteImport } from './routes/souhlas'
 import { Route as SoukromiRouteImport } from './routes/soukromi'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AppBankaRouteImport } from './routes/_app/banka'
+import { Route as AppDphRouteImport } from './routes/_app/dph'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppImportRouteImport } from './routes/_app/import'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
@@ -104,6 +105,11 @@ const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
 const AppBankaRoute = AppBankaRouteImport.update({
   id: '/banka',
   path: '/banka',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDphRoute = AppDphRouteImport.update({
+  id: '/dph',
+  path: '/dph',
   getParentRoute: () => AppRoute,
 } as any)
 const AppFakturyRoute = AppFakturyRouteImport.update({
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/banka': typeof AppBankaRoute
+  '/dph': typeof AppDphRoute
   '/faktury': typeof AppFakturyRouteWithChildren
   '/import': typeof AppImportRoute
   '/kontakty': typeof AppKontaktyRoute
@@ -282,6 +289,7 @@ export interface FileRoutesByTo {
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/banka': typeof AppBankaRoute
+  '/dph': typeof AppDphRoute
   '/import': typeof AppImportRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/_app/banka': typeof AppBankaRoute
+  '/_app/dph': typeof AppDphRoute
   '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/import': typeof AppImportRoute
   '/_app/kontakty': typeof AppKontaktyRoute
@@ -361,6 +370,7 @@ export interface FileRouteTypes {
     | '/soukromi'
     | '/.well-known/$'
     | '/banka'
+    | '/dph'
     | '/faktury'
     | '/import'
     | '/kontakty'
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
     | '/soukromi'
     | '/.well-known/$'
     | '/banka'
+    | '/dph'
     | '/import'
     | '/kontakty'
     | '/nastaveni'
@@ -437,6 +448,7 @@ export interface FileRouteTypes {
     | '/soukromi'
     | '/.well-known/$'
     | '/_app/banka'
+    | '/_app/dph'
     | '/_app/faktury'
     | '/_app/import'
     | '/_app/kontakty'
@@ -575,6 +587,13 @@ declare module '@tanstack/react-router' {
       path: '/banka'
       fullPath: '/banka'
       preLoaderRoute: typeof AppBankaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dph': {
+      id: '/_app/dph'
+      path: '/dph'
+      fullPath: '/dph'
+      preLoaderRoute: typeof AppDphRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/faktury': {
@@ -775,6 +794,7 @@ const AppFakturyRouteWithChildren = AppFakturyRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppBankaRoute: typeof AppBankaRoute
+  AppDphRoute: typeof AppDphRoute
   AppFakturyRoute: typeof AppFakturyRouteWithChildren
   AppImportRoute: typeof AppImportRoute
   AppKontaktyRoute: typeof AppKontaktyRoute
@@ -785,6 +805,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppBankaRoute: AppBankaRoute,
+  AppDphRoute: AppDphRoute,
   AppFakturyRoute: AppFakturyRouteWithChildren,
   AppImportRoute: AppImportRoute,
   AppKontaktyRoute: AppKontaktyRoute,

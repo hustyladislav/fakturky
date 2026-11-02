@@ -30,7 +30,7 @@ export const SUBJECTS = {
       cisloOrientacni: 2,
       psc: 11000,
     },
-    seznamRegistraci: { stavZdrojeDph: 'AKTIVNI' },
+    seznamRegistraci: { stavZdrojeDph: 'AKTIVNI', stavZdrojeVr: 'AKTIVNI' },
   },
   // Customer.
   12345024: {
@@ -49,11 +49,25 @@ export const SUBJECTS = {
   },
 }
 
+// Veřejný rejstřík (VR) records, served under /ekonomicke-subjekty-vr/<ico>.
+const VR = {
+  12345016: {
+    zaznamy: [
+      {
+        rejstrik: 'OR',
+        primarniZaznam: true,
+        spisovaZnacka: [{ soud: 'KSBR', oddil: 'C', vlozka: 12345 }],
+      },
+    ],
+  },
+}
+
 const port = Number(process.env.ARES_MOCK_PORT ?? 3199)
 
 createServer((req, res) => {
   const ico = (req.url ?? '').split('?')[0].split('/').filter(Boolean).pop() ?? ''
-  const subject = SUBJECTS[ico]
+  const isVr = (req.url ?? '').includes('/vr/')
+  const subject = isVr ? VR[ico] : SUBJECTS[ico]
   res.setHeader('content-type', 'application/json')
   if (!subject) {
     res.statusCode = 404

@@ -181,6 +181,7 @@ const cases: Record<string, Case> = {
   },
   'lookup.ares': { kind: 'external' },
   'lookup.exchangeRate': { kind: 'external' },
+  'lookup.vies': { kind: 'external' },
 
   'templates.list': { kind: 'scoped', run: (b) => b.templates.list({}) },
   'templates.createFromDocument': {

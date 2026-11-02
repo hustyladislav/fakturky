@@ -361,6 +361,8 @@ export const cs = {
       vatRecap: 'Rekapitulace DPH',
       vatRecapRow: (rate: string) => `Sazba ${rate} %`,
       nonPayer: 'Nejste plátcem DPH, faktura bude bez DPH.',
+      proformaNoVat:
+        'Zálohová faktura je bez DPH: zadejte částku, kterou má odběratel zaplatit (u plátců včetně DPH). DPH se vyúčtuje dokladem k přijaté platbě.',
       saveDraft: 'Uložit koncept',
       issue: 'Vystavit',
       saved: 'Koncept byl uložen.',
@@ -379,7 +381,8 @@ export const cs = {
         'line.vatRate': 'sazbu DPH 21 / 12 % nebo režim DPH u každé položky',
         'customer.vatId': 'DIČ / IČ DPH (nutné pro přenesení daňové povinnosti v rámci EU)',
         'customer.address': 'adresu (ulice, město, PSČ)',
-        'customer.taxId': 'IČO nebo DIČ',
+        'customer.country':
+          'zemi odběratele v jiném členském státě EU (přenesení daňové povinnosti v rámci EU se nevztahuje na tuzemského odběratele)',
       },
       missingLines: (names: string[]) => `U položek doplňte: ${names.join(', ')}.`,
       missingCustomer: (names: string[]) =>
@@ -430,6 +433,7 @@ export const cs = {
       iban: 'IBAN',
       account: 'Účet',
       paidSoFar: 'Uhrazeno',
+      creditedBy: (number: string) => `Z toho dobropisem ${number}`,
       remaining: 'Zbývá uhradit',
       history: 'Průběh',
       timeline: {
@@ -597,9 +601,13 @@ export const cs = {
     street: 'Ulice a číslo',
     city: 'Město',
     zip: 'PSČ',
+    country: 'Země',
+    euReverseChargeDomestic:
+      'Přenesení daňové povinnosti v rámci EU lze použít jen pro odběratele z jiného členského státu. U tohoto kontaktu je nastavena Česká republika.',
     edit: 'Upravit kontakt',
     updated: 'Kontakt byl uložen.',
-    taxDocHint: 'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a jeho IČO nebo DIČ.',
+    taxDocHint:
+      'Plátci DPH musí na daňovém dokladu uvést adresu odběratele a – je-li plátcem DPH – i jeho DIČ.',
     created: 'Kontakt byl vytvořen.',
     archived: 'Kontakt byl archivován.',
   },
@@ -810,6 +818,7 @@ export const cs = {
       archive_contact: 'Archivuji kontakt',
       lookup_company_by_ico: 'Vyhledávám firmu podle IČO',
       lookup_company_ares: 'Hledám firmu v ARES',
+      lookup_eu_vat_id: 'Ověřuji DIČ ve VIES',
       get_exchange_rate: 'Zjišťuji kurz ČNB',
       list_documents: 'Procházím faktury',
       get_document: 'Načítám doklad',

@@ -1,4 +1,11 @@
-import { getRate, IntegrationError, lookupByIco, normalizeIco, todayPrague } from '@fakturky/domain'
+import {
+  checkVatId,
+  getRate,
+  IntegrationError,
+  lookupByIco,
+  normalizeIco,
+  todayPrague,
+} from '@fakturky/domain'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
@@ -55,6 +62,42 @@ export const lookupRouter = {
       try {
         const ico = normalizeIco(input.ico)
         return await cached(`ares:${ico}`, 60 * 60_000, () => lookupByIco(ico))
+      } catch (e) {
+        return wrap(e)
+      }
+    }),
+
+  vies: procedure({
+    mcp: { name: 'lookup_eu_vat_id', title: 'Check an EU VAT ID in VIES', readOnly: true },
+    openapi: {
+      method: 'GET',
+      path: '/lookup/vies/{vatId}',
+      summary: 'Check an EU VAT ID in VIES',
+      tags: tag,
+    },
+  })
+    .input(z.object({ vatId: z.string().min(4).max(20) }))
+    .output(
+      z.object({
+        valid: z.boolean(),
+        countryCode: z.string(),
+        vatNumber: z.string(),
+        name: z.string().nullable(),
+        address: z.string().nullable(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      enforceRateLimit(`vies:${context.principal.organizationId}`, LOOKUPS_PER_MINUTE)
+      try {
+        const vatId = input.vatId.replace(/\s/g, '').toUpperCase()
+        const r = await cached(`vies:${vatId}`, 60 * 60_000, () => checkVatId(vatId))
+        return {
+          valid: r.valid,
+          countryCode: r.countryCode,
+          vatNumber: r.vatNumber,
+          name: r.name,
+          address: r.address,
+        }
       } catch (e) {
         return wrap(e)
       }

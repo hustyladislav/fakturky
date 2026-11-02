@@ -948,6 +948,13 @@ export const cs = {
   templates: {
     title: 'Šablony',
     emptyTitle: 'Zatím žádné šablony',
+    subtitle: (n: number, active: number) =>
+      `${n} ${n === 1 ? 'šablona' : n < 5 ? 'šablony' : 'šablon'} · ${active === 0 ? 'nic se neopakuje' : `${active} se opakuje`}`,
+    net: 'bez DPH',
+    nextShort: 'další',
+    today: 'Dnes',
+    autoIssueShort: 'vystaví se samo',
+    autoSendShort: 'vystaví a odešle',
     empty:
       'Otevřete vystavenou fakturu a zvolte „Uložit jako šablonu“. Příště ji vytvoříte jedním klikem.',
     use: 'Použít',
@@ -1166,6 +1173,12 @@ export const cs = {
     emptyNoAccount: 'Nejdřív přidejte bankovní účet v Nastavení.',
     emptyFiltered: 'V tomto přehledu nic není.',
     emptyUnmatched: 'Všechny příchozí platby jsou vyřízené.',
+    emptyUnmatchedTitle: 'Máte hotovo',
+    subtitleEmpty: 'Zatím žádné platby',
+    subtitle: (open: number, matched: number) =>
+      `${open === 0 ? 'Vše spárováno' : `${open} čeká na spárování`} · ${matched} spárováno s fakturami`,
+    incoming: 'Příchozí platba',
+    outgoing: 'Odchozí platba',
     suggestion: 'Návrh',
     confirm: 'Potvrdit',
     pairWith: 'Spárovat s fakturou…',

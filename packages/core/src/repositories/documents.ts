@@ -284,7 +284,8 @@ async function lastPaidOn(db: Db | Tx, orgId: string, ids: string[]) {
   return map
 }
 
-export type ListSort = 'issueDate' | 'dueDate' | 'number' | 'customer' | 'total'
+/** `recent` (last touched first) is internal: the command palette, not a public sort. */
+export type ListSort = 'issueDate' | 'dueDate' | 'number' | 'customer' | 'total' | 'recent'
 
 /** WHERE for list/stats: tenant scope, filter chip, type and free-text search (joins `contact`). */
 function listWhere(
@@ -470,6 +471,7 @@ export const documentsRepo = {
     const dir = opts.dir === 'asc' ? asc : desc
     const customerName = sql`lower(coalesce(${document.customerSnapshot}->>'name', ${contact.name}, ''))`
     const orderBy = {
+      recent: [desc(document.updatedAt), desc(document.id)],
       issueDate: [dir(document.issueDate), dir(document.createdAt), dir(document.id)],
       dueDate: [dir(document.dueDate), desc(document.createdAt), desc(document.id)],
       number: [dir(document.number), desc(document.createdAt), desc(document.id)],

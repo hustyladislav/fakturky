@@ -174,6 +174,7 @@ const cases: Record<string, Case> = {
   'documents.pdf': { kind: 'foreign', run: (b, a) => b.documents.pdf({ id: a.issuedId }) },
   'documents.isdoc': { kind: 'foreign', run: (b, a) => b.documents.isdoc({ id: a.issuedId }) },
   'documents.defaults': { kind: 'scoped', run: (b) => b.documents.defaults({}) },
+  'search.global': { kind: 'scoped', run: (b) => b.search.global({ query: SECRET }) },
   'documents.list': { kind: 'scoped', run: (b) => b.documents.list({ search: SECRET }) },
   'documents.stats': { kind: 'scoped', run: (b) => b.documents.stats({ search: SECRET }) },
   'documents.get': { kind: 'foreign', run: (b, a) => b.documents.get({ id: a.issuedId }) },

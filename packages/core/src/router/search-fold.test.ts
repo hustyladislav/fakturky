@@ -113,3 +113,24 @@ describe('diacritics- and case-insensitive search', () => {
     expect(await api().contacts.list({ search: '5566' })).toHaveLength(1)
   })
 })
+
+describe('search.global', () => {
+  test('returns documents and contacts for one diacritics-free query', async () => {
+    const r = await api().search.global({ query: 'lipa' })
+    expect(r.documents.map((d) => d.customerName)).toEqual(['Studio Lípa s.r.o.'])
+    expect(r.contacts.map((c) => c.name)).toEqual(['Studio Lípa s.r.o.'])
+    expect(r.documents[0]?.displayStatus).toBe('issued')
+  })
+
+  test('an empty query returns the most recent items, limited per group', async () => {
+    const r = await api().search.global({ query: '', limit: 1 })
+    expect(r.documents).toHaveLength(1)
+    expect(r.contacts).toHaveLength(1)
+  })
+
+  test('another organization finds nothing', async () => {
+    const other = await seedOrg(handle, 'fold-other')
+    const b = clientFor(handle, { userId: 'u2', organizationId: other, via: 'session' })
+    expect(await b.search.global({ query: 'lipa' })).toEqual({ documents: [], contacts: [] })
+  })
+})

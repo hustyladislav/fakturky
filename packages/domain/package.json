@@ -17,6 +17,7 @@
     "./qr/spayd": "./src/qr/spayd.ts",
     "./qr/render": "./src/qr/render.ts",
     "./dates": "./src/dates.ts",
+    "./fold": "./src/fold.ts",
     "./integrations/ares": "./src/integrations/ares.ts",
     "./bank-codes": "./src/bank-codes.ts",
     "./integrations/cnb": "./src/integrations/cnb.ts",

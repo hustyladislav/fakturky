@@ -27,6 +27,8 @@ import { lazy, type ReactNode, Suspense, useEffect, useMemo, useState } from 're
 import { clearAssistantStorage } from '@/components/assistant/assistant-storage'
 import { InstallHint } from '@/components/pwa/install-hint'
 import { cs } from '@/i18n/cs'
+import { orpc } from '@/lib/orpc'
+import { PALETTE_POOL } from '@/lib/palette-search'
 import { type NavItem, NEW_INVOICE_PATH, navItems, useNavItems } from './nav'
 import { useRecordRecent } from './recent-pages'
 import { ShellContext, type ShellState, useShell as useShellState } from './shell-context'
@@ -53,6 +55,24 @@ export function AppShell({
   children: ReactNode
 }) {
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const shellQueryClient = useQueryClient()
+  // Warm the palette's recent-items pool and code once the page is idle, so ⌘K answers instantly.
+  useEffect(() => {
+    const warm = () => {
+      void shellQueryClient.prefetchQuery({
+        ...orpc.search.global.queryOptions({ input: PALETTE_POOL }),
+        staleTime: 30_000,
+      })
+      void import('./command-palette')
+    }
+    const idle = window.requestIdleCallback
+    if (idle) {
+      const h = idle(warm, { timeout: 4000 })
+      return () => window.cancelIdleCallback(h)
+    }
+    const h = setTimeout(warm, 1500)
+    return () => clearTimeout(h)
+  }, [shellQueryClient])
   const [helpOpen, setHelpOpen] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)
   const [question, setQuestion] = useState<{ id: number; text: string } | null>(null)

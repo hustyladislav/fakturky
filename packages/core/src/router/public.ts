@@ -10,6 +10,7 @@ import {
 } from '@fakturky/domain'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
+import { BRAND } from '../brand'
 import { toDocumentForExport } from '../export'
 import { publicProcedure } from '../orpc'
 import { paymentQrInput } from '../payment-qr'
@@ -94,6 +95,11 @@ export const publicRouter = {
         remaining: z.string(),
         introText: z.string().nullable(),
         footerText: z.string().nullable(),
+        /**
+         * The document as the PDF sees it (the `InvoicePdfInput` shape of `@fakturky/pdf`), for the HTML twin.
+         * Private note, customer contact details and internal ids are stripped; images are data URLs.
+         */
+        sheet: z.record(z.string(), z.unknown()),
       }),
     )
     .handler(async ({ context, input }) => {
@@ -184,6 +190,27 @@ export const publicRouter = {
             : toFixed(new Decimal(0), 2),
         introText: doc.introText,
         footerText: doc.footerText,
+        sheet: {
+          ...x,
+          uuid: '',
+          originalDocument: x.originalDocument ? { ...x.originalDocument, uuid: '' } : null,
+          note: null,
+          supplier: { ...x.supplier },
+          customer: { ...x.customer, email: null, phone: null },
+          lines: x.lines.map((l, i) => ({
+            ...l,
+            detail: lines[i]?.vatNote ? `${lines[i]?.vatNote}` : null,
+            discountPercent: lines[i]?.discountPercent ?? '0',
+          })),
+          language: doc.language,
+          brandName: BRAND.name,
+          showBrand: look.showBrand,
+          accentColor: look.accentColor ?? undefined,
+          headerText: doc.introText,
+          footerText: doc.footerText,
+          logo: look.logo?.dataUrl ?? null,
+          signature: look.signature?.dataUrl ?? null,
+        },
       }
     }),
 

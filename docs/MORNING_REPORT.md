@@ -54,6 +54,10 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Shipped overnight
 
+- **QA round 2** (issues #103–#114) fixed: invoices to consumers without IČO/DIČ #105, proforma VAT preview + PDF
+  label #107, payment/date validation #111, contact country + VIES + EU reverse-charge check #116, credit-note
+  PDF/balance #117, split-rate receipts #118, unique variable symbols + CLI `pdf -o` #119, related-document links +
+  real dialogs instead of `window.prompt` #120; e2e for credit note / related docs / cron #121.
 - TypeScript 7 (native compiler) across the monorepo #104 — no code changes needed; 307 unit + 15 e2e tests green.
 - PWA (installable on phone) #100; performance pass with lazy-loaded heavy UI #93; a11y checks (axe) in e2e #101/#102.
 - **Late night batch**: proforma → tax receipt for received advance → final invoice #94/#96; ČNB rate follows DUZP,

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.02">
+  <BkToCstmrStmt>
+    <GrpHdr><MsgId>MSG-1</MsgId><CreDtTm>2026-01-31T23:00:00</CreDtTm></GrpHdr>
+    <Stmt>
+      <Id>STMT-1</Id>
+      <Acct>
+        <Id><IBAN>CZ8720100000002400123455</IBAN></Id>
+        <Ccy>CZK</Ccy>
+      </Acct>
+      <Ntry>
+        <NtryRef>NTRY-1</NtryRef>
+        <Amt Ccy="CZK">12100.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-01-05</Dt></BookgDt>
+        <ValDt><Dt>2026-01-05</Dt></ValDt>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><EndToEndId>/VS20260001/SS/KS0308</EndToEndId></Refs>
+            <RltdPties>
+              <Dbtr><Nm>Novák Jan s.r.o.</Nm></Dbtr>
+              <DbtrAcct><Id><Othr><Id>1234567890</Id></Othr></Id></DbtrAcct>
+            </RltdPties>
+            <RltdAgts><DbtrAgt><FinInstnId><Othr><Id>0800</Id></Othr></FinInstnId></DbtrAgt></RltdAgts>
+            <RmtInf><Ustrd>Platba faktury &amp; poplatek</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+      <Ntry>
+        <NtryRef>NTRY-2</NtryRef>
+        <Amt Ccy="EUR">49.90</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-01-08</Dt></BookgDt>
+        <NtryDtls>
+          <TxDtls>
+            <RltdPties>
+              <Cdtr><Nm>Hosting GmbH</Nm></Cdtr>
+              <CdtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></CdtrAcct>
+            </RltdPties>
+            <RmtInf><Strd><CdtrRefInf><Ref>5551234</Ref></CdtrRefInf></Strd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+      <Ntry>
+        <NtryRef>NTRY-3</NtryRef>
+        <Amt Ccy="CZK">300.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>PDNG</Sts>
+        <BookgDt><Dt>2026-01-09</Dt></BookgDt>
+      </Ntry>
+      <Ntry>
+        <NtryRef>NTRY-4</NtryRef>
+        <Amt Ccy="CZK">3000.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-01-10</Dt></BookgDt>
+        <NtryDtls>
+          <TxDtls>
+            <AmtDtls><TxAmt><Amt Ccy="CZK">1000.00</Amt></TxAmt></AmtDtls>
+            <Refs><EndToEndId>/VS111/SS/KS</EndToEndId></Refs>
+            <RltdPties><Dbtr><Nm>Batch A</Nm></Dbtr></RltdPties>
+          </TxDtls>
+          <TxDtls>
+            <AmtDtls><TxAmt><Amt Ccy="CZK">2000.00</Amt></TxAmt></AmtDtls>
+            <Refs><EndToEndId>/VS222/SS/KS</EndToEndId></Refs>
+            <RltdPties><Dbtr><Nm>Batch B</Nm></Dbtr></RltdPties>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+    </Stmt>
+  </BkToCstmrStmt>
+</Document>

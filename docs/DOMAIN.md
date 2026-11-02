@@ -85,7 +85,13 @@ Source of truth for `packages/domain`. Researched 2026-11-01; law = zákon 235/2
 - **VIES**: `POST https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number` `{"countryCode","vatNumber"}`.
 - **ČNB rates**: `https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/kurzy-devizoveho-trhu/denni_kurz.txt?date=DD.MM.YYYY`
   (`země|měna|množství|kód|kurz`, comma decimals, divide by `množství`), or JSON `https://api.cnb.cz/cnbapi/exrates/daily`.
-- **Fio API** (later, free bank pairing for Fio users): token-based, 1 req / 30 s.
+- **Fio API** (free bank pairing for Fio users): token-based, 1 req / 30 s.
+- **Bank statements** (`@fakturky/domain/bank`, `parseStatement`): CSV (Fio, Revolut personal + Business, Raiffeisenbank,
+  ČSOB, KB — detected from the header, columns matched by name aliases; any other CSV via an explicit column mapping),
+  ABO/GPC (records 074/075/078/079, posting code 1 debit / 2 credit / 4 storno debit / 5 storno credit, Windows-1250),
+  CAMT.053 XML (VS/KS/SS from the Czech `/VS…/SS…/KS…` EndToEndId convention or `Strd/CdtrRefInf/Ref`). Amounts are
+  signed (credit > 0). Re-imports are idempotent through `external_id` (bank id, else a row fingerprint).
+  CSV exports of KB/ČSOB/Raiffeisen were modelled from their documented column names, not from real account exports.
 
 ## Exports
 

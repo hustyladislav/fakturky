@@ -1,0 +1,3 @@
+Datum provedení;Datum zaúčtování;Číslo účtu;Název účtu;Kategorie transakce;Číslo protiúčtu;Název protiúčtu;Typ transakce;Zpráva;Poznámka;VS;KS;SS;Zaúčtovaná částka;Měna účtu;Původní částka a měna;Původní částka;Původní měna;Poplatek;Id transakce;Vlastní poznámka;Název obchodníka;Město
+05.01.2026 10:00;06.01.2026;1234567/5500;Hlavní účet;Příjmy;987654321/0100;Alfa a.s.;Příchozí tuzemská platba;Faktura 2026-0007;;20260007;0308;;"2 420,00";CZK;;;;;RB-0001;;;
+07.01.2026 11:30;07.01.2026;1234567/5500;Hlavní účet;Nákupy;;Tesco;Platba kartou;;;;;;-199,90;CZK;;;;;RB-0002;;;

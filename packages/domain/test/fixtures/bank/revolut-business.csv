@@ -1,0 +1,2 @@
+Date started (UTC),Date completed (UTC),ID,Type,State,Description,Reference,Payer,Card number,Card label,Card state,Orig currency,Orig amount,Payment currency,Amount,Total amount,Exchange rate,Fee,Fee currency,Balance,Account,Beneficiary account number,Beneficiary sort code or routing number,Beneficiary IBAN,Beneficiary BIC,MCC,Related transaction id,Spend program
+"Jan 10, 2026","Jan 10, 2026",6f1c0b1a-0001,TRANSFER,COMPLETED,Payment from Client Ltd,INV 20260005,Client Ltd,,,,EUR,121.00,EUR,121.00,121.00,,0.00,EUR,5121.00,Main,,,,,,,

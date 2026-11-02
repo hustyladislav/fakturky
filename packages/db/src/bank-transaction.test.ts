@@ -6,7 +6,8 @@ import { bankAccount, bankTransaction, organization } from './schema'
 const handle = await createDb()
 afterAll(() => handle.close())
 
-test('bank transactions are unique per account and external id', async () => {
+// Applying all migrations on PGlite can take several seconds on a cold CI runner.
+test('bank transactions are unique per account and external id', { timeout: 60_000 }, async () => {
   await migrate(handle)
   const [org] = await handle.db
     .insert(organization)

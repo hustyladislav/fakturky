@@ -710,6 +710,7 @@ export const cs = {
   },
   vat: {
     title: 'DPH',
+    subtitle: (period: string, deadline: string) => `${period} · termín podání ${deadline}`,
     disclaimer: 'Kontrolujte před podáním — aplikace nenahrazuje daňového poradce.',
     disclaimerText:
       'Podklady vycházejí pouze z dokladů, které jste vystavili. Přijaté faktury (daň na vstupu) zatím neevidujeme – doplňte je ručně. Soubor si vždy zkontrolujte v EPO, než jej odešlete.',

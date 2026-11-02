@@ -37,6 +37,13 @@ export async function onboardByIco(page: Page, ico: string, expectedName: string
   await page.getByRole('button', { name: 'Načíst z ARES' }).click()
   await expect(page.getByLabel('Obchodní jméno / jméno a příjmení')).toHaveValue(expectedName)
   await page.getByRole('button', { name: 'Pokračovat' }).click()
+  await skipOnboardingBank(page)
+}
+
+/** Onboarding bank step -> "Přeskočit" -> done screen -> dashboard. */
+export async function skipOnboardingBank(page: Page) {
+  await page.getByRole('button', { name: 'Přeskočit' }).click()
+  await page.getByRole('button', { name: 'Přejít na přehled' }).click()
   await expect(page.getByRole('heading', { name: 'Dobrý den' })).toBeVisible()
 }
 

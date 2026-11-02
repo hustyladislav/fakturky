@@ -11,7 +11,7 @@
       "source": "hustyladislav/agentic-setup",
       "sourceType": "github",
       "skillPath": "skills/pr/SKILL.md",
-      "computedHash": "e82412865d94e7e468558e83d23e3c192c38d6ee40955ea9fc537c5f7ba6df24"
+      "computedHash": "a0c68a98b4b0573115ba66bf1f909ae975864ff63a887cbadf30d22f6e4071cc"
     },
     "shadcn": {
       "source": "shadcn/ui",

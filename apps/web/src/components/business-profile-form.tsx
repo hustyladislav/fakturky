@@ -4,21 +4,37 @@ import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
 import { client, orpc } from '@/lib/orpc'
 
 type Profile = Awaited<ReturnType<typeof client.businessProfile.get>>
 
+export type ProfileValues = {
+  legalName: string
+  ico: string
+  dic: string
+  street: string
+  city: string
+  zip: string
+  vatStatus: Profile['vatStatus']
+  registryNote: string
+  email: string
+  phone: string
+}
+
 export function BusinessProfileForm({
   profile,
   submitLabel,
   onSaved,
+  onValuesChange,
 }: {
   profile: Profile
   submitLabel: string
   onSaved?: () => void | Promise<void>
+  /** Live values, for a preview next to the form. */
+  onValuesChange?: (values: ProfileValues) => void
 }) {
   const queryClient = useQueryClient()
   const [values, setValues] = useState({
@@ -34,6 +50,7 @@ export function BusinessProfileForm({
     phone: profile.phone ?? '',
   })
   const [icoError, setIcoError] = useState<string | null>(null)
+  useEffect(() => onValuesChange?.(values), [values, onValuesChange])
   const set = (key: keyof typeof values) => (e: { target: { value: string } }) => {
     if (key === 'ico') setIcoError(null)
     setValues((v) => ({ ...v, [key]: e.target.value }))

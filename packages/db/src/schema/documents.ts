@@ -60,6 +60,8 @@ export const document = pgTable(
     rounding: money('rounding').notNull().default('0'),
     /** Round the payable total to whole currency units; the difference is the separate `rounding` line. */
     roundTotal: boolean('round_total').notNull().default(false),
+    /** Line prices include VAT (tax receipts for advances: VAT is extracted from the received gross). */
+    pricesIncludeVat: boolean('prices_include_vat').notNull().default(false),
     relatedDocumentId: text('related_document_id').references((): AnyPgColumn => document.id),
     /** Set for documents brought in by an import ('fakturoid' | 'csv' | 'isdoc'); they keep their original number. */
     importedFrom: text('imported_from'),

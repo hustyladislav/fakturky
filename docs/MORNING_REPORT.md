@@ -41,6 +41,11 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 
 ## Shipped overnight
 
+- **Late night batch**: proforma → tax receipt for received advance → final invoice #94/#96; ČNB rate follows DUZP,
+  CZK VAT amounts, rounding line #92/#98; document appearance (accent colour, logo, signature) #95; JSON export +
+  e2e #97; VAT treatments per line instead of "0 %" #89/#91; legal QA fixes (registry note, required customer data
+  for tax invoices, payment block on public page, 2 536 500 Kč warning) #82; number series settings #81;
+  Fakturoid/CSV/ISDOC import #77; design QA passes #83/#85/#87/#90; e2e now a required check.
 - **In-app assistant (⌘J)** #38/#68/#74: DeepSeek V4.1 Flash via AI Gateway (US inference, prompt training
   disallowed), every app action as a tool, approval cards for destructive actions, navigation tools, ⌘K "Zeptat se
   asistenta". Hard caps: $100/month global, $2/month per organization, per-user rate limit + gateway key/team

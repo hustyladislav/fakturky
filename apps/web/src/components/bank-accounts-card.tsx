@@ -18,14 +18,20 @@ import {
 import { FieldError } from '@fakturky/ui/components/field-error'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
+import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { bankErrorMessage } from '@/components/bank/bank-errors'
 import { cs } from '@/i18n/cs'
+import { COMMON_CURRENCIES, CURRENCY_CODES, currencyLabel } from '@/lib/currencies'
 import { orpc } from '@/lib/orpc'
 
 const t = cs.bankAccounts
+
+/** Fio's official API documentation (explains where to create a token in internet banking). */
+const FIO_API_DOCS = 'https://www.fio.cz/docs/cz/API_Bankovnictvi.pdf'
 
 export function BankAccountsCard() {
   const queryClient = useQueryClient()
@@ -166,16 +172,37 @@ function NewBankAccount({ onCreated }: { onCreated: () => unknown }) {
             />
             <FieldError id="ba-account-error">{accountError}</FieldError>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 items-start gap-4">
             <div className="space-y-2">
               <Label htmlFor="ba-currency">{t.currency}</Label>
-              <Input id="ba-currency" name="currency" defaultValue="CZK" maxLength={3} required />
+              <NativeSelect id="ba-currency" name="currency" defaultValue="CZK" required>
+                {COMMON_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+                <option disabled>──────────</option>
+                {CURRENCY_CODES.filter((c) => !COMMON_CURRENCIES.includes(c)).map((c) => (
+                  <option key={c} value={c}>
+                    {currencyLabel(c)}
+                  </option>
+                ))}
+              </NativeSelect>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ba-bic">
-                {t.bic} <span className="text-muted-foreground">({t.bicOptional})</span>
-              </Label>
-              <Input id="ba-bic" name="bic" maxLength={11} />
+              <div className="flex items-baseline justify-between gap-2">
+                <Label htmlFor="ba-bic">{t.bic}</Label>
+                <span id="ba-bic-hint" className="text-muted-foreground text-xs">
+                  {t.bicOptional}
+                </span>
+              </div>
+              <Input
+                id="ba-bic"
+                name="bic"
+                maxLength={11}
+                autoCapitalize="characters"
+                aria-describedby="ba-bic-hint"
+              />
             </div>
           </div>
           <label className="flex items-center gap-2 text-sm">
@@ -252,6 +279,20 @@ function FioToken({
               <DialogTitle>{f.title}</DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground text-sm">{f.description}</p>
+            <ol className="list-decimal space-y-1 pl-5 text-muted-foreground text-sm">
+              {f.steps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+            <a
+              href={FIO_API_DOCS}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-1 text-sm underline underline-offset-2"
+            >
+              {f.docsLink}
+              <ExternalLink className="size-3.5" aria-hidden />
+            </a>
             <div className="space-y-2">
               <Label htmlFor="fio-token">{f.token}</Label>
               <Input
@@ -260,9 +301,14 @@ function FioToken({
                 type="password"
                 required
                 autoComplete="off"
+                spellCheck={false}
                 aria-invalid={error ? true : undefined}
+                aria-describedby="fio-token-hint"
                 onChange={() => setError(null)}
               />
+              <p id="fio-token-hint" className="text-muted-foreground text-xs">
+                {f.tokenHint}
+              </p>
               <FieldError>{error}</FieldError>
             </div>
             <DialogFooter>

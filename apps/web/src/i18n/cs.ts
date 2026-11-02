@@ -918,7 +918,7 @@ export const cs = {
     accountPlaceholder: '123456789/0800 nebo LT12 1000 0111 0100 1000',
     currency: 'Měna',
     bic: 'BIC / SWIFT',
-    bicOptional: 'Nepovinné',
+    bicOptional: 'nepovinné',
     showQr: 'Zobrazit QR platbu na faktuře',
     default: 'Výchozí',
     makeDefault: 'Nastavit jako výchozí',
@@ -933,7 +933,14 @@ export const cs = {
       disconnect: 'Odpojit Fio',
       title: 'Propojení s Fio bankou',
       description:
-        'Vložte token pouze pro čtení (Fio internetbanking → Nastavení → API). Token uložíme zašifrovaně a jednou denně podle něj stáhneme nové platby. Na účtu s ním nelze nic platit.',
+        'Stačí token pouze pro čtení. Podle něj jednou denně stáhneme nové platby a spárujeme je s fakturami. Platit s ním nejde.',
+      steps: [
+        'Přihlaste se do Fio internetbankingu a otevřete Nastavení → API.',
+        'Zvolte Přidat nový token a oprávnění „Pouze sledování účtu“.',
+        'Zkopírujte vygenerovaný token a vložte ho sem.',
+      ],
+      docsLink: 'Návod od Fio (PDF)',
+      tokenHint: 'Token uložíme zašifrovaně a po uložení už ho nikde nezobrazíme.',
       token: 'Token Fio API',
       save: 'Uložit token',
       connected: 'Fio propojeno',
@@ -979,6 +986,8 @@ export const cs = {
     paidInvoice: 'Faktura',
     overpaid: (amount: string) => `Přeplatek ${amount}`,
     remaining: 'zbývá',
+    remainingHeader: 'Zbývá',
+    pairInvoice: 'Faktura',
     reasons: {
       variable_symbol: 'shodný variabilní symbol',
       reference_in_message: 'číslo faktury ve zprávě',

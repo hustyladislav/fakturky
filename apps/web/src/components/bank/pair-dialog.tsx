@@ -63,33 +63,48 @@ export function PairDialog({
           placeholder={t.pairSearch}
           aria-label={t.pairSearch}
         />
-        <ul className="max-h-72 divide-y overflow-auto rounded-lg border">
-          {candidates.length === 0 && (
-            <li className="text-muted-foreground p-3 text-sm">{t.noOpen}</li>
-          )}
-          {candidates.map((d) => (
-            <li key={d.id} className="flex items-center justify-between gap-3 p-3 text-sm">
-              <div className="min-w-0">
-                <div className="font-medium tabular-nums">{d.number}</div>
-                <div className="text-muted-foreground truncate">{d.customerName ?? '—'}</div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-muted-foreground text-xs">
-                  {t.remaining} <Money amount={d.remaining} currency={d.currency} />
-                </span>
-                <Button
-                  size="sm"
-                  disabled={match.isPending || !transaction}
-                  onClick={() =>
-                    transaction && match.mutate({ transactionId: transaction.id, documentId: d.id })
-                  }
+        {candidates.length === 0 ? (
+          <p className="rounded-lg border p-3 text-muted-foreground text-sm">{t.noOpen}</p>
+        ) : (
+          <div className="max-h-[50vh] overflow-auto rounded-lg border">
+            {/* One shared grid so the "zbývá" amounts line up (right-aligned, tabular) across rows. */}
+            <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto] divide-y">
+              <li
+                aria-hidden
+                className="col-span-3 grid grid-cols-subgrid items-center gap-x-3 bg-muted/50 px-3 py-1.5 text-muted-foreground text-xs"
+              >
+                <span>{t.pairInvoice}</span>
+                <span className="text-right">{t.remainingHeader}</span>
+                <span />
+              </li>
+              {candidates.map((d) => (
+                <li
+                  key={d.id}
+                  className="col-span-3 grid grid-cols-subgrid items-center gap-x-3 p-3 text-sm"
                 >
-                  {t.pair}
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                  <div className="min-w-0">
+                    <div className="font-medium tabular-nums">{d.number}</div>
+                    <div className="break-words text-muted-foreground">{d.customerName ?? '—'}</div>
+                  </div>
+                  <div className="whitespace-nowrap text-right tabular-nums">
+                    <span className="sr-only">{t.remaining} </span>
+                    <Money amount={d.remaining} currency={d.currency} />
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={match.isPending || !transaction}
+                    onClick={() =>
+                      transaction &&
+                      match.mutate({ transactionId: transaction.id, documentId: d.id })
+                    }
+                  >
+                    {t.pair}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )

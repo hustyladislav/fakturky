@@ -1,6 +1,7 @@
 # Morning report
 
-Overnight build, 2026-11-01 22:00 → 2026-11-02 08:00. 109 PRs merged, CI green (unit + e2e + a11y + security scans).
+Overnight build, 2026-11-01 22:00 → 2026-11-02 08:00: 109 PRs. Day 2 (design v2 + UI/UX rounds 2–3, until 17:00): 43 more.
+CI green on `main` (508 unit tests + e2e + a11y + security scans). **Work is paused after round 3, as you asked.**
 
 ## TL;DR
 
@@ -16,10 +17,10 @@ a remote MCP server, REST API and CLI over the same operations.
 
 ## Needs you (in priority order)
 
-1. **Production is behind `main`.** Vercel Hobby allows 100 deploys / 24 h and we used them up at ~03:30 (every PR
-   built a preview — now fixed: only `main` deploys, docs-only commits skip). Production still runs the 03:16 build;
-   bank import, VAT reports, QA round 2 fixes and the final polish deploy automatically when the quota frees
-   (~22:00). **To ship now:** upgrade the team to Pro ($20/mo), then push any commit to `main`.
+1. **Production is two PRs behind `main`.** Production runs #170 (16:20). The deploys for #175 (⌘K command bar) and
+   #178 (landing IČO demo) hit the Vercel Hobby limit (100 deploys / 24 h; only `main` deploys now, docs-only commits
+   skip). They ship with the next code commit to `main` once the quota frees, or click **Redeploy** on the latest
+   `main` commit in Vercel. Upgrading to Pro ($20/mo) removes the limit.
 2. **Domain** — pick one (`docs/research/names.md`; `fakturky.app` is free, $9.99/yr) and buy it or tell me to.
    Unblocks: magic-link & invoice e-mails to everyone (Resend sandbox today delivers to nobody, since your Resend
    team "moravio" is owned by another address), publishing the Google consent screen (today only you can use
@@ -56,6 +57,42 @@ key, Better Auth dashboard (dash.better-auth.com), branch protection, auto-merge
 | ![](screenshots/inv-Posplatnosti-1440-light.png) | ![](screenshots/inv-Posplatnosti-375-light.png) | ![](screenshots/bank-pair-1440-light.png) |
 | **Banka** | **DPH** | **Nastavení** |
 | ![](screenshots/bank-banka-1440-light.png) | ![](screenshots/dph-dph-1440-light.png) | ![](screenshots/settings-nastaveni-1440-light.png) |
+
+## Shipped on day 2 (design v2 + UI/UX rounds 2–3)
+
+- **QR Platba** on the invoice detail, public page and e-mail #138 (SPAYD for CZK, EPC for EUR; hidden when paid,
+  draft, cancelled, not a bank transfer, or per bank account setting).
+- **Design v2, every page** #139–#157: "the app speaks the PDF's language" — desk/sheet surfaces, micro-labels,
+  hairlines, serif figures, avatars, StatusBadge v2, relative dates, real date picker and currency combobox,
+  illustrated empty states, View Transitions. Invoice detail = the real document as a paper sheet + sticky action
+  rail; two-pane editor with live A4 preview; dashboard with chart and VAT-limit tracker; contact detail page.
+  Spec and critique: `docs/DESIGN_V2.md`.
+- **Geist Serif** (Vercel's new serif, OFL) replaces Fraunces in the web, PDF and e-mails #158. Inter stays for UI text —
+  say if you want Geist Sans too.
+- **Round 3, world-class UX** (driven by a dogfood report and fresh screenshots):
+  - Create flow: ARES fills the business after 8 IČO digits, bank-account step with live IBAN/BIC, keyboard-first
+    customer picker, inline bank account in the editor, phone-first editor layout #163/#164/#168/#169/#172/#173.
+    **Sign-up → first issued invoice by keyboard only: 5 s machine time** (≈25 s for a person), an e2e test #180.
+  - After issuing: "Sdílet" is the primary action, one-click mark paid with undo #167; partial credit notes with live
+    VAT split #170; recurrence set up from the toast #177.
+  - ⌘K command bar (Linear-style): documents, contacts, actions with parameters, navigation; also `search.global` on
+    REST and MCP #175; diacritics-insensitive search #165.
+  - Bank import preview + per-row result + "Odchozí" tab #174; appearance settings with live preview and dimmed paper
+    in dark mode #179; assistant approval summaries and history #171; container-responsive dashboard and lists #166.
+  - Landing: hero built from the real app UI, live IČO demo on a public ARES proxy, honest free-tier comparison #176/#178
+    (local Lighthouse: mobile 97/100/100/100, desktop 100s).
+- **Agent setup**: `AGENTS.md` is now a short index with topic docs (`docs/agents/`), a decision log
+  (`docs/decisions/`), shared skills and PR-body hooks #159/#161/#162. The same setup is published as a reusable skill:
+  https://github.com/hustyladislav/agentic-setup (`npx skills add hustyladislav/agentic-setup`). The private template
+  repo it replaced is archived, not deleted.
+- Fixed a real hydration bug that also made e2e flaky: text typed before hydration was wiped #160.
+
+### Known gaps after round 3 (not verified)
+
+- Sticky editor action bar vs. the tab bar on notched iPhones (safe-area) — not checkable in a desktop browser.
+- 640–767 px range; screen-reader pass over the customer combobox and ⌘K; assistant at 390 px in dark mode.
+- Public `/f/:token` page title; the CLI card on the landing page still says "Připravujeme" (CLI not on npm yet).
+- Decision-log entries marked "to confirm by the owner" in `docs/decisions/` need your rationale.
 
 ## Shipped overnight
 

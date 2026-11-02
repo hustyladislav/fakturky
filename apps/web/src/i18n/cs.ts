@@ -986,6 +986,8 @@ export const cs = {
       list_number_series: 'Načítám číselné řady',
       update_number_series: 'Upravuji číselnou řadu',
       set_next_document_number: 'Nastavuji další číslo dokladu',
+      get_vat_report: 'Připravuji přehled DPH',
+      export_vat_xml: 'Generuji XML pro EPO',
       navigate: 'Otevírám stránku',
       openDocument: 'Otevírám doklad',
       prefillInvoiceForm: 'Předvyplňuji fakturu',

@@ -86,6 +86,8 @@ export interface VatReportDocument {
   recap: readonly VatReportRecapRow[]
   /** Overrides the report default for EU supplies (goods → ř.20 / SH code 0, services → ř.21 / code 3). */
   euSupplyKind?: 'goods' | 'services'
+  /** Foreign-currency document without a stored ČNB rate: the CZK amounts are not trustworthy. */
+  missingExchangeRate?: boolean
 }
 
 export interface VatReportOptions {
@@ -176,6 +178,8 @@ export type VatWarningCode =
   /** Domestic supply above the KH limit, customer without Czech DIČ → reported in A.5. */
   | 'large_domestic_without_dic'
   | 'unsupported_rate'
+  /** Foreign-currency document without a ČNB exchange rate: CZK amounts cannot be derived. */
+  | 'missing_exchange_rate'
   /** Exempt supplies are not derived: ř.26 vs ř.50 depends on the right to deduct. */
   | 'exempt_manual'
 
@@ -274,6 +278,8 @@ export function buildVatReport(
       warnings.push({ code, blocking, documentId: doc.id, number: doc.number })
     const contribute = (rowKey: VatRowKey, base: Decimal, vat: Decimal) =>
       contributions.push({ rowKey, documentId: doc.id, base: toFixed(base), vat: toFixed(vat) })
+
+    if (doc.missingExchangeRate) warn('missing_exchange_rate', true)
 
     const docTotal = sum(doc.recap.map((r) => parseDecimal(r.baseCzk).plus(parseDecimal(r.vatCzk))))
     const czDic = czDicDigits(doc.customer)

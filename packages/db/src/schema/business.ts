@@ -21,6 +21,16 @@ export type Address = {
   country?: string
 }
 
+export type VatFiling = {
+  /** Číslo finančního úřadu (EPO `c_ufo`), 3 digits. */
+  taxOfficeCode: string
+  /** Optional územní pracoviště (`c_pracufo`), 4 digits. */
+  workplaceCode?: string | null
+  period: 'monthly' | 'quarterly'
+  /** F = fyzická osoba, P = právnická osoba. */
+  subjectType: 'F' | 'P'
+}
+
 export const businessProfile = pgTable('business_profile', {
   id: idColumn(),
   organizationId: text('organization_id')
@@ -33,6 +43,8 @@ export const businessProfile = pgTable('business_profile', {
   address: jsonb('address').$type<Address>().notNull().default({}),
   vatStatus: vatStatus('vat_status').notNull().default('non_payer'),
   registryNote: text('registry_note'),
+  /** Data needed to file VAT reports (EPO): tax office code, filing period, taxpayer type. Null until set. */
+  vatFiling: jsonb('vat_filing').$type<VatFiling | null>(),
   email: text('email'),
   phone: text('phone'),
   website: text('website'),

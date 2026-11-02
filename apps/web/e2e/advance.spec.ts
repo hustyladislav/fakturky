@@ -20,7 +20,6 @@ test('proforma → paid → final invoice with the advance deducted (non-VAT pay
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^Z\d{4}-0001$/)
 
   await page.getByRole('button', { name: 'Označit jako zaplacenou' }).first().click()
-  await page.getByRole('button', { name: 'Označit jako zaplacenou' }).last().click()
   await expect(page.getByText('Zaplacená', { exact: true }).first()).toBeVisible()
 
   // The paid proforma links to nothing yet; creating the final invoice adds it to the related documents.

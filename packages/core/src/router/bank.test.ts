@@ -31,15 +31,29 @@ describe('statement import', () => {
       content: fixture('fio.csv'),
     })
     expect(first).toMatchObject({ format: 'fio-csv', imported: 4, duplicates: 0 })
+    // Every row is accounted for: debits are stored but never paired, nothing vanishes.
+    expect(first.rows).toHaveLength(4)
+    expect(first.rows.filter((r) => r.outcome === 'outgoing')).toHaveLength(1)
+    expect(
+      first.rows.filter((r) => r.outcome === 'unmatched' || r.outcome === 'suggested'),
+    ).toHaveLength(3)
     const again = await api.bank.importStatement({
       bankAccountId: accountId,
       content: fixture('fio.csv'),
     })
     expect(again).toMatchObject({ imported: 0, duplicates: 4 })
+    expect(again.rows.map((r) => r.outcome)).toEqual([
+      'duplicate',
+      'duplicate',
+      'duplicate',
+      'duplicate',
+    ])
+    const debits = await api.bank.list({ status: 'unmatched', direction: 'debit' })
+    expect(debits.items).toHaveLength(1)
 
     const all = await api.bank.list({})
     expect(all.total).toBe(4)
-    expect(all.counts).toEqual({ unmatched: 3, matched: 0, ignored: 0 })
+    expect(all.counts).toEqual({ unmatched: 3, matched: 0, ignored: 0, outgoing: 1 })
     const unmatched = await api.bank.list({ status: 'unmatched' })
     expect(unmatched.items.map((t) => t.amount).sort()).toEqual(['1000.00', '12100.00', '500.00'])
     const search = await api.bank.list({ search: 'novák' })

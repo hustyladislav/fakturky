@@ -119,7 +119,7 @@ function Overview() {
   ) : undefined
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div className="@container mx-auto max-w-[1200px]">
       <PageHeader eyebrow={today()} title={t.greeting} subtitle={subtitle} className="mb-5" />
 
       <QuickActions />
@@ -154,7 +154,7 @@ function Overview() {
 
       {summary.isPending && (
         <div className="space-y-5" aria-busy="true">
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 @4xl:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-[142px] rounded-xl" />
             ))}
@@ -166,9 +166,9 @@ function Overview() {
       {s && (
         <div className="space-y-5">
           {/* KPIs: 4 across on desktop, 2x2 on tablet, a snap carousel on phones */}
-          <div className="-mx-4 flex scroll-px-4 snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-4 flex scroll-px-4 snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] @xl:mx-0 @xl:grid @xl:grid-cols-2 @xl:gap-4 @xl:overflow-visible @xl:px-0 @xl:pb-0 @4xl:grid-cols-4 [&::-webkit-scrollbar]:hidden">
             <KpiCard
-              className="w-[calc(100%-3.25rem)] shrink-0 snap-start md:w-auto"
+              className="w-[calc(100%-3.25rem)] shrink-0 snap-start @xl:w-auto"
               label={t.kpi.month}
               amount={s.monthTurnover}
               tone="ink"
@@ -187,13 +187,13 @@ function Overview() {
               spark={spark?.map((m) => Number(m.turnover))}
             />
             <KpiCard
-              className="w-[calc(100%-3.25rem)] shrink-0 snap-start md:w-auto"
+              className="w-[calc(100%-3.25rem)] shrink-0 snap-start @xl:w-auto"
               label={t.kpi.unpaid}
               amount={s.unpaid}
               hint={t.kpi.unpaidHint(s.unpaidCount)}
             />
             <KpiCard
-              className="w-[calc(100%-3.25rem)] shrink-0 snap-start md:w-auto"
+              className="w-[calc(100%-3.25rem)] shrink-0 snap-start @xl:w-auto"
               label={t.kpi.overdue}
               amount={s.overdue}
               tone={s.overdueCount > 0 ? 'overdue' : undefined}
@@ -204,7 +204,7 @@ function Overview() {
               }
             />
             <KpiCard
-              className="w-[calc(100%-3.25rem)] shrink-0 snap-start md:w-auto"
+              className="w-[calc(100%-3.25rem)] shrink-0 snap-start @xl:w-auto"
               label={t.kpi.received}
               amount={s.monthReceived}
               delta={
@@ -215,18 +215,18 @@ function Overview() {
             />
           </div>
 
-          <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start">
-            <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-5">
+          <div className="flex flex-col gap-5 @4xl:grid @4xl:grid-cols-[minmax(0,1fr)_23rem] @4xl:items-start">
+            <div className="contents @4xl:flex @4xl:min-w-0 @4xl:flex-col @4xl:gap-5">
               <RevenueChart months={s.months} className="order-2" />
               {hasDocs && (
-                <section className="sheet order-4 pt-5 pb-2">
+                <section className="sheet @container order-4 pt-5 pb-2">
                   <SectionLabel
                     className="px-5"
                     action={
                       <Link
                         to="/faktury"
                         search={{ filter: 'all' }}
-                        className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                        className="whitespace-nowrap text-xs font-medium text-primary underline-offset-4 hover:underline"
                       >
                         {t.allInvoices}
                       </Link>
@@ -254,7 +254,7 @@ function Overview() {
                                   : cs.invoices.draftNumber)}
                             </div>
                           </div>
-                          <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-4">
+                          <div className="flex shrink-0 flex-col items-end gap-1 @md:flex-row @md:items-center @md:gap-4">
                             <Amount
                               value={d.total}
                               currency={d.currency}
@@ -271,7 +271,7 @@ function Overview() {
               )}
             </div>
 
-            <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-5">
+            <div className="contents @4xl:flex @4xl:min-w-0 @4xl:flex-col @4xl:gap-5">
               <AwaitingList docs={unpaid.data ?? []} total={s.unpaidCount} className="order-1" />
               {s.vatLimit ? (
                 <VatLimitCard vat={s.vatLimit} className="order-3" />

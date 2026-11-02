@@ -604,7 +604,7 @@ function DphSection({
   )
 
   return (
-    <section className="space-y-4 sheet p-5 sm:p-7">
+    <section className="@container space-y-4 sheet p-5 sm:p-7">
       <div>
         <h2 className="font-serif text-xl">{t.dph.title}</h2>
         <p className="text-sm text-muted-foreground">{t.dph.description}</p>
@@ -717,7 +717,7 @@ function DphSection({
         </div>
       </div>
 
-      <dl className="grid overflow-hidden rounded-xl bg-muted/60 sm:grid-cols-4 sm:divide-x">
+      <dl className="grid overflow-hidden rounded-xl bg-muted/60 @2xl:grid-cols-4 @2xl:divide-x">
         {[
           [t.dph.summaryOut, f.r62, false],
           [t.dph.summaryDeduction, f.r63, false],
@@ -726,7 +726,7 @@ function DphSection({
         ].map(([label, amount, key]) => (
           <div
             key={label as string}
-            className={cn('p-4 max-sm:border-b last:border-0', key && 'bg-card')}
+            className={cn('border-b p-4 last:border-0 @2xl:border-b-0', key && 'bg-card')}
           >
             <dt className="label-caps">{label}</dt>
             <dd className="mt-1.5">

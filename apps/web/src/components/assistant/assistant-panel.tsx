@@ -24,11 +24,16 @@ import {
   MessageScrollerViewport,
 } from '@fakturky/ui/components/message-scroller'
 import { Trace, TraceIcon, TraceLine, TraceTitle } from '@fakturky/ui/components/trace'
+import { useQuery } from '@tanstack/react-query'
+import { Link, useLocation } from '@tanstack/react-router'
 import {
   ArrowUp,
   Check,
   Coffee,
+  FileText,
+  History,
   Loader2,
+  MapPin,
   ShieldQuestion,
   Sparkles,
   Square,
@@ -38,21 +43,22 @@ import {
 } from 'lucide-react'
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { cs } from '@/i18n/cs'
+import { orpc } from '@/lib/orpc'
+import { contextLabel, pageKey, starters } from './assistant-context'
+import {
+  type Part,
+  recoveredFailures,
+  resultDocumentId,
+  type ToolPart,
+  type TurnMessage,
+  toolFailed,
+} from './assistant-parts'
 import { useAssistant } from './assistant-provider'
+import { DOCUMENT_TOOLS, documentSummary } from './assistant-summary'
 import { RichText } from './rich-text'
 
 const t = cs.assistant
 
-type ToolPart = {
-  type: 'tool-call'
-  id: string
-  name: string
-  arguments: string
-  state: string
-  output?: { ok?: boolean }
-  approval?: { id: string; needsApproval: boolean; approved?: boolean }
-}
-type Part = { type: 'text'; content: string } | ToolPart
 type Interrupt = {
   kind?: string
   toolCallId?: string
@@ -69,28 +75,75 @@ function limitState(error: Error | undefined) {
   return { message: message ?? t.error, coffee: !!message && code !== 'assistant_limit_rate' }
 }
 
+function documentId(raw: string): string | null {
+  try {
+    const id = (JSON.parse(raw) as { id?: unknown }).id
+    return typeof id === 'string' ? id : null
+  } catch {
+    return null
+  }
+}
+
+/** What the action does in words (customer, lines, total) instead of the raw arguments. */
+function ApprovalBody({ part }: { part: ToolPart }) {
+  const id = DOCUMENT_TOOLS.has(part.name) ? documentId(part.arguments) : null
+  const doc = useQuery({
+    ...orpc.documents.get.queryOptions({ input: { id: id ?? '' } }),
+    enabled: !!id,
+  })
+  const summary = doc.data ? documentSummary(part.name, doc.data) : null
+  return (
+    <>
+      {summary ? (
+        <>
+          <ItemTitle>
+            <ShieldQuestion className="size-4 shrink-0 text-primary" aria-hidden />
+            {summary.title}
+          </ItemTitle>
+          <p className="text-sm text-muted-foreground tabular-nums">{summary.facts.join(' · ')}</p>
+        </>
+      ) : (
+        <ItemTitle>
+          <ShieldQuestion className="size-4 shrink-0 text-primary" aria-hidden />
+          {toolLabel(part.name)}
+        </ItemTitle>
+      )}
+      {!summary && !doc.isPending && (
+        <details className="mt-1 text-xs text-muted-foreground">
+          <summary className="cursor-pointer select-none">{t.details}</summary>
+          <pre className="mt-1 max-h-32 overflow-auto rounded-md bg-muted p-2 text-[11px] leading-snug">
+            {formatArgs(part.arguments)}
+          </pre>
+        </details>
+      )}
+    </>
+  )
+}
+
 function ApprovalCard({ part, interrupt }: { part: ToolPart; interrupt: Interrupt | undefined }) {
   const decided = part.approval?.approved !== undefined
   const answered = decided || !interrupt
+  const failed = toolFailed(part)
+  const openId =
+    part.name !== 'delete_document_draft'
+      ? (resultDocumentId(part) ?? documentId(part.arguments))
+      : null
+  const done = part.output?.ok === true && openId && DOCUMENT_TOOLS.has(part.name)
   return (
-    <Item variant="outline" size="sm" className="bg-card">
+    <Item variant="outline" size="sm" className="flex-col items-stretch bg-card">
       <ItemContent>
-        <ItemTitle>
-          <ShieldQuestion className="size-4 text-primary" aria-hidden />
-          {toolLabel(part.name)}
-        </ItemTitle>
+        <ApprovalBody part={part} />
         <ItemDescription className="line-clamp-none">
-          {decided
-            ? part.approval?.approved === false
-              ? t.rejected
-              : t.approved
-            : answered
-              ? t.expired
-              : t.approvalHint}
+          {failed
+            ? t.toolFailed
+            : decided
+              ? part.approval?.approved === false
+                ? t.rejected
+                : t.approved
+              : answered
+                ? t.expired
+                : t.approvalHint}
         </ItemDescription>
-        <pre className="mt-1 max-h-32 overflow-auto rounded-md bg-muted p-2 text-[11px] leading-snug text-muted-foreground">
-          {formatArgs(part.arguments)}
-        </pre>
       </ItemContent>
       {!answered && (
         <ItemActions>
@@ -101,6 +154,19 @@ function ApprovalCard({ part, interrupt }: { part: ToolPart; interrupt: Interrup
           <Button size="sm" variant="outline" onClick={() => interrupt?.resolveInterrupt?.(false)}>
             <X data-icon="inline-start" />
             {t.reject}
+          </Button>
+        </ItemActions>
+      )}
+      {done && openId && (
+        <ItemActions>
+          <Button
+            size="sm"
+            variant="outline"
+            nativeButton={false}
+            render={<Link to="/faktury/$id" params={{ id: openId }} />}
+          >
+            <FileText data-icon="inline-start" />
+            {t.openInvoice}
           </Button>
         </ItemActions>
       )}
@@ -117,7 +183,7 @@ function formatArgs(raw: string) {
 }
 
 function ToolTrace({ part }: { part: ToolPart }) {
-  const failed = part.state === 'error' || part.output?.ok === false
+  const failed = toolFailed(part)
   const done = part.state === 'complete' || part.output !== undefined
   const status = failed ? 'error' : done ? undefined : 'running'
   return (
@@ -137,14 +203,17 @@ function ToolTrace({ part }: { part: ToolPart }) {
 function AssistantMessage({
   parts,
   interrupts,
+  hidden,
 }: {
   parts: ReadonlyArray<Part>
   interrupts: Interrupt[]
+  hidden: ReadonlySet<string>
 }) {
   return (
     <Message>
       <MessageContent>
         {parts.map((part, i) => {
+          if (part.type === 'tool-call' && hidden.has(part.id)) return null
           const key = `${part.type}-${'id' in part && part.id ? part.id : i}`
           if (part.type === 'text') {
             if (!part.content.trim()) return null
@@ -187,14 +256,16 @@ function Composer({ draft, setDraft }: { draft: string; setDraft: (v: string) =>
     void send(text)
   }
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    if (e.key !== 'Enter' || e.nativeEvent.isComposing) return
+    // Enter and ⌘/Ctrl+Enter send; Shift+Enter is a new line.
+    if (!e.shiftKey || e.metaKey || e.ctrlKey) {
       e.preventDefault()
       submit()
     }
   }
 
   return (
-    <InputGroup className="bg-card">
+    <InputGroup className="bg-card has-disabled:bg-card has-disabled:opacity-100 dark:has-disabled:bg-input/30">
       <InputGroupTextarea
         ref={ref}
         value={draft}
@@ -202,8 +273,9 @@ function Composer({ draft, setDraft }: { draft: string; setDraft: (v: string) =>
         onKeyDown={onKeyDown}
         placeholder={t.placeholder}
         aria-label={t.placeholder}
-        rows={2}
+        rows={1}
         maxLength={4000}
+        className="max-h-44 min-h-12 resize-none field-sizing-content"
       />
       <InputGroupAddon align="block-end">
         {isLoading ? (
@@ -233,12 +305,96 @@ function Composer({ draft, setDraft }: { draft: string; setDraft: (v: string) =>
   )
 }
 
+/** Where the user is, as a chip; the invoice number appears once the document has loaded. */
+function ContextChip({ pathname }: { pathname: string }) {
+  const key = pageKey(pathname)
+  const id = key === 'invoice' ? pathname.split('/')[2] : undefined
+  const doc = useQuery({
+    ...orpc.documents.get.queryOptions({ input: { id: id ?? '' } }),
+    enabled: !!id,
+  })
+  return (
+    <span className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs text-muted-foreground">
+      <MapPin className="size-3 shrink-0" aria-hidden />
+      <span className="truncate">{contextLabel(key, doc.data?.number)}</span>
+    </span>
+  )
+}
+
+function EmptyState({ setDraft }: { setDraft: (v: string) => void }) {
+  const { send, history, openConversation, clearHistory } = useAssistant()
+  const { pathname } = useLocation()
+  return (
+    <div className="flex h-full flex-col gap-5 overflow-y-auto p-4">
+      <div className="mt-auto space-y-3">
+        <ContextChip pathname={pathname} />
+        <p className="px-1 text-sm text-muted-foreground">{t.subtitle}</p>
+      </div>
+      <div className="space-y-2">
+        <p className="px-1 text-xs font-medium text-muted-foreground">{t.suggestionsTitle}</p>
+        <div className="flex flex-wrap gap-2">
+          {starters(pageKey(pathname)).map((s) => (
+            <button
+              key={s}
+              type="button"
+              className="rounded-full border bg-card px-3 py-1.5 text-left text-sm transition-colors hover:bg-background focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              onClick={() => (s.endsWith(' ') ? setDraft(s) : void send(s))}
+            >
+              {s.trim()}
+              {s.endsWith(' ') ? '…' : ''}
+            </button>
+          ))}
+        </div>
+      </div>
+      {history.length > 0 && (
+        <section className="space-y-1" aria-label={t.recent}>
+          <div className="flex items-center justify-between px-1">
+            <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <History className="size-3" aria-hidden />
+              {t.recent}
+            </h3>
+            <button
+              type="button"
+              onClick={clearHistory}
+              className="text-xs text-muted-foreground underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
+            >
+              {t.clearHistory}
+            </button>
+          </div>
+          <ul>
+            {history.slice(0, 5).map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  onClick={() => openConversation(c.id)}
+                  className="flex w-full items-baseline justify-between gap-3 rounded-md px-1 py-1.5 text-left text-sm transition-colors hover:bg-background focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                >
+                  <span className="truncate">{c.title}</span>
+                  <RelativeTime at={c.updatedAt} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <p className="px-1 text-xs leading-relaxed text-muted-foreground">{t.privacy}</p>
+    </div>
+  )
+}
+
+function RelativeTime({ at }: { at: number }) {
+  const days = Math.round((at - Date.now()) / 86_400_000)
+  const rtf = new Intl.RelativeTimeFormat('cs', { numeric: 'auto' })
+  return <span className="shrink-0 text-xs text-muted-foreground">{rtf.format(days, 'day')}</span>
+}
+
 export function AssistantPanel({ onClose }: { onClose: () => void }) {
-  const { messages, isLoading, error, interrupts, clear, send } = useAssistant()
+  const { messages, isLoading, error, interrupts, clear } = useAssistant()
   const [draft, setDraft] = useState('')
   const limit = limitState(error)
   const pending = interrupts as unknown as Interrupt[]
   const last = messages[messages.length - 1]
+  const recovered = recoveredFailures(messages as unknown as TurnMessage[])
   const waiting = isLoading && (!last || last.role === 'user')
 
   return (
@@ -271,27 +427,7 @@ export function AssistantPanel({ onClose }: { onClose: () => void }) {
 
       <div className="min-h-0 flex-1">
         {messages.length === 0 ? (
-          <div className="flex h-full flex-col justify-end gap-4 p-4">
-            <div className="space-y-1 px-1">
-              <p className="text-sm text-muted-foreground">{t.subtitle}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="px-1 text-xs font-medium text-muted-foreground">{t.suggestionsTitle}</p>
-              <div className="flex flex-wrap gap-2">
-                {t.suggestions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className="rounded-full border bg-card px-3 py-1.5 text-left text-sm transition-colors hover:bg-background focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                    onClick={() => (s.endsWith(' ') ? setDraft(s) : void send(s))}
-                  >
-                    {s.trim()}
-                    {s.endsWith(' ') ? '…' : ''}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <EmptyState setDraft={setDraft} />
         ) : (
           <MessageScrollerProvider>
             <MessageScroller>
@@ -323,6 +459,7 @@ export function AssistantPanel({ onClose }: { onClose: () => void }) {
                         <AssistantMessage
                           parts={m.parts as unknown as Part[]}
                           interrupts={pending}
+                          hidden={recovered}
                         />
                       </MessageScrollerItem>
                     )
@@ -380,6 +517,7 @@ export function AssistantPanel({ onClose }: { onClose: () => void }) {
 
       <div className="shrink-0 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <Composer draft={draft} setDraft={setDraft} />
+        <p className="mt-1.5 px-1 text-[11px] text-muted-foreground">{t.composerHint}</p>
       </div>
     </aside>
   )

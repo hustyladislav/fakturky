@@ -228,242 +228,248 @@ function InvoiceList() {
   const filteredEmpty = list.isSuccess && rows.length === 0 && !noDocsAtAll
 
   return (
-    <div className="mx-auto max-w-[1200px] pb-24 sm:pb-0">
-      <PageHeader
-        title={t.title}
-        subtitle={subtitle}
-        actions={
-          <>
-            <div className="hidden sm:block">
-              <CsvDownload kind="documents" />
-            </div>
-            <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
-              <Plus /> {t.new}
-            </Button>
-          </>
-        }
-      />
-
-      {noDocsAtAll ? (
-        <EmptyState
-          illustration="invoices"
-          title={t.empty}
-          className="bg-card"
-          action={
-            <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
-              {t.emptyCta}
-            </Button>
+    <>
+      <div className="@container mx-auto max-w-[1200px] pb-24 sm:pb-0">
+        <PageHeader
+          title={t.title}
+          subtitle={subtitle}
+          actions={
+            <>
+              <div className="hidden sm:block">
+                <CsvDownload kind="documents" />
+              </div>
+              <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
+                <Plus /> {t.new}
+              </Button>
+            </>
           }
         />
-      ) : (
-        <>
-          <SummaryStrip
-            stats={stats.data}
-            value={filter as StripFilter}
-            onChange={(f) =>
-              navigate({ search: (s) => ({ ...s, filter: f === 'all' ? undefined : f }) })
+
+        {noDocsAtAll ? (
+          <EmptyState
+            illustration="invoices"
+            title={t.empty}
+            className="bg-card"
+            action={
+              <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
+                {t.emptyCta}
+              </Button>
             }
           />
-
-          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative sm:w-96">
-              <Search
-                className="absolute top-2.5 left-2.5 size-4 text-muted-foreground"
-                aria-hidden
-              />
-              <Input
-                className="bg-card pl-8"
-                placeholder={t.search}
-                value={term}
-                onChange={(e) => setTerm(e.target.value)}
-                aria-label={cs.common.search}
-              />
-            </div>
-            <NativeSelect
-              className="bg-card sm:w-56"
-              aria-label={t.columns.type}
-              value={type ?? ''}
-              onChange={(e) =>
-                navigate({
-                  search: (s) => ({ ...s, type: TYPES.find((x) => x === e.target.value) }),
-                })
-              }
-            >
-              <option value="">{t.allTypes}</option>
-              {TYPES.map((x) => (
-                <option key={x} value={x}>
-                  {t.type[x]}
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
-
-          {list.isPending ? (
-            <div className="sheet divide-y divide-border/60" aria-busy="true">
-              {Array.from({ length: 8 }, (_, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3">
-                  <Skeleton className="size-9 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-3.5 w-1/3" />
-                    <Skeleton className="h-3 w-1/5" />
-                  </div>
-                  <Skeleton className="h-4 w-24" />
-                </div>
-              ))}
-            </div>
-          ) : filteredEmpty ? (
-            <EmptyState
-              illustration="search"
-              title={t.emptyFiltered}
-              className="bg-card"
-              action={
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setTerm('')
-                    navigate({ search: {} })
-                  }}
-                >
-                  {t.resetFilter}
-                </Button>
+        ) : (
+          <>
+            <SummaryStrip
+              stats={stats.data}
+              value={filter as StripFilter}
+              onChange={(f) =>
+                navigate({ search: (s) => ({ ...s, filter: f === 'all' ? undefined : f }) })
               }
             />
-          ) : (
-            <>
-              {/* Phone: grouped cards; the table below is for md+ */}
-              <div className="sheet overflow-hidden md:hidden">
-                {groups.map((g) => (
-                  <Fragment key={g.key}>
-                    {grouped && (
-                      <div className="sticky top-14 z-10 flex items-baseline justify-between border-b bg-[color-mix(in_srgb,var(--card)_60%,var(--muted))] px-4 py-2">
-                        <span className="label-caps text-foreground">{monthLabel(g.key)}</span>
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {Number(g.sum) === 0 ? '' : `${cs.invoices.issuedLabel} ${crowns(g.sum)}`}
-                        </span>
-                      </div>
-                    )}
-                    <ul>
-                      {g.rows.map((d) => (
-                        <InvoiceCard key={d.id} d={d} />
-                      ))}
-                    </ul>
-                  </Fragment>
+
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative sm:w-96">
+                <Search
+                  className="absolute top-2.5 left-2.5 size-4 text-muted-foreground"
+                  aria-hidden
+                />
+                <Input
+                  className="bg-card pl-8"
+                  placeholder={t.search}
+                  value={term}
+                  onChange={(e) => setTerm(e.target.value)}
+                  aria-label={cs.common.search}
+                />
+              </div>
+              <NativeSelect
+                className="bg-card sm:w-56"
+                aria-label={t.columns.type}
+                value={type ?? ''}
+                onChange={(e) =>
+                  navigate({
+                    search: (s) => ({ ...s, type: TYPES.find((x) => x === e.target.value) }),
+                  })
+                }
+              >
+                <option value="">{t.allTypes}</option>
+                {TYPES.map((x) => (
+                  <option key={x} value={x}>
+                    {t.type[x]}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+
+            {list.isPending ? (
+              <div className="sheet divide-y divide-border/60" aria-busy="true">
+                {Array.from({ length: 8 }, (_, i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-3">
+                    <Skeleton className="size-9 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-3.5 w-1/3" />
+                      <Skeleton className="h-3 w-1/5" />
+                    </div>
+                    <Skeleton className="h-4 w-24" />
+                  </div>
                 ))}
               </div>
-
-              <div className="sheet hidden md:block">
-                <table className="w-full border-separate border-spacing-0 text-sm">
-                  <thead>
-                    <tr className="[&>th]:sticky [&>th]:top-14 [&>th]:z-20 [&>th]:border-b [&>th]:bg-card [&>th]:py-3 [&>th]:text-left [&>th]:font-normal">
-                      <th className="w-10 rounded-tl-xl pl-4">
-                        <input
-                          type="checkbox"
-                          aria-label={t.bulk.selectAll}
-                          checked={allSelected}
-                          onChange={() =>
-                            setSelected(allSelected ? new Set() : new Set(rows.map((d) => d.id)))
-                          }
-                          className="size-4 cursor-pointer align-middle"
-                        />
-                      </th>
-                      <th className="pr-3 pl-2">
-                        <SortHeader column="customer" sort={sort} dir={dir} onSort={onSort}>
-                          {t.columns.customer}
-                        </SortHeader>
-                        <span className="label-caps mx-1.5" aria-hidden>
-                          ·
-                        </span>
-                        <SortHeader column="number" sort={sort} dir={dir} onSort={onSort}>
-                          {t.columns.number}
-                        </SortHeader>
-                      </th>
-                      <th className="hidden px-3 lg:table-cell">
-                        <SortHeader column="issueDate" sort={sort} dir={dir} onSort={onSort}>
-                          {t.columns.issued}
-                        </SortHeader>
-                      </th>
-                      <th className="px-3">
-                        <SortHeader column="dueDate" sort={sort} dir={dir} onSort={onSort}>
-                          {t.columns.due}
-                        </SortHeader>
-                      </th>
-                      <th className="px-3 !text-right">
-                        <SortHeader column="total" sort={sort} dir={dir} onSort={onSort}>
-                          {t.columns.total}
-                        </SortHeader>
-                      </th>
-                      <th className="px-3">
-                        <span className="label-caps">{t.columns.status}</span>
-                      </th>
-                      <th className="w-[7.5rem] rounded-tr-xl" />
-                    </tr>
-                  </thead>
-                  {groups.map((g) => (
-                    <tbody key={g.key}>
-                      {grouped && (
-                        <tr>
-                          <th
-                            colSpan={7}
-                            scope="colgroup"
-                            className="sticky top-[6.25rem] z-10 border-b bg-[color-mix(in_srgb,var(--card)_55%,var(--muted))] px-4 py-2 text-left font-normal"
-                          >
-                            <span className="flex items-baseline justify-between gap-4">
-                              <span className="label-caps text-foreground">
-                                {monthLabel(g.key)}
-                              </span>
-                              <span className="text-xs text-muted-foreground tabular-nums">
-                                {list.hasNextPage && g === groups.at(-1)
-                                  ? t.monthTotal(g.rows.length, null)
-                                  : t.monthTotal(
-                                      g.rows.length,
-                                      Number(g.sum) === 0 ? null : crowns(g.sum),
-                                    )}
-                              </span>
-                            </span>
-                          </th>
-                        </tr>
-                      )}
-                      {g.rows.map((d) => (
-                        <InvoiceRow
-                          key={d.id}
-                          d={d}
-                          selected={selected.has(d.id)}
-                          active={rows[cursor]?.id === d.id}
-                          onToggle={() => toggle(d.id)}
-                        />
-                      ))}
-                    </tbody>
-                  ))}
-                </table>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between gap-4 text-xs text-muted-foreground">
-                <span className="hidden md:inline">{t.keyboardHint}</span>
-                {list.hasNextPage && stats.data && (
-                  <span className="tabular-nums">
-                    {t.shown(rows.length, stats.data[filter as StripFilter].count)}
-                  </span>
-                )}
-                {list.hasNextPage && (
+            ) : filteredEmpty ? (
+              <EmptyState
+                illustration="search"
+                title={t.emptyFilteredBy(q ?? null, [
+                  ...(filter !== 'all' ? [String(t.filters[filter])] : []),
+                  ...(type ? [String(t.type[type])] : []),
+                ])}
+                className="bg-card"
+                action={
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="mx-auto md:mx-0"
-                    disabled={list.isFetchingNextPage}
-                    onClick={() => list.fetchNextPage()}
+                    onClick={() => {
+                      setTerm('')
+                      navigate({ search: {} })
+                    }}
                   >
-                    {t.loadMore}
+                    {t.resetFilter}
                   </Button>
-                )}
-              </div>
-            </>
-          )}
-        </>
-      )}
+                }
+              />
+            ) : (
+              <>
+                {/* Phone: grouped cards; the table below is for md+ */}
+                <div className="sheet overflow-hidden @3xl:hidden">
+                  {groups.map((g) => (
+                    <Fragment key={g.key}>
+                      {grouped && (
+                        <div className="sticky top-14 z-10 flex items-baseline justify-between border-b bg-[color-mix(in_srgb,var(--card)_60%,var(--muted))] px-4 py-2">
+                          <span className="label-caps text-foreground">{monthLabel(g.key)}</span>
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {Number(g.sum) === 0
+                              ? ''
+                              : `${cs.invoices.issuedLabel} ${crowns(g.sum)}`}
+                          </span>
+                        </div>
+                      )}
+                      <ul>
+                        {g.rows.map((d) => (
+                          <InvoiceCard key={d.id} d={d} />
+                        ))}
+                      </ul>
+                    </Fragment>
+                  ))}
+                </div>
 
+                <div className="sheet hidden @3xl:block">
+                  <table className="w-full border-separate border-spacing-0 text-sm">
+                    <thead>
+                      <tr className="[&>th]:sticky [&>th]:top-14 [&>th]:z-20 [&>th]:border-b [&>th]:bg-card [&>th]:py-3 [&>th]:text-left [&>th]:font-normal">
+                        <th className="w-10 rounded-tl-xl pl-4">
+                          <input
+                            type="checkbox"
+                            aria-label={t.bulk.selectAll}
+                            checked={allSelected}
+                            onChange={() =>
+                              setSelected(allSelected ? new Set() : new Set(rows.map((d) => d.id)))
+                            }
+                            className="size-4 cursor-pointer align-middle"
+                          />
+                        </th>
+                        <th className="pr-3 pl-2">
+                          <SortHeader column="customer" sort={sort} dir={dir} onSort={onSort}>
+                            {t.columns.customer}
+                          </SortHeader>
+                          <span className="label-caps mx-1.5" aria-hidden>
+                            ·
+                          </span>
+                          <SortHeader column="number" sort={sort} dir={dir} onSort={onSort}>
+                            {t.columns.number}
+                          </SortHeader>
+                        </th>
+                        <th className="hidden px-3 @4xl:table-cell">
+                          <SortHeader column="issueDate" sort={sort} dir={dir} onSort={onSort}>
+                            {t.columns.issued}
+                          </SortHeader>
+                        </th>
+                        <th className="px-3">
+                          <SortHeader column="dueDate" sort={sort} dir={dir} onSort={onSort}>
+                            {t.columns.due}
+                          </SortHeader>
+                        </th>
+                        <th className="px-3 !text-right">
+                          <SortHeader column="total" sort={sort} dir={dir} onSort={onSort}>
+                            {t.columns.total}
+                          </SortHeader>
+                        </th>
+                        <th className="px-3">
+                          <span className="label-caps">{t.columns.status}</span>
+                        </th>
+                        <th className="w-[7.5rem] rounded-tr-xl" />
+                      </tr>
+                    </thead>
+                    {groups.map((g) => (
+                      <tbody key={g.key}>
+                        {grouped && (
+                          <tr>
+                            <th
+                              colSpan={7}
+                              scope="colgroup"
+                              className="sticky top-[6.25rem] z-10 border-b bg-[color-mix(in_srgb,var(--card)_55%,var(--muted))] px-4 py-2 text-left font-normal"
+                            >
+                              <span className="flex items-baseline justify-between gap-4">
+                                <span className="label-caps text-foreground">
+                                  {monthLabel(g.key)}
+                                </span>
+                                <span className="text-xs text-muted-foreground tabular-nums">
+                                  {list.hasNextPage && g === groups.at(-1)
+                                    ? t.monthTotal(g.rows.length, null)
+                                    : t.monthTotal(
+                                        g.rows.length,
+                                        Number(g.sum) === 0 ? null : crowns(g.sum),
+                                      )}
+                                </span>
+                              </span>
+                            </th>
+                          </tr>
+                        )}
+                        {g.rows.map((d) => (
+                          <InvoiceRow
+                            key={d.id}
+                            d={d}
+                            selected={selected.has(d.id)}
+                            active={rows[cursor]?.id === d.id}
+                            onToggle={() => toggle(d.id)}
+                          />
+                        ))}
+                      </tbody>
+                    ))}
+                  </table>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-4 text-xs text-muted-foreground">
+                  <span className="hidden md:inline">{t.keyboardHint}</span>
+                  {list.hasNextPage && stats.data && (
+                    <span className="tabular-nums">
+                      {t.shown(rows.length, stats.data[filter as StripFilter].count)}
+                    </span>
+                  )}
+                  {list.hasNextPage && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mx-auto md:mx-0"
+                      disabled={list.isFetchingNextPage}
+                      onClick={() => list.fetchNextPage()}
+                    >
+                      {t.loadMore}
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
       {selectedDocs.length > 0 && (
         <BulkBar selected={selectedDocs} sum={selectedSum} onClear={() => setSelected(new Set())} />
       )}
-    </div>
+    </>
   )
 }

@@ -110,7 +110,7 @@ function Contacts() {
     : undefined
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div className="@container mx-auto max-w-[1200px]">
       <PageHeader
         title={t.title}
         subtitle={subtitle}
@@ -155,7 +155,7 @@ function Contacts() {
             <EmptyState illustration="search" title={t.noMatch} className="bg-card" />
           ) : (
             <>
-              <ul className="sheet overflow-hidden md:hidden">
+              <ul className="sheet overflow-hidden @3xl:hidden">
                 {rows.map((c) => {
                   const s = byId.get(c.id)
                   return (
@@ -194,7 +194,7 @@ function Contacts() {
                 })}
               </ul>
 
-              <div className="sheet hidden md:block">
+              <div className="sheet hidden @3xl:block">
                 <table className="w-full border-separate border-spacing-0 text-sm">
                   <thead>
                     <tr className="[&>th]:sticky [&>th]:top-14 [&>th]:z-20 [&>th]:border-b [&>th]:bg-card [&>th]:py-3 [&>th]:text-left [&>th]:font-normal">
@@ -203,7 +203,7 @@ function Contacts() {
                           {t.columns.name}
                         </SortHeader>
                       </th>
-                      <th className="hidden px-3 xl:table-cell">
+                      <th className="hidden px-3 @4xl:table-cell">
                         <span className="label-caps">{t.columns.email}</span>
                       </th>
                       <th className="px-3 !text-right">
@@ -250,7 +250,7 @@ function Contacts() {
                               </div>
                             </div>
                           </td>
-                          <td className="hidden max-w-[14rem] truncate border-b border-border/60 px-3 text-muted-foreground xl:table-cell">
+                          <td className="hidden max-w-[14rem] truncate border-b border-border/60 px-3 text-muted-foreground @4xl:table-cell">
                             {c.emails[0] ?? '—'}
                           </td>
                           <td className="border-b border-border/60 px-3 text-right whitespace-nowrap">

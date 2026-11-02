@@ -8,6 +8,7 @@ import { bankMatchingRepo } from '../repositories/bank-matching'
 import {
   bankListInputSchema,
   bankListOutputSchema,
+  IMPORT_OUTCOMES,
   importStatementInputSchema,
   importStatementOutputSchema,
   matchInputSchema,
@@ -16,6 +17,7 @@ import {
 } from '../schemas/bank'
 
 const tag = ['Bank']
+const MAX_RESULT_ROWS = 500
 
 /** Maps repository failures onto oRPC errors with readable messages. */
 export async function guardBank<T>(fn: () => Promise<T>): Promise<T> {
@@ -121,11 +123,61 @@ export const bankRouter = {
           source,
           statement,
         )
+        const autoMatched = await bankMatchingRepo.autoMatch(
+          context.db,
+          org,
+          context.principal.userId,
+        )
+        const shown = statement.transactions.slice(0, MAX_RESULT_ROWS)
+        const ids = result.rowIds.slice(0, MAX_RESULT_ROWS)
+        const stored = new Map(
+          (
+            await bankRepo.byIds(
+              context.db,
+              org,
+              ids.filter((i): i is string => i !== null),
+            )
+          ).map((r) => [r.tx.id, r] as const),
+        )
+        const open = [...stored.values()].filter(
+          (r) => r.tx.matchStatus === 'unmatched' && parseDecimal(r.tx.amount).gt(0),
+        )
+        const suggestions = await bankMatchingRepo.suggest(
+          context.db,
+          org,
+          open.map((r) => r.tx),
+        )
+        const rows = shown.map((t, i) => {
+          const id = ids[i]
+          const row = id ? stored.get(id) : undefined
+          const suggestion = row ? suggestions.get(row.tx.id)?.[0] : undefined
+          const outcome: (typeof IMPORT_OUTCOMES)[number] = !row
+            ? 'duplicate'
+            : parseDecimal(row.tx.amount).lt(0)
+              ? 'outgoing'
+              : row.tx.matchStatus === 'matched'
+                ? 'matched'
+                : suggestion
+                  ? 'suggested'
+                  : 'unmatched'
+          return {
+            bookedOn: t.bookedOn,
+            amount: toFixed(t.amount, 2),
+            currency: t.currency,
+            counterpartyName: t.counterpartyName,
+            variableSymbol: t.variableSymbol,
+            outcome,
+            documentNumber: row?.documentNumber ?? suggestion?.document.number ?? null,
+          }
+        })
         return {
           format: statement.format,
-          ...result,
+          imported: result.imported,
+          duplicates: result.duplicates,
           warnings: statement.warnings.slice(0, 50),
-          autoMatched: await bankMatchingRepo.autoMatch(context.db, org, context.principal.userId),
+          autoMatched,
+          rows,
+          rowsTruncated: statement.transactions.length > MAX_RESULT_ROWS,
         }
       }),
     ),

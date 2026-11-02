@@ -3,6 +3,7 @@ import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
 import {
   addDays,
+  allocateGross,
   buildPaymentQrPayload,
   computeDocumentTotals,
   DEFAULT_NUMBER_PATTERNS,
@@ -21,9 +22,18 @@ import {
   variableSymbolFromNumber,
 } from '@fakturky/domain'
 import { and, asc, desc, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm'
+import type { z } from 'zod'
 import { MailError, type Services } from '../context'
 import { paymentQrInput } from '../payment-qr'
-import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
+import type {
+  DisplayStatus,
+  DraftInput,
+  DraftPatch,
+  documentDetailSchema,
+} from '../schemas/document'
+
+type DocumentDetail = z.infer<typeof documentDetailSchema>
+
 import { appearanceRepo } from './appearance'
 import { bankAccountsRepo } from './bank-accounts'
 import { amountTerm, foldedWordsMatch } from './fold'
@@ -346,6 +356,74 @@ export async function loadOriginal(db: Db | Tx, orgId: string, doc: DocRow) {
     .from(document)
     .where(and(eq(document.organizationId, orgId), eq(document.id, doc.relatedDocumentId)))
   return o?.number && o.issueDate ? { number: o.number, issueDate: o.issueDate, uuid: o.id } : null
+}
+
+/**
+ * One negative VAT-inclusive line per VAT rate of the invoice. The credited gross amount is spread over the
+ * rates in proportion to each rate's gross total, so base and VAT per rate stay consistent with the invoice.
+ */
+async function partialCreditLines(db: Db, orgId: string, src: DocumentDetail, amountInput: string) {
+  const amount = parseAmount(amountInput)
+  if (amount.lte(0)) throw new DocumentError('BAD_REQUEST', 'Amount must be positive')
+  const earlier = await db
+    .select({ total: document.total })
+    .from(document)
+    .where(
+      and(
+        eq(document.organizationId, orgId),
+        eq(document.relatedDocumentId, src.id),
+        eq(document.type, 'credit_note'),
+        isNull(document.deletedAt),
+        ne(document.status, 'cancelled'),
+      ),
+    )
+  // Credit notes carry negative totals.
+  const creditable = earlier.reduce(
+    (left, c) => left.plus(parseDecimal(c.total)),
+    parseDecimal(src.total),
+  )
+  if (amount.gt(creditable)) {
+    throw new DocumentError(
+      'BAD_REQUEST',
+      `The credited amount exceeds what is still creditable (${toFixed(creditable, 2)})`,
+    )
+  }
+  const groups = src.vatRecap.length
+    ? src.vatRecap.map((r) => ({
+        vatRate: r.vatRate,
+        vatTreatment: r.vatTreatment,
+        gross: parseDecimal(r.total),
+      }))
+    : [
+        {
+          vatRate: src.lines[0]?.vatRate ?? '0',
+          vatTreatment: src.lines[0]?.vatTreatment ?? 'outside_scope',
+          gross: parseDecimal(src.total),
+        },
+      ]
+  const grossSum = groups.reduce((sum, g) => sum.plus(g.gross), new Decimal(0))
+  if (grossSum.lte(0)) throw new DocumentError('CONFLICT', 'Nothing left to credit on this invoice')
+  const shares = allocateGross(
+    amount,
+    groups.map((g) => g.gross),
+  )
+  return groups.map((g, i) => {
+    const share = shares[i] as Decimal
+    const from = src.lines.find((l) => l.vatRate === g.vatRate && l.vatTreatment === g.vatTreatment)
+    return {
+      description:
+        groups.length > 1
+          ? `Oprava faktury ${src.number} (${g.vatRate} %)`
+          : `Oprava faktury ${src.number}`,
+      quantity: '-1',
+      unit: null,
+      unitPrice: toFixed(share, 2),
+      vatRate: g.vatRate,
+      vatTreatment: g.vatTreatment as VatTreatment,
+      vatNote: from?.vatNote ?? null,
+      discountPercent: '0',
+    }
+  })
 }
 
 export const documentsRepo = {
@@ -1391,19 +1469,22 @@ export const documentsRepo = {
     actorId: string,
     id: string,
     reason?: string | null,
+    amount?: string | null,
   ) {
     const src = await this.get(db, orgId, id)
     if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
     if (src.type !== 'invoice' || (src.status !== 'issued' && src.status !== 'paid')) {
       throw new DocumentError('CONFLICT', 'A credit note can only correct an issued invoice')
     }
+    const partial = amount ? await partialCreditLines(db, orgId, src, amount) : null
     const draft = await this.createDraft(
       db,
       orgId,
       actorId,
       {
         type: 'credit_note',
-        roundTotal: src.roundTotal,
+        // A typed amount is credited exactly; a full reversal keeps the invoice's rounding.
+        roundTotal: partial ? false : src.roundTotal,
         contactId: src.contactId,
         bankAccountId: src.bankAccountId,
         currency: src.currency,
@@ -1411,18 +1492,20 @@ export const documentsRepo = {
         language: src.language as 'cs' | 'sk' | 'en',
         paymentMethod: src.paymentMethod,
         introText: reason?.trim() || `Oprava faktury ${src.number}`,
-        lines: src.lines.map((l) => ({
-          description: l.description,
-          quantity: parseDecimal(l.quantity).negated().toString(),
-          unit: l.unit,
-          unitPrice: l.unitPrice,
-          vatRate: l.vatRate,
-          vatTreatment: l.vatTreatment as VatTreatment,
-          vatNote: l.vatNote,
-          discountPercent: l.discountPercent,
-        })),
+        lines:
+          partial ??
+          src.lines.map((l) => ({
+            description: l.description,
+            quantity: parseDecimal(l.quantity).negated().toString(),
+            unit: l.unit,
+            unitPrice: l.unitPrice,
+            vatRate: l.vatRate,
+            vatTreatment: l.vatTreatment as VatTreatment,
+            vatNote: l.vatNote,
+            discountPercent: l.discountPercent,
+          })),
       },
-      { relatedDocumentId: id },
+      { relatedDocumentId: id, ...(partial && { pricesIncludeVat: true }) },
     )
     if (!draft) throw new Error('credit note draft missing')
     await logActivity(db, orgId, actorId, id, 'credit_note_created', { creditNoteId: draft.id })

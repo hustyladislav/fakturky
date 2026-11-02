@@ -131,12 +131,20 @@ export const documentsRouter = {
       method: 'POST',
       path: '/documents/{id}/credit-note',
       summary:
-        'Create a draft credit note that reverses all lines of an issued invoice. Edit the draft for partial corrections, then issue it.',
+        'Create a draft credit note for an issued invoice: reverses all lines, or only `amount` (VAT-inclusive, spread over the VAT rates in proportion). Then issue it.',
       tags: tag,
     },
   })
     .input(
-      idInput.extend({ reason: z.string().max(1000).nullish().describe('Shown on the document') }),
+      idInput.extend({
+        reason: z.string().max(1000).nullish().describe('Shown on the document'),
+        amount: z
+          .string()
+          .nullish()
+          .describe(
+            'VAT-inclusive amount to credit, in the invoice currency; omit to reverse the whole invoice',
+          ),
+      }),
     )
     .output(documentDetailSchema)
     .handler(({ context, input }) =>
@@ -147,6 +155,7 @@ export const documentsRouter = {
           context.principal.userId,
           input.id,
           input.reason,
+          input.amount,
         )
         return assistantTag(context, doc)
       }),

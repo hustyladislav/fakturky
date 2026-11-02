@@ -34,7 +34,11 @@ const emptyLine = (vatRate = '21'): Line => ({
   unitPrice: '',
   vatRate,
 })
-const num = (v: string) => (v.trim() === '' ? '0' : v.trim().replace(',', '.'))
+/** Czech input: "1 500,5" (space or NBSP thousands, comma decimal) -> "1500.5". */
+const num = (v: string) => {
+  const t = v.replace(/[\s\u00a0\u202f]/g, '').replace(',', '.')
+  return t === '' ? '0' : t
+}
 /** Strips trailing fraction zeros from a decimal string without going through floating point. */
 const trimDecimal = (v: string) => (v.includes('.') ? v.replace(/\.?0+$/, '') : v)
 const validNum = (v: string) => /^-?\d+(\.\d+)?$/.test(num(v))
@@ -64,6 +68,7 @@ export function InvoiceForm({ id }: { id?: string }) {
   const [issueDate, setIssueDate] = useState(today)
   const [dueDate, setDueDate] = useState(addDays(today, 14))
   const [taxableDate, setTaxableDate] = useState(today)
+  const [taxableTouched, setTaxableTouched] = useState(false)
   const [currency, setCurrency] = useState('CZK')
   const [exchangeRate, setExchangeRate] = useState('')
   const [bankAccountId, setBankAccountId] = useState('')
@@ -101,6 +106,7 @@ export function InvoiceForm({ id }: { id?: string }) {
     setFooterText(d.footerText ?? '')
     setPrivateNote(d.privateNote ?? '')
     setDueTouched(true)
+    setTaxableTouched(true)
     setLines(
       d.lines.length
         ? d.lines.map((l) => ({
@@ -217,6 +223,8 @@ export function InvoiceForm({ id }: { id?: string }) {
 
   function setIssue(v: string) {
     setIssueDate(v)
+    // DUZP defaults to the issue date until the user sets it explicitly (docs/DOMAIN.md).
+    if (!taxableTouched) setTaxableDate(v)
     if (!dueTouched && defaults.data) setDueDate(addDays(v, defaults.data.dueDays))
   }
 
@@ -303,7 +311,10 @@ export function InvoiceForm({ id }: { id?: string }) {
                 id="taxableDate"
                 type="date"
                 value={taxableDate}
-                onChange={(e) => setTaxableDate(e.target.value)}
+                onChange={(e) => {
+                  setTaxableTouched(true)
+                  setTaxableDate(e.target.value)
+                }}
               />
               <p className="text-muted-foreground text-xs">{t.taxableHint}</p>
             </div>
@@ -540,7 +551,7 @@ export function InvoiceForm({ id }: { id?: string }) {
         </div>
       </Card>
 
-      <div className="from-background bg-gradient-to-t fixed inset-x-0 bottom-0 z-10 flex gap-2 p-4 sm:static sm:justify-end sm:p-0">
+      <div className="from-background bg-gradient-to-t fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex gap-2 p-4 sm:static sm:justify-end sm:p-0">
         <Button
           type="button"
           variant="outline"

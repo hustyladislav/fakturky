@@ -73,6 +73,24 @@ const cases: Record<string, Case> = {
   'dashboard.summary': { kind: 'scoped', run: (b) => b.dashboard.summary({}) },
 
   'exports.documents': { kind: 'scoped', run: (b) => b.exports.documents({}) },
+  'numberSeries.list': { kind: 'scoped', run: (b) => b.numberSeries.list({}) },
+  'numberSeries.update': {
+    kind: 'foreign',
+    run: async (b, a) => {
+      const mine = await b.numberSeries.list({})
+      const theirs = await clientFor(handle, principal(orgA)).numberSeries.list({})
+      void mine
+      return b.numberSeries.update({ id: theirs[0]?.id ?? a.token, name: 'pwned' })
+    },
+  },
+  'numberSeries.setNext': {
+    kind: 'foreign',
+    run: async (b) => {
+      const theirs = await clientFor(handle, principal(orgA)).numberSeries.list({})
+      return b.numberSeries.setNext({ id: theirs[0]?.id ?? 'x', value: 5000 })
+    },
+  },
+  'exports.organization': { kind: 'scoped', run: (b) => b.exports.organization({}) },
   'exports.contacts': { kind: 'scoped', run: (b) => b.exports.contacts({}) },
   'documents.createCreditNote': {
     kind: 'foreign',
@@ -228,7 +246,13 @@ beforeAll(async () => {
   }
   const bContact = await bApi.contacts.create({ name: 'B client' })
   bOwn = {
-    draftId: (await bApi.documents.createDraft({ contactId: bContact.id, lines: [line] })).id,
+    draftId: (
+      await bApi.documents.createDraft({
+        contactId: bContact.id,
+        // Org B's own data must not reuse org A's marker, or whole-payload scans cannot tell them apart.
+        lines: [{ ...line, description: 'B line' }],
+      })
+    ).id,
   }
 })
 afterAll(() => handle.close())

@@ -474,9 +474,22 @@ export const cs = {
     notFound: 'Tento odkaz na fakturu neplatí nebo byl zrušen.',
     issuedIn: (brand: string) => `Vystaveno ve ${brand}`,
   },
+  numberSeries: {
+    title: 'Číslování dokladů',
+    description:
+      'Vzor čísla: {YYYY} rok, {YY} rok dvoumístně, {MM} měsíc a právě jedno pořadové číslo, např. {NNNN}. Každý rok se číslování začíná od jedničky. Vydaná čísla se nikdy nepoužijí znovu.',
+    pattern: 'Vzor čísla',
+    nextNumber: 'Další číslo',
+    continueFrom: 'Pokračovat od čísla (jen výš)',
+    set: 'Nastavit',
+    saved: 'Číslování bylo uloženo.',
+    types: { invoice: 'Faktury', proforma: 'Zálohové faktury', credit_note: 'Opravné doklady' },
+  },
   templates: {
     title: 'Šablony',
-    empty: 'Zatím nemáte žádné šablony. Otevřete fakturu a zvolte „Uložit jako šablonu“.',
+    emptyTitle: 'Zatím žádné šablony',
+    empty:
+      'Otevřete vystavenou fakturu a zvolte „Uložit jako šablonu“. Příště ji vytvoříte jedním klikem.',
     use: 'Použít',
     used: 'Vytvořili jsme nový koncept ze šablony.',
     delete: 'Smazat',
@@ -505,7 +518,9 @@ export const cs = {
   contacts: {
     title: 'Kontakty',
     new: 'Nový kontakt',
-    empty: 'Zatím nemáte žádné kontakty.',
+    emptyTitle: 'Zatím žádní odběratelé',
+    empty:
+      'Kontakt se vám uloží i při vytvoření faktury. Můžete ho ale přidat i předem, třeba z ARES.',
     name: 'Název nebo jméno',
     ico: 'IČO',
     dic: 'DIČ',
@@ -515,6 +530,10 @@ export const cs = {
     archived: 'Kontakt byl archivován.',
   },
   settings: {
+    exportTitle: 'Export dat',
+    exportDescription:
+      'Stáhněte si všechna svá data (doklady, kontakty, bankovní účty, šablony, nastavení) jako jeden soubor JSON.',
+    exportButton: 'Stáhnout všechna data (JSON)',
     remindersTitle: 'Upomínky',
     remindersDescription:
       'Zdvořilé e-mailové upomínky odběratelům po splatnosti: 3., 10. a 17. den po termínu, nejvýše třikrát. Odesílají se jen na e-mail uvedený u odběratele.',

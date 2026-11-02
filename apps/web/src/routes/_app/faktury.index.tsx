@@ -89,56 +89,72 @@ function InvoiceList() {
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-muted-foreground hidden text-left text-xs sm:table-header-group">
-              <tr>
-                <th className="px-4 py-2 font-medium">{t.columns.number}</th>
-                <th className="px-4 py-2 font-medium">{t.columns.customer}</th>
-                <th className="px-4 py-2 font-medium">{t.columns.issued}</th>
-                <th className="px-4 py-2 font-medium">{t.columns.due}</th>
-                <th className="px-4 py-2 text-right font-medium">{t.columns.total}</th>
-                <th className="px-4 py-2 font-medium">{t.columns.status}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.data?.map((d) => (
-                <tr key={d.id} className="hover:bg-muted/30 border-t [&>td]:p-0">
-                  <Cell id={d.id} draft={d.status === 'draft'} strong>
-                    {d.number ?? t.draftNumber}
-                  </Cell>
-                  <Cell id={d.id} draft={d.status === 'draft'}>
-                    {d.customerName ?? '—'}
-                  </Cell>
-                  <Cell id={d.id} draft={d.status === 'draft'} hide>
-                    {d.issueDate ? formatDateCs(d.issueDate) : '—'}
-                  </Cell>
-                  <Cell id={d.id} draft={d.status === 'draft'} hide>
-                    {d.dueDate ? formatDateCs(d.dueDate) : '—'}
-                  </Cell>
-                  <Cell id={d.id} draft={d.status === 'draft'} right>
+        <>
+          {/* Phone: one card-like row per invoice; the table below is for sm+ */}
+          <ul className="divide-y overflow-hidden rounded-xl border sm:hidden">
+            {list.data?.map((d) => (
+              <li key={d.id}>
+                <Link
+                  to={d.status === 'draft' ? '/faktury/$id/upravit' : '/faktury/$id'}
+                  params={{ id: d.id }}
+                  className="hover:bg-muted/30 flex items-center justify-between gap-3 p-3"
+                >
+                  <div className="min-w-0">
+                    <div className="font-medium whitespace-nowrap tabular-nums">
+                      {d.number ?? t.draftNumber}
+                    </div>
+                    <div className="text-muted-foreground truncate text-sm">
+                      {d.customerName ?? '—'}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
                     <Money amount={d.total} currency={d.currency} />
-                  </Cell>
-                  <Cell id={d.id} draft={d.status === 'draft'}>
                     <InvoiceStatus status={d.displayStatus} />
-                  </Cell>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-hidden rounded-xl border sm:block">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-muted-foreground hidden text-left text-xs sm:table-header-group">
+                <tr>
+                  <th className="px-4 py-2 font-medium">{t.columns.number}</th>
+                  <th className="px-4 py-2 font-medium">{t.columns.customer}</th>
+                  <th className="px-4 py-2 font-medium">{t.columns.issued}</th>
+                  <th className="px-4 py-2 font-medium">{t.columns.due}</th>
+                  <th className="px-4 py-2 text-right font-medium">{t.columns.total}</th>
+                  <th className="px-4 py-2 font-medium">{t.columns.status}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {list.data?.map((d) => (
+                  <tr key={d.id} className="hover:bg-muted/30 border-t [&>td]:p-0">
+                    <Cell id={d.id} draft={d.status === 'draft'} strong>
+                      {d.number ?? t.draftNumber}
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'}>
+                      {d.customerName ?? '—'}
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'} hide>
+                      {d.issueDate ? formatDateCs(d.issueDate) : '—'}
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'} hide>
+                      {d.dueDate ? formatDateCs(d.dueDate) : '—'}
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'} right>
+                      <Money amount={d.total} currency={d.currency} />
+                    </Cell>
+                    <Cell id={d.id} draft={d.status === 'draft'}>
+                      <InvoiceStatus status={d.displayStatus} />
+                    </Cell>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
-
-      <div className="from-background fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t p-4 sm:hidden">
-        <Button
-          nativeButton={false}
-          render={<Link to="/faktury/nova" />}
-          size="lg"
-          className="w-full"
-        >
-          <Plus /> {t.new}
-        </Button>
-      </div>
     </div>
   )
 }
@@ -158,7 +174,7 @@ function Cell({
   right?: boolean
   strong?: boolean
 }) {
-  const cls = `block px-4 py-3 ${strong ? 'font-medium tabular-nums' : ''}`
+  const cls = `block px-4 py-3 whitespace-nowrap ${strong ? 'font-medium tabular-nums' : ''}`
   return (
     <td className={`${hide ? 'hidden sm:table-cell' : ''} ${right ? 'text-right' : ''}`}>
       {draft ? (

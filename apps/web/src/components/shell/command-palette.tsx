@@ -5,11 +5,12 @@ import {
   DialogTitle,
 } from '@fakturky/ui/components/dialog'
 import { Kbd } from '@fakturky/ui/components/kbd'
-import { useLocation, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { FilePlus2, Keyboard, type LucideIcon, Search, Sparkles, UserPlus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cs } from '@/i18n/cs'
 import { NEW_INVOICE_PATH, navItems } from './nav'
+import { readRecent } from './recent-pages'
 import { useShell } from './shell-context'
 
 interface Command {
@@ -19,28 +20,6 @@ interface Command {
   icon: LucideIcon
   hint?: string
   run: () => void
-}
-
-const RECENT_KEY = 'recent-pages'
-
-function readRecent(): string[] {
-  try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]')
-  } catch {
-    return []
-  }
-}
-
-/** Records visited app pages for the "Nedávné" group. */
-export function useRecordRecent() {
-  const { pathname } = useLocation()
-  useEffect(() => {
-    if (!navItems.some((n) => n.to === pathname)) return
-    try {
-      const next = [pathname, ...readRecent().filter((p) => p !== pathname)].slice(0, 5)
-      localStorage.setItem(RECENT_KEY, JSON.stringify(next))
-    } catch {}
-  }, [pathname])
 }
 
 const groupLabels = {

@@ -13,27 +13,8 @@ import {
   useRef,
 } from 'react'
 import { getApprovalToolsFn } from '@/server/agent-approval-tools'
+import { storageKey, threadKey } from './assistant-storage'
 import { createClientTools } from './client-tools'
-
-const STORAGE_PREFIX = 'assistant.messages.v1'
-const THREAD_PREFIX = 'assistant.thread.v1'
-
-/** Per signed-in user, so a shared browser never restores someone else's conversation. */
-const storageKey = (userKey: string) => `${STORAGE_PREFIX}:${userKey}`
-const threadKey = (userKey: string) => `${THREAD_PREFIX}:${userKey}`
-
-/** Called on sign-out: removes every stored conversation of this browser tab. */
-export function clearAssistantStorage() {
-  try {
-    for (const key of Object.keys(sessionStorage)) {
-      if (key.startsWith(STORAGE_PREFIX) || key.startsWith(THREAD_PREFIX)) {
-        sessionStorage.removeItem(key)
-      }
-    }
-  } catch {
-    // storage unavailable
-  }
-}
 
 type Message = ReturnType<typeof useChat>['messages'][number]
 

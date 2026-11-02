@@ -25,16 +25,23 @@ import {
   Settings,
   Sparkles,
 } from 'lucide-react'
-import { type ReactNode, useMemo, useState } from 'react'
-import { AssistantPanel } from '@/components/assistant/assistant-panel'
-import { AssistantProvider, clearAssistantStorage } from '@/components/assistant/assistant-provider'
+import { lazy, type ReactNode, Suspense, useMemo, useState } from 'react'
+import { clearAssistantStorage } from '@/components/assistant/assistant-storage'
 import { cs } from '@/i18n/cs'
-import { authClient } from '@/lib/auth-client'
-import { CommandPalette, useRecordRecent } from './command-palette'
 import { NEW_INVOICE_PATH, navItems } from './nav'
+import { useRecordRecent } from './recent-pages'
 import { ShellContext, type ShellState, useShell as useShellState } from './shell-context'
-import { ShortcutsHelp, useModKey } from './shortcuts-help'
+import { useModKey } from './use-mod-key'
 import { useShortcuts } from './use-shortcuts'
+
+const CommandPalette = lazy(() =>
+  import('./command-palette').then((m) => ({ default: m.CommandPalette })),
+)
+const ShortcutsHelp = lazy(() =>
+  import('./shortcuts-help').then((m) => ({ default: m.ShortcutsHelp })),
+)
+const loadAssistant = () => import('@/components/assistant/assistant-root')
+const AssistantRoot = lazy(loadAssistant)
 
 const navLink =
   'group/nav flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground data-[status=active]:bg-sidebar-accent data-[status=active]:text-sidebar-foreground max-lg:justify-center max-lg:px-0 [&_svg]:size-4 [&_svg]:shrink-0'
@@ -69,21 +76,30 @@ export function AppShell({
 
   return (
     <ShellContext.Provider value={state}>
-      <AssistantProvider userKey={user.email} pendingQuestion={question}>
-        <ShellInner user={user}>{children}</ShellInner>
-      </AssistantProvider>
+      <ShellInner user={user} question={question}>
+        {children}
+      </ShellInner>
     </ShellContext.Provider>
   )
 }
 
 function ShellInner({
   user,
+  question,
   children,
 }: {
   user: { name: string; email: string }
+  question: { id: number; text: string } | null
   children: ReactNode
 }) {
-  const { setPaletteOpen, assistantOpen, setAssistantOpen } = useShellState()
+  const { setPaletteOpen, paletteOpen, helpOpen, assistantOpen, setAssistantOpen } = useShellState()
+  // Dialog code loads the first time it is needed (palette: on first open or intent).
+  const [dialogsSeen, setDialogsSeen] = useState({ palette: false, help: false })
+  if (paletteOpen && !dialogsSeen.palette) setDialogsSeen((d) => ({ ...d, palette: true }))
+  if (helpOpen && !dialogsSeen.help) setDialogsSeen((d) => ({ ...d, help: true }))
+  // Mounted on first open and kept, so the conversation survives closing the panel and navigation.
+  const [assistantMounted, setAssistantMounted] = useState(false)
+  if (assistantOpen && !assistantMounted) setAssistantMounted(true)
   useShortcuts()
   useRecordRecent()
   const modKey = useModKey()
@@ -106,6 +122,8 @@ function ShellInner({
           </Link>
           <button
             type="button"
+            onPointerEnter={() => void import('./command-palette')}
+            onFocus={() => void import('./command-palette')}
             onClick={() => setPaletteOpen(true)}
             className="ml-auto flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-sm text-muted-foreground transition-colors hover:text-foreground md:ml-0 md:w-72 md:justify-between"
           >
@@ -126,6 +144,8 @@ function ShellInner({
               aria-label={cs.shell.assistant}
               title={`${cs.shell.assistant} (${modKey} J)`}
               aria-pressed={assistantOpen}
+              onPointerEnter={() => void loadAssistant()}
+              onFocus={() => void loadAssistant()}
               onClick={() => setAssistantOpen(!assistantOpen)}
             >
               <PanelRight />
@@ -150,10 +170,21 @@ function ShellInner({
         </main>
       </div>
 
-      {assistantOpen && <AssistantPanel onClose={() => setAssistantOpen(false)} />}
+      {assistantMounted && (
+        <Suspense fallback={null}>
+          <AssistantRoot
+            userKey={user.email}
+            pendingQuestion={question}
+            open={assistantOpen}
+            onClose={() => setAssistantOpen(false)}
+          />
+        </Suspense>
+      )}
       <MobileTabs />
-      <CommandPalette />
-      <ShortcutsHelp />
+      <Suspense fallback={null}>
+        {dialogsSeen.palette && <CommandPalette />}
+        {dialogsSeen.help && <ShortcutsHelp />}
+      </Suspense>
     </div>
   )
 }
@@ -235,7 +266,7 @@ function AccountMenu({ user }: { user: { name: string; email: string } }) {
         <DropdownMenuItem
           onClick={async () => {
             clearAssistantStorage()
-            await authClient.signOut()
+            await (await import('@/lib/auth-client')).authClient.signOut()
             queryClient.clear()
             await navigate({ to: '/prihlaseni' })
           }}
@@ -314,7 +345,7 @@ function MoreMenu({ tabClass }: { tabClass: string }) {
         <DropdownMenuItem
           onClick={async () => {
             clearAssistantStorage()
-            await authClient.signOut()
+            await (await import('@/lib/auth-client')).authClient.signOut()
             queryClient.clear()
             await navigate({ to: '/prihlaseni' })
           }}

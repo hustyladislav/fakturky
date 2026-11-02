@@ -7,7 +7,6 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { z } from 'zod'
 import { CsvDownload } from '@/components/csv-download'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
@@ -18,15 +17,18 @@ const FILTERS = ['all', 'unpaid', 'overdue', 'paid', 'draft'] as const
 
 export const Route = createFileRoute('/_app/faktury/')({
   head: pageHead(cs.invoices.title),
-  validateSearch: z.object({
-    filter: z.enum(FILTERS).catch('all').default('all'),
-    q: z.string().optional(),
+  // Plain validation (no zod): keeps the schema library out of the client bundle.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { filter?: (typeof FILTERS)[number]; q?: string } => ({
+    filter: FILTERS.find((f) => f === search.filter),
+    q: typeof search.q === 'string' && search.q ? search.q : undefined,
   }),
   component: InvoiceList,
 })
 
 function InvoiceList() {
-  const { filter, q } = Route.useSearch()
+  const { filter = 'all', q } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const [term, setTerm] = useState(q ?? '')
   useEffect(() => {

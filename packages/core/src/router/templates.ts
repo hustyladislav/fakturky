@@ -202,6 +202,12 @@ export const recurringRouter = {
         active: z.boolean().optional(),
         autoIssue: z.boolean().optional(),
         autoSend: z.boolean().optional(),
+        frequency: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
+        dayOfMonth: z.number().int().min(1).max(31).optional(),
+        nextRunOn: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
       }),
     )
     .output(ruleSchema)

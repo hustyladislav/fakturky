@@ -12,9 +12,9 @@ export type ImageBytes = Uint8Array | null | undefined
 export interface InvoicePdfInput extends Omit<DocumentForExport, 'lines'> {
   lines: PdfLine[]
   language: DocumentLanguage
-  /** Product name for the "Vystaveno ve …" line. Pass `BRAND.name`; never hardcoded here. */
+  /** Product name for the "Vystaveno v aplikaci …" line. Pass `BRAND.name`; never hardcoded here. */
   brandName: string
-  /** Hide the "Vystaveno ve …" line (user setting). Default true. */
+  /** Hide the "Vystaveno v aplikaci …" line (user setting). Default true. */
   showBrand?: boolean
   /** Hex colour (#RRGGBB) for the header rule, the customer bar and the closing text. Default: brand green. */
   accentColor?: string

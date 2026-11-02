@@ -43,8 +43,21 @@ export async function request(
     // non-JSON (e.g. ISDOC XML): keep raw text
   }
   if (!res.ok) {
-    const message =
+    let message =
       data && typeof data === 'object' && 'message' in data ? String(data.message) : res.statusText
+    // Validation failures carry the offending fields: show them instead of a bare "Input validation failed".
+    const issues = (data as { data?: { issues?: { path?: unknown[]; message?: string }[] } } | null)
+      ?.data?.issues
+    if (Array.isArray(issues) && issues.length > 0) {
+      message += `\n${issues
+        .map(
+          (i) =>
+            `  - ${(i.path ?? []).map(String).join('.') || '(body)'}: ${i.message ?? 'invalid'}`,
+        )
+        .join('\n')}`
+    }
+    const fields = (data as { data?: { fields?: unknown } } | null)?.data?.fields
+    if (Array.isArray(fields) && fields.length > 0) message += `\n  Missing: ${fields.join(', ')}`
     throw new ApiError(res.status, message)
   }
   return data

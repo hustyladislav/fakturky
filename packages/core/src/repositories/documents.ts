@@ -732,7 +732,7 @@ export const documentsRepo = {
           ...totalColumns(totals, doc.currency),
           number,
           seriesId: series.id,
-          variableSymbol: variableSymbolFromNumber(number),
+          variableSymbol: variableSymbolFromNumber(number, doc.type),
           bankAccountId: bank?.id ?? null,
           issueDate,
           publicToken: randomBytes(24).toString('base64url'),

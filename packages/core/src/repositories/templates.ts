@@ -169,11 +169,23 @@ export const recurringRepo = {
     db: Db,
     orgId: string,
     id: string,
-    patch: { active?: boolean; autoIssue?: boolean; autoSend?: boolean },
+    patch: {
+      active?: boolean
+      autoIssue?: boolean
+      autoSend?: boolean
+      frequency?: Frequency
+      dayOfMonth?: number
+      nextRunOn?: string
+    },
   ) {
+    const set: typeof patch = { ...patch }
+    // A new day of the month moves the next run to its next occurrence unless a date was given.
+    if (patch.dayOfMonth !== undefined && patch.nextRunOn === undefined) {
+      set.nextRunOn = firstOccurrence(todayPrague(), patch.dayOfMonth)
+    }
     const [row] = await db
       .update(recurringRule)
-      .set(patch)
+      .set(set)
       .where(and(eq(recurringRule.organizationId, orgId), eq(recurringRule.id, id)))
       .returning()
     return row ?? null

@@ -63,8 +63,19 @@ Running log of the overnight build (2026-11-01 → 11-02). Newest at the top of 
 - REST: https://fakturky.vercel.app/docs/api · CLI: `packages/cli` (until published) · https://fakturky.vercel.app/llms.txt
 - Import your Fakturoid history: Nastavení → Import
 
+## Screenshots (current `main`, local seed data)
+
+| Invoice detail | Invoice on phone | Bank pairing |
+|---|---|---|
+| ![](screenshots/inv-Posplatnosti-1440-light.png) | ![](screenshots/inv-Posplatnosti-375-light.png) | ![](screenshots/bank-pair-1440-light.png) |
+| **Banka** | **DPH** | **Nastavení** |
+| ![](screenshots/bank-banka-1440-light.png) | ![](screenshots/dph-dph-1440-light.png) | ![](screenshots/settings-nastaveni-1440-light.png) |
+
 ## Shipped overnight
 
+- Final polish #132–#137: styled Czech selects/file pickers, one primary action per invoice status + "Více" menu,
+  Nastavení with sub-navigation and deep links, bank dialogs (currency select, Fio token steps), aligned pairing
+  dialog, error/loading states with "Zkusit znovu", mobile access to Banka/DPH/Šablony.
 - **VAT reports for payers** (/dph) #123/#125/#126/#127/#129: přiznání k DPH (DPHDP3), kontrolní hlášení (DPHKH1),
   souhrnné hlášení (DPHSHV) XML validated against the official XSDs, drill-down, warnings, manual input-VAT rows,
   EPO upload guide + disclaimer. Also via REST/MCP/CLI. Input side (received invoices) stays manual for now.

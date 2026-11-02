@@ -21,6 +21,8 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    // Cross-fade + 8 px slide of the content area (`vt-page`); a no-op where unsupported or reduced motion.
+    defaultViewTransition: true,
     ssr: { nonce: requestNonce() },
   })
   setupRouterSsrQueryIntegration({ router, queryClient })

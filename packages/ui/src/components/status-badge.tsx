@@ -1,12 +1,12 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from 'cn'
-import { Ban, Check, CircleDashed, CircleDot, Clock, Send } from 'lucide-react'
 import type { ComponentType } from 'react'
+import { pluralDays } from '../lib/dates'
 
 export type DocumentStatus = 'draft' | 'issued' | 'overdue' | 'partial' | 'paid' | 'cancelled'
 
 const statusVariants = cva(
-  'inline-flex h-6 w-fit shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium whitespace-nowrap [&>svg]:size-3.5',
+  'inline-flex h-6 min-w-[5.5rem] w-fit shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium whitespace-nowrap [&>svg]:size-3.5',
   {
     variants: {
       status: {
@@ -21,32 +21,45 @@ const statusVariants = cva(
   },
 )
 
-const icons: Record<DocumentStatus, ComponentType<{ 'aria-hidden'?: boolean }>> = {
-  draft: CircleDashed,
-  issued: Send,
-  overdue: Clock,
-  partial: CircleDot,
-  paid: Check,
-  cancelled: Ban,
+const dotVariants: Record<DocumentStatus, string> = {
+  draft: 'border border-current bg-transparent',
+  issued: 'bg-current',
+  overdue: 'bg-current',
+  partial: '[background:conic-gradient(currentColor_0_50%,transparent_0)] border border-current',
+  paid: 'bg-current',
+  cancelled: 'bg-current opacity-60',
 }
 
-/** Status = icon + text + colour, never colour alone. The label is passed in (Czech lives in i18n). */
+/**
+ * Status v2: 6 px dot + label on a soft tint. Meaning is carried by the label too, never colour alone.
+ * With `overdueDays` an overdue badge reads "14 dní po splatnosti" (the children are replaced).
+ */
 function StatusBadge({
   status,
   children,
   className,
-  icon,
+  icon: Icon,
+  overdueDays,
 }: {
   status: DocumentStatus
-  children: React.ReactNode
+  children?: React.ReactNode
   className?: string
+  /** Replaces the dot (e.g. an assistant-drafted badge). */
   icon?: ComponentType<{ 'aria-hidden'?: boolean }>
+  overdueDays?: number
 } & Required<Pick<VariantProps<typeof statusVariants>, 'status'>>) {
-  const Icon = icon ?? icons[status]
+  const label =
+    status === 'overdue' && overdueDays && overdueDays > 0
+      ? `${pluralDays(overdueDays)} po splatnosti`
+      : children
   return (
-    <span className={cn(statusVariants({ status }), className)}>
-      <Icon aria-hidden />
-      {children}
+    <span className={cn(statusVariants({ status }), className)} data-status={status}>
+      {Icon ? (
+        <Icon aria-hidden />
+      ) : (
+        <span aria-hidden className={cn('size-1.5 shrink-0 rounded-full', dotVariants[status])} />
+      )}
+      {label}
     </span>
   )
 }

@@ -24,6 +24,7 @@ import type { DisplayStatus, DraftInput, DraftPatch } from '../schemas/document'
 import { bankAccountsRepo } from './bank-accounts'
 
 const {
+  bankTransaction,
   document,
   documentLine,
   payment,
@@ -242,7 +243,7 @@ function totalColumns(totals: ReturnType<typeof computeDocumentTotals>, currency
 /** `payment.method` of the settlement a credit note makes on its invoice (the note holds the credit note number). */
 export const CREDIT_NOTE_METHOD = 'credit_note'
 
-async function paidSums(db: Db | Tx, orgId: string, ids: string[]) {
+export async function paidSums(db: Db | Tx, orgId: string, ids: string[]) {
   const map = new Map<string, Decimal>()
   if (ids.length === 0) return map
   const rows = await db
@@ -1366,9 +1367,28 @@ export const documentsRepo = {
           )
         }
       }
-      await tx
+      const removed = await tx
         .delete(payment)
         .where(and(eq(payment.organizationId, orgId), eq(payment.documentId, id)))
+        .returning({ id: payment.id })
+      // Bank transactions that were paired with this document's payments become available again.
+      if (removed.length > 0) {
+        await tx
+          .update(bankTransaction)
+          .set({
+            matchStatus: 'unmatched',
+            matchedDocumentId: null,
+            paymentId: null,
+            matchedAmount: null,
+          })
+          .where(
+            and(
+              eq(bankTransaction.organizationId, orgId),
+              eq(bankTransaction.matchedDocumentId, id),
+              eq(bankTransaction.matchStatus, 'matched'),
+            ),
+          )
+      }
       await tx.update(document).set({ status: 'issued', paidAt: null }).where(scoped(orgId, id))
       await logActivity(tx, orgId, actorId, id, 'unpaid')
     })

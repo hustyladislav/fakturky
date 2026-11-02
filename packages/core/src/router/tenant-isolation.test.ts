@@ -70,6 +70,35 @@ const cases: Record<string, Case> = {
         content: 'Datum;Objem;Měna\n05.01.2026;100,00;CZK\n',
       }),
   },
+  'bank.autoMatch': { kind: 'scoped', run: (b) => b.bank.autoMatch({}) },
+  'bank.match': {
+    // Org B cannot pay org A's invoice with B's own transaction, nor book A's transaction on B's invoice.
+    kind: 'foreign',
+    run: async (b, a) => {
+      const mine = await b.bank.list({})
+      const theirs = await clientFor(handle, principal(orgA)).bank.list({})
+      const ownTx = mine.items[0]
+      expect(ownTx).toBeDefined()
+      await expect(
+        b.bank.match({ transactionId: ownTx?.id ?? '', documentId: a.issuedId }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+      return b.bank.match({ transactionId: theirs.items[0]?.id ?? 'x', documentId: a.issuedId })
+    },
+  },
+  'bank.unmatch': {
+    kind: 'foreign',
+    run: async (b) => {
+      const theirs = await clientFor(handle, principal(orgA)).bank.list({})
+      return b.bank.unmatch({ transactionId: theirs.items[0]?.id ?? 'x' })
+    },
+  },
+  'bank.setIgnored': {
+    kind: 'foreign',
+    run: async (b) => {
+      const theirs = await clientFor(handle, principal(orgA)).bank.list({})
+      return b.bank.setIgnored({ transactionId: theirs.items[0]?.id ?? 'x', ignored: true })
+    },
+  },
   'bank.syncFio': { kind: 'foreign', run: (b, a) => b.bank.syncFio({ id: a.bankAccountId }) },
 
   'businessProfile.get': { kind: 'scoped', run: (b) => b.businessProfile.get() },
@@ -291,6 +320,11 @@ beforeAll(async () => {
     secret: SECRET,
   }
   const bContact = await bApi.contacts.create({ name: 'B client' })
+  const bBank = await bApi.bankAccounts.create({ label: 'B bank', account: '19-2000145399/0800' })
+  await bApi.bank.importStatement({
+    bankAccountId: bBank.id,
+    content: 'Datum;Objem;Měna;Název protiúčtu\n06.01.2026;77,00;CZK;B payer\n',
+  })
   bOwn = {
     draftId: (
       await bApi.documents.createDraft({

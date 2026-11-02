@@ -106,6 +106,8 @@ export const paymentSchema = z.object({
   currency: z.string(),
   method: z.string(),
   note: z.string().nullable(),
+  /** `bank` = booked from a paired bank transaction. */
+  source: z.enum(['manual', 'bank']),
   createdAt: z.date(),
 })
 

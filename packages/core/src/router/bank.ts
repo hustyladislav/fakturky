@@ -1,14 +1,17 @@
-import { toFixed } from '@fakturky/domain'
+import { parseDecimal, toFixed } from '@fakturky/domain'
 import { parseStatement, StatementParseError } from '@fakturky/domain/bank'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
 import { BankError, bankRepo, type TransactionSource } from '../repositories/bank'
+import { bankMatchingRepo } from '../repositories/bank-matching'
 import {
   bankListInputSchema,
   bankListOutputSchema,
   importStatementInputSchema,
   importStatementOutputSchema,
+  matchInputSchema,
+  matchOutputSchema,
   syncOutputSchema,
 } from '../schemas/bank'
 
@@ -47,13 +50,36 @@ export const bankRouter = {
       const org = context.principal.organizationId
       const { items, total } = await bankRepo.list(context.db, org, input)
       const counts = await bankRepo.counts(context.db, org, input.bankAccountId)
+      const suggestions = await bankMatchingRepo.suggest(
+        context.db,
+        org,
+        items.map((i) => i.tx),
+      )
       return {
-        items: items.map(({ tx, documentNumber }) => ({
-          ...tx,
-          amount: toFixed(tx.amount, 2),
-          matchedAmount: tx.matchedAmount === null ? null : toFixed(tx.matchedAmount, 2),
-          matchedDocumentNumber: documentNumber,
-        })),
+        items: items.map(({ tx, documentNumber }) => {
+          const overpaid =
+            tx.matchStatus === 'matched' && tx.matchedAmount !== null
+              ? parseDecimal(tx.amount).minus(tx.matchedAmount)
+              : null
+          return {
+            ...tx,
+            amount: toFixed(tx.amount, 2),
+            matchedAmount: tx.matchedAmount === null ? null : toFixed(tx.matchedAmount, 2),
+            overpaid: overpaid?.gt('0.005') ? toFixed(overpaid, 2) : null,
+            matchedDocumentNumber: documentNumber,
+            suggestions: (suggestions.get(tx.id) ?? []).map((s) => ({
+              documentId: s.document.id,
+              number: s.document.number,
+              customerName: s.document.customerName,
+              currency: s.document.currency,
+              total: s.document.total,
+              remaining: s.document.remaining,
+              dueDate: s.document.dueDate,
+              score: s.score,
+              reasons: s.reasons,
+            })),
+          }
+        }),
         total,
         counts,
       }
@@ -99,7 +125,7 @@ export const bankRouter = {
           format: statement.format,
           ...result,
           warnings: statement.warnings.slice(0, 50),
-          autoMatched: 0,
+          autoMatched: await bankMatchingRepo.autoMatch(context.db, org, context.principal.userId),
         }
       }),
     ),
@@ -126,7 +152,126 @@ export const bankRouter = {
         const r = await bankRepo.syncFio(context.db, context.principal.organizationId, input.id, {
           fetch: context.services?.fetch,
         })
-        return { ...r, autoMatched: 0 }
+        const autoMatched = await bankMatchingRepo.autoMatch(
+          context.db,
+          context.principal.organizationId,
+          context.principal.userId,
+        )
+        return { ...r, autoMatched }
+      }),
+    ),
+
+  autoMatch: procedure({
+    mcp: {
+      name: 'auto_match_bank_payments',
+      title: 'Pair incoming bank payments with invoices',
+      description:
+        'Pairs unmatched incoming payments with open invoices when the variable symbol identifies exactly one invoice in the same currency. Partial payments are booked as partial; an excess is flagged as overpayment.',
+      idempotent: true,
+    },
+    openapi: {
+      method: 'POST',
+      path: '/bank/auto-match',
+      summary: 'Pair unmatched incoming payments with invoices by variable symbol',
+      tags: tag,
+    },
+  })
+    .input(z.object({}))
+    .output(z.object({ matched: z.number() }))
+    .handler(({ context }) =>
+      guardBank(async () => ({
+        matched: await bankMatchingRepo.autoMatch(
+          context.db,
+          context.principal.organizationId,
+          context.principal.userId,
+        ),
+      })),
+    ),
+
+  match: procedure({
+    mcp: {
+      name: 'match_bank_transaction',
+      title: 'Pair a bank transaction with an invoice',
+      description:
+        'Books an incoming bank transaction as a payment (source "bank") on an invoice or advance invoice. Use this to confirm a suggestion or to pair manually.',
+    },
+    openapi: {
+      method: 'POST',
+      path: '/bank/transactions/{transactionId}/match',
+      summary: 'Pair an incoming bank transaction with an invoice and record the payment',
+      tags: tag,
+    },
+  })
+    .input(matchInputSchema)
+    .output(matchOutputSchema)
+    .handler(({ context, input }) =>
+      guardBank(() =>
+        bankMatchingRepo.match(
+          context.db,
+          context.principal.organizationId,
+          context.principal.userId,
+          input.transactionId,
+          input.documentId,
+          { amount: input.amount },
+        ),
+      ),
+    ),
+
+  unmatch: procedure({
+    mcp: {
+      name: 'unmatch_bank_transaction',
+      title: 'Undo the pairing of a bank transaction',
+      description:
+        'Removes the payment created by the pairing and reopens the invoice if that payment had settled it.',
+      destructive: true,
+    },
+    openapi: {
+      method: 'POST',
+      path: '/bank/transactions/{transactionId}/unmatch',
+      summary: 'Undo the pairing: delete the payment and reopen the invoice',
+      tags: tag,
+    },
+  })
+    .input(z.object({ transactionId: z.string().min(1) }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(({ context, input }) =>
+      guardBank(async () => {
+        await bankMatchingRepo.unmatch(
+          context.db,
+          context.principal.organizationId,
+          context.principal.userId,
+          input.transactionId,
+        )
+        return { ok: true as const }
+      }),
+    ),
+
+  setIgnored: procedure({
+    mcp: {
+      name: 'ignore_bank_transaction',
+      title: 'Ignore (or restore) a bank transaction',
+      description:
+        'Marks an unmatched transaction as ignored (not an invoice payment) or puts it back among the unmatched ones.',
+      idempotent: true,
+    },
+    openapi: {
+      method: 'POST',
+      path: '/bank/transactions/{transactionId}/ignore',
+      summary: 'Ignore a bank transaction, or restore it with ignored=false',
+      tags: tag,
+    },
+  })
+    .input(z.object({ transactionId: z.string().min(1), ignored: z.boolean().default(true) }))
+    .output(z.object({ ok: z.literal(true) }))
+    .handler(({ context, input }) =>
+      guardBank(async () => {
+        await bankMatchingRepo.setIgnored(
+          context.db,
+          context.principal.organizationId,
+          input.transactionId,
+          input.ignored,
+        )
+        return { ok: true as const }
       }),
     ),
 }

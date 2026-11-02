@@ -3,6 +3,18 @@ import { z } from 'zod'
 
 const money = z.string().describe('Decimal string')
 
+export const suggestionSchema = z.object({
+  documentId: z.string(),
+  number: z.string().nullable(),
+  customerName: z.string().nullable(),
+  currency: z.string(),
+  total: money,
+  remaining: money.describe('Open balance of the document'),
+  dueDate: z.string().nullable(),
+  score: z.number(),
+  reasons: z.array(z.enum(['variable_symbol', 'reference_in_message', 'amount', 'name'])),
+})
+
 export const bankTransactionSchema = z.object({
   id: z.string(),
   bankAccountId: z.string(),
@@ -20,6 +32,14 @@ export const bankTransactionSchema = z.object({
   matchedDocumentId: z.string().nullable(),
   matchedDocumentNumber: z.string().nullable(),
   matchedAmount: money.nullable(),
+  overpaid: money
+    .nullable()
+    .describe('Part of a paired payment that exceeded the open balance (overpayment), if any'),
+  suggestions: z
+    .array(suggestionSchema)
+    .describe(
+      'Likely documents for an unmatched incoming payment; applying one needs confirmation',
+    ),
   createdAt: z.date(),
 })
 
@@ -64,6 +84,23 @@ export const importStatementOutputSchema = z.object({
   duplicates: z.number().describe('Transactions already known (skipped)'),
   warnings: z.array(z.string()),
   autoMatched: z.number().describe('Incoming payments paired with invoices automatically'),
+})
+
+export const matchInputSchema = z.object({
+  transactionId: z.string().min(1),
+  documentId: z.string().min(1),
+  amount: z
+    .string()
+    .optional()
+    .describe('Decimal string; default = the whole transaction (capped at the open balance)'),
+})
+
+export const matchOutputSchema = z.object({
+  documentId: z.string(),
+  paymentId: z.string(),
+  amount: money.describe('Booked as a payment'),
+  full: z.boolean().describe('The document is now fully paid'),
+  overpaid: money.describe('Received beyond what was booked'),
 })
 
 export const syncOutputSchema = z.object({

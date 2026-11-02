@@ -8,7 +8,7 @@ import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Check, Copy, Download, ExternalLink, Pencil, RefreshCw, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { PromptDialog } from '@/components/prompt-dialog'
@@ -426,7 +426,7 @@ function InvoiceDetail() {
       )}
 
       {sending && (
-        <section className="space-y-3 rounded-xl border p-4">
+        <RevealPanel>
           <h2 className="font-semibold">{t.sendTitle}</h2>
           <div className="space-y-2">
             <Label htmlFor="mailTo">{t.sendTo}</Label>
@@ -467,7 +467,7 @@ function InvoiceDetail() {
               {cs.common.cancel}
             </Button>
           </div>
-        </section>
+        </RevealPanel>
       )}
 
       <PromptDialog
@@ -591,7 +591,7 @@ function InvoiceDetail() {
       </PromptDialog>
 
       {paying && (
-        <section className="space-y-3 rounded-xl border p-4">
+        <RevealPanel>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="amount">{t.markPaidPartial}</Label>
@@ -630,13 +630,13 @@ function InvoiceDetail() {
               {cs.common.cancel}
             </Button>
           </div>
-        </section>
+        </RevealPanel>
       )}
 
       {publicUrl && (
         <section className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm">
           <span className="text-muted-foreground">{t.publicLink}</span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -816,4 +816,17 @@ function InvoiceDetail() {
       </>
     )
   }
+}
+
+/** Inline panel that scrolls into view when it opens (it renders below the fold on long documents). */
+function RevealPanel({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLElement>(null)
+  useEffect(() => {
+    ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [])
+  return (
+    <section ref={ref} className="space-y-3 rounded-xl border bg-card p-4">
+      {children}
+    </section>
+  )
 }

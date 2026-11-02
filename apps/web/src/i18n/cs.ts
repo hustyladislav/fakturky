@@ -358,10 +358,16 @@ export const cs = {
       weekendHint: (day: string) =>
         `Splatnost vychází na ${day}. Platba dorazí nejdřív v pracovní den.`,
       weekdays: ['neděli', 'pondělí', 'úterý', 'středu', 'čtvrtek', 'pátek', 'sobotu'],
+      vatNote: 'Právní důvod osvobození',
+      vatNotePlaceholder: 'Právní důvod osvobození, např. § 51 odst. 1 zákona o DPH',
       missingFields: {
+        'line.vatNote': 'právní důvod osvobození u osvobozených položek (§ zákona o DPH)',
+        'line.vatRate': 'sazbu DPH 21 / 12 % nebo režim DPH u každé položky',
+        'customer.vatId': 'DIČ / IČ DPH (nutné pro přenesení daňové povinnosti v rámci EU)',
         'customer.address': 'adresu (ulice, město, PSČ)',
         'customer.taxId': 'IČO nebo DIČ',
       },
+      missingLines: (names: string[]) => `U položek doplňte: ${names.join(', ')}.`,
       missingCustomer: (names: string[]) =>
         `Daňový doklad vyžaduje údaje odběratele. Doplňte u kontaktu: ${names.join(', ')}.`,
       registryNoteMissing:

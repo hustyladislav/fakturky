@@ -87,6 +87,12 @@ for (const v of variants) {
       await pickCustomer(page, customerName)
       await expect(page.getByText('automaticky při vystavení')).toBeVisible()
       await fillLines(page, v.lines)
+      if (v.vatPayer) {
+        // There is no 0 % rate in Czech VAT: payers get 21/12 % plus VAT regimes instead.
+        const vat = page.getByLabel('DPH', { exact: true }).locator('visible=true').first()
+        await expect(vat.locator('option', { hasText: /^0 %$/ })).toHaveCount(0)
+        await expect(vat.locator('option', { hasText: 'Osvobozeno od DPH' })).toHaveCount(1)
+      }
       const total = page.getByText('Celkem k úhradě').locator('..')
       await expect(total).toContainText(amountRe(v.total))
       if (v.vatLines) {

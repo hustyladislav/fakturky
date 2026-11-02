@@ -56,10 +56,25 @@ export const bankAccountSchema = z.object({
   isDefault: z.boolean(),
   defaultForCurrency: z.boolean(),
   showQr: z.boolean(),
+  /** A Fio API token is stored (encrypted); the token itself is never returned. */
+  fioConnected: z.boolean(),
+  fioLastSyncedAt: z.date().nullable(),
+  fioLastError: z.string().nullable(),
   archivedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 })
+
+type AccountRow = {
+  fioTokenEncrypted: string | null
+  fioLastSyncedAt: Date | null
+  fioLastError: string | null
+}
+
+/** Row → API shape: derives `fioConnected`; the schema parse then drops every column not listed above. */
+export function presentAccount<T extends AccountRow>(row: T) {
+  return { ...row, fioConnected: row.fioTokenEncrypted !== null }
+}
 
 export type BankAccountInput = z.infer<typeof bankAccountInputSchema>
 export type BankAccountPatch = z.infer<typeof bankAccountPatchSchema>

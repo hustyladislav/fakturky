@@ -50,6 +50,8 @@ export default defineConfig({
               BETTER_AUTH_URL: baseURL,
               ARES_BASE_URL: `http://127.0.0.1:${ARES_PORT}`,
               CRON_SECRET: 'e2e-'.repeat(6),
+              // Throw-away key for the local e2e database only (32 zero bytes, base64).
+              ENCRYPTION_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
             },
           },
         ]),

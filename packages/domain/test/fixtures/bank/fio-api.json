@@ -1,0 +1,53 @@
+{
+  "accountStatement": {
+    "info": {
+      "accountId": "2400123455",
+      "bankId": "2010",
+      "currency": "CZK",
+      "iban": "CZ8720100000002400123455",
+      "bic": "FIOBCZPPXXX",
+      "openingBalance": 10000.0,
+      "closingBalance": 22100.0,
+      "dateStart": "2026-01-01+0100",
+      "dateEnd": "2026-01-31+0100",
+      "idFrom": 1001,
+      "idTo": 1002
+    },
+    "transactionList": {
+      "transaction": [
+        {
+          "column22": { "value": 11111111, "name": "ID pohybu", "id": 22 },
+          "column0": { "value": "2026-01-05+0100", "name": "Datum", "id": 0 },
+          "column1": { "value": 12100.0, "name": "Objem", "id": 1 },
+          "column14": { "value": "CZK", "name": "Měna", "id": 14 },
+          "column2": { "value": "1234567890", "name": "Protiúčet", "id": 2 },
+          "column10": { "value": "Novák Jan s.r.o.", "name": "Název protiúčtu", "id": 10 },
+          "column3": { "value": "0800", "name": "Kód banky", "id": 3 },
+          "column12": { "value": "Česká spořitelna, a.s.", "name": "Název banky", "id": 12 },
+          "column4": { "value": "0308", "name": "KS", "id": 4 },
+          "column5": { "value": "20260001", "name": "VS", "id": 5 },
+          "column6": null,
+          "column7": { "value": "Faktura 2026-0001", "name": "Uživatelská identifikace", "id": 7 },
+          "column16": { "value": "Platba faktury", "name": "Zpráva pro příjemce", "id": 16 },
+          "column8": { "value": "Příjem převodem uvnitř banky", "name": "Typ", "id": 8 },
+          "column25": null
+        },
+        {
+          "column22": { "value": 11111112, "name": "ID pohybu", "id": 22 },
+          "column0": { "value": "2026-01-07+0100", "name": "Datum", "id": 0 },
+          "column1": { "value": -350.5, "name": "Objem", "id": 1 },
+          "column14": { "value": "CZK", "name": "Měna", "id": 14 },
+          "column2": null,
+          "column10": null,
+          "column3": null,
+          "column4": null,
+          "column5": null,
+          "column6": null,
+          "column7": { "value": "Nákup: Albert", "name": "Uživatelská identifikace", "id": 7 },
+          "column16": null,
+          "column25": { "value": "Potraviny", "name": "Komentář", "id": 25 }
+        }
+      ]
+    }
+  }
+}

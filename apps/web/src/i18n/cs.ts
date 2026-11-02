@@ -490,6 +490,16 @@ export const cs = {
       taxableDate: 'DUZP (datum zdanitelného plnění)',
       taxableHint: 'Den, kdy nastalo plnění. U plátců DPH určuje, do kterého měsíce DPH patří.',
       dueIn: (days: number) => `${days} dní`,
+      dueSummary: (days: number, date: string) => {
+        const when = new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' }).format(
+          new Date(`${date}T12:00:00`),
+        )
+        if (days <= 0) return `Splatnost ihned (${when})`
+        const unit = days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'
+        return `Splatnost za ${days} ${unit} (${when})`
+      },
+      datesEdit: 'upravit',
+      datesHide: 'skrýt',
       today: 'Dnes',
       currency: 'Měna',
       exchangeRate: 'Kurz ČNB (Kč za 1 jednotku)',

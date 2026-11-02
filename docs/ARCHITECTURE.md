@@ -83,11 +83,15 @@ All tables: `id` (uuid v7, text), `organization_id`, `created_at`, `updated_at`.
 - **document_line** — `position`, `description`, `quantity`, `unit`, `unit_price`, `vat_rate`, `discount_percent`,
   cached line totals.
 - **payment** — `document_id`, `paid_on`, `amount`, `currency`, `method`, `note`, `source` (`manual` | `bank`).
+- **bank_transaction** — one statement line (upload or Fio API): `bank_account_id`, `booked_on`, signed `amount`,
+  `currency`, `variable_symbol` / `constant_symbol` / `specific_symbol`, counterparty account + name, `message`,
+  `external_id` (unique per account, so re-imports are idempotent), `source`, `match_status`
+  (`unmatched` | `matched` | `ignored`), `matched_document_id`, `payment_id`, `matched_amount`.
 - **template** — reusable invoice blueprint (customer, lines, texts). **recurring_rule** — template + schedule
   (`monthly` on day N / `quarterly` / `yearly`), `next_run_on`, `auto_issue`, `auto_send`, `active`.
 - **activity** — append-only audit log (document created/issued/sent/viewed/paid/cancelled, settings changes).
 - **exchange_rate** — ČNB daily cache (`date`, `currency`, `amount`, `rate`).
-- Later: `item` (price list), `expense`, `bank_transaction` (Fio API / CSV import for auto-pairing).
+- Later: `item` (price list), `expense`.
 
 ## Request flow
 

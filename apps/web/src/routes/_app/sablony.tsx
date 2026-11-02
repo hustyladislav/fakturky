@@ -10,9 +10,13 @@ import { FileStack } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
-export const Route = createFileRoute('/_app/sablony')({ component: Templates })
+export const Route = createFileRoute('/_app/sablony')({
+  head: pageHead(cs.templates.title),
+  component: Templates,
+})
 
 const t = cs.templates
 

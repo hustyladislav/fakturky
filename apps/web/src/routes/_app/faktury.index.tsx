@@ -11,11 +11,13 @@ import { z } from 'zod'
 import { CsvDownload } from '@/components/csv-download'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 const FILTERS = ['all', 'unpaid', 'overdue', 'paid', 'draft'] as const
 
 export const Route = createFileRoute('/_app/faktury/')({
+  head: pageHead(cs.invoices.title),
   validateSearch: z.object({
     filter: z.enum(FILTERS).catch('all').default('all'),
     q: z.string().optional(),
@@ -116,7 +118,7 @@ function InvoiceList() {
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <Money amount={d.total} currency={d.currency} />
-                    <InvoiceStatus status={d.displayStatus} />
+                    <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
                   </div>
                 </Link>
               </li>
@@ -153,7 +155,7 @@ function InvoiceList() {
                       <Money amount={d.total} currency={d.currency} />
                     </Cell>
                     <Cell id={d.id} draft={d.status === 'draft'}>
-                      <InvoiceStatus status={d.displayStatus} />
+                      <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
                     </Cell>
                   </tr>
                 ))}

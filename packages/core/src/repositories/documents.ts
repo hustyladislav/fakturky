@@ -280,13 +280,33 @@ export const documentsRepo = {
       orgId,
       rows.map((r) => r.doc.id),
     )
-    return rows.map(({ doc, contactName }) =>
-      decorate(
+    // Drafts the assistant created are flagged so the UI can show "Koncept · navrhl asistent".
+    const viaRows = rows.length
+      ? await db
+          .select({ id: activity.entityId })
+          .from(activity)
+          .where(
+            and(
+              eq(activity.organizationId, orgId),
+              eq(activity.entityType, 'document'),
+              eq(activity.action, 'created'),
+              sql`${activity.data}->>'via' = 'assistant'`,
+              inArray(
+                activity.entityId,
+                rows.map((r) => r.doc.id),
+              ),
+            ),
+          )
+      : []
+    const viaAssistant = new Set(viaRows.map((r) => r.id))
+    return rows.map(({ doc, contactName }) => ({
+      ...decorate(
         doc,
         sums.get(doc.id) ?? new Decimal(0),
         (doc.customerSnapshot?.name as string | undefined) ?? contactName,
       ),
-    )
+      viaAssistant: viaAssistant.has(doc.id),
+    }))
   },
 
   async get(db: Db | Tx, orgId: string, id: string) {
@@ -342,6 +362,9 @@ export const documentsRepo = {
         total: r.total,
       })),
       activity: acts,
+      viaAssistant: acts.some(
+        (a) => a.action === 'created' && (a.data as { via?: string } | null)?.via === 'assistant',
+      ),
     }
   },
 
@@ -702,6 +725,21 @@ export const documentsRepo = {
       }
     })
     return this.get(db, orgId, id)
+  },
+
+  /** Marks a freshly created draft as proposed by the assistant (for drafts made by duplicate/template/credit-note). */
+  async tagAssistant(db: Db, orgId: string, documentId: string) {
+    await db
+      .update(activity)
+      .set({ data: sql`coalesce(${activity.data}, '{}'::jsonb) || '{"via":"assistant"}'::jsonb` })
+      .where(
+        and(
+          eq(activity.organizationId, orgId),
+          eq(activity.entityType, 'document'),
+          eq(activity.entityId, documentId),
+          eq(activity.action, 'created'),
+        ),
+      )
   },
 
   async duplicate(db: Db, orgId: string, actorId: string, id: string) {

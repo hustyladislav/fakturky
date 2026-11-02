@@ -255,6 +255,7 @@ export const cs = {
   },
   invoices: {
     title: 'Faktury',
+    assistantDraft: 'Koncept · navrhl asistent',
     new: 'Nová faktura',
     empty: 'Zatím nemáte žádné faktury.',
     emptyFiltered: 'Nic neodpovídá zvolenému filtru.',
@@ -563,6 +564,7 @@ export const cs = {
     profileSaved: 'Údaje byly uloženy.',
   },
   onboarding: {
+    pageTitle: 'Úvodní nastavení',
     title: 'Vítejte! Pojďme nastavit vaše údaje',
     description:
       'Tyto údaje se objeví na vašich fakturách jako dodavatel. Stačí zadat IČO a zbytek doplníme z registru ARES.',

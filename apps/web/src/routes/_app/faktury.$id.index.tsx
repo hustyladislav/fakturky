@@ -12,9 +12,11 @@ import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage } from '@/lib/errors'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/faktury/$id/')({
+  head: pageHead(cs.invoices.title),
   component: InvoiceDetail,
 })
 
@@ -213,7 +215,7 @@ function InvoiceDetail() {
               {cs.invoices.type[d.type as keyof typeof cs.invoices.type]}
             </span>
           )}
-          <InvoiceStatus status={d.displayStatus} />
+          <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
         </div>
         <div className="hidden flex-wrap gap-2 sm:flex">
           <Actions />

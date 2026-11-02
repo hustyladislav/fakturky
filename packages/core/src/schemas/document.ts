@@ -108,6 +108,8 @@ export const documentSchema = z.object({
   customerSnapshot: snapshot,
   bankSnapshot: snapshot,
   customerName: z.string().nullable(),
+  /** Draft was created by the in-app assistant (activity `via`). */
+  viaAssistant: z.boolean().optional(),
   issueDate: z.string().nullable(),
   taxableDate: z.string().nullable(),
   dueDate: z.string().nullable(),

@@ -1,7 +1,7 @@
 import { formatDateCs } from '@fakturky/domain/dates'
 import { Button } from '@fakturky/ui/components/button'
 import { Money } from '@fakturky/ui/components/money'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, notFound } from '@tanstack/react-router'
 import { Download, Printer } from 'lucide-react'
 import { cs } from '@/i18n/cs'
 import { client } from '@/lib/orpc'
@@ -9,7 +9,21 @@ import { client } from '@/lib/orpc'
 const t = cs.publicInvoice
 
 export const Route = createFileRoute('/f/$token')({
-  loader: ({ params }) => client.public.invoice({ token: params.token }).catch(() => null),
+  loader: async ({ params }) => {
+    try {
+      return await client.public.invoice({ token: params.token })
+    } catch (e) {
+      // Only an unknown token is a 404; outages and other failures must surface as errors.
+      if ((e as { code?: string }).code === 'NOT_FOUND') throw notFound()
+      throw e
+    }
+  },
+  notFoundComponent: () => (
+    <main className="mx-auto max-w-md p-6 pt-24 text-center">
+      <h1 className="font-serif text-3xl font-medium">404</h1>
+      <p className="mt-2 text-muted-foreground">{t.notFound}</p>
+    </main>
+  ),
   head: () => ({
     meta: [{ name: 'robots', content: 'noindex, nofollow, noarchive' }, { title: cs.brand }],
   }),
@@ -47,13 +61,6 @@ function PartyBlock({ title, p }: { title: string; p: Party }) {
 function PublicInvoice() {
   const d = Route.useLoaderData()
   const { token } = Route.useParams()
-  if (!d) {
-    return (
-      <main className="mx-auto max-w-md p-6 pt-24 text-center">
-        <p className="text-muted-foreground">{t.notFound}</p>
-      </main>
-    )
-  }
   const title =
     d.type === 'proforma'
       ? t.titleProforma

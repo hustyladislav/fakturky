@@ -16,3 +16,12 @@ test('HTML stays text (React escapes it)', () => {
     { kind: 'text', text: '<img src=x onerror=alert(1)>' },
   ])
 })
+
+test('links: https and internal paths become links, javascript: stays text', () => {
+  expect(inlineParts('[web](https://example.cz) [faktura](/faktury/1)')).toEqual([
+    { kind: 'link', text: 'web', href: 'https://example.cz/' },
+    { kind: 'text', text: ' ' },
+    { kind: 'link', text: 'faktura', href: '/faktury/1' },
+  ])
+  expect(inlineParts('[x](javascript:alert1)').some((p) => p.kind === 'link')).toBe(false)
+})

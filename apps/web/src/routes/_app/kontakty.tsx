@@ -25,9 +25,11 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { CsvDownload } from '@/components/csv-download'
 import { cs } from '@/i18n/cs'
+import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/_app/kontakty')({
+  head: pageHead(cs.contacts.title),
   validateSearch: (search: Record<string, unknown>): { novy?: boolean } =>
     search.novy === true || search.novy === 'true' ? { novy: true } : {},
   loader: ({ context }) =>

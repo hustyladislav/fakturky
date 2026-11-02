@@ -1,4 +1,6 @@
 import { Button as ButtonPrimitive } from '@base-ui/react/button'
+import { mergeProps } from '@base-ui/react/merge-props'
+import { useRender } from '@base-ui/react/use-render'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from 'cn'
 
@@ -45,6 +47,19 @@ function Button({
   size = 'default',
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  // A link styled as a button must stay a link: Base UI would add role="button" to a non-native render.
+  if (props.nativeButton === false && props.render) {
+    const { nativeButton: _native, render, ...rest } = props
+    return useRender({
+      defaultTagName: 'a',
+      props: mergeProps<'a'>(
+        { className: cn(buttonVariants({ variant, size, className })) },
+        rest as React.ComponentProps<'a'>,
+      ),
+      render: render as React.ReactElement,
+      state: { slot: 'button', variant, size },
+    })
+  }
   return (
     <ButtonPrimitive
       data-slot="button"

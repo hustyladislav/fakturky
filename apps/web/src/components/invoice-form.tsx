@@ -1,68 +1,64 @@
+import type { DocumentLanguage } from '@fakturky/domain'
 import { addDays, isoWeekday, isWeekend, todayPrague } from '@fakturky/domain/dates'
 import { computeDocumentTotals, type VatTreatment } from '@fakturky/domain/vat'
+import { Amount } from '@fakturky/ui/components/amount'
 import { Button } from '@fakturky/ui/components/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@fakturky/ui/components/collapsible'
+import { CurrencyCombobox } from '@fakturky/ui/components/currency-combobox'
+import { DatePicker } from '@fakturky/ui/components/date-picker'
 import { Input } from '@fakturky/ui/components/input'
+import { Kbd } from '@fakturky/ui/components/kbd'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
+import { PageHeader } from '@fakturky/ui/components/page-header'
+import { Textarea } from '@fakturky/ui/components/textarea'
+import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
+import { formToSheet } from '@/lib/document-sheet'
 import { apiErrorMessage } from '@/lib/errors'
+import { num, trimDecimal, validNum } from '@/lib/invoice-numbers'
 import { type InvoicePrefill, onInvoicePrefill, takeInvoicePrefill } from '@/lib/invoice-prefill'
 import { client, orpc } from '@/lib/orpc'
-import { CustomerPicker, type PickedCustomer } from './customer-picker'
+import { CustomerCard, type PickedCustomer } from './invoice-editor/customer-card'
+import { emptyLine, ItemsTable, type Line, nextLineKey } from './invoice-editor/items-table'
+import { PreviewButton, PreviewPane, PreviewSheet, useIsWide } from './invoice-editor/preview'
 
 const t = cs.invoices.form
 
-type Line = {
-  key: number
-  description: string
-  quantity: string
-  unit: string
-  unitPrice: string
-  vatRate: string
-  vatTreatment: VatTreatment
-  vatNote: string
-}
-
-const VAT_RATES = ['21', '12']
-const TREATMENTS = [
-  'exempt',
-  'reverse_charge',
-  'eu_reverse_charge',
-  'export',
-  'outside_scope',
-] as const
-let lineKey = 1
-const emptyLine = (vatRate = '21'): Line => ({
-  key: lineKey++,
-  description: '',
-  quantity: '1',
-  unit: 'ks',
-  unitPrice: '',
-  vatRate,
-  vatTreatment: 'standard',
-  vatNote: '',
-})
-/** Czech input: "1 500,5" (space or NBSP thousands, comma decimal) -> "1500.5". */
-const num = (v: string) => {
-  const t = v.replace(/[\s\u00a0\u202f]/g, '').replace(',', '.')
-  return t === '' ? '0' : t
-}
-/** Strips trailing fraction zeros from a decimal string without going through floating point. */
-const trimDecimal = (v: string) => (v.includes('.') ? v.replace(/\.?0+$/, '') : v)
-const validNum = (v: string) => /^-?\d+(\.\d+)?$/.test(num(v))
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionTitle({ children, id }: { children: React.ReactNode; id?: string }) {
   return (
-    <section className="space-y-4 rounded-xl border p-4 sm:p-5">
-      <h2 className="font-semibold">{title}</h2>
+    <h2 id={id} className="label-caps !font-sans mb-3">
       {children}
-    </section>
+    </h2>
+  )
+}
+
+function Row({
+  label,
+  amount,
+  currency,
+  muted,
+}: {
+  label: string
+  amount: string
+  currency: string
+  muted?: boolean
+}) {
+  return (
+    <div className={cn('flex justify-between gap-6', muted && 'text-muted-foreground')}>
+      <span>{label}</span>
+      <Money amount={amount} currency={currency} />
+    </div>
   )
 }
 
@@ -71,6 +67,8 @@ export function InvoiceForm({ id }: { id?: string }) {
   const queryClient = useQueryClient()
   const defaults = useQuery(orpc.documents.defaults.queryOptions({ input: {} }))
   const accounts = useQuery(orpc.bankAccounts.list.queryOptions({ input: {} }))
+  const profile = useQuery(orpc.businessProfile.get.queryOptions({ input: {} }))
+  const look = useQuery(orpc.appearance.get.queryOptions({ input: {} }))
   const existing = useQuery({
     ...orpc.documents.get.queryOptions({ input: { id: id ?? '' } }),
     enabled: !!id,
@@ -95,9 +93,14 @@ export function InvoiceForm({ id }: { id?: string }) {
   const [introText, setIntroText] = useState('')
   const [footerText, setFooterText] = useState('')
   const [privateNote, setPrivateNote] = useState('')
+  const [orderNumber, setOrderNumber] = useState('')
+  const [language, setLanguage] = useState<DocumentLanguage>('cs')
   const [lines, setLines] = useState<Line[]>([emptyLine()])
   const [ready, setReady] = useState(false)
   const [dueTouched, setDueTouched] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const wide = useIsWide()
 
   const vatPayerDefault = defaults.data?.vatPayer ?? false
   const applyPrefill = useCallback(
@@ -109,7 +112,7 @@ export function InvoiceForm({ id }: { id?: string }) {
       if (prefill.lines.length) {
         setLines(
           prefill.lines.map((l) => ({
-            key: lineKey++,
+            key: nextLineKey(),
             description: l.description,
             quantity: l.quantity || '1',
             unit: 'ks',
@@ -149,6 +152,7 @@ export function InvoiceForm({ id }: { id?: string }) {
     setDueDate(addDays(today, d.dueDays))
     setCurrency(d.currency)
     setPaymentMethod(d.paymentMethod)
+    setLanguage(d.language as DocumentLanguage)
     setFooterText(d.footerText ?? '')
     setLines([emptyLine(d.vatPayer ? '21' : '0')])
     // Hand-off from the assistant (`prefillInvoiceForm`): applied once, on top of the defaults.
@@ -170,15 +174,20 @@ export function InvoiceForm({ id }: { id?: string }) {
     setRoundTotal(d.roundTotal)
     setBankAccountId(d.bankAccountId ?? '')
     setPaymentMethod(d.paymentMethod)
+    setLanguage((d.language as DocumentLanguage) ?? 'cs')
+    setOrderNumber(d.orderNumber ?? '')
     setIntroText(d.introText ?? '')
     setFooterText(d.footerText ?? '')
     setPrivateNote(d.privateNote ?? '')
+    setMoreOpen(
+      !!(d.introText || d.footerText || d.privateNote || d.orderNumber || d.language !== 'cs'),
+    )
     setDueTouched(true)
     setTaxableTouched(true)
     setLines(
       d.lines.length
         ? d.lines.map((l) => ({
-            key: lineKey++,
+            key: nextLineKey(),
             description: l.description,
             quantity: trimDecimal(l.quantity),
             unit: l.unit ?? '',
@@ -268,6 +277,8 @@ export function InvoiceForm({ id }: { id?: string }) {
     exchangeRate: foreign && exchangeRate ? num(exchangeRate) : null,
     roundTotal,
     paymentMethod,
+    language,
+    orderNumber: orderNumber.trim() || null,
     introText: introText || null,
     footerText: footerText || null,
     privateNote: privateNote || null,
@@ -283,6 +294,16 @@ export function InvoiceForm({ id }: { id?: string }) {
         vatNote: vatPayer && l.vatTreatment === 'exempt' ? l.vatNote.trim() || null : null,
       })),
   })
+
+  // "Unsaved" = the payload differs from what was loaded or last saved. Seeded values that arrive late
+  // (bank accounts, ČNB rate) are folded into the baseline instead of counting as edits.
+  const current = JSON.stringify({ docType, ...payload() })
+  const [baseline, setBaseline] = useState<string | null>(null)
+  const settled = ready && accounts.isSuccess && (!foreign || rateFor !== null || rateTouched)
+  useEffect(() => {
+    if (settled && baseline === null) setBaseline(current)
+  }, [settled])
+  const dirty = baseline !== null && baseline !== current
 
   const [createdId, setCreatedId] = useState<string | undefined>()
   const [issueError, setIssueError] = useState<string | null>(null)
@@ -307,9 +328,11 @@ export function InvoiceForm({ id }: { id?: string }) {
       const body = payload()
       if (andIssue && !customer) throw new Error(t.needCustomer)
       if (andIssue && body.lines.length === 0) throw new Error(t.needLines)
+      const submitted = JSON.stringify({ docType, ...body })
       const doc = draftId
         ? await client.documents.updateDraft({ id: draftId, patch: body })
         : await client.documents.createDraft({ ...body, type: docType })
+      setBaseline(submitted)
       if (!andIssue) return doc
       try {
         return await client.documents.issue({ id: doc.id })
@@ -344,9 +367,23 @@ export function InvoiceForm({ id }: { id?: string }) {
     },
   })
 
+  // Ctrl/⌘ + Enter issues from anywhere on the page.
+  const issueRef = useRef<() => void>(() => {})
+  issueRef.current = () => {
+    if (ready && !save.isPending) save.mutate(true)
+  }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.isComposing) {
+        e.preventDefault()
+        issueRef.current()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   const weekend = dueDate && isWeekend(dueDate)
-  const setLine = (key: number, patch: Partial<Line>) =>
-    setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)))
 
   function setIssue(v: string) {
     setIssueDate(v)
@@ -355,15 +392,70 @@ export function InvoiceForm({ id }: { id?: string }) {
     if (!dueTouched && defaults.data) setDueDate(addDays(v, defaults.data.dueDays))
   }
 
-  const grid = vatPayer
-    ? 'grid-cols-[1fr_4.5rem_3.5rem_7rem_4.5rem_2rem]'
-    : 'grid-cols-[1fr_4.5rem_3.5rem_7rem_2rem]'
+  const rowTotals = lines.map((_, i) => totals?.lines[i]?.base)
+  const type = (existing.data?.type ?? docType) as
+    | 'invoice'
+    | 'proforma'
+    | 'credit_note'
+    | 'payment_receipt'
+  const account = currencyAccounts.find((a) => a.id === effectiveAccount)
+  const sheetDoc = useMemo(
+    () =>
+      formToSheet(
+        {
+          type,
+          issueDate,
+          taxableDate,
+          dueDate,
+          vatPayer,
+          currency,
+          exchangeRate,
+          roundTotal,
+          language,
+          paymentMethod,
+          introText,
+          footerText,
+          lines,
+          customerName: customer?.name ?? null,
+        },
+        { look: look.data, profile: profile.data, contact: customerRow.data, account },
+      ),
+    [
+      type,
+      issueDate,
+      taxableDate,
+      dueDate,
+      vatPayer,
+      currency,
+      exchangeRate,
+      roundTotal,
+      language,
+      paymentMethod,
+      introText,
+      footerText,
+      lines,
+      customer?.name,
+      look.data,
+      profile.data,
+      customerRow.data,
+      account,
+    ],
+  )
+
+  const supplier = profile.data
+  const supplierAddress = supplier?.address
+  const totalValue = totals?.total ?? '0'
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 pb-28 sm:pb-6">
-      <h1 className="text-2xl font-semibold">{id ? t.titleEdit : t.titleNew}</h1>
+    <div className="mx-auto max-w-[1136px]">
+      <PageHeader
+        eyebrow={cs.invoices.type[type]}
+        title={id ? t.titleEdit : t.titleNew}
+        subtitle={dirty ? t.unsaved : draftId ? t.savedState : undefined}
+        className="mb-5"
+      />
       {defaults.data && !defaults.data.hasProfile && (
-        <p className="rounded-lg border border-warning/50 bg-warning/14 p-3 text-sm text-foreground">
+        <p className="mb-4 rounded-lg border border-warning/50 bg-warning/14 p-3 text-foreground text-sm">
           {t.needProfile}{' '}
           <Link to="/nastaveni" className="underline">
             {cs.nav.settings}
@@ -372,7 +464,7 @@ export function InvoiceForm({ id }: { id?: string }) {
       )}
 
       {defaults.data?.hasProfile && defaults.data.registryNoteMissing && (
-        <p className="rounded-lg border border-warning/50 bg-warning/14 p-3 text-sm text-foreground">
+        <p className="mb-4 rounded-lg border border-warning/50 bg-warning/14 p-3 text-foreground text-sm">
           {t.registryNoteMissing}{' '}
           <Link to="/nastaveni" className="underline">
             {cs.nav.settings}
@@ -380,447 +472,381 @@ export function InvoiceForm({ id }: { id?: string }) {
         </p>
       )}
 
-      {!id && (
-        <Card title={t.documentType}>
-          <NativeSelect
-            aria-label={t.documentType}
-            value={docType}
-            onChange={(e) => setDocType(e.target.value as 'invoice' | 'proforma')}
-          >
-            <option value="invoice">{cs.invoices.type.invoice}</option>
-            <option value="proforma">{cs.invoices.type.proforma}</option>
-          </NativeSelect>
-          {docType === 'proforma' && (
-            <p className="text-muted-foreground text-sm">{t.proformaHint}</p>
-          )}
-        </Card>
-      )}
-
-      <Card title={t.customer}>
-        <CustomerPicker value={customer} onChange={setCustomer} />
-        {euReverseDomestic && (
-          <p role="alert" className="text-destructive text-sm">
-            {cs.contacts.euReverseChargeDomestic}
-          </p>
-        )}
-        {issueError && (
-          <p role="alert" className="text-destructive text-sm">
-            {issueError}{' '}
-            <Link to="/kontakty" className="underline">
-              {cs.nav.contacts}
-            </Link>
-          </p>
-        )}
-      </Card>
-
-      <Card title={t.details}>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="issueDate">{t.issueDate}</Label>
-            <Input
-              id="issueDate"
-              type="date"
-              value={issueDate}
-              onChange={(e) => setIssue(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="dueDate">{t.dueDate}</Label>
-            <Input
-              id="dueDate"
-              type="date"
-              value={dueDate}
-              onChange={(e) => {
-                setDueTouched(true)
-                setDueDate(e.target.value)
-              }}
-            />
-            <div className="flex flex-wrap gap-1">
-              {[7, 14, 30].map((d) => (
-                <Button
-                  key={d}
-                  type="button"
-                  variant="outline"
-                  size="xs"
-                  onClick={() => {
-                    setDueTouched(true)
-                    setDueDate(addDays(issueDate, d))
-                  }}
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
+        <section className="sheet min-w-0 divide-y divide-border" aria-label={t.documentHeading}>
+          {/* Header: what kind of document, and that the number comes at issue. */}
+          <div className="space-y-3 p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+              {id ? (
+                <span className="font-serif text-xl font-medium">{cs.invoices.type[type]}</span>
+              ) : (
+                <NativeSelect
+                  aria-label={t.documentType}
+                  className="w-auto min-w-52 font-serif"
+                  value={docType}
+                  onChange={(e) => setDocType(e.target.value as 'invoice' | 'proforma')}
                 >
-                  {t.dueIn(d)}
-                </Button>
-              ))}
-            </div>
-          </div>
-          {vatPayer && (
-            <div className="space-y-2">
-              <Label htmlFor="taxableDate">{t.taxableDate}</Label>
-              <Input
-                id="taxableDate"
-                type="date"
-                value={taxableDate}
-                onChange={(e) => {
-                  setTaxableTouched(true)
-                  setTaxableDate(e.target.value)
-                }}
-              />
-              <p className="text-muted-foreground text-xs">{t.taxableHint}</p>
-            </div>
-          )}
-        </div>
-        {weekend && (
-          <p className="text-muted-foreground text-sm">
-            {t.weekendHint(t.weekdays[isoWeekday(dueDate) % 7] ?? '')}
-          </p>
-        )}
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="currency">{t.currency}</Label>
-            <Input
-              id="currency"
-              list="currencies"
-              value={currency}
-              maxLength={3}
-              onChange={(e) => {
-                const v = e.target.value.toUpperCase()
-                setCurrency(v)
-                if (v.length === 3 && v !== 'CZK') {
-                  setRateTouched(false)
-                  setRateFor(null)
-                }
-              }}
-            />
-            <datalist id="currencies">
-              {['CZK', 'EUR', 'USD', 'GBP', 'PLN'].map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
-          </div>
-          {foreign && (
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="rate">{t.exchangeRate}</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="rate"
-                  inputMode="decimal"
-                  value={exchangeRate}
-                  onChange={(e) => {
-                    setRateTouched(true)
-                    setExchangeRate(e.target.value)
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setRateTouched(false)
-                    void loadRate(currency, rateDate)
-                  }}
-                >
-                  {t.exchangeRateLoad}
-                </Button>
-              </div>
-              <p className="text-muted-foreground text-xs">{t.exchangeRateHint}</p>
-            </div>
-          )}
-        </div>
-        <p className="text-muted-foreground text-sm">
-          {t.number}: <span className="bg-muted rounded px-1.5 py-0.5 text-xs">{t.numberAuto}</span>
-        </p>
-      </Card>
-
-      <Card title={t.items}>
-        <div className="space-y-3">
-          {lines.map((l) => (
-            <div key={l.key} className="space-y-2 rounded-lg border p-3 sm:border-0 sm:p-0">
-              <div className={`hidden gap-2 sm:grid ${grid}`}>
-                <Input
-                  aria-label={t.description}
-                  placeholder={t.description}
-                  value={l.description}
-                  onChange={(e) => setLine(l.key, { description: e.target.value })}
-                />
-                <Input
-                  aria-label={t.quantity}
-                  inputMode="decimal"
-                  value={l.quantity}
-                  onChange={(e) => setLine(l.key, { quantity: e.target.value })}
-                />
-                <Input
-                  aria-label={t.unit}
-                  value={l.unit}
-                  onChange={(e) => setLine(l.key, { unit: e.target.value })}
-                />
-                <Input
-                  aria-label={t.unitPrice}
-                  placeholder={t.unitPrice}
-                  inputMode="decimal"
-                  value={l.unitPrice}
-                  onChange={(e) => setLine(l.key, { unitPrice: e.target.value })}
-                />
-                {vatPayer && <VatSelect line={l} onChange={(patch) => setLine(l.key, patch)} />}
-                <RemoveButton
-                  disabled={lines.length === 1}
-                  onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
-                />
-              </div>
-              {vatPayer && l.vatTreatment === 'exempt' && (
-                <Input
-                  aria-label={t.vatNote}
-                  placeholder={t.vatNotePlaceholder}
-                  value={l.vatNote}
-                  onChange={(e) => setLine(l.key, { vatNote: e.target.value })}
-                />
+                  <option value="invoice">{cs.invoices.type.invoice}</option>
+                  <option value="proforma">{cs.invoices.type.proforma}</option>
+                </NativeSelect>
               )}
-              {/* mobile: stacked */}
-              <div className="space-y-2 sm:hidden">
-                <Input
-                  aria-label={t.description}
-                  placeholder={t.description}
-                  value={l.description}
-                  onChange={(e) => setLine(l.key, { description: e.target.value })}
-                />
-                <div className="grid grid-cols-3 gap-2">
-                  <Input
-                    aria-label={t.quantity}
-                    inputMode="decimal"
-                    value={l.quantity}
-                    onChange={(e) => setLine(l.key, { quantity: e.target.value })}
-                  />
-                  <Input
-                    aria-label={t.unit}
-                    value={l.unit}
-                    onChange={(e) => setLine(l.key, { unit: e.target.value })}
-                  />
-                  <Input
-                    aria-label={t.unitPrice}
-                    placeholder={t.unitPrice}
-                    inputMode="decimal"
-                    value={l.unitPrice}
-                    onChange={(e) => setLine(l.key, { unitPrice: e.target.value })}
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  {vatPayer ? (
-                    <VatSelect line={l} onChange={(patch) => setLine(l.key, patch)} />
-                  ) : (
-                    <span />
-                  )}
-                  <RemoveButton
-                    disabled={lines.length === 1}
-                    onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
-                  />
-                </div>
-              </div>
+              <p className="text-muted-foreground text-sm">
+                {t.number}:{' '}
+                <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{t.numberAuto}</span>
+              </p>
             </div>
-          ))}
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setLines((ls) => [...ls, emptyLine(vatPayer ? '21' : '0')])}
-        >
-          <Plus /> {t.addLine}
-        </Button>
+            {!id && docType === 'proforma' && (
+              <p className="text-muted-foreground text-sm">{t.proformaHint}</p>
+            )}
+          </div>
 
-        {totals && (
-          <div className="ml-auto max-w-xs space-y-1 border-t pt-3 text-sm">
-            {vatPayer && (
-              <>
-                <Row label={t.subtotal} amount={totals.subtotal} currency={currency} />
-                {totals.recap.map((r) => (
-                  <Row
-                    key={`${r.vatTreatment}-${r.vatRate}`}
-                    label={`${t.vat} · ${t.vatRecapRow(r.vatRate)}`}
-                    amount={r.vat}
-                    currency={currency}
-                    muted
-                  />
-                ))}
-              </>
-            )}
-            {Number(totals.rounding) !== 0 && (
-              <Row label={t.rounding} amount={totals.rounding} currency={currency} muted />
-            )}
-            {vatPayer && foreign && validNum(exchangeRate) && Number(num(exchangeRate)) > 0 && (
-              <Row label={t.vatInCzk} amount={totals.vatTotalCzk} currency="CZK" muted />
-            )}
-            <div className="flex items-baseline justify-between pt-1 text-base font-semibold">
-              <span>{t.total}</span>
-              <Money amount={totals.total} currency={currency} />
+          {/* Parties, side by side like on the invoice. */}
+          <div className="grid gap-6 p-5 sm:p-6 md:grid-cols-2">
+            <div>
+              <SectionTitle>{t.supplier}</SectionTitle>
+              {supplier ? (
+                <div className="space-y-0.5 text-sm">
+                  <div className="font-serif text-[17px] leading-6 font-medium">
+                    {supplier.legalName}
+                  </div>
+                  {supplierAddress?.street && (
+                    <div className="text-muted-foreground">{supplierAddress.street}</div>
+                  )}
+                  {(supplierAddress?.zip || supplierAddress?.city) && (
+                    <div className="text-muted-foreground">
+                      {supplierAddress.zip} {supplierAddress.city}
+                    </div>
+                  )}
+                  {(supplier.ico || supplier.dic) && (
+                    <div className="pt-0.5 text-muted-foreground tabular-nums">
+                      {supplier.ico && <>IČO {supplier.ico}</>}
+                      {supplier.ico && supplier.dic && ' · '}
+                      {supplier.dic && <>DIČ {supplier.dic}</>}
+                    </div>
+                  )}
+                  <Link
+                    to="/nastaveni"
+                    className="inline-block pt-1.5 text-muted-foreground text-xs underline underline-offset-2 hover:text-foreground"
+                  >
+                    {t.supplierEdit}
+                  </Link>
+                </div>
+              ) : (
+                <div className="skel-shimmer h-16 rounded-lg" />
+              )}
             </div>
-            {!vatPayer && (
-              <p className="text-muted-foreground text-xs">
-                {isProforma ? t.proformaNoVat : t.nonPayer}
+            <div>
+              <SectionTitle>{t.customer}</SectionTitle>
+              <CustomerCard value={customer} details={customerRow.data} onChange={setCustomer} />
+              {euReverseDomestic && (
+                <p role="alert" className="mt-3 text-destructive text-sm">
+                  {cs.contacts.euReverseChargeDomestic}
+                </p>
+              )}
+              {issueError && (
+                <p role="alert" className="mt-3 text-destructive text-sm">
+                  {issueError}{' '}
+                  <Link to="/kontakty" className="underline">
+                    {cs.nav.contacts}
+                  </Link>
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Dates and currency. */}
+          <div className="p-5 sm:p-6">
+            <SectionTitle>{t.dates}</SectionTitle>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="issueDate">{t.issueDate}</Label>
+                <DatePicker id="issueDate" value={issueDate} onChange={setIssue} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="dueDate">{t.dueDate}</Label>
+                <DatePicker
+                  id="dueDate"
+                  value={dueDate}
+                  presets
+                  presetBase={issueDate}
+                  onChange={(v) => {
+                    setDueTouched(true)
+                    setDueDate(v)
+                  }}
+                />
+              </div>
+              {vatPayer && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="taxableDate">{t.taxableDate}</Label>
+                  <DatePicker
+                    id="taxableDate"
+                    value={taxableDate}
+                    onChange={(v) => {
+                      setTaxableTouched(true)
+                      setTaxableDate(v)
+                    }}
+                  />
+                  <p className="text-muted-foreground text-xs">{t.taxableHint}</p>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label htmlFor="currency">{t.currency}</Label>
+                <CurrencyCombobox
+                  id="currency"
+                  value={currency}
+                  onChange={(code) => {
+                    setCurrency(code)
+                    if (code !== 'CZK') {
+                      setRateTouched(false)
+                      setRateFor(null)
+                    }
+                  }}
+                />
+              </div>
+              {foreign && (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="rate">{t.exchangeRate}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="rate"
+                      inputMode="decimal"
+                      value={exchangeRate}
+                      onChange={(e) => {
+                        setRateTouched(true)
+                        setExchangeRate(e.target.value)
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setRateTouched(false)
+                        void loadRate(currency, rateDate)
+                      }}
+                    >
+                      {t.exchangeRateLoad}
+                    </Button>
+                  </div>
+                  <p className="text-muted-foreground text-xs">{t.exchangeRateHint}</p>
+                </div>
+              )}
+            </div>
+            {weekend && (
+              <p className="mt-3 text-muted-foreground text-sm">
+                {t.weekendHint(t.weekdays[isoWeekday(dueDate) % 7] ?? '')}
               </p>
             )}
           </div>
-        )}
-      </Card>
 
-      <Card title={t.payment}>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={roundTotal}
-            onChange={(e) => setRoundTotal(e.target.checked)}
-          />
-          {t.roundTotal}
-        </label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="bank">{t.bankAccount}</Label>
-            <NativeSelect
-              id="bank"
-              value={effectiveAccount}
-              onChange={(e) => setBankAccountId(e.target.value)}
-            >
-              {currencyAccounts.length === 0 && <option value="">{t.bankAccountNone}</option>}
-              {currencyAccounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.label} · {a.accountNumber ? `${a.accountNumber}/${a.bankCode}` : a.iban}
-                </option>
-              ))}
-            </NativeSelect>
+          {/* Items and totals. */}
+          <div className="p-5 sm:p-6">
+            <SectionTitle>{t.items}</SectionTitle>
+            <ItemsTable
+              lines={lines}
+              onChange={setLines}
+              vatPayer={vatPayer}
+              rowTotals={rowTotals}
+              currency={currency}
+              newLine={() => emptyLine(vatPayer ? '21' : '0')}
+            />
+
+            {totals && (
+              <div className="mt-5 ml-auto max-w-sm space-y-1 text-sm">
+                {vatPayer && (
+                  <>
+                    <Row label={t.subtotal} amount={totals.subtotal} currency={currency} />
+                    {totals.recap.map((r) => (
+                      <Row
+                        key={`${r.vatTreatment}-${r.vatRate}`}
+                        label={`${t.vat} · ${t.vatRecapRow(r.vatRate)}`}
+                        amount={r.vat}
+                        currency={currency}
+                        muted
+                      />
+                    ))}
+                  </>
+                )}
+                {Number(totals.rounding) !== 0 && (
+                  <Row label={t.rounding} amount={totals.rounding} currency={currency} muted />
+                )}
+                {vatPayer && foreign && validNum(exchangeRate) && Number(num(exchangeRate)) > 0 && (
+                  <Row label={t.vatInCzk} amount={totals.vatTotalCzk} currency="CZK" muted />
+                )}
+                <div className="hairline mt-2 flex items-baseline justify-between gap-6 pt-3">
+                  <span className="label-caps !font-sans">{t.total}</span>
+                  <Amount value={totals.total} currency={currency} size="lg" />
+                </div>
+                {!vatPayer && (
+                  <p className="text-muted-foreground text-xs">
+                    {isProforma ? t.proformaNoVat : t.nonPayer}
+                  </p>
+                )}
+              </div>
+            )}
+            <label className="mt-4 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={roundTotal}
+                onChange={(e) => setRoundTotal(e.target.checked)}
+              />
+              {t.roundTotal}
+            </label>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="method">{t.paymentMethod}</Label>
-            <NativeSelect
-              id="method"
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-            >
-              {Object.entries(t.methods).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </NativeSelect>
+
+          {/* Payment. */}
+          <div className="p-5 sm:p-6">
+            <SectionTitle>{t.payment}</SectionTitle>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="bank">{t.bankAccount}</Label>
+                <NativeSelect
+                  id="bank"
+                  value={effectiveAccount}
+                  onChange={(e) => setBankAccountId(e.target.value)}
+                >
+                  {currencyAccounts.length === 0 && <option value="">{t.bankAccountNone}</option>}
+                  {currencyAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label} · {a.accountNumber ? `${a.accountNumber}/${a.bankCode}` : a.iban}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="method">{t.paymentMethod}</Label>
+                <NativeSelect
+                  id="method"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                >
+                  {Object.entries(t.methods).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+            </div>
           </div>
-        </div>
-      </Card>
 
-      <Card title={t.texts}>
-        <div className="space-y-2">
-          <Label htmlFor="intro">{t.intro}</Label>
-          <textarea
-            id="intro"
-            rows={2}
-            className="border-input bg-background w-full rounded-md border p-2 text-sm"
-            value={introText}
-            onChange={(e) => setIntroText(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="footer">{t.footer}</Label>
-          <textarea
-            id="footer"
-            rows={2}
-            className="border-input bg-background w-full rounded-md border p-2 text-sm"
-            value={footerText}
-            onChange={(e) => setFooterText(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="private">{t.privateNote}</Label>
-          <textarea
-            id="private"
-            rows={2}
-            className="border-input bg-background w-full rounded-md border p-2 text-sm"
-            value={privateNote}
-            onChange={(e) => setPrivateNote(e.target.value)}
-          />
-        </div>
-      </Card>
+          {/* Texts, order number, language: out of the way until needed. */}
+          <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
+            <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 p-5 text-left outline-none focus-visible:bg-muted/50 sm:px-6">
+              <span>
+                <span className="block font-medium text-sm">{t.moreOptions}</span>
+                <span className="block text-muted-foreground text-xs">{t.moreOptionsHint}</span>
+              </span>
+              <ChevronDown
+                aria-hidden
+                className="size-4 text-muted-foreground transition-transform group-aria-expanded:rotate-180"
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 px-5 pb-5 sm:px-6 sm:pb-6">
+              <div className="space-y-1.5">
+                <Label htmlFor="intro">{t.intro}</Label>
+                <Textarea
+                  id="intro"
+                  rows={2}
+                  value={introText}
+                  onChange={(e) => setIntroText(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="footer">{t.footer}</Label>
+                <Textarea
+                  id="footer"
+                  rows={2}
+                  value={footerText}
+                  onChange={(e) => setFooterText(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="private">{t.privateNote}</Label>
+                <Textarea
+                  id="private"
+                  rows={2}
+                  value={privateNote}
+                  onChange={(e) => setPrivateNote(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="order">{t.orderNumber}</Label>
+                  <Input
+                    id="order"
+                    value={orderNumber}
+                    onChange={(e) => setOrderNumber(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="language">{t.language}</Label>
+                  <NativeSelect
+                    id="language"
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as DocumentLanguage)}
+                  >
+                    {Object.entries(t.languages).map(([k, v]) => (
+                      <option key={k} value={k}>
+                        {v}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </section>
 
-      <div className="from-background bg-gradient-to-t fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex gap-2 p-4 sm:static sm:justify-end sm:p-0">
-        <Button
-          type="button"
-          variant="outline"
-          className="flex-1 sm:flex-none"
-          disabled={save.isPending || !ready}
-          onClick={() => save.mutate(false)}
-        >
-          {t.saveDraft}
-        </Button>
-        <Button
-          type="button"
-          className="flex-[2] sm:flex-none"
-          disabled={save.isPending || !ready}
-          onClick={() => save.mutate(true)}
-        >
-          {t.issue}
-        </Button>
+        {wide && <PreviewPane doc={sheetDoc} />}
       </div>
+
+      {/* Sticky action bar: the total, whether anything is unsaved, and the two ways out. */}
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 -mx-4 mt-6 border-t bg-background/90 px-4 py-3 backdrop-blur md:bottom-0 md:-mx-8 md:px-8">
+        <div className="mx-auto flex max-w-[1136px] items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="label-caps max-sm:sr-only">{t.totalShort}</div>
+            <div className="flex items-baseline gap-3">
+              <Amount value={totalValue} currency={currency} size="md" className="max-sm:text-lg" />
+              <span
+                className={cn(
+                  'hidden items-center gap-1.5 text-xs sm:flex',
+                  dirty ? 'text-warning' : 'text-muted-foreground',
+                )}
+                aria-live="polite"
+              >
+                {dirty && <span aria-hidden className="size-1.5 rounded-full bg-current" />}
+                {dirty ? t.unsaved : draftId ? t.savedState : ''}
+              </span>
+            </div>
+          </div>
+          <PreviewButton onClick={() => setPreviewOpen(true)} />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={save.isPending || !ready}
+            onClick={() => save.mutate(false)}
+          >
+            {t.saveDraft}
+          </Button>
+          <Button
+            type="button"
+            title={t.issueHint}
+            disabled={save.isPending || !ready}
+            onClick={() => save.mutate(true)}
+          >
+            {save.isPending && <Loader2 className="animate-spin" aria-hidden />}
+            {t.issue}
+            <Kbd
+              aria-hidden
+              className="ml-1 hidden border-primary-foreground/30 bg-primary-foreground/15 text-primary-foreground sm:inline-flex"
+            >
+              ⌘↵
+            </Kbd>
+          </Button>
+        </div>
+      </div>
+
+      {!wide && <PreviewSheet doc={sheetDoc} open={previewOpen} onOpenChange={setPreviewOpen} />}
     </div>
-  )
-}
-
-function Row({
-  label,
-  amount,
-  currency,
-  muted,
-}: {
-  label: string
-  amount: string
-  currency: string
-  muted?: boolean
-}) {
-  return (
-    <div className={`flex justify-between ${muted ? 'text-muted-foreground' : ''}`}>
-      <span>{label}</span>
-      <Money amount={amount} currency={currency} />
-    </div>
-  )
-}
-
-/** Standard rates plus the VAT regimes; there is no 0 % rate in Czech VAT. */
-function VatSelect({
-  line,
-  onChange,
-}: {
-  line: Line
-  onChange: (patch: Pick<Line, 'vatRate' | 'vatTreatment'>) => void
-}) {
-  const value = line.vatTreatment === 'standard' ? line.vatRate : line.vatTreatment
-  return (
-    <NativeSelect
-      aria-label={t.vatRate}
-      className="max-w-44"
-      value={value}
-      onChange={(e) => {
-        const v = e.target.value
-        if (VAT_RATES.includes(v)) onChange({ vatRate: v, vatTreatment: 'standard' })
-        else onChange({ vatRate: '0', vatTreatment: v as VatTreatment })
-      }}
-    >
-      {VAT_RATES.map((r) => (
-        <option key={r} value={r}>
-          {r} %
-        </option>
-      ))}
-      {TREATMENTS.map((x) => (
-        <option key={x} value={x}>
-          {cs.invoices.vatTreatment[x]}
-        </option>
-      ))}
-    </NativeSelect>
-  )
-}
-
-function RemoveButton({ onClick, disabled }: { onClick: () => void; disabled: boolean }) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      aria-label={t.removeLine}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      <Trash2 />
-    </Button>
   )
 }

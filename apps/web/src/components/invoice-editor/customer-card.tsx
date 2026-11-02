@@ -1,0 +1,325 @@
+import { Avatar } from '@fakturky/ui/components/avatar'
+import { Button } from '@fakturky/ui/components/button'
+import { Input } from '@fakturky/ui/components/input'
+import { Label } from '@fakturky/ui/components/label'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Loader2, Plus, X } from 'lucide-react'
+import { useId, useMemo, useState } from 'react'
+import { toast } from 'sonner'
+import { cs } from '@/i18n/cs'
+import { apiErrorMessage } from '@/lib/errors'
+import { client, orpc } from '@/lib/orpc'
+
+export type PickedCustomer = { id: string; name: string; ico?: string | null }
+
+const t = cs.invoices.form
+
+interface Details {
+  dic?: string | null
+  ico?: string | null
+  address?: { street?: string | undefined; city?: string | undefined; zip?: string | undefined }
+}
+
+/**
+ * The customer block of the invoice: a picked customer is shown like it will read on the document; before
+ * that a search box (own contacts, 8-digit IČO -> ARES), chips for the people billed most recently and an
+ * inline "Nový odběratel" form.
+ */
+export function CustomerCard({
+  value,
+  details,
+  onChange,
+}: {
+  value: PickedCustomer | null
+  /** Contact data of the picked customer (address, DIČ) for the summary. */
+  details?: Details | undefined
+  onChange: (c: PickedCustomer | null) => void
+}) {
+  const queryClient = useQueryClient()
+  const [term, setTerm] = useState('')
+  const [open, setOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const q = term.trim()
+  const isIco = /^\d{8}$/.test(q.replace(/\s/g, ''))
+
+  const contacts = useQuery(
+    orpc.contacts.list.queryOptions({ input: { search: q || undefined, limit: 8 } }),
+  )
+  // "Recent": whoever was billed last. Drafts included, so a half-finished day still shows up.
+  const recentDocs = useQuery({
+    ...orpc.documents.list.queryOptions({ input: { filter: 'all', limit: 30 } }),
+    enabled: !value,
+    staleTime: 60_000,
+  })
+  const recent = useMemo(() => {
+    const seen = new Map<string, string>()
+    for (const d of recentDocs.data ?? []) {
+      if (d.contactId && d.customerName && !seen.has(d.contactId))
+        seen.set(d.contactId, d.customerName)
+    }
+    return [...seen].slice(0, 4).map(([id, name]) => ({ id, name }))
+  }, [recentDocs.data])
+
+  const ares = useQuery({
+    queryKey: ['ares', q.replace(/\s/g, '')],
+    queryFn: () => client.lookup.ares({ ico: q.replace(/\s/g, '') }),
+    enabled: isIco,
+    staleTime: 5 * 60_000,
+    retry: false,
+  })
+  const fromAres = useMutation({
+    mutationFn: async () => {
+      const s = ares.data
+      if (!s) throw new Error('no subject')
+      return client.contacts.create({
+        name: s.name,
+        ico: s.ico,
+        dic: s.dic,
+        address: { street: s.address.street, city: s.address.city, zip: s.address.zip },
+        country: s.address.country || 'CZ',
+      })
+    },
+    onSuccess: async (c) => {
+      await queryClient.invalidateQueries({ queryKey: orpc.contacts.key() })
+      pick({ id: c.id, name: c.name, ico: c.ico })
+    },
+    onError: () => toast.error(cs.common.error),
+  })
+
+  function pick(c: PickedCustomer) {
+    onChange(c)
+    setOpen(false)
+    setTerm('')
+    setCreating(false)
+  }
+
+  if (value) {
+    const a = details?.address
+    const line = [a?.street, [a?.zip, a?.city].filter(Boolean).join(' ')].filter(Boolean)
+    return (
+      <div className="flex items-start gap-3">
+        <Avatar name={value.name} size="md" />
+        <div className="min-w-0 flex-1 text-sm">
+          <div className="font-serif text-[17px] leading-6 font-medium">{value.name}</div>
+          {line.map((l) => (
+            <div key={l} className="text-muted-foreground">
+              {l}
+            </div>
+          ))}
+          {(value.ico || details?.ico || details?.dic) && (
+            <div className="mt-0.5 text-muted-foreground tabular-nums">
+              {(value.ico ?? details?.ico) && <>IČO {value.ico ?? details?.ico}</>}
+              {(value.ico ?? details?.ico) && details?.dic && ' · '}
+              {details?.dic && <>DIČ {details.dic}</>}
+            </div>
+          )}
+        </div>
+        <button
+          type="button"
+          className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-muted-foreground text-sm hover:bg-muted hover:text-foreground"
+          onClick={() => onChange(null)}
+        >
+          <X className="size-3.5" aria-hidden /> {t.customerChange}
+        </button>
+      </div>
+    )
+  }
+
+  const own = contacts.data ?? []
+  const aresNew = ares.data && !own.some((c) => c.ico === ares.data?.ico) ? ares.data : null
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <Input
+          value={term}
+          onChange={(e) => {
+            setTerm(e.target.value)
+            setOpen(true)
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          placeholder={t.customerSearch}
+          aria-label={t.customer}
+          autoComplete="off"
+          className="h-10 bg-card"
+        />
+        {open && (
+          <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg bg-popover shadow-floating">
+            {own.length > 0 && (
+              <div className="py-1">
+                <div className="label-caps px-3 pt-2 pb-1">{t.customerYours}</div>
+                {own.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-muted"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => pick({ id: c.id, name: c.name, ico: c.ico })}
+                  >
+                    <Avatar name={c.name} size="xs" />
+                    <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                    {c.ico && <span className="text-muted-foreground tabular-nums">{c.ico}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+            {aresNew && (
+              <div className="py-1">
+                <div className="label-caps px-3 pt-2 pb-1">{t.customerAres}</div>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => fromAres.mutate()}
+                >
+                  <span className="min-w-0 truncate">{aresNew.name}</span>
+                  <span className="text-muted-foreground tabular-nums">{aresNew.ico}</span>
+                </button>
+              </div>
+            )}
+            {ares.isError && <p className="px-3 py-2 text-destructive text-sm">{t.aresFailed}</p>}
+            {own.length === 0 && !aresNew && !ares.isFetching && (
+              <p className="px-3 py-2 text-muted-foreground text-sm">{t.customerNone}</p>
+            )}
+            {ares.isFetching && (
+              <p className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-sm">
+                <Loader2 className="size-4 animate-spin" aria-hidden /> {cs.common.loading}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {!open && !q && recent.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="label-caps">{t.customerRecent}</div>
+          <div className="flex flex-wrap gap-1.5">
+            {recent.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => pick({ id: c.id, name: c.name })}
+                className="flex max-w-full items-center gap-1.5 rounded-full border bg-card py-1 pr-3 pl-1 text-sm transition-colors hover:bg-muted"
+              >
+                <Avatar name={c.name} size="xs" />
+                <span className="truncate">{c.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {creating ? (
+        <NewCustomer onCancel={() => setCreating(false)} onCreated={pick} />
+      ) : (
+        <Button type="button" variant="ghost" size="sm" onClick={() => setCreating(true)}>
+          <Plus /> {t.customerNew}
+        </Button>
+      )}
+    </div>
+  )
+}
+
+/** Inline "Nový odběratel": name, IČO (ARES fills the rest), address. Creates the contact and picks it. */
+function NewCustomer({
+  onCancel,
+  onCreated,
+}: {
+  onCancel: () => void
+  onCreated: (c: PickedCustomer) => void
+}) {
+  const queryClient = useQueryClient()
+  const id = useId()
+  const [name, setName] = useState('')
+  const [ico, setIco] = useState('')
+  const [street, setStreet] = useState('')
+  const [city, setCity] = useState('')
+  const [zip, setZip] = useState('')
+  const [dic, setDic] = useState<string | null>(null)
+  const [filled, setFilled] = useState(false)
+
+  async function lookup(value: string) {
+    const digits = value.replace(/\s/g, '')
+    if (!/^\d{8}$/.test(digits)) return
+    try {
+      const s = await client.lookup.ares({ ico: digits })
+      if (!s) return
+      setName((n) => n || s.name)
+      setStreet((v) => v || s.address.street)
+      setCity((v) => v || s.address.city)
+      setZip((v) => v || s.address.zip)
+      setDic(s.dic)
+      setFilled(true)
+    } catch {
+      toast.error(t.aresFailed)
+    }
+  }
+
+  const create = useMutation({
+    mutationFn: () =>
+      client.contacts.create({
+        name: name.trim(),
+        ico: ico.replace(/\s/g, '') || null,
+        dic,
+        address: { street, city, zip },
+        country: 'CZ',
+      }),
+    onSuccess: async (c) => {
+      await queryClient.invalidateQueries({ queryKey: orpc.contacts.key() })
+      onCreated({ id: c.id, name: c.name, ico: c.ico })
+    },
+    onError: (e) => toast.error(apiErrorMessage(e)),
+  })
+
+  return (
+    <div className="space-y-3 rounded-lg bg-muted/60 p-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor={`${id}-ico`}>{t.customerNewIco}</Label>
+          <Input
+            id={`${id}-ico`}
+            inputMode="numeric"
+            value={ico}
+            onChange={(e) => {
+              setIco(e.target.value)
+              void lookup(e.target.value)
+            }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor={`${id}-name`}>{t.customerNewName}</Label>
+          <Input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto_6rem]">
+        <div className="space-y-1.5">
+          <Label htmlFor={`${id}-street`}>{t.customerNewStreet}</Label>
+          <Input id={`${id}-street`} value={street} onChange={(e) => setStreet(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor={`${id}-city`}>{t.customerNewCity}</Label>
+          <Input id={`${id}-city`} value={city} onChange={(e) => setCity(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor={`${id}-zip`}>{t.customerNewZip}</Label>
+          <Input id={`${id}-zip`} value={zip} onChange={(e) => setZip(e.target.value)} />
+        </div>
+      </div>
+      {filled && <p className="text-muted-foreground text-xs">{t.customerAresFilled}</p>}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          size="sm"
+          disabled={!name.trim() || create.isPending}
+          onClick={() => create.mutate()}
+        >
+          {t.customerNewCreate}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+          {cs.common.cancel}
+        </Button>
+      </div>
+    </div>
+  )
+}

@@ -148,11 +148,11 @@ for (const v of variants) {
         timeout: 15_000,
       })
       await expect(page.getByText('Vystavená', { exact: true }).first()).toBeVisible()
-      // Variable symbol defaults to the digits of the number.
-      await expect(page.getByText(/^\d{4}0001$/)).toBeVisible()
+      // Variable symbol defaults to the digits of the number (the rail and the paper both show it).
+      await expect(page.getByText(/^\d{4}0001$/).first()).toBeVisible()
       await expect(page.getByText('CZ6508000000192000145399')).toBeVisible()
-      // The payment card carries the QR Platba, black on white, at least 160 px wide.
-      const qr = page.getByRole('img', { name: 'QR Platba' })
+      // The payment card carries the QR Platba, black on white, at least 160 px wide (the paper has its own).
+      const qr = page.getByTestId('payment-card').getByRole('img', { name: 'QR Platba' })
       await expect(qr).toBeVisible()
       expect((await qr.boundingBox())?.width).toBeGreaterThanOrEqual(160)
       await expect(page.getByText('Naskenujte v bankovní aplikaci')).toBeVisible()

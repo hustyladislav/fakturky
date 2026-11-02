@@ -42,6 +42,11 @@ export interface InvoiceSheetProps {
   density?: 'comfortable' | 'compact'
   /** Level of the document heading (title + number). Default 2. */
   headingLevel?: 2 | 3 | 4
+  /**
+   * A picture of the document next to the form that edits it (the live preview): hidden from assistive tech
+   * and without labelled regions, so labels like "Odběratel" stay unique on the page.
+   */
+  decorative?: boolean
   className?: string
   style?: CSSProperties
 }
@@ -76,12 +81,20 @@ function Label({ children, id }: { children: ReactNode; id?: string }) {
   )
 }
 
-function Party({ p, customer }: { p: PartyModel; customer?: boolean }) {
+function Party({
+  p,
+  customer,
+  decorative,
+}: {
+  p: PartyModel
+  customer?: boolean
+  decorative?: boolean
+}) {
   const id = useId()
   return (
     <section
       className="fk-party"
-      aria-labelledby={id}
+      aria-labelledby={decorative ? undefined : id}
       {...(customer ? { 'data-customer': '' } : {})}
     >
       <Label id={id}>{p.label}</Label>
@@ -209,6 +222,7 @@ export function InvoiceSheet({
   maxScale = 1.75,
   density = 'comfortable',
   headingLevel = 2,
+  decorative = false,
   className,
   style,
 }: InvoiceSheetProps) {
@@ -241,7 +255,7 @@ export function InvoiceSheet({
         className="fk-sheet"
         lang={m.lang}
         data-density={density}
-        aria-label={m.documentName || t.document}
+        {...(decorative ? { 'aria-hidden': true } : { 'aria-label': m.documentName || t.document })}
       >
         <div className="fk-body">
           <header className="fk-header">
@@ -272,8 +286,8 @@ export function InvoiceSheet({
           </dl>
 
           <div className="fk-parties">
-            <Party p={m.supplier} />
-            <Party p={m.customer} customer />
+            <Party p={m.supplier} decorative={decorative} />
+            <Party p={m.customer} customer decorative={decorative} />
           </div>
 
           {m.correction ? (
@@ -338,7 +352,10 @@ export function InvoiceSheet({
           <div className="fk-bottom">
             <div className="fk-left">
               {m.payment ? (
-                <section className="fk-pay" aria-label={m.payment.heading}>
+                <section
+                  className="fk-pay"
+                  {...(decorative ? {} : { 'aria-label': m.payment.heading })}
+                >
                   {qrData ? (
                     <figure className="fk-qr">
                       <div className="fk-qr-frame">
@@ -412,7 +429,10 @@ export function InvoiceSheet({
                 ))}
               </dl>
 
-              <div className="fk-total" role="group" aria-label={m.total.label}>
+              <div
+                className="fk-total"
+                {...(decorative ? {} : { role: 'group', 'aria-label': m.total.label })}
+              >
                 <span className="fk-label">{m.total.label}</span>
                 <strong className="fk-total-value fk-serif" style={{ fontWeight: 500 }}>
                   {m.total.value}

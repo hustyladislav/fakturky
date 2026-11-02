@@ -79,6 +79,7 @@ export function toDocumentForExport(
             ? 'payment_receipt'
             : 'invoice',
     originalDocument: original ?? null,
+    pricesIncludeVat: doc.pricesIncludeVat,
     number: doc.number ?? '',
     uuid: doc.id,
     issueDate: doc.issueDate ?? '',

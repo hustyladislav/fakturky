@@ -74,7 +74,7 @@ export const draftInputSchema = z.object({
   language: fields.language.optional(),
   paymentMethod: fields.paymentMethod.optional(),
   lines: fields.lines.default([]),
-  roundTotal: fields.roundTotal.default(false),
+  roundTotal: fields.roundTotal.optional(),
 })
 
 export const draftPatchSchema = z.object(fields).omit({ type: true }).partial()

@@ -84,7 +84,6 @@ test('cron: refuses unauthorised calls; a due recurring rule issues its invoice'
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: 'Opakovat' }).first().click()
   await page.getByLabel('Den v měsíci').fill(String(Number(todayPrague().slice(8))))
-  await page.getByLabel('První vystavení od').fill(todayPrague())
   await page.getByLabel('Rovnou vystavit').check()
   await page.getByRole('button', { name: 'Nastavit opakování' }).click()
   await expect(page.getByText('Příští běh')).toBeVisible()

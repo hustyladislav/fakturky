@@ -20,6 +20,7 @@ import { Route as RegistraceRouteImport } from './routes/registrace'
 import { Route as SouhlasRouteImport } from './routes/souhlas'
 import { Route as SoukromiRouteImport } from './routes/soukromi'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
+import { Route as AppBankaRouteImport } from './routes/_app/banka'
 import { Route as AppFakturyRouteImport } from './routes/_app/faktury'
 import { Route as AppImportRouteImport } from './routes/_app/import'
 import { Route as AppKontaktyRouteImport } from './routes/_app/kontakty'
@@ -99,6 +100,11 @@ const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
   id: '/.well-known/$',
   path: '/.well-known/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppBankaRoute = AppBankaRouteImport.update({
+  id: '/banka',
+  path: '/banka',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppFakturyRoute = AppFakturyRouteImport.update({
   id: '/faktury',
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
+  '/banka': typeof AppBankaRoute
   '/faktury': typeof AppFakturyRouteWithChildren
   '/import': typeof AppImportRoute
   '/kontakty': typeof AppKontaktyRoute
@@ -274,6 +281,7 @@ export interface FileRoutesByTo {
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
+  '/banka': typeof AppBankaRoute
   '/import': typeof AppImportRoute
   '/kontakty': typeof AppKontaktyRoute
   '/nastaveni': typeof AppNastaveniRoute
@@ -312,6 +320,7 @@ export interface FileRoutesById {
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
+  '/_app/banka': typeof AppBankaRoute
   '/_app/faktury': typeof AppFakturyRouteWithChildren
   '/_app/import': typeof AppImportRoute
   '/_app/kontakty': typeof AppKontaktyRoute
@@ -351,6 +360,7 @@ export interface FileRouteTypes {
     | '/souhlas'
     | '/soukromi'
     | '/.well-known/$'
+    | '/banka'
     | '/faktury'
     | '/import'
     | '/kontakty'
@@ -388,6 +398,7 @@ export interface FileRouteTypes {
     | '/souhlas'
     | '/soukromi'
     | '/.well-known/$'
+    | '/banka'
     | '/import'
     | '/kontakty'
     | '/nastaveni'
@@ -425,6 +436,7 @@ export interface FileRouteTypes {
     | '/souhlas'
     | '/soukromi'
     | '/.well-known/$'
+    | '/_app/banka'
     | '/_app/faktury'
     | '/_app/import'
     | '/_app/kontakty'
@@ -557,6 +569,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/.well-known/$'
       preLoaderRoute: typeof DotwellKnownSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/banka': {
+      id: '/_app/banka'
+      path: '/banka'
+      fullPath: '/banka'
+      preLoaderRoute: typeof AppBankaRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/faktury': {
       id: '/_app/faktury'
@@ -755,6 +774,7 @@ const AppFakturyRouteWithChildren = AppFakturyRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppBankaRoute: typeof AppBankaRoute
   AppFakturyRoute: typeof AppFakturyRouteWithChildren
   AppImportRoute: typeof AppImportRoute
   AppKontaktyRoute: typeof AppKontaktyRoute
@@ -764,6 +784,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppBankaRoute: AppBankaRoute,
   AppFakturyRoute: AppFakturyRouteWithChildren,
   AppImportRoute: AppImportRoute,
   AppKontaktyRoute: AppKontaktyRoute,

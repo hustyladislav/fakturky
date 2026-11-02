@@ -242,6 +242,17 @@ function InvoiceDetail() {
           <Actions />
         </div>
       </div>
+      {(() => {
+        const bankPayments = d.payments.filter((p) => p.source === 'bank')
+        const last = bankPayments[bankPayments.length - 1]
+        if (!last) return null
+        const date = formatDateCs(last.paidOn)
+        return (
+          <p className="text-muted-foreground text-sm" data-testid="paid-by-transfer">
+            {d.status === 'paid' ? t.paidByTransfer(date) : t.partlyPaidByTransfer(date)}
+          </p>
+        )
+      })()}
       <div className="flex flex-wrap gap-2 sm:hidden">
         <Actions part="secondary" />
       </div>

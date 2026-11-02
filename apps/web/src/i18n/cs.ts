@@ -1050,6 +1050,7 @@ export const cs = {
       'Zdvořilé e-mailové upomínky odběratelům po splatnosti: 3., 10. a 17. den po termínu, nejvýše třikrát. Odesílají se jen na e-mail uvedený u odběratele.',
     remindersToggle: 'Automaticky posílat upomínky po splatnosti',
     title: 'Nastavení',
+    subtitle: (name: string, ico: string | null) => (ico ? `${name} · IČO ${ico}` : name),
     profileTitle: 'Firemní údaje',
     profileDescription: 'Objeví se na vašich fakturách jako dodavatel.',
     navLabel: 'Sekce nastavení',
@@ -1074,6 +1075,9 @@ export const cs = {
     skip: 'Vyplním později',
   },
   profile: {
+    cardLabel: 'Náhled firmy na dokladech',
+    cardPlaceholder: 'Název vaší firmy',
+    cardCaption: 'Takto se vaše firma objeví na fakturách jako dodavatel.',
     ico: 'IČO',
     icoLookup: 'Načíst z ARES',
     icoFound: 'Údaje byly načteny z ARES.',

@@ -215,7 +215,7 @@ function InvoiceDetail() {
               {cs.invoices.type[d.type as keyof typeof cs.invoices.type]}
             </span>
           )}
-          <InvoiceStatus status={d.displayStatus} />
+          <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
         </div>
         <div className="hidden flex-wrap gap-2 sm:flex">
           <Actions />

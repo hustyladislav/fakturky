@@ -255,6 +255,7 @@ export const cs = {
   },
   invoices: {
     title: 'Faktury',
+    assistantDraft: 'Koncept · navrhl asistent',
     new: 'Nová faktura',
     empty: 'Zatím nemáte žádné faktury.',
     emptyFiltered: 'Nic neodpovídá zvolenému filtru.',

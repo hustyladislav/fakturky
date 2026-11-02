@@ -185,7 +185,7 @@ function Overview() {
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <Money amount={d.total} currency={d.currency} />
-                  <InvoiceStatus status={d.displayStatus} />
+                  <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
                 </div>
               </Link>
             ))}

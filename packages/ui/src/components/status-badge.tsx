@@ -35,10 +35,14 @@ function StatusBadge({
   status,
   children,
   className,
-}: { status: DocumentStatus; children: React.ReactNode; className?: string } & Required<
-  Pick<VariantProps<typeof statusVariants>, 'status'>
->) {
-  const Icon = icons[status]
+  icon,
+}: {
+  status: DocumentStatus
+  children: React.ReactNode
+  className?: string
+  icon?: ComponentType<{ 'aria-hidden'?: boolean }>
+} & Required<Pick<VariantProps<typeof statusVariants>, 'status'>>) {
+  const Icon = icon ?? icons[status]
   return (
     <span className={cn(statusVariants({ status }), className)}>
       <Icon aria-hidden />

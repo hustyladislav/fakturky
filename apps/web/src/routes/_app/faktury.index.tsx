@@ -118,7 +118,7 @@ function InvoiceList() {
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <Money amount={d.total} currency={d.currency} />
-                    <InvoiceStatus status={d.displayStatus} />
+                    <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
                   </div>
                 </Link>
               </li>
@@ -155,7 +155,7 @@ function InvoiceList() {
                       <Money amount={d.total} currency={d.currency} />
                     </Cell>
                     <Cell id={d.id} draft={d.status === 'draft'}>
-                      <InvoiceStatus status={d.displayStatus} />
+                      <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
                     </Cell>
                   </tr>
                 ))}

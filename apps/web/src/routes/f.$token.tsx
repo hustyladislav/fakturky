@@ -253,6 +253,12 @@ function PublicInvoice() {
           ))}
 
         <div className="ml-auto max-w-xs space-y-1 text-sm">
+          {Number(d.rounding) !== 0 && (
+            <div className="flex justify-between text-neutral-600">
+              <span>{t.rounding}</span>
+              <Money amount={d.rounding} currency={d.currency} />
+            </div>
+          )}
           {d.exchangeRate && (
             <div className="text-xs text-neutral-500">
               {t.exchangeRate}: {Number(d.exchangeRate)}

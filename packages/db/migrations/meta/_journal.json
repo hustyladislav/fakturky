@@ -57,6 +57,13 @@
       "when": 1793580249262,
       "tag": "0007_slimy_preak",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793580983845,
+      "tag": "0008_flippant_george_stacy",
+      "breakpoints": true
     }
   ]
 }

@@ -289,6 +289,38 @@ test('exempt lines need a legal basis; EU reverse charge needs the customer VAT 
   expect((await api.documents.issue({ id: eu.id })).status).toBe('issued')
 })
 
+test('rounding to whole units is a separate line; foreign currency keeps CZK VAT', async () => {
+  const org = await seedOrg(handle, 'rounding')
+  await handle.db
+    .insert(schema.businessProfile)
+    .values({ organizationId: org, legalName: 'Plátce', vatStatus: 'payer' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({
+    name: 'K',
+    ico: '12345678',
+    address: { street: 'A 1', city: 'Praha', zip: '11000' },
+  })
+  const d = await api.documents.createDraft({
+    contactId: c.id,
+    roundTotal: true,
+    lines: [{ description: 'x', quantity: '1', unitPrice: '100.40', vatRate: '21' }],
+  })
+  // 100,40 + 21,08 = 121,48 → 121, rounding −0,48
+  expect(d.total).toBe('121.0000')
+  expect(d.rounding).toBe('-0.4800')
+  const issued = await api.documents.issue({ id: d.id })
+  expect(issued.total).toBe('121.0000')
+  const view = await clientFor(handle, null).public.invoice({ token: issued.publicToken as string })
+  expect(view.rounding).toBe('-0.4800')
+  expect(view.total).toBe('121.0000')
+  const off = await api.documents.updateDraft({
+    id: (await api.documents.duplicate({ id: issued.id })).id,
+    patch: { roundTotal: false },
+  })
+  expect(off.rounding).toBe('0.0000')
+  expect(off.total).toBe('121.4800')
+})
+
 test('VAT payer advance: proforma → paid → tax receipt → final invoice deducting base and VAT', async () => {
   const org = await seedOrg(handle, 'advance-payer')
   await handle.db

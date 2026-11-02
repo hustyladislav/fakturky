@@ -359,6 +359,9 @@ export const cs = {
       weekendHint: (day: string) =>
         `Splatnost vychází na ${day}. Platba dorazí nejdřív v pracovní den.`,
       weekdays: ['neděli', 'pondělí', 'úterý', 'středu', 'čtvrtek', 'pátek', 'sobotu'],
+      roundTotal: 'Zaokrouhlit celkovou částku na celé koruny / jednotky',
+      rounding: 'Zaokrouhlení',
+      vatInCzk: 'DPH v Kč (kurz ČNB)',
       vatNote: 'Právní důvod osvobození',
       vatNotePlaceholder: 'Právní důvod osvobození, např. § 51 odst. 1 zákona o DPH',
       missingFields: {
@@ -498,6 +501,7 @@ export const cs = {
     qrEpc: 'QR platba (EPC)',
     vatRecap: 'Rekapitulace DPH',
     exchangeRate: 'Kurz ČNB',
+    rounding: 'Zaokrouhlení',
     notPayer: 'Neplátce DPH',
     payer: 'Plátce DPH',
     paid: 'Zaplaceno',

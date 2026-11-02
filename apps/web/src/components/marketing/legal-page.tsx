@@ -19,7 +19,7 @@ export function LegalPage({
   return (
     <div className="min-h-svh">
       <header className="mx-auto flex h-16 max-w-3xl items-center justify-between px-6">
-        <Link to="/" aria-label={BRAND.name}>
+        <Link to="/">
           <Logo name={BRAND.name} markClassName="size-8" />
         </Link>
         <ThemeToggle labels={cs.theme} />

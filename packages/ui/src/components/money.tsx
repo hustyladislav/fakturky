@@ -16,7 +16,7 @@ function Money({
     <span className={cn('whitespace-nowrap tabular-nums', className)}>
       {p.negative && '−'}
       {p.integer}
-      <span className="opacity-60">,{p.fraction}</span>
+      <span className="opacity-70 [.text-muted-foreground_&]:opacity-100">,{p.fraction}</span>
       {' '}
       {p.currency}
     </span>

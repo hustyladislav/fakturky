@@ -100,20 +100,20 @@ function ShellInner({
 
       <div className={cn('md:pl-16 lg:pl-60', assistantOpen && 'lg:pr-[380px]')}>
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur md:px-8">
-          <Link to="/prehled" className="md:hidden" aria-label={BRAND.name}>
+          <Link to="/prehled" className="md:hidden">
             <LogoMark letter={BRAND.name.charAt(0)} className="size-7" />
+            <span className="sr-only">{BRAND.name}</span>
           </Link>
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
             className="ml-auto flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-sm text-muted-foreground transition-colors hover:text-foreground md:ml-0 md:w-72 md:justify-between"
-            aria-label={cs.shell.search}
           >
             <span className="flex items-center gap-2">
               <Search className="size-4" aria-hidden />
-              <span className="hidden md:inline">{cs.shell.search}</span>
+              <span className="sr-only md:not-sr-only">{cs.shell.search}</span>
             </span>
-            <span className="hidden gap-1 md:flex">
+            <span className="hidden gap-1 md:flex" aria-hidden>
               <Kbd>{modKey}</Kbd>
               <Kbd>K</Kbd>
             </span>
@@ -162,9 +162,10 @@ function Sidebar({ user }: { user: { name: string; email: string } }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-16 flex-col border-r bg-sidebar text-sidebar-foreground md:flex lg:w-60">
       <div className="flex h-14 items-center px-4 max-lg:justify-center max-lg:px-0">
-        <Link to="/prehled" aria-label={BRAND.name}>
+        <Link to="/prehled">
           <Logo name={BRAND.name} className="max-lg:hidden" markClassName="size-7" />
           <LogoMark letter={BRAND.name.charAt(0)} className="size-8 lg:hidden" />
+          <span className="sr-only lg:hidden">{BRAND.name}</span>
         </Link>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-2 max-lg:px-2" aria-label={cs.shell.navigation}>
@@ -216,10 +217,8 @@ function AccountMenu({ user }: { user: { name: string; email: string } }) {
   const queryClient = useQueryClient()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        className="flex h-12 w-full items-center gap-3 rounded-lg px-2 text-left outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-3 focus-visible:ring-ring/50 max-lg:justify-center"
-        aria-label={cs.shell.account}
-      >
+      <DropdownMenuTrigger className="flex h-12 w-full items-center gap-3 rounded-lg px-2 text-left outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-3 focus-visible:ring-ring/50 max-lg:justify-center">
+        <span className="sr-only lg:hidden">{cs.shell.account}</span>
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-medium text-accent-foreground">
           {user.name.charAt(0).toUpperCase()}
         </span>

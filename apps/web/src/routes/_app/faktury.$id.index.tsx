@@ -1,5 +1,6 @@
 import { formatDateCs, todayPrague } from '@fakturky/domain/dates'
 import { Button, buttonVariants } from '@fakturky/ui/components/button'
+import { DatePicker } from '@fakturky/ui/components/date-picker'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,36 +10,41 @@ import {
 } from '@fakturky/ui/components/dropdown-menu'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
-import { Money } from '@fakturky/ui/components/money'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
+import { PageHeader } from '@fakturky/ui/components/page-header'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
+import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
+  ArrowLeft,
   Ban,
   BookmarkPlus,
-  Check,
   ChevronDown,
-  Copy,
   CopyPlus,
   Download,
-  ExternalLink,
   FileCheck,
   FileMinus,
   Pencil,
   Receipt,
-  RefreshCw,
   Send,
   Trash2,
   Undo2,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ErrorState } from '@/components/error-state'
-import { InvoiceStatus } from '@/components/invoice-status'
-import { PaymentQr } from '@/components/payment-qr'
+import {
+  DocHero,
+  DocumentPaper,
+  PaymentCard,
+  PublicLinkCard,
+  RelatedDocs,
+  Timeline,
+} from '@/components/invoice-detail/parts'
 import { PromptDialog } from '@/components/prompt-dialog'
 import { cs } from '@/i18n/cs'
+import { detailToSheet } from '@/lib/document-sheet'
 import { apiErrorMessage } from '@/lib/errors'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
@@ -50,55 +56,20 @@ export const Route = createFileRoute('/_app/faktury/$id/')({
 
 const t = cs.invoices.detail
 
-function Field({
-  label,
-  children,
-  wide,
-}: {
-  label: string
-  children: React.ReactNode
-  wide?: boolean
-}) {
-  return (
-    <div className={wide ? 'col-span-2 break-all' : undefined}>
-      <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className="text-sm">{children}</dd>
-    </div>
-  )
-}
-
-function Party({ title, p }: { title: string; p: Record<string, unknown> | null }) {
-  if (!p) return null
-  const a = (p.address ?? {}) as Record<string, string | undefined>
-  return (
-    <div className="space-y-0.5 text-sm">
-      <div className="text-muted-foreground text-xs">{title}</div>
-      <div className="font-medium">{String(p.name ?? '')}</div>
-      {a.street && <div>{a.street}</div>}
-      {(a.zip || a.city) && (
-        <div>
-          {a.zip} {a.city}
-        </div>
-      )}
-      {p.ico ? <div>IČO {String(p.ico)}</div> : null}
-      {p.dic ? <div>DIČ {String(p.dic)}</div> : null}
-    </div>
-  )
-}
-
 function InvoiceDetail() {
   const { id } = Route.useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const q = useQuery(orpc.documents.get.queryOptions({ input: { id } }))
   const [paying, setPaying] = useState(false)
+  const [docOpen, setDocOpen] = useState(false)
   const [dialog, setDialog] = useState<
     'cancel' | 'delete' | 'rotate' | 'template' | 'credit' | 'receipt' | null
   >(null)
   const [rate12, setRate12] = useState('')
   const [receiptRate, setReceiptRate] = useState<'21' | '12' | 'split'>('21')
   const [amount, setAmount] = useState('')
-  const [paidOn, setPaidOn] = useState('')
+  const [paidOn, setPaidOn] = useState(() => todayPrague())
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
   const onError = (e: unknown) => toast.error(apiErrorMessage(e))
@@ -226,6 +197,35 @@ function InvoiceDetail() {
   )
 
   const d = q.data
+  const isDraft = d?.status === 'draft'
+  // The paper needs the look (logo, accent, signature); a draft has no snapshots yet, so it also reads the
+  // live profile, contact and bank account.
+  const look = useQuery(orpc.appearance.get.queryOptions({ input: {} }))
+  const profile = useQuery({
+    ...orpc.businessProfile.get.queryOptions({ input: {} }),
+    enabled: isDraft,
+  })
+  const contact = useQuery({
+    ...orpc.contacts.get.queryOptions({ input: { id: d?.contactId ?? '' } }),
+    enabled: isDraft && !!d?.contactId,
+  })
+  const accounts = useQuery({
+    ...orpc.bankAccounts.list.queryOptions({ input: {} }),
+    enabled: isDraft,
+  })
+  const sheet = useMemo(
+    () =>
+      d
+        ? detailToSheet(d, {
+            look: look.data,
+            profile: profile.data,
+            contact: contact.data,
+            accounts: accounts.data,
+          })
+        : null,
+    [d, look.data, profile.data, contact.data, accounts.data],
+  )
+
   if (q.isError) {
     // A missing invoice is final; anything else (offline, 5xx) is worth another try.
     const code = (q.error as { code?: string } | null)?.code
@@ -234,318 +234,172 @@ function InvoiceDetail() {
     }
     return <ErrorState onRetry={() => q.refetch()} />
   }
-  if (!d) {
+  if (!d || !sheet) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4" aria-busy="true">
-        <Skeleton className="h-9 w-48" />
-        <Skeleton className="h-[520px] rounded-xl" />
+      <div className="mx-auto max-w-[1136px]" aria-busy="true">
+        <Skeleton className="mb-6 h-9 w-56" />
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <Skeleton className="h-[640px] rounded-[3px]" />
+          <Skeleton className="h-[320px] rounded-xl" />
+        </div>
       </div>
     )
   }
 
   const doc = d
-  const isDraft = d.status === 'draft'
   const open = d.status === 'issued' && d.type !== 'credit_note'
-  const bank = d.bankSnapshot as Record<string, string | null> | null
   const publicUrl = d.publicToken ? `${window.location.origin}/f/${d.publicToken}` : null
   const defaultTo = ((d.customerSnapshot?.emails as string[] | undefined) ?? [])[0]
   const busy = issue.isPending || markPaid.isPending || cancel.isPending
 
+  const sendPanel = sending && (
+    <RevealPanel>
+      <h2 className="label-caps !font-sans">{t.sendTitle}</h2>
+      <div className="space-y-2">
+        <Label htmlFor="mailTo">{t.sendTo}</Label>
+        <Input
+          id="mailTo"
+          type="email"
+          value={mailTo}
+          placeholder={defaultTo ?? ''}
+          onChange={(e) => setMailTo(e.target.value)}
+        />
+        {!defaultTo && <p className="text-muted-foreground text-xs">{t.sendNoEmail}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="mailMsg">{t.sendMessage}</Label>
+        <textarea
+          id="mailMsg"
+          rows={3}
+          className="border-input bg-background w-full rounded-md border p-2 text-sm"
+          value={mailMsg}
+          onChange={(e) => setMailMsg(e.target.value)}
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button
+          disabled={send.isPending || !(mailTo || defaultTo)}
+          onClick={() =>
+            send.mutate({
+              id,
+              to: mailTo || undefined,
+              message: mailMsg || undefined,
+              reminder: d.displayStatus === 'overdue',
+            })
+          }
+        >
+          {t.sendConfirm}
+        </Button>
+        <Button variant="ghost" onClick={() => setSending(false)}>
+          {cs.common.cancel}
+        </Button>
+      </div>
+    </RevealPanel>
+  )
+
+  const payPanel = paying && (
+    <RevealPanel>
+      <h2 className="label-caps !font-sans">{t.hero.receipt}</h2>
+      <div className="space-y-2">
+        <Label htmlFor="amount">{t.markPaidPartial}</Label>
+        <Input
+          id="amount"
+          inputMode="decimal"
+          placeholder={d.remaining}
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="paidOn">{t.markPaidDate}</Label>
+        <DatePicker id="paidOn" value={paidOn} onChange={setPaidOn} />
+      </div>
+      <div className="flex gap-2">
+        <Button
+          disabled={markPaid.isPending}
+          onClick={() =>
+            markPaid.mutate({
+              id,
+              amount: amount ? amount.replace(',', '.') : null,
+              paidOn: paidOn || undefined,
+            })
+          }
+        >
+          {t.markPaidConfirm}
+        </Button>
+        <Button variant="ghost" onClick={() => setPaying(false)}>
+          {cs.common.cancel}
+        </Button>
+      </div>
+    </RevealPanel>
+  )
+
   return (
-    <div className="mx-auto max-w-3xl space-y-4 pb-28 sm:pb-6">
-      <Link to="/faktury" className="text-muted-foreground text-sm hover:underline">
-        ← {t.back}
+    <div className="mx-auto max-w-[1136px]">
+      <Link
+        to="/faktury"
+        className="mb-3 inline-flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground"
+      >
+        <ArrowLeft className="size-3.5" aria-hidden /> {t.back}
       </Link>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tabular-nums">
-            {d.number ?? cs.invoices.draftNumber}
-          </h1>
-          {d.type !== 'invoice' && (
-            <span className="text-muted-foreground text-sm">
-              {cs.invoices.type[d.type as keyof typeof cs.invoices.type]}
-            </span>
-          )}
-          <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
-          {d.importedFrom && (
-            <span className="rounded-full border px-2 py-0.5 text-muted-foreground text-xs">
-              {cs.import.imported}
-            </span>
-          )}
-        </div>
-        <div className="hidden flex-wrap gap-2 sm:flex">
-          <Actions />
-        </div>
-      </div>
-      {(() => {
-        const bankPayments = d.payments.filter((p) => p.source === 'bank')
-        const last = bankPayments[bankPayments.length - 1]
-        if (!last) return null
-        const date = formatDateCs(last.paidOn)
-        return (
-          <p className="text-muted-foreground text-sm" data-testid="paid-by-transfer">
-            {d.status === 'paid' ? t.paidByTransfer(date) : t.partlyPaidByTransfer(date)}
-          </p>
-        )
-      })()}
-      <div className="flex flex-wrap gap-2 sm:hidden">
-        <Actions part="secondary" />
-      </div>
+      <PageHeader
+        eyebrow={cs.invoices.type[d.type as keyof typeof cs.invoices.type]}
+        title={d.number ?? cs.invoices.draftNumber}
+        subtitle={
+          <>
+            {d.customerName ?? '—'}
+            {d.issueDate ? ` · ${formatDateCs(d.issueDate)}` : ''}
+          </>
+        }
+      />
 
-      <section className="space-y-5 rounded-xl border p-4 sm:p-6">
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Party title={t.supplier} p={d.supplierSnapshot} />
-          <Party title={t.customer} p={d.customerSnapshot ?? { name: d.customerName }} />
-        </div>
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Field label={t.issueDate}>{d.issueDate ? formatDateCs(d.issueDate) : '—'}</Field>
-          <Field label={t.dueDate}>{d.dueDate ? formatDateCs(d.dueDate) : '—'}</Field>
-          {d.vatMode !== 'none' && (
-            <Field label={t.taxableDate}>{d.taxableDate ? formatDateCs(d.taxableDate) : '—'}</Field>
-          )}
-          {!d.paymentQr && d.variableSymbol && (
-            <Field label={t.variableSymbol}>{d.variableSymbol}</Field>
-          )}
-          {!d.paymentQr && bank?.iban && (
-            <Field wide label={t.iban}>
-              {bank.iban}
-            </Field>
-          )}
-          {!d.paymentQr && bank?.accountNumber && (
-            <Field wide label={t.account}>
-              {bank.accountNumber}/{bank.bankCode}
-            </Field>
-          )}
-        </dl>
-
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[34rem] text-sm">
-            <thead className="text-muted-foreground text-left text-xs">
-              <tr className="border-b">
-                <th className="py-2 font-medium">{cs.invoices.form.description}</th>
-                <th className="py-2 text-right font-medium">{cs.invoices.form.quantity}</th>
-                <th className="py-2 text-right font-medium">{cs.invoices.form.unitPrice}</th>
-                {d.vatMode !== 'none' && (
-                  <th className="py-2 text-right font-medium">{cs.invoices.form.vatRate}</th>
-                )}
-                <th className="py-2 text-right font-medium">
-                  {d.vatMode !== 'none'
-                    ? cs.invoices.form.lineTotalNet
-                    : cs.invoices.form.lineTotal}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {d.lines.map((l) => (
-                <tr key={l.id} className="border-b">
-                  <td className="py-2">{l.description}</td>
-                  <td className="py-2 text-right tabular-nums">
-                    {Number(l.quantity)} {l.unit}
-                  </td>
-                  <td className="py-2 text-right">
-                    <Money amount={l.unitPrice} currency={d.currency} />
-                  </td>
-                  {d.vatMode !== 'none' && (
-                    <td className="py-2 text-right tabular-nums">
-                      {l.vatTreatment === 'standard'
-                        ? `${Number(l.vatRate)} %`
-                        : (cs.invoices.vatTreatment[
-                            l.vatTreatment as keyof typeof cs.invoices.vatTreatment
-                          ] ?? l.vatTreatment)}
-                    </td>
-                  )}
-                  <td className="py-2 text-right">
-                    <Money amount={l.lineSubtotal} currency={d.currency} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="ml-auto max-w-xs space-y-1 text-sm">
-          {d.vatMode !== 'none' &&
-            d.vatRecap.map((r) => (
-              <div
-                key={`${r.vatTreatment}-${r.vatRate}`}
-                className="text-muted-foreground flex justify-between"
-              >
-                <span>
-                  {cs.invoices.form.vat}{' '}
-                  {r.vatTreatment === 'standard'
-                    ? `${Number(r.vatRate)} %`
-                    : (cs.invoices.vatTreatment[
-                        r.vatTreatment as keyof typeof cs.invoices.vatTreatment
-                      ] ?? r.vatTreatment)}
-                </span>
-                <Money amount={r.vat} currency={d.currency} />
+      {/* One DOM, two layouts: the rail is `display: contents` on small screens so hero, QR, paper and
+          timeline can be ordered freely; from `lg` it is the sticky right column. */}
+      <div className="flex flex-col gap-4 pb-28 md:pb-8 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-x-8">
+        <aside
+          aria-label={t.hero.open}
+          className="contents lg:sticky lg:top-[4.5rem] lg:col-start-2 lg:row-start-1 lg:-mx-1 lg:-mt-1 lg:flex lg:max-h-[calc(100dvh-5.5rem)] lg:flex-col lg:gap-4 lg:overflow-y-auto lg:px-1 lg:pt-1 lg:pb-6 lg:[scrollbar-width:thin] lg:[mask-image:linear-gradient(to_bottom,#000_calc(100%-24px),transparent)]"
+        >
+          <div className="order-1 flex flex-col gap-4">
+            <DocHero d={d}>
+              <div className="hidden md:block">
+                <Actions part="primary" />
               </div>
-            ))}
-          {Number(d.rounding) !== 0 && (
-            <div className="text-muted-foreground flex justify-between">
-              <span>{cs.invoices.form.rounding}</span>
-              <Money amount={d.rounding} currency={d.currency} />
+              <div className="flex gap-2 [&>*:first-child]:flex-1">
+                <Actions part="secondary" />
+              </div>
+            </DocHero>
+            {sendPanel}
+            {payPanel}
+          </div>
+          <div className="order-2 empty:hidden">
+            <PaymentCard d={d} />
+          </div>
+          <div className="order-4 empty:hidden">
+            <RelatedDocs d={d} />
+          </div>
+          <div className="order-4">
+            <Timeline d={d} />
+          </div>
+          {publicUrl && (
+            <div className="order-4">
+              <PublicLinkCard
+                url={publicUrl}
+                rotating={rotateLink.isPending}
+                onRotate={() => setDialog('rotate')}
+              />
             </div>
           )}
-          <div className="flex items-baseline justify-between border-t pt-2 text-lg font-semibold">
-            <span>{cs.invoices.form.total}</span>
-            <Money amount={d.total} currency={d.currency} />
-          </div>
-          {Number(d.paidAmount) > 0 && (
-            <>
-              <div className="text-muted-foreground flex justify-between">
-                <span>{t.paidSoFar}</span>
-                <Money amount={d.paidAmount} currency={d.currency} />
-              </div>
-              {d.payments
-                .filter((p) => p.method === 'credit_note')
-                .map((p) => (
-                  <div key={p.id} className="text-muted-foreground flex justify-between">
-                    <span>{t.creditedBy(p.note ?? '')}</span>
-                    <Money amount={p.amount} currency={d.currency} />
-                  </div>
-                ))}
-              {open && (
-                <div className="flex justify-between font-medium">
-                  <span>{t.remaining}</span>
-                  <Money amount={d.remaining} currency={d.currency} />
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        </aside>
 
-        {d.introText && <p className="text-sm whitespace-pre-line">{d.introText}</p>}
-        {d.footerText && (
-          <p className="text-muted-foreground text-sm whitespace-pre-line">{d.footerText}</p>
-        )}
-      </section>
-
-      {d.paymentQr && (
-        <section
-          className="flex flex-col items-center gap-5 rounded-xl border p-4 sm:flex-row sm:items-start sm:gap-8 sm:p-6"
-          aria-labelledby="payment-card-title"
-          data-testid="payment-card"
-        >
-          <div className="w-full min-w-0 flex-1 space-y-3">
-            <h2 id="payment-card-title" className="font-semibold">
-              {t.payment}
-            </h2>
-            <dl className="grid grid-cols-2 gap-4">
-              <Field label={t.amountDue}>
-                <span className="font-medium">
-                  <Money amount={d.remaining} currency={d.currency} />
-                </span>
-              </Field>
-              {d.variableSymbol && <Field label={t.variableSymbol}>{d.variableSymbol}</Field>}
-              {bank?.accountNumber && (
-                <Field wide label={t.account}>
-                  {bank.accountNumber}/{bank.bankCode}
-                </Field>
-              )}
-              {bank?.iban && (
-                <Field wide label={t.iban}>
-                  {bank.iban}
-                </Field>
-              )}
-            </dl>
-          </div>
-          <figure className="shrink-0 space-y-1.5 text-center">
-            <PaymentQr qr={d.paymentQr} className="mx-auto" />
-            <figcaption className="text-xs">
-              <div className="font-medium">
-                {d.paymentQr.kind === 'spayd' ? cs.paymentQr.platba : cs.paymentQr.epc}
-              </div>
-              <div className="text-muted-foreground">{cs.paymentQr.hint}</div>
-            </figcaption>
-          </figure>
-        </section>
-      )}
-
-      {(d.parent || d.related.length > 0) && (
-        <section className="space-y-2 rounded-xl border p-4 text-sm" aria-label={t.relatedTitle}>
-          <h2 className="font-semibold">{t.relatedTitle}</h2>
-          <ul className="space-y-1">
-            {d.parent && (
-              <li>
-                <span className="text-muted-foreground">{t.relatedParent}: </span>
-                <Link
-                  to="/faktury/$id"
-                  params={{ id: d.parent.id }}
-                  className="underline underline-offset-2"
-                >
-                  {d.parent.number ?? cs.invoices.draftNumber}
-                </Link>{' '}
-                <span className="text-muted-foreground">
-                  ({cs.invoices.type[d.parent.type as keyof typeof cs.invoices.type]})
-                </span>
-              </li>
-            )}
-            {d.related.map((r) => (
-              <li key={r.id}>
-                <span className="text-muted-foreground">
-                  {cs.invoices.type[r.type as keyof typeof cs.invoices.type]}:{' '}
-                </span>
-                <Link
-                  to="/faktury/$id"
-                  params={{ id: r.id }}
-                  className="underline underline-offset-2"
-                >
-                  {r.number ?? cs.invoices.draftNumber}
-                </Link>
-                {r.status === 'cancelled' && (
-                  <span className="text-muted-foreground"> ({cs.invoices.status.cancelled})</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {sending && (
-        <RevealPanel>
-          <h2 className="font-semibold">{t.sendTitle}</h2>
-          <div className="space-y-2">
-            <Label htmlFor="mailTo">{t.sendTo}</Label>
-            <Input
-              id="mailTo"
-              type="email"
-              value={mailTo}
-              placeholder={defaultTo ?? ''}
-              onChange={(e) => setMailTo(e.target.value)}
-            />
-            {!defaultTo && <p className="text-muted-foreground text-xs">{t.sendNoEmail}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="mailMsg">{t.sendMessage}</Label>
-            <textarea
-              id="mailMsg"
-              rows={3}
-              className="border-input bg-background w-full rounded-md border p-2 text-sm"
-              value={mailMsg}
-              onChange={(e) => setMailMsg(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              disabled={send.isPending || !(mailTo || defaultTo)}
-              onClick={() =>
-                send.mutate({
-                  id,
-                  to: mailTo || undefined,
-                  message: mailMsg || undefined,
-                  reminder: d.displayStatus === 'overdue',
-                })
-              }
-            >
-              {t.sendConfirm}
-            </Button>
-            <Button variant="ghost" onClick={() => setSending(false)}>
-              {cs.common.cancel}
-            </Button>
-          </div>
-        </RevealPanel>
-      )}
+        <DocumentPaper
+          className="order-3 min-w-0 lg:col-start-1 lg:row-start-1"
+          doc={sheet.doc}
+          qr={sheet.qr}
+          open={docOpen}
+          onToggle={() => setDocOpen((v) => !v)}
+        />
+      </div>
 
       <PromptDialog
         open={dialog === 'cancel'}
@@ -667,112 +521,10 @@ function InvoiceDetail() {
         )}
       </PromptDialog>
 
-      {paying && (
-        <RevealPanel>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="amount">{t.markPaidPartial}</Label>
-              <Input
-                id="amount"
-                inputMode="decimal"
-                placeholder={d.remaining}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="paidOn">{t.markPaidDate}</Label>
-              <Input
-                id="paidOn"
-                type="date"
-                value={paidOn}
-                onChange={(e) => setPaidOn(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              disabled={markPaid.isPending}
-              onClick={() =>
-                markPaid.mutate({
-                  id,
-                  amount: amount ? amount.replace(',', '.') : null,
-                  paidOn: paidOn || undefined,
-                })
-              }
-            >
-              {t.markPaidConfirm}
-            </Button>
-            <Button variant="ghost" onClick={() => setPaying(false)}>
-              {cs.common.cancel}
-            </Button>
-          </div>
-        </RevealPanel>
-      )}
-
-      {publicUrl && (
-        <section className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm">
-          <span className="text-muted-foreground">{t.publicLink}</span>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                await navigator.clipboard.writeText(publicUrl)
-                toast.success(t.linkCopied)
-              }}
-            >
-              <Copy /> {t.copyLink}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={rotateLink.isPending}
-              onClick={() => setDialog('rotate')}
-            >
-              <RefreshCw /> {t.rotateLink}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              nativeButton={false}
-              render={
-                <a href={publicUrl} target="_blank" rel="noreferrer" aria-label={t.publicLink} />
-              }
-            >
-              <ExternalLink />
-            </Button>
-          </div>
-        </section>
-      )}
-
-      <section className="space-y-2 rounded-xl border p-4">
-        <h2 className="text-sm font-semibold">{t.history}</h2>
-        <ol className="space-y-1.5">
-          {d.activity.map((a) => (
-            <li key={a.id} className="flex items-center gap-2 text-sm">
-              <Check className="text-muted-foreground size-3.5" />
-              <span>{t.timeline[a.action as keyof typeof t.timeline] ?? a.action}</span>
-              <span className="text-muted-foreground">
-                {formatDateCs(todayPrague(a.createdAt))}
-                {(a.data as { amount?: string } | null)?.amount ? (
-                  <>
-                    {' · '}
-                    <Money amount={(a.data as { amount: string }).amount} currency={d.currency} />
-                    {' · '}
-                    {t.manual}
-                  </>
-                ) : null}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* Sits above the mobile tab bar (h-16); only the primary action is pinned, the rest is in flow.
+      {/* Phones: sits above the tab bar (h-16); only the primary action is pinned, the rest is in the hero.
           Hidden while the pay/send panel is open: its own confirm button is the action then. */}
       {!paying && !sending && (
-        <div className="from-background fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex flex-col gap-2 bg-gradient-to-t p-4 sm:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex flex-col gap-2 border-t bg-background/95 p-3 backdrop-blur md:hidden">
           <Actions mobile part="primary" />
         </div>
       )}
@@ -786,8 +538,9 @@ function InvoiceDetail() {
     mobile?: boolean
     part?: 'all' | 'primary' | 'secondary'
   }) {
-    const full = mobile ? 'w-full' : ''
+    const big = cn('h-10 w-full text-sm', mobile && 'h-11 text-base')
     const isProforma = doc.type === 'proforma'
+    const isDraft = doc.status === 'draft'
     const hasReceipt = doc.related.some(
       (r) => r.type === 'payment_receipt' && r.status !== 'cancelled',
     )
@@ -818,11 +571,19 @@ function InvoiceDetail() {
     const pdfButton = (variant: 'default' | 'outline') => (
       <Button
         variant={variant}
-        className={full}
+        className={variant === 'default' ? big : ''}
         nativeButton={false}
         render={<a href={`/api/documents/${id}/pdf`} download />}
       >
-        <Download /> {t.downloadPdf}
+        <Download />
+        {variant === 'default' ? (
+          t.downloadPdf
+        ) : (
+          <>
+            <span className="sr-only">{t.downloadPdfVerb} </span>
+            <span className="max-sm:sr-only">PDF</span>
+          </>
+        )}
       </Button>
     )
 
@@ -830,20 +591,20 @@ function InvoiceDetail() {
       switch (primary) {
         case 'issue':
           return (
-            <Button className={full} disabled={busy} onClick={() => issue.mutate({ id })}>
+            <Button className={big} disabled={busy} onClick={() => issue.mutate({ id })}>
               {t.issue}
             </Button>
           )
         case 'pay':
           return (
-            <Button className={full} onClick={() => setPaying(true)}>
+            <Button className={big} onClick={() => setPaying(true)}>
               {t.markPaid}
             </Button>
           )
         case 'receipt':
           return (
             <Button
-              className={full}
+              className={big}
               disabled={receipt.isPending}
               onClick={() => setDialog('receipt')}
             >
@@ -853,7 +614,7 @@ function InvoiceDetail() {
         case 'final':
           return (
             <Button
-              className={full}
+              className={big}
               disabled={finalInvoice.isPending}
               onClick={() => finalInvoice.mutate({ id })}
             >
@@ -870,7 +631,6 @@ function InvoiceDetail() {
         {isDraft && (
           <Button
             variant="outline"
-            className={full}
             nativeButton={false}
             render={<Link to="/faktury/$id/upravit" params={{ id }} />}
           >
@@ -878,13 +638,15 @@ function InvoiceDetail() {
           </Button>
         )}
         {!isDraft && canSend && (
-          <Button variant="outline" className={full} onClick={() => setSending(true)}>
+          <Button variant="outline" onClick={() => setSending(true)}>
             <Send /> {doc.displayStatus === 'overdue' ? t.remind : t.send}
           </Button>
         )}
         {!isDraft && primary !== 'pdf' && pdfButton('outline')}
         <DropdownMenu>
-          <DropdownMenuTrigger className={buttonVariants({ variant: 'outline', className: full })}>
+          <DropdownMenuTrigger
+            className={buttonVariants({ variant: 'outline', className: 'shrink-0' })}
+          >
             {t.more}
             <ChevronDown aria-hidden />
           </DropdownMenuTrigger>
@@ -949,14 +711,14 @@ function InvoiceDetail() {
   }
 }
 
-/** Inline panel that scrolls into view when it opens (it renders below the fold on long documents). */
+/** Inline panel that scrolls into view when it opens (it can render below the fold on small screens). */
 function RevealPanel({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLElement>(null)
   useEffect(() => {
-    ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [])
   return (
-    <section ref={ref} className="space-y-3 rounded-xl border bg-card p-4">
+    <section ref={ref} className="sheet space-y-3 p-5">
       {children}
     </section>
   )

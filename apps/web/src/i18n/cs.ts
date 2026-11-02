@@ -216,7 +216,7 @@ export const cs = {
       'Koncept: tento text připravil provozovatel jako výchozí návrh a čeká na právní kontrolu. Do té doby berte znění jako informativní.',
   },
   authPanel: {
-    title: 'Faktury, které se píšou samy. A zdarma.',
+    title: 'Faktury, které se píší samy. A zdarma.',
     points: [
       'Neomezený počet faktur a kontaktů',
       'QR platba a údaje z ARES doplněné za vás',
@@ -1243,6 +1243,11 @@ export const cs = {
     emptyFiltered: 'V tomto přehledu nic není.',
     emptyUnmatched: 'Všechny příchozí platby jsou vyřízené.',
     emptyUnmatchedTitle: 'Máte hotovo',
+    emptyMatchedTitle: 'Zatím žádné spárované platby',
+    emptyMatched:
+      'Jakmile platba odpovídá faktuře, objeví se tady a faktura se označí jako uhrazená.',
+    emptyIgnoredTitle: 'Nic jste neignorovali',
+    emptyIgnored: 'Platby, které k fakturám nepatří, můžete odložit sem, ať vás nerozptylují.',
     subtitleEmpty: 'Zatím žádné platby',
     subtitle: (open: number, matched: number) =>
       `${open === 0 ? 'Vše spárováno' : `${open} čeká na spárování`} · ${matched} spárováno s fakturami`,

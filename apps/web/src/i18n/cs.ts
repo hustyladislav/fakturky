@@ -381,6 +381,8 @@ export const cs = {
         'line.vatRate': 'sazbu DPH 21 / 12 % nebo režim DPH u každé položky',
         'customer.vatId': 'DIČ / IČ DPH (nutné pro přenesení daňové povinnosti v rámci EU)',
         'customer.address': 'adresu (ulice, město, PSČ)',
+        'customer.country':
+          'zemi odběratele v jiném členském státě EU (přenesení daňové povinnosti v rámci EU se nevztahuje na tuzemského odběratele)',
       },
       missingLines: (names: string[]) => `U položek doplňte: ${names.join(', ')}.`,
       missingCustomer: (names: string[]) =>
@@ -599,6 +601,9 @@ export const cs = {
     street: 'Ulice a číslo',
     city: 'Město',
     zip: 'PSČ',
+    country: 'Země',
+    euReverseChargeDomestic:
+      'Přenesení daňové povinnosti v rámci EU lze použít jen pro odběratele z jiného členského státu. U tohoto kontaktu je nastavena Česká republika.',
     edit: 'Upravit kontakt',
     updated: 'Kontakt byl uložen.',
     taxDocHint:
@@ -813,6 +818,7 @@ export const cs = {
       archive_contact: 'Archivuji kontakt',
       lookup_company_by_ico: 'Vyhledávám firmu podle IČO',
       lookup_company_ares: 'Hledám firmu v ARES',
+      lookup_eu_vat_id: 'Ověřuji DIČ ve VIES',
       get_exchange_rate: 'Zjišťuji kurz ČNB',
       list_documents: 'Procházím faktury',
       get_document: 'Načítám doklad',

@@ -1,8 +1,6 @@
 import { BRAND } from '@fakturky/core/brand'
 import { Button } from '@fakturky/ui/components/button'
 import { Logo } from '@fakturky/ui/components/logo'
-import { Money } from '@fakturky/ui/components/money'
-import { StatusBadge } from '@fakturky/ui/components/status-badge'
 import { ThemeToggle } from '@fakturky/ui/components/theme'
 import { Link } from '@tanstack/react-router'
 import {
@@ -20,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { cs } from '@/i18n/cs'
+import { HeroComposition } from './hero-composition'
 
 function Github({ className, ...props }: React.ComponentProps<'svg'> & { 'data-icon'?: string }) {
   return (
@@ -44,8 +43,8 @@ export function Landing() {
       <SiteHeader />
       <main>
         <Hero />
-        <Why />
         <Features />
+        <Why />
         <ForAssistants />
         <Faq />
         <FinalCta />
@@ -101,15 +100,15 @@ function SiteHeader() {
 
 function Hero() {
   return (
-    <section className="mx-auto max-w-[1200px] px-5 pt-14 pb-16 md:px-8 md:pt-24 md:pb-24">
+    <section className="mx-auto max-w-[1200px] px-5 pt-10 pb-4 md:px-8 md:pt-16 md:pb-8">
       <div className="mx-auto max-w-3xl text-center">
         <h1 className="text-5xl leading-[1.05] font-medium tracking-tight text-balance md:text-7xl">
           {t.heroTitle}
         </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-pretty text-muted-foreground">
+        <p className="mx-auto mt-5 max-w-2xl text-lg text-pretty text-muted-foreground">
           {t.heroText}
         </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Button
             size="lg"
             className="h-11 px-5 text-base"
@@ -132,107 +131,14 @@ function Hero() {
         </div>
         <p className="mt-4 text-sm text-muted-foreground">{t.heroNote}</p>
       </div>
-      <ProductMock />
+      <HeroComposition />
     </section>
-  )
-}
-
-const qrCells = Array.from({ length: 169 }, (_, i) => {
-  const x = i % 13
-  const y = Math.floor(i / 13)
-  const finder = (x < 4 && y < 4) || (x > 8 && y < 4) || (x < 4 && y > 8)
-  return finder
-    ? (x % 3 === 1 && y % 3 === 1) ||
-        x === 0 ||
-        y === 0 ||
-        x === 3 ||
-        y === 3 ||
-        x === 9 ||
-        x === 12 ||
-        y === 9 ||
-        y === 12
-    : (i * 7 + y * 3) % 5 < 2
-})
-
-function ProductMock() {
-  const rows = [
-    {
-      n: '2026-0042',
-      c: 'Novák & syn s.r.o.',
-      a: '24200.00',
-      s: 'issued' as const,
-      l: cs.status.issued,
-    },
-    { n: '2026-0041', c: 'Kavárna U Mostu', a: '8500.00', s: 'paid' as const, l: cs.status.paid },
-    {
-      n: '2026-0040',
-      c: 'Studio Lípa',
-      a: '56000.00',
-      s: 'overdue' as const,
-      l: cs.status.overdue,
-    },
-    { n: '2026-0039', c: 'Ing. Petr Dvořák', a: '3200.00', s: 'paid' as const, l: cs.status.paid },
-  ]
-  return (
-    <div className="relative mx-auto mt-14 max-w-5xl md:mt-20" aria-hidden="true">
-      <div className="overflow-hidden rounded-xl border bg-card shadow-[0_30px_80px_-30px_rgba(31,77,60,0.35)]">
-        <div className="flex h-9 items-center gap-1.5 border-b bg-muted px-3">
-          <span className="size-2.5 rounded-full bg-border" />
-          <span className="size-2.5 rounded-full bg-border" />
-          <span className="size-2.5 rounded-full bg-border" />
-        </div>
-        <div className="grid md:grid-cols-[1.1fr_1fr]">
-          <div className="border-b p-5 md:border-r md:border-b-0 md:p-6">
-            <div className="mb-4 text-sm font-medium text-muted-foreground">{t.mock.recent}</div>
-            <ul className="divide-y">
-              {rows.map((r) => (
-                <li key={r.n} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium">{r.n}</div>
-                    <div className="truncate text-xs text-muted-foreground">{r.c}</div>
-                  </div>
-                  <StatusBadge status={r.s} className="hidden sm:inline-flex">
-                    {r.l}
-                  </StatusBadge>
-                  <Money amount={r.a} className="text-sm" />
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-muted/50 p-5 md:p-6">
-            <div className="mx-auto max-w-sm rounded-md border bg-white p-5 text-[#1B1A17] shadow-sm">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs text-neutral-500">{t.mock.invoice}</span>
-                <span className="font-serif text-lg">{t.mock.number}</span>
-              </div>
-              <div className="mt-1 text-sm">{t.mock.customer}</div>
-              <div className="my-4 h-px bg-neutral-200" />
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <div className="text-xs text-neutral-500">{t.mock.total}</div>
-                  <div className="font-serif text-3xl">24&nbsp;200,00&nbsp;Kč</div>
-                </div>
-                <div className="text-center">
-                  <div className="grid size-16 grid-cols-13 gap-px">
-                    {qrCells.map((on, i) => (
-                      <span key={i} className={on ? 'bg-neutral-900' : 'bg-transparent'} />
-                    ))}
-                  </div>
-                  <div className="mt-1 text-[10px] text-neutral-500">{t.mock.qr}</div>
-                </div>
-              </div>
-              <div className="mt-4 h-1 rounded-full bg-primary" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   )
 }
 
 function Why() {
   return (
-    <section id="proc-zdarma" className="border-y bg-card py-16 md:py-24">
+    <section id="proc-zdarma" className="border-y bg-card py-12 md:py-16">
       <div className="mx-auto grid max-w-[1200px] gap-10 px-5 md:grid-cols-[1fr_1.4fr] md:px-8">
         <h2 className="text-4xl leading-tight font-medium md:text-5xl">{t.whyTitle}</h2>
         <div className="space-y-4 text-[17px] leading-relaxed text-pretty">
@@ -266,11 +172,11 @@ function Why() {
 
 function Features() {
   return (
-    <section id="funkce" className="mx-auto max-w-[1200px] px-5 py-16 md:px-8 md:py-24">
+    <section id="funkce" className="mx-auto max-w-[1200px] px-5 py-12 md:px-8 md:py-16">
       <h2 className="max-w-2xl text-4xl leading-tight font-medium text-balance md:text-5xl">
         {t.featuresTitle}
       </h2>
-      <ul className="mt-10 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-8 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 lg:grid-cols-3">
         {t.features.map(([title, text], i) => {
           const Icon = featureIcons[i] ?? InfinityIcon
           return (
@@ -289,7 +195,7 @@ function Features() {
 function ForAssistants() {
   const icons = [Plug, Bot, Terminal]
   return (
-    <section id="ai" className="border-y bg-sidebar py-16 md:py-24">
+    <section id="ai" className="border-y bg-sidebar py-12 md:py-16">
       <div className="mx-auto grid max-w-[1200px] gap-10 px-5 md:px-8 lg:grid-cols-2">
         <div>
           <h2 className="text-4xl leading-tight font-medium md:text-5xl">{t.aiTitle}</h2>
@@ -327,25 +233,51 @@ function ForAssistants() {
   )
 }
 
+function Snippet({ title, children }: { title: string; children: string }) {
+  return (
+    <figure className="min-w-0">
+      <figcaption className="mb-1.5 text-xs font-medium text-muted-foreground">{title}</figcaption>
+      <pre className="overflow-x-auto rounded-xl border bg-card p-4 font-mono text-[13px] leading-relaxed">
+        <code>{children}</code>
+      </pre>
+    </figure>
+  )
+}
+
 function ApiExample() {
   // Derived from the current origin so the key never points at another deployment.
-  const [origin, setOrigin] = useState('https://vase-instance.example')
+  const [origin, setOrigin] = useState<string>(BRAND.productionUrl)
   useEffect(() => setOrigin(window.location.origin), [])
+  const mcp = JSON.stringify(
+    {
+      mcpServers: {
+        [BRAND.slug]: {
+          url: `${origin}/mcp`,
+          headers: { Authorization: `Bearer ${BRAND.apiKeyPrefix}…` },
+        },
+      },
+    },
+    null,
+    2,
+  )
   return (
-    <pre className="min-w-0 self-start overflow-x-auto rounded-xl border bg-card p-5 font-mono text-[13px] leading-relaxed">
-      <code>{`# ${t.aiCards[0]?.[0]}
-curl ${origin}/api/v1/documents \\
-  -H "Authorization: Bearer ${BRAND.apiKeyPrefix}…"
-
-# OpenAPI
-${origin}/api/v1/openapi.json`}</code>
-    </pre>
+    <div className="min-w-0 space-y-4 self-start">
+      <Snippet title={t.aiConfigTitle}>{mcp}</Snippet>
+      <p className="-mt-2 text-xs text-muted-foreground">
+        {t.aiConfigHint}{' '}
+        <a href="/docs/mcp" className="text-primary underline underline-offset-4">
+          {t.aiMcpDocs}
+        </a>
+      </p>
+      <Snippet title={t.aiCards[0]?.[0] ?? 'REST API'}>{`curl ${origin}/api/v1/documents \\
+  -H "Authorization: Bearer ${BRAND.apiKeyPrefix}…"`}</Snippet>
+    </div>
   )
 }
 
 function Faq() {
   return (
-    <section id="faq" className="mx-auto max-w-3xl px-5 py-16 md:px-8 md:py-24">
+    <section id="faq" className="mx-auto max-w-3xl px-5 py-12 md:px-8 md:py-16">
       <h2 className="text-4xl leading-tight font-medium md:text-5xl">{t.faqTitle}</h2>
       <div className="mt-8 divide-y border-y">
         {t.faq.map(([q, a]) => (
@@ -369,8 +301,8 @@ function Faq() {
 
 function FinalCta() {
   return (
-    <section className="mx-auto max-w-[1200px] px-5 pb-20 md:px-8 md:pb-28">
-      <div className="rounded-xl border bg-accent px-6 py-14 text-center md:py-20">
+    <section className="mx-auto max-w-[1200px] px-5 pb-14 md:px-8 md:pb-20">
+      <div className="rounded-xl border bg-accent px-6 py-10 text-center md:py-14">
         <h2 className="mx-auto max-w-2xl text-4xl leading-tight font-medium text-balance text-accent-foreground md:text-5xl">
           {t.ctaTitle}
         </h2>

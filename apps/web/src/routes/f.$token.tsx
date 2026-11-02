@@ -140,6 +140,12 @@ function PublicInvoice() {
                   {Number(l.quantity)} {l.unit} ×{' '}
                   <Money amount={l.unitPrice} currency={d.currency} />
                   {d.vatPayer && <> · {Number(l.vatRate)} %</>}
+                  {Number(l.discountPercent) > 0 && (
+                    <>
+                      {' · '}
+                      {t.discount} {Number(l.discountPercent)} %
+                    </>
+                  )}
                 </div>
               </div>
               <Money amount={l.total} currency={d.currency} className="shrink-0" />
@@ -206,7 +212,7 @@ function PublicInvoice() {
             </div>
           )}
           <div className="flex items-baseline justify-between border-t border-b border-neutral-400 py-2">
-            <span className="font-medium">{t.amountDue}</span>
+            <span className="font-medium">{d.status === 'paid' ? t.lineTotal : t.amountDue}</span>
             <span className="font-serif text-3xl font-medium">
               <Money amount={d.status === 'paid' ? d.total : d.remaining} currency={d.currency} />
             </span>

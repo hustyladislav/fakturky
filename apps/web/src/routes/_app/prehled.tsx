@@ -58,7 +58,9 @@ function Overview() {
         </div>
       )}
 
-      {!s && (
+      {summary.isError && <p className="text-muted-foreground text-sm">{cs.common.error}</p>}
+
+      {summary.isPending && (
         <div className="space-y-6" aria-busy="true">
           <div className="grid gap-3 sm:grid-cols-3">
             {[0, 1, 2].map((i) => (

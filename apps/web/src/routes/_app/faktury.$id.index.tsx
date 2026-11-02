@@ -200,7 +200,6 @@ function InvoiceDetail() {
   const isDraft = d?.status === 'draft'
   // The paper needs the look (logo, accent, signature); a draft has no snapshots yet, so it also reads the
   // live profile, contact and bank account.
-  const look = useQuery(orpc.appearance.get.queryOptions({ input: {} }))
   const profile = useQuery({
     ...orpc.businessProfile.get.queryOptions({ input: {} }),
     enabled: isDraft,
@@ -217,13 +216,12 @@ function InvoiceDetail() {
     () =>
       d
         ? detailToSheet(d, {
-            look: look.data,
             profile: profile.data,
             contact: contact.data,
             accounts: accounts.data,
           })
         : null,
-    [d, look.data, profile.data, contact.data, accounts.data],
+    [d, profile.data, contact.data, accounts.data],
   )
 
   if (q.isError) {
@@ -365,7 +363,7 @@ function InvoiceDetail() {
               <div className="hidden md:block">
                 <Actions part="primary" />
               </div>
-              <div className="flex gap-2 [&>*:first-child]:flex-1">
+              <div className="flex gap-2 [&>*]:min-w-fit [&>*]:flex-1">
                 <Actions part="secondary" />
               </div>
             </DocHero>
@@ -581,7 +579,7 @@ function InvoiceDetail() {
         ) : (
           <>
             <span className="sr-only">{t.downloadPdfVerb} </span>
-            <span className="max-sm:sr-only">PDF</span>
+            <span>PDF</span>
           </>
         )}
       </Button>
@@ -638,14 +636,19 @@ function InvoiceDetail() {
           </Button>
         )}
         {!isDraft && canSend && (
-          <Button variant="outline" onClick={() => setSending(true)}>
-            <Send /> {doc.displayStatus === 'overdue' ? t.remind : t.send}
+          <Button
+            variant="outline"
+            aria-label={doc.displayStatus === 'overdue' ? t.remind : t.send}
+            onClick={() => setSending(true)}
+          >
+            <Send />
+            <span>{doc.displayStatus === 'overdue' ? t.remindShort : t.sendShort}</span>
           </Button>
         )}
         {!isDraft && primary !== 'pdf' && pdfButton('outline')}
         <DropdownMenu>
           <DropdownMenuTrigger
-            className={buttonVariants({ variant: 'outline', className: 'shrink-0' })}
+            className={buttonVariants({ variant: 'outline', className: 'px-2' })}
           >
             {t.more}
             <ChevronDown aria-hidden />

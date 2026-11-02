@@ -447,7 +447,7 @@ export function InvoiceForm({ id }: { id?: string }) {
   const totalValue = totals?.total ?? '0'
 
   return (
-    <div className="mx-auto max-w-[1136px]">
+    <div className="mx-auto max-w-[1136px] pb-6">
       <PageHeader
         eyebrow={cs.invoices.type[type]}
         title={id ? t.titleEdit : t.titleNew}
@@ -473,7 +473,10 @@ export function InvoiceForm({ id }: { id?: string }) {
       )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
-        <section className="sheet min-w-0 divide-y divide-border" aria-label={t.documentHeading}>
+        <section
+          className="sheet @container min-w-0 divide-y divide-border"
+          aria-label={t.documentHeading}
+        >
           {/* Header: what kind of document, and that the number comes at issue. */}
           <div className="space-y-3 p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -501,7 +504,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           </div>
 
           {/* Parties, side by side like on the invoice. */}
-          <div className="grid gap-6 p-5 sm:p-6 md:grid-cols-2">
+          <div className="grid gap-6 p-5 sm:p-6 @[34rem]:grid-cols-2">
             <div>
               <SectionTitle>{t.supplier}</SectionTitle>
               {supplier ? (
@@ -707,10 +710,17 @@ export function InvoiceForm({ id }: { id?: string }) {
                   {currencyAccounts.length === 0 && <option value="">{t.bankAccountNone}</option>}
                   {currencyAccounts.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.label} · {a.accountNumber ? `${a.accountNumber}/${a.bankCode}` : a.iban}
+                      {a.label}
                     </option>
                   ))}
                 </NativeSelect>
+                {account && (
+                  <p className="text-muted-foreground text-xs tabular-nums">
+                    {account.accountNumber
+                      ? `${account.accountNumber}/${account.bankCode}`
+                      : account.iban}
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="method">{t.paymentMethod}</Label>
@@ -806,7 +816,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           <div className="min-w-0 flex-1">
             <div className="label-caps max-sm:sr-only">{t.totalShort}</div>
             <div className="flex items-baseline gap-3">
-              <Amount value={totalValue} currency={currency} size="md" className="max-sm:text-lg" />
+              <Amount value={totalValue} currency={currency} size="md" className="max-sm:text-lg [&>.opacity-60]:opacity-80" />
               <span
                 className={cn(
                   'hidden items-center gap-1.5 text-xs sm:flex',

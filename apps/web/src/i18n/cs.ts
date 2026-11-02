@@ -348,6 +348,7 @@ export const cs = {
     },
     allInvoices: 'Všechny faktury',
     emptyTitle: 'Začněte první fakturou',
+    addBankAccount: 'Přidat bankovní účet',
     emptyText: 'Přidejte bankovní účet a vystavte první fakturu. Zabere to pár minut.',
     months: ['led', 'úno', 'bře', 'dub', 'kvě', 'čvn', 'čvc', 'srp', 'zář', 'říj', 'lis', 'pro'],
   },
@@ -357,6 +358,11 @@ export const cs = {
     new: 'Nová faktura',
     empty: 'Zatím nemáte žádné faktury.',
     emptyFiltered: 'Nic neodpovídá zvolenému filtru.',
+    emptyFilteredBy: (search: string | null, filters: string[]) => {
+      const parts = [search ? `hledání „${search}“` : null, ...filters].filter(Boolean)
+      return `Nic nenalezeno: ${parts.join(' · ')}`
+    },
+    paidOn: (date: string) => `Zaplaceno ${date}`,
     emptyCta: 'Vystavit první fakturu',
     search: 'Hledat podle čísla, odběratele nebo VS…',
     subtitle: (count: number, unpaid: string | null) =>
@@ -373,7 +379,7 @@ export const cs = {
     issuedLabel: 'vystaveno',
     noMonth: 'Bez data',
     noNumber: 'Bez čísla',
-    resetFilter: 'Zrušit filtr',
+    resetFilter: 'Zrušit filtry',
     loadMore: 'Načíst další',
     sortBy: (column: string) => `Seřadit podle: ${column}`,
     keyboardHint: 'J / K pohyb · Enter otevřít · X vybrat',
@@ -484,6 +490,16 @@ export const cs = {
       taxableDate: 'DUZP (datum zdanitelného plnění)',
       taxableHint: 'Den, kdy nastalo plnění. U plátců DPH určuje, do kterého měsíce DPH patří.',
       dueIn: (days: number) => `${days} dní`,
+      dueSummary: (days: number, date: string) => {
+        const when = new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' }).format(
+          new Date(`${date}T12:00:00`),
+        )
+        if (days <= 0) return `Splatnost ihned (${when})`
+        const unit = days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'
+        return `Splatnost za ${days} ${unit} (${when})`
+      },
+      datesEdit: 'upravit',
+      datesHide: 'skrýt',
       today: 'Dnes',
       currency: 'Měna',
       exchangeRate: 'Kurz ČNB (Kč za 1 jednotku)',
@@ -505,6 +521,9 @@ export const cs = {
       payment: 'Platba',
       bankAccount: 'Bankovní účet',
       bankAccountNone: 'Žádný účet – přidejte ho v Nastavení',
+      bankAddInline: 'Přidejte účet, ať faktura ponese číslo účtu a QR platbu.',
+      noBankConfirm: 'Faktura nebude mít QR platbu ani číslo účtu — pokračovat?',
+      noBankConfirmYes: 'Vystavit i tak',
       paymentMethod: 'Forma úhrady',
       methods: { bank_transfer: 'Převodem', cash: 'Hotově', card: 'Kartou' },
       texts: 'Texty',
@@ -546,6 +565,7 @@ export const cs = {
         `Daňový doklad vyžaduje údaje odběratele. Doplňte u kontaktu: ${names.join(', ')}.`,
       registryNoteMissing:
         'V nastavení chybí zápis v rejstříku (např. „Fyzická osoba zapsaná v živnostenském rejstříku“). Podnikatelé ho mají na fakturách uvádět.',
+      registryNoteDismiss: 'Skrýt upozornění',
       needProfile: 'Než vystavíte fakturu, vyplňte prosím údaje o své firmě v Nastavení.',
     },
     detail: {
@@ -1140,15 +1160,18 @@ export const cs = {
     submit: 'Pokračovat',
     skip: 'Vyplním později',
     progressLabel: 'Postup nastavení',
-    steps: ['Firma', 'Zkontrolujte údaje', 'Hotovo'],
+    steps: ['Firma', 'Zkontrolujte údaje', 'Bankovní účet', 'Hotovo'],
     stepOf: (n: number, total: number) => `Krok ${n} z ${total}`,
     previewLabel: 'Tak to bude vypadat na dokladech',
-    aresHint: 'Zadejte IČO a klikněte na Načíst z ARES: název, adresu i DIČ doplníme za vás.',
+    aresHint:
+      'Zadejte IČO a doplníme z ARES název, adresu, DIČ, plátcovství DPH i zápis v rejstříku.',
     doneTitle: 'Máte hotovo',
     doneText: 'Firma je nastavená. Tak se bude objevovat na každé vaší faktuře.',
     firstInvoice: 'Vystavit první fakturu',
     toDashboard: 'Přejít na přehled',
-    redirecting: 'Za chvíli vás přesměrujeme na přehled.',
+    bankTitle: 'Kam vám mají klienti platit?',
+    bankDescription:
+      'Číslo účtu se objeví na každé faktuře spolu s QR platbou, kterou klient naskenuje v bankovní aplikaci.',
   },
   profile: {
     cardLabel: 'Náhled firmy na dokladech',
@@ -1168,7 +1191,6 @@ export const cs = {
     vatPayer: 'Plátce DPH',
     vatIdentified: 'Identifikovaná osoba',
     registryNote: 'Zápis v rejstříku',
-    registryNoteSoleTrader: 'Fyzická osoba zapsaná v živnostenském rejstříku.',
     registryNoteHint:
       'Např. „Fyzická osoba zapsaná v živnostenském rejstříku“ nebo spisová značka.',
     email: 'E-mail',
@@ -1196,6 +1218,13 @@ export const cs = {
     deleted: 'Účet byl smazán.',
     updated: 'Výchozí účet byl změněn.',
     invalid: 'Číslo účtu nebo IBAN není platné. Zkontrolujte ho prosím.',
+    quick: {
+      submit: 'Přidat účet',
+      skip: 'Přeskočit',
+      required: 'Zadejte číslo účtu nebo IBAN.',
+      defaultLabel: 'Hlavní účet',
+      hint: 'České číslo účtu doplníme na IBAN a BIC. Revolut a zahraniční banky: vložte IBAN z aplikace.',
+    },
     fio: {
       connect: 'Propojit s Fio',
       reconnect: 'Změnit token',

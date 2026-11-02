@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import { bankErrorMessage } from '@/components/bank/bank-errors'
 import { PairDialog } from '@/components/bank/pair-dialog'
 import { UploadStatementDialog } from '@/components/bank/upload-statement-dialog'
+import { ErrorState } from '@/components/error-state'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
@@ -197,7 +198,9 @@ function BankPage() {
         </div>
       </div>
 
-      {list.isPending ? (
+      {list.isError ? (
+        <ErrorState onRetry={() => list.refetch()} />
+      ) : list.isPending ? (
         <div className="space-y-px overflow-hidden rounded-xl border" aria-busy="true">
           {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="h-16 rounded-none" />

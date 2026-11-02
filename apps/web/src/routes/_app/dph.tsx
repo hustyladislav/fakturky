@@ -13,6 +13,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { Download, ExternalLink, Receipt, TriangleAlert } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { ErrorState } from '@/components/error-state'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { client, orpc } from '@/lib/orpc'
@@ -63,7 +64,22 @@ function downloadXml(f: { filename: string; xml: string }) {
 function VatPage() {
   const profile = useQuery(orpc.businessProfile.get.queryOptions())
 
-  if (profile.isPending) return <Skeleton className="mx-auto h-64 max-w-[1200px] rounded-xl" />
+  if (profile.isPending) {
+    return (
+      <div className="mx-auto max-w-[1200px] space-y-4" aria-busy="true">
+        <Skeleton className="h-9 w-40" />
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+    )
+  }
+  if (profile.isError) {
+    return (
+      <div className="mx-auto max-w-[1200px] space-y-6">
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
+        <ErrorState onRetry={() => profile.refetch()} />
+      </div>
+    )
+  }
   if (profile.data?.vatStatus !== 'payer') {
     return (
       <div className="mx-auto max-w-[1200px] space-y-6">
@@ -222,7 +238,7 @@ function PayerPage({ profile }: { profile: Profile }) {
         </div>
       </section>
 
-      {report.isError && <p className="text-sm text-destructive">{cs.common.error}</p>}
+      {report.isError && <ErrorState onRetry={() => report.refetch()} />}
       {report.isPending && <Skeleton className="h-64 rounded-xl" aria-busy="true" />}
 
       {r && (
@@ -321,7 +337,6 @@ function FilingCard({ profile }: { profile: Profile }) {
             })
           }}
         >
-          <p className="text-sm text-muted-foreground sm:col-span-2">{t.filing.description}</p>
           <div className="space-y-2">
             <Label htmlFor="uf-code">{t.filing.taxOfficeCode}</Label>
             <Input

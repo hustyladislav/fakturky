@@ -34,6 +34,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { ErrorState } from '@/components/error-state'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { PromptDialog } from '@/components/prompt-dialog'
 import { cs } from '@/i18n/cs'
@@ -224,7 +225,14 @@ function InvoiceDetail() {
   )
 
   const d = q.data
-  if (q.isError) return <p className="text-muted-foreground">{t.notFound}</p>
+  if (q.isError) {
+    // A missing invoice is final; anything else (offline, 5xx) is worth another try.
+    const code = (q.error as { code?: string } | null)?.code
+    if (code === 'NOT_FOUND' || code === 'BAD_REQUEST') {
+      return <p className="text-muted-foreground">{t.notFound}</p>
+    }
+    return <ErrorState onRetry={() => q.refetch()} />
+  }
   if (!d) {
     return (
       <div className="mx-auto max-w-3xl space-y-4" aria-busy="true">
@@ -717,10 +725,13 @@ function InvoiceDetail() {
         </ol>
       </section>
 
-      {/* Sits above the mobile tab bar (h-16); only the primary action is pinned, the rest is in flow. */}
-      <div className="from-background fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex flex-col gap-2 bg-gradient-to-t p-4 sm:hidden">
-        <Actions mobile part="primary" />
-      </div>
+      {/* Sits above the mobile tab bar (h-16); only the primary action is pinned, the rest is in flow.
+          Hidden while the pay/send panel is open: its own confirm button is the action then. */}
+      {!paying && !sending && (
+        <div className="from-background fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex flex-col gap-2 bg-gradient-to-t p-4 sm:hidden">
+          <Actions mobile part="primary" />
+        </div>
+      )}
     </div>
   )
 

@@ -96,6 +96,10 @@ const cases: Record<string, Case> = {
     kind: 'foreign',
     run: (b, a) => b.documents.createCreditNote({ id: a.issuedId }),
   },
+  'documents.createPaymentReceipt': {
+    kind: 'foreign',
+    run: (b, a) => b.documents.createPaymentReceipt({ id: a.issuedId }),
+  },
   'documents.createFinalInvoice': {
     kind: 'foreign',
     run: (b, a) => b.documents.createFinalInvoice({ id: a.issuedId }),

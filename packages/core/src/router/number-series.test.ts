@@ -13,12 +13,17 @@ test('series defaults, pattern validation, preview, continuing numbering', async
   await handle.db.insert(schema.businessProfile).values({ organizationId: org, legalName: 'X' })
   const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
   const list = await api.numberSeries.list({})
-  expect(list.map((s) => s.documentType).sort()).toEqual(['credit_note', 'invoice', 'proforma'])
+  expect(list.map((s) => s.documentType).sort()).toEqual([
+    'credit_note',
+    'invoice',
+    'payment_receipt',
+    'proforma',
+  ])
   const inv = list.find((s) => s.documentType === 'invoice')
   if (!inv) throw new Error('missing')
   const year = new Date().getFullYear()
   expect(inv.nextNumber).toBe(`${year}-0001`)
-  expect((await api.numberSeries.list({})).length).toBe(3) // idempotent
+  expect((await api.numberSeries.list({})).length).toBe(4) // idempotent
 
   await expect(api.numberSeries.update({ id: inv.id, pattern: 'FA{NNNN}' })).rejects.toMatchObject({
     code: 'BAD_REQUEST',

@@ -11,6 +11,7 @@ import {
   formatMoney,
   parseDecimal,
   periodKey,
+  round,
   todayPrague,
   toFixed,
   VAT_RATES,
@@ -86,10 +87,12 @@ const SERIES_NAMES: Record<string, string> = {
   invoice: 'Faktury',
   proforma: 'Zálohové faktury',
   credit_note: 'Opravné doklady',
+  payment_receipt: 'Doklady k přijaté platbě',
 }
 
 const vatApplies = (profile: { vatStatus: string } | null, type: string) =>
-  profile?.vatStatus === 'payer' && (type === 'invoice' || type === 'credit_note')
+  profile?.vatStatus === 'payer' &&
+  (type === 'invoice' || type === 'credit_note' || type === 'payment_receipt')
 
 /**
  * Whether VAT is computed. A credit note follows the VAT treatment of the invoice it corrects (the
@@ -392,6 +395,21 @@ export const documentsRepo = {
         total: r.total,
       })),
       activity: acts,
+      related: await db
+        .select({
+          id: document.id,
+          type: document.type,
+          number: document.number,
+          status: document.status,
+        })
+        .from(document)
+        .where(
+          and(
+            eq(document.organizationId, orgId),
+            eq(document.relatedDocumentId, id),
+            isNull(document.deletedAt),
+          ),
+        ),
       viaAssistant: acts.some(
         (a) => a.action === 'created' && (a.data as { via?: string } | null)?.via === 'assistant',
       ),
@@ -704,7 +722,11 @@ export const documentsRepo = {
         })
         .where(scoped(orgId, id))
       // A final invoice fully covered by the advance is settled on issue.
-      if (doc.type === 'invoice' && doc.relatedDocumentId && parseDecimal(totals.total).lte(0)) {
+      // A tax receipt documents a payment already received, so it is settled on issue.
+      if (
+        doc.type === 'payment_receipt' ||
+        (doc.type === 'invoice' && doc.relatedDocumentId && parseDecimal(totals.total).lte(0))
+      ) {
         await tx
           .update(document)
           .set({ status: 'paid', paidAt: new Date() })
@@ -831,6 +853,80 @@ export const documentsRepo = {
   },
 
   /**
+   * Daňový doklad k přijaté platbě (§28(1)(d)): a VAT payer issues it for an advance received on a proforma.
+   * The paid amount is VAT-inclusive; the base is derived at the chosen rate (21 or 12 %).
+   */
+  async createPaymentReceipt(
+    db: Db,
+    orgId: string,
+    actorId: string,
+    id: string,
+    vatRate: '21' | '12',
+  ) {
+    const src = await this.get(db, orgId, id)
+    if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (src.type !== 'proforma' || src.status !== 'paid') {
+      throw new DocumentError('CONFLICT', 'A receipt needs a fully paid proforma')
+    }
+    const profile = await loadProfile(db, orgId)
+    if (!vatApplies(profile, 'payment_receipt')) {
+      throw new DocumentError('CONFLICT', 'Only VAT payers issue a tax receipt for an advance')
+    }
+    const paid = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
+    // VAT inside a gross amount: A × r / (100 + r), the base is the rest.
+    const vat = round(paid.times(vatRate).div(parseDecimal(vatRate).plus(100)), 2)
+    const base = paid.minus(vat)
+    return db.transaction(async (txn) => {
+      const tx = txn as unknown as Db
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`receipt:${id}`}))`)
+      const [existing] = await tx
+        .select({ id: document.id })
+        .from(document)
+        .where(
+          and(
+            eq(document.organizationId, orgId),
+            eq(document.relatedDocumentId, id),
+            eq(document.type, 'payment_receipt'),
+            isNull(document.deletedAt),
+            ne(document.status, 'cancelled'),
+          ),
+        )
+      if (existing) {
+        throw new DocumentError('CONFLICT', 'A tax receipt already exists for this proforma')
+      }
+      return this.createDraft(
+        tx,
+        orgId,
+        actorId,
+        {
+          type: 'payment_receipt',
+          roundTotal: false,
+          contactId: src.contactId,
+          bankAccountId: src.bankAccountId,
+          currency: src.currency,
+          exchangeRate: src.exchangeRate,
+          language: src.language as 'cs' | 'sk' | 'en',
+          paymentMethod: src.paymentMethod,
+          introText: `Přijatá záloha na základě zálohové faktury ${src.number}`,
+          lines: [
+            {
+              description: `Přijatá záloha (zálohová faktura ${src.number})`,
+              quantity: '1',
+              unit: null,
+              unitPrice: toFixed(base, 2),
+              vatRate,
+              vatTreatment: 'standard' as const,
+              vatNote: null,
+              discountPercent: '0',
+            },
+          ],
+        },
+        { relatedDocumentId: id },
+      )
+    })
+  },
+
+  /**
    * Final invoice for a fully paid proforma: copies its lines and deducts the advance as a negative line.
    * VAT payers need a tax receipt for the advance first, which is not supported yet, so this is refused.
    */
@@ -841,11 +937,35 @@ export const documentsRepo = {
       throw new DocumentError('CONFLICT', 'A final invoice needs a fully paid proforma')
     }
     const profile = await loadProfile(db, orgId)
-    if (vatApplies(profile, 'invoice')) {
-      throw new DocumentError(
-        'CONFLICT',
-        'VAT payers need a tax receipt for the advance first; create the final invoice manually',
-      )
+    const payer = vatApplies(profile, 'invoice')
+    // A VAT payer deducts the advance as shown on the tax receipt (base and VAT per rate).
+    let receipt: { number: string | null; rate: string; base: string } | null = null
+    if (payer) {
+      const [r] = await db
+        .select()
+        .from(document)
+        .where(
+          and(
+            eq(document.organizationId, orgId),
+            eq(document.relatedDocumentId, id),
+            eq(document.type, 'payment_receipt'),
+            eq(document.status, 'paid'),
+            isNull(document.deletedAt),
+          ),
+        )
+      const [rl] = r
+        ? await db
+            .select()
+            .from(documentLine)
+            .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, r.id)))
+        : []
+      if (!r || !rl) {
+        throw new DocumentError(
+          'PRECONDITION_FAILED',
+          'Issue the tax receipt for the received advance first',
+        )
+      }
+      receipt = { number: r.number, rate: rl.vatRate, base: rl.lineSubtotal }
     }
     const advance = src.payments.reduce((s, p) => s.plus(parseDecimal(p.amount)), new Decimal(0))
     const draft = await db.transaction(async (txn) => {
@@ -887,20 +1007,32 @@ export const documentsRepo = {
               quantity: l.quantity,
               unit: l.unit,
               unitPrice: l.unitPrice,
-              vatRate: l.vatRate,
+              // Proforma lines carry no VAT rate; a payer's final invoice uses the receipt's rate.
+              vatRate: receipt && Number(l.vatRate) === 0 ? receipt.rate : l.vatRate,
               vatTreatment: l.vatTreatment as VatTreatment,
               vatNote: l.vatNote,
               discountPercent: l.discountPercent,
             })),
-            {
-              description: `Uhrazená záloha (zálohová faktura ${src.number})`,
-              quantity: '1',
-              unit: null,
-              unitPrice: advance.negated().toString(),
-              vatRate: '0',
-              vatTreatment: 'standard' as const,
-              discountPercent: '0',
-            },
+            receipt
+              ? {
+                  description: `Odpočet zálohy (daňový doklad k přijaté platbě ${receipt.number})`,
+                  quantity: '1',
+                  unit: null,
+                  unitPrice: parseDecimal(receipt.base).negated().toString(),
+                  vatRate: receipt.rate,
+                  vatTreatment: 'standard' as const,
+                  vatNote: null,
+                  discountPercent: '0',
+                }
+              : {
+                  description: `Uhrazená záloha (zálohová faktura ${src.number})`,
+                  quantity: '1',
+                  unit: null,
+                  unitPrice: advance.negated().toString(),
+                  vatRate: '0',
+                  vatTreatment: 'standard' as const,
+                  discountPercent: '0',
+                },
           ],
         },
         { relatedDocumentId: id },
@@ -1014,6 +1146,12 @@ export const documentsRepo = {
           'This invoice is settled by the advance and cannot be reopened',
         )
       }
+      if (doc.type === 'payment_receipt') {
+        throw new DocumentError(
+          'CONFLICT',
+          'A tax receipt documents a received payment; cancel it instead',
+        )
+      }
       if (doc.type === 'proforma') {
         const [dep] = await tx
           .select({ id: document.id })
@@ -1022,7 +1160,7 @@ export const documentsRepo = {
             and(
               eq(document.organizationId, orgId),
               eq(document.relatedDocumentId, id),
-              eq(document.type, 'invoice'),
+              inArray(document.type, ['invoice', 'payment_receipt']),
               isNull(document.deletedAt),
               ne(document.status, 'cancelled'),
             ),

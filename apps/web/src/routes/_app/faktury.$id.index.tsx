@@ -162,6 +162,16 @@ function InvoiceDetail() {
     }),
   )
   const defaults = useQuery(orpc.documents.defaults.queryOptions({ input: {} }))
+  const receipt = useMutation(
+    orpc.documents.createPaymentReceipt.mutationOptions({
+      onSuccess: async (n) => {
+        toast.success(t.receiptCreated)
+        await refresh()
+        navigate({ to: '/faktury/$id/upravit', params: { id: n.id } })
+      },
+      onError,
+    }),
+  )
   const saveTemplate = useMutation(
     orpc.templates.createFromDocument.mutationOptions({
       onSuccess: async () => {
@@ -577,15 +587,33 @@ function InvoiceDetail() {
             >
               {cs.templates.saveAs}
             </Button>
-            {d?.type === 'proforma' && d.status === 'paid' && !defaults.data?.vatPayer && (
-              <Button
-                className={full}
-                disabled={finalInvoice.isPending}
-                onClick={() => finalInvoice.mutate({ id })}
-              >
-                {t.finalInvoice}
-              </Button>
-            )}
+            {d?.type === 'proforma' &&
+              d.status === 'paid' &&
+              defaults.data?.vatPayer &&
+              !d.related.some((r) => r.type === 'payment_receipt' && r.status !== 'cancelled') && (
+                <Button
+                  className={full}
+                  disabled={receipt.isPending}
+                  onClick={() => {
+                    const rate = window.prompt(t.receiptRatePrompt, '21')
+                    if (rate === '21' || rate === '12') receipt.mutate({ id, vatRate: rate })
+                  }}
+                >
+                  {t.receipt}
+                </Button>
+              )}
+            {d?.type === 'proforma' &&
+              d.status === 'paid' &&
+              (!defaults.data?.vatPayer ||
+                d.related.some((r) => r.type === 'payment_receipt' && r.status === 'paid')) && (
+                <Button
+                  className={full}
+                  disabled={finalInvoice.isPending}
+                  onClick={() => finalInvoice.mutate({ id })}
+                >
+                  {t.finalInvoice}
+                </Button>
+              )}
             {d?.type === 'invoice' && (open || d.status === 'paid') && (
               <Button
                 variant="outline"

@@ -156,6 +156,7 @@ export const documentSchema = z.object({
   paidAmount: z.string(),
   remaining: z.string(),
   publicToken: z.string().nullable(),
+  importedFrom: z.string().nullable().describe('Source system when imported (read-only document)'),
   paidAt: z.date().nullable(),
   cancelledAt: z.date().nullable(),
   createdAt: z.date(),

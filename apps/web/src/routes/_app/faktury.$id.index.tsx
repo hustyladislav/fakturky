@@ -226,6 +226,11 @@ function InvoiceDetail() {
             </span>
           )}
           <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
+          {d.importedFrom && (
+            <span className="rounded-full border px-2 py-0.5 text-muted-foreground text-xs">
+              {cs.import.imported}
+            </span>
+          )}
         </div>
         <div className="hidden flex-wrap gap-2 sm:flex">
           <Actions />

@@ -6,6 +6,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
+import { refreshDocumentData } from '@/lib/document-cache'
 import { formToSheet } from '@/lib/document-sheet'
 import { apiErrorMessage } from '@/lib/errors'
 import { num, validNum } from '@/lib/invoice-numbers'
@@ -254,7 +255,7 @@ export function useInvoiceDraft(id?: string) {
         return await client.documents.issue({ id: doc.id })
       } catch (e) {
         // Keep the saved draft: a retry updates it instead of creating a second one.
-        await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
+        await refreshDocumentData(queryClient)
         setCreatedId(doc.id)
         if (!id) {
           try {
@@ -268,7 +269,7 @@ export function useInvoiceDraft(id?: string) {
       }
     },
     onSuccess: async (doc, andIssue) => {
-      await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
+      await refreshDocumentData(queryClient)
       toast.success(andIssue ? cs.invoices.detail.issued(doc.number ?? '') : t.saved)
       if (andIssue) navigate({ to: '/faktury/$id', params: { id: doc.id } })
       else if (!draftId) {

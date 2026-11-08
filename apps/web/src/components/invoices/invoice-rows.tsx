@@ -13,6 +13,7 @@ import type { MouseEvent } from 'react'
 import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
+import { refreshDocumentData } from '@/lib/document-cache'
 import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
 import { undoPaidInput } from './undo-paid'
@@ -55,10 +56,7 @@ function DueCell({ d }: { d: Doc }) {
 export function useDocActions() {
   const qc = useQueryClient()
   const navigate = useNavigate()
-  const refresh = () => {
-    qc.invalidateQueries({ queryKey: orpc.documents.key() })
-    qc.invalidateQueries({ queryKey: orpc.dashboard.key() })
-  }
+  const refresh = () => refreshDocumentData(qc)
   const markUnpaid = useMutation(
     orpc.documents.markUnpaid.mutationOptions({
       onSuccess: refresh,

@@ -12,6 +12,7 @@ import { Archive, FilePlus2, MoreHorizontal, Pencil } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
+import { apiErrorMessage } from '@/lib/errors'
 import { setInvoicePrefill } from '@/lib/invoice-prefill'
 import { orpc } from '@/lib/orpc'
 import { EditContactDialog } from './contact-dialogs'
@@ -45,7 +46,7 @@ export function ContactMenu({
         await queryClient.invalidateQueries({ queryKey: orpc.contacts.key() })
         onArchived?.()
       },
-      onError: () => toast.error(cs.common.error),
+      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
   return (

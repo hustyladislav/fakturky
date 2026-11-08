@@ -1782,6 +1782,139 @@ export const cs = {
       prefillInvoiceForm: 'Předvyplňuji fakturu',
     },
   },
+  /** Czech for each English API error; `errors.test.ts` fails if the server gains one without an entry. */
+  serverErrors: {
+    'A credit note can only correct an issued invoice':
+      'Opravný doklad lze vystavit jen k vystavené faktuře.',
+    'A credit note needs the corrected invoice and a reason':
+      'Opravný doklad musí mít opravovanou fakturu a důvod opravy.',
+    'A final invoice already exists for this proforma':
+      'K této záloze už konečná faktura existuje.',
+    'A final invoice already uses this advance; cancel it first':
+      'Tuto zálohu už používá konečná faktura. Nejdřív ji stornujte.',
+    'A final invoice needs a fully paid proforma':
+      'Konečnou fakturu lze vystavit až po úplném zaplacení zálohy.',
+    'A monthly series needs {MM} in the pattern':
+      'Řada s měsíčním číslováním musí mít ve vzoru {MM}.',
+    'A receipt needs a fully paid proforma':
+      'Doklad k přijaté platbě lze vystavit až po úplném zaplacení zálohy.',
+    'A series that restarts needs {YYYY} or {YY} in the pattern':
+      'Řada, která začíná znovu od jedničky, musí mít ve vzoru {YYYY} nebo {YY}.',
+    'A tax receipt already exists for this proforma':
+      'K této záloze už doklad k přijaté platbě existuje.',
+    'A tax receipt documents a received payment; cancel it instead':
+      'Doklad k přijaté platbě potvrzuje přijatou úhradu. Místo toho ho stornujte.',
+    'Add at least one line': 'Přidejte alespoň jednu položku.',
+    'Amount is not a number': 'Částka není platné číslo.',
+    'Amount must be positive': 'Částka musí být větší než nula.',
+    'Bank account not found': 'Bankovní účet se nenašel.',
+    'Choose a customer first': 'Nejdřív vyberte odběratele.',
+    'Contact not found': 'Kontakt se nenašel.',
+    'Credit notes are created from an invoice (createCreditNote)':
+      'Opravný doklad se vytváří z vystavené faktury.',
+    'Credit notes cannot be duplicated': 'Opravný doklad nelze duplikovat.',
+    'Document has no lines': 'Doklad nemá žádné položky.',
+    'Document is already issued': 'Doklad už je vystavený.',
+    'Document not found': 'Doklad se nenašel.',
+    'Drafts have no public link; issue the document first':
+      'Koncept nemá veřejný odkaz. Nejdřív doklad vystavte.',
+    'Exchange rate is required': 'Vyplňte směnný kurz.',
+    'Exchange rate is required for foreign currency': 'U cizí měny vyplňte směnný kurz.',
+    'Exempt lines need the statutory basis (§ of the VAT act)':
+      'U osvobozené položky uveďte zákonný důvod (§ zákona o DPH).',
+    'Fakturoid sent no token': 'Fakturoid nevrátil přístupový token.',
+    'Fill in your business profile before issuing': 'Před vystavením doplňte své firemní údaje.',
+    'Fill in your business profile first': 'Nejdřív doplňte své firemní údaje.',
+    'Fio allows one request per 30 seconds; try again shortly':
+      'Fio povoluje jeden dotaz za 30 sekund. Zkuste to za chvíli.',
+    'Invalid Czech bank account number': 'Číslo českého účtu není platné.',
+    'Invalid Fakturoid account slug': 'Název účtu ve Fakturoidu není platný.',
+    'Invalid IBAN': 'IBAN není platný.',
+    'Issue the tax receipt for the received advance first':
+      'Nejdřív vystavte doklad k přijaté záloze.',
+    'Issued document not found': 'Vystavený doklad se nenašel.',
+    'IČO nebylo v ARES nalezeno': 'IČO nebylo v ARES nalezeno.',
+    'Missing document number': 'Chybí číslo dokladu.',
+    'Missing or invalid issue date': 'Chybí nebo není platné datum vystavení.',
+    'No Fio token is set for this bank account': 'U tohoto účtu není nastavený token Fio.',
+    'No contacts found (is there a name column?)':
+      'V souboru nejsou žádné kontakty. Má sloupec s názvem?',
+    'No invoices found (is there a number column?)':
+      'V souboru nejsou žádné faktury. Má sloupec s číslem?',
+    'No payment QR for this document': 'Tento doklad nemá QR kód pro platbu.',
+    'Nothing left to credit on this invoice': 'Na této faktuře už není co opravovat.',
+    'Only PNG and JPEG images are supported': 'Podporujeme jen obrázky PNG a JPEG.',
+    'Only VAT payers issue a tax receipt for an advance':
+      'Doklad k přijaté platbě vystavují jen plátci DPH.',
+    'Only drafts can be deleted; cancel issued documents instead':
+      'Smazat lze jen koncept. Vystavený doklad stornujte.',
+    'Only drafts can be edited; issued documents are immutable':
+      'Upravit lze jen koncept. Vystavený doklad už měnit nelze.',
+    'Only incoming payments can be paired with a document':
+      'S dokladem lze spárovat jen příchozí platbu.',
+    'Only invoices and advance invoices can be paid':
+      'Zaplatit lze jen fakturu nebo zálohovou fakturu.',
+    'Only issued documents can be cancelled': 'Stornovat lze jen vystavený doklad.',
+    'Only issued or paid documents can be marked unpaid':
+      'Jako neuhrazený lze označit jen vystavený nebo zaplacený doklad.',
+    'Only issued, unpaid documents can be marked as paid':
+      'Jako zaplacený lze označit jen vystavený a neuhrazený doklad.',
+    'Only issued, unpaid documents can be paired with a payment':
+      'Spárovat lze jen vystavený a neuhrazený doklad.',
+    'Organization not found': 'Firma se nenašla.',
+    'PDF rendering is not available': 'PDF se teď nepodařilo vytvořit.',
+    'Payment not found on this document': 'Tato platba u dokladu není.',
+    'Reminders can only be sent for overdue invoices':
+      'Upomínku lze poslat jen k faktuře po splatnosti.',
+    'Reminders do not apply to credit notes': 'K opravnému dokladu se upomínka neposílá.',
+    'Rule not found': 'Pravidlo se nenašlo.',
+    'Series not found': 'Číselná řada se nenašla.',
+    'Storing tokens is not configured on this server':
+      'Ukládání tokenů není na tomto serveru nastavené.',
+    'Tax receipts are created from a paid proforma (createPaymentReceipt)':
+      'Doklad k přijaté platbě se vytváří ze zaplacené zálohy.',
+    'Template not found': 'Šablona se nenašla.',
+    'The Fio token has an invalid format': 'Token Fio nemá správný formát.',
+    'The advance was received on different dates; issue a receipt for each payment separately':
+      'Záloha přišla v různých dnech. Vystavte doklad ke každé platbě zvlášť.',
+    'The amount must be positive and at most the received amount':
+      'Částka musí být větší než nula a nejvýše rovna přijaté částce.',
+    'The credit notes would refund more than the invoice total':
+      'Opravné doklady by vrátily víc, než je celková částka faktury.',
+    'The customer has no e-mail address': 'Odběratel nemá vyplněný e-mail.',
+    'The document is already fully paid': 'Doklad už je celý zaplacený.',
+    'The image file is damaged or incomplete': 'Soubor s obrázkem je poškozený nebo neúplný.',
+    'The image must be at most 300 KB': 'Obrázek může mít nejvýše 300 KB.',
+    'The next number can only be raised, never lowered':
+      'Další číslo lze jen zvýšit, nikdy snížit.',
+    'The payment currency differs from the document currency':
+      'Měna platby se liší od měny dokladu.',
+    'The payment date cannot be in the future': 'Datum platby nemůže být v budoucnosti.',
+    'The payment exceeds the remaining balance': 'Platba je vyšší než zbývající částka.',
+    'The statement belongs to a different bank account': 'Výpis patří k jinému bankovnímu účtu.',
+    'The stored Fio token cannot be read; set it again':
+      'Uložený token Fio nelze přečíst. Nastavte ho znovu.',
+    'The transaction is already paired with a document': 'Tato platba už je spárovaná s dokladem.',
+    'The transaction is not paired with a document': 'Tato platba není spárovaná s dokladem.',
+    'This document cannot be sent': 'Tento doklad nelze odeslat.',
+    'This invoice already has a credit note; cancelling it too would correct it twice':
+      'K této faktuře už opravný doklad existuje. Storno by ji opravilo podruhé.',
+    'This invoice is settled by the advance and cannot be reopened':
+      'Tato faktura je uhrazená zálohou a nelze ji znovu otevřít.',
+    'Too many lookups, try again in a minute': 'Příliš mnoho dotazů. Zkuste to za minutu.',
+    'Transaction not found': 'Platba se nenašla.',
+    'Unpair the transaction first': 'Nejdřív platbu odpárujte.',
+    'Use a VAT rate of 21 or 12, or choose a VAT regime (exempt, reverse charge, …) for the line':
+      'U položky použijte sazbu 21 nebo 12 %, nebo zvolte režim DPH (osvobozeno, přenesení daňové povinnosti…).',
+    'VAT reports are available to VAT payers only (set the VAT status in the business profile)':
+      'Přehledy DPH jsou jen pro plátce DPH. Stav plátcovství nastavíte ve firemních údajích.',
+  } as Record<string, string>,
+  serverErrorsDynamic: {
+    allocations: (total: string) =>
+      `Rozdělení musí použít každou sazbu DPH jednou a dát dohromady přijatou částku (${total}).`,
+    creditExceeded: (limit: string) =>
+      `Opravovaná částka je vyšší, než kolik lze ještě opravit (${limit}).`,
+  },
 } as const
 
 export type Dictionary = typeof cs

@@ -3,6 +3,7 @@ import { Download } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
+import { apiErrorMessage } from '@/lib/errors'
 import { client } from '@/lib/orpc'
 import type { VatReport, VatReportInput } from './use-vat-report'
 
@@ -31,7 +32,7 @@ export function VatExports({
     try {
       downloadXml(await client.vat.exportXml({ ...input, kind }))
     } catch (e) {
-      toast.error((e as Error).message || t.error)
+      toast.error(apiErrorMessage(e))
     } finally {
       setBusy(null)
     }

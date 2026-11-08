@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
 import { refreshDocumentData } from '@/lib/document-cache'
+import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
 import { RepeatForm } from './repeat-form'
 
@@ -27,7 +28,7 @@ function useTemplateActions(onRuleCreated: () => void) {
     await queryClient.invalidateQueries({ queryKey: orpc.templates.key() })
     await queryClient.invalidateQueries({ queryKey: orpc.recurring.key() })
   }
-  const onError = (e: unknown) => toast.error((e as Error).message || cs.common.error)
+  const onError = (e: unknown) => toast.error(apiErrorMessage(e))
 
   const use = useMutation(
     orpc.templates.use.mutationOptions({

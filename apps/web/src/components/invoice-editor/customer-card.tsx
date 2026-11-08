@@ -109,7 +109,7 @@ export function CustomerCard({
       await queryClient.invalidateQueries({ queryKey: orpc.contacts.key() })
       pick({ id: c.id, name: c.name, ico: c.ico })
     },
-    onError: () => toast.error(cs.common.error),
+    onError: (e) => toast.error(apiErrorMessage(e)),
   })
 
   function pick(c: PickedCustomer) {

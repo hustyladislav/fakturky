@@ -208,6 +208,22 @@ describe('undoing', () => {
     expect(tx).toMatchObject({ matchStatus: 'unmatched', matchedDocumentId: null })
   })
 
+  test('removing one payment releases only the bank transaction behind it', async () => {
+    const inv = await invoice('1000')
+    const vs = inv.variableSymbol as string
+    await pay('300,00', { vs, message: 'first-part' })
+    await pay('200,00', { vs, message: 'second-part' })
+    const doc = await api.documents.get({ id: inv.id })
+    const second = (await txs('matched')).find((t) => t.message === 'second-part')
+    const removed = doc.payments.find((p) => p.amount === '200.0000')
+    await api.documents.markUnpaid({ id: inv.id, paymentId: removed?.id })
+
+    expect((await txs('unmatched')).some((t) => t.id === second?.id)).toBe(true)
+    const kept = (await txs('matched')).find((t) => t.message === 'first-part')
+    expect(kept).toMatchObject({ matchedDocumentId: inv.id })
+    expect((await api.documents.get({ id: inv.id })).payments).toHaveLength(1)
+  })
+
   test('ignore / restore, but a paired transaction must be unpaired first', async () => {
     await pay('12,00', { name: 'noise', message: 'ignore-me' })
     const tx = (await txs('unmatched')).find((t) => t.message === 'ignore-me')

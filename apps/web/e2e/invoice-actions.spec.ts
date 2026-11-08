@@ -44,6 +44,36 @@ test('after issuing, Sdílet is primary and copies the link; paying has one clic
   expect(id).toBeTruthy()
 })
 
+test('undoing "mark paid" from the list keeps an earlier part-payment', async ({ page }) => {
+  await signUp(page, testEmail('undo-list'))
+  await onboardByIco(page, ICO.nonPayerSupplier, 'E2E Neplátce Novák')
+  await addBankAccount(page)
+  await createContact(page, 'Vrácení s.r.o.')
+  const id = await issueInvoice(page, 'Vrácení s.r.o.', '1000')
+  await page.waitForLoadState('networkidle')
+
+  const hero = page.getByTestId('doc-hero')
+  await hero.getByRole('button', { name: 'Další možnosti platby' }).click()
+  await page.getByRole('menuitem', { name: /Jiná částka/ }).click()
+  await page.getByLabel('Přijatá částka').fill('400')
+  await page.getByRole('button', { name: 'Uložit platbu' }).click()
+  await expect(page.getByText('Částečně uhrazená', { exact: true }).first()).toBeVisible()
+
+  await page.goto('/faktury')
+  await page.getByText('Vrácení s.r.o.').locator('visible=true').first().hover()
+  await page
+    .getByRole('button', { name: 'Označit jako zaplacenou' })
+    .locator('visible=true')
+    .first()
+    .click()
+  await expect(page.getByText('Faktura je označená jako zaplacená.')).toBeVisible()
+  await page.getByRole('button', { name: 'Vrátit', exact: true }).click()
+  await page.waitForLoadState('networkidle')
+
+  await page.goto(`/faktury/${id}`)
+  await expect(page.getByText('Částečně uhrazená', { exact: true }).first()).toBeVisible()
+})
+
 test.describe('on a phone', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 1280, height: 900 } })
 

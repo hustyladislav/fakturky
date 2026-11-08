@@ -379,6 +379,7 @@ export function CommandPalette() {
     <Dialog open={paletteOpen} onOpenChange={setPaletteOpen}>
       <DialogContent
         showCloseButton={false}
+        instant
         className="top-[14%] max-w-2xl translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-2xl"
       >
         <DialogTitle className="sr-only">{cs.palette.title}</DialogTitle>

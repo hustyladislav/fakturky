@@ -125,16 +125,15 @@ export const cs = {
     },
     signIn: 'Přihlásit se',
     start: 'Začít zdarma',
-    heroTitle: 'Fakturujte zdarma. Bez omezení.',
+    heroTitle: 'Faktury zdarma, bez limitů.',
     heroText:
-      'Přehledný fakturační program pro české živnostníky a firmy. Správná DPH, QR platba, údaje z ARES i export do ISDOC. Bez karty, bez reklam, s otevřeným kódem.',
-    heroNote: 'Vytvoření účtu trvá minutu.',
+      'Zadáte IČO, zbytek doplníme z ARES. DPH, QR platba i export do ISDOC jsou součástí, bez karty a bez reklam.',
+    heroNote: 'Účet si vytvoříte za minutu.',
     docs: 'Dokumentace API',
     hero: {
       kpiMonth: 'Obrat tento měsíc',
       kpiReceived: 'Zaplaceno tento měsíc',
       awaiting: 'Čeká na platbu',
-      paidToast: 'Platba spárována',
     },
     demoFields: (ico: string, dic: string | null) => `IČO ${ico}${dic ? ` · DIČ ${dic}` : ''}`,
     demo: {
@@ -205,13 +204,13 @@ export const cs = {
     },
     whyTitle: 'Proč zdarma?',
     whyText: [
-      `${BRAND.name} provozuje jeden člověk ve svém volném čase. Chtěl jsem fakturační program, který nenutí platit za počet faktur, a nenašel jsem ho, tak vznikl tento.`,
-      'Provoz se platí z dobrovolných darů. Žádné reklamy, žádné prodávání dat, žádné „odemkněte za 199 Kč“. Kód je otevřený na GitHubu, takže vidíte, co se s vašimi daty děje, a můžete si službu klidně spustit sami.',
+      `${BRAND.name} je projekt jednoho člověka. Chtěl jsem fakturační program, který nenutí platit za počet faktur, a nenašel jsem ho.`,
+      'Provoz se platí z dobrovolných darů. Žádné reklamy, žádné prodávání dat. Kód je otevřený na GitHubu, takže vidíte, co se s vašimi daty děje, a můžete si službu spustit sami.',
       'Když vám aplikace ušetří čas, můžete mi koupit kávu. Nemusíte.',
     ],
     whyCoffee: 'Kupte mi kávu',
     whyGithub: 'Kód na GitHubu',
-    featuresTitle: 'Všechno, co k fakturaci potřebujete',
+    featuresTitle: 'Co dostanete zdarma',
     features: [
       [
         'Neomezeně faktur a kontaktů',
@@ -306,15 +305,6 @@ export const cs = {
     updated: (date: string) => `Poslední aktualizace: ${date}`,
     draftNotice:
       'Koncept: tento text připravil provozovatel jako výchozí návrh a čeká na právní kontrolu. Do té doby berte znění jako informativní.',
-  },
-  authPanel: {
-    title: 'Faktury, které se píší samy. A zdarma.',
-    points: [
-      'Neomezený počet faktur a kontaktů',
-      'QR platba a údaje z ARES doplněné za vás',
-      'Správně vypočtená DPH a export do ISDOC',
-    ],
-    note: 'Provozuje jediný člověk, bez reklam a bez upsellu. Kód je otevřený na GitHubu.',
   },
   auth: {
     google: 'Pokračovat přes Google',
@@ -1284,17 +1274,15 @@ export const cs = {
   },
   onboarding: {
     pageTitle: 'Úvodní nastavení',
-    title: 'Vítejte! Pojďme nastavit vaše údaje',
+    title: 'Začněte svým IČO',
     description:
-      'Tyto údaje se objeví na vašich fakturách jako dodavatel. Stačí zadat IČO a zbytek doplníme z registru ARES.',
+      'Název, adresu i DIČ doplníme z registru ARES. Údaje se objeví na vašich fakturách jako dodavatel.',
     submit: 'Pokračovat',
     skip: 'Vyplním později',
     progressLabel: 'Postup nastavení',
-    steps: ['Firma', 'Zkontrolujte údaje', 'Bankovní účet', 'Hotovo'],
+    steps: ['Firma', 'Bankovní účet', 'Hotovo'],
     stepOf: (n: number, total: number) => `Krok ${n} z ${total}`,
     previewLabel: 'Tak to bude vypadat na dokladech',
-    aresHint:
-      'Zadejte IČO a doplníme z ARES název, adresu, DIČ, plátcovství DPH i zápis v rejstříku.',
     doneTitle: 'Máte hotovo',
     doneText: 'Firma je nastavená. Tak se bude objevovat na každé vaší faktuře.',
     firstInvoice: 'Vystavit první fakturu',

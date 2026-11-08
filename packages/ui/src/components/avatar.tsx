@@ -10,7 +10,7 @@ const avatarVariants = cva(
         sm: 'size-7 text-[11px]',
         md: 'size-9 text-xs',
         lg: 'size-12 text-base',
-        xl: 'size-16 font-serif text-2xl',
+        xl: 'size-16 text-2xl',
       },
       shape: { round: 'rounded-full', square: 'rounded-lg' },
     },

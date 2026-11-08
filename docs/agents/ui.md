@@ -1,9 +1,7 @@
 # UI: shadcn/ui (Base UI) on Tailwind v4, Czech copy
 
 Every new or touched screen is built from shadcn components (Base UI flavour, `base-nova` style). Use the `shadcn`
-and `frontend-design` skills. Design system: [DESIGN.md](../DESIGN.md) (tokens, type, shell, the invoice document, Czech
-copy) and its current iteration [DESIGN_V2.md](../DESIGN_V2.md) (surfaces, micro-labels, motion, page-by-page targets).
-Reference visuals: `design/explorations/a-calm-editorial.html`, `b-crisp-product.html`.
+and `frontend-design` skills. Design system: [DESIGN.md](../DESIGN.md) (tokens, type, motion, mobile, user stories, the invoice document, Czech copy).
 
 ## Where things live
 - `packages/ui/src/components/*` — shadcn components restyled once to the project tokens, plus app primitives (`amount`, `avatar`, `empty-state`, `date-picker`, `currency-combobox`…). Add with `pnpm dlx shadcn@latest add <name>` from `apps/web` (config in `apps/web/components.json`); never `--overwrite` without reading the diff.
@@ -15,7 +13,8 @@ Reference visuals: `design/explorations/a-calm-editorial.html`, `b-crisp-product
 - Compose primitives before writing custom markup; variants before ad-hoc classes.
 - Base UI, not Radix: custom triggers use `render={<Button />}` (not `asChild`). A link that looks like a button is a real `<Link>` with `className={buttonVariants(…)}` (`Button render={<Link />}` gets `role="button"`).
 - Semantic colors only (`bg-primary`, `text-muted-foreground`, `bg-destructive/10`…). No raw hex in `className`; a missing role goes in the theme file.
-- Status is icon + text + color, never color alone. Inputs have labels (tests use `getByLabel`). Brand green is never a status.
+- Status is dot or icon + text + color, never color alone. Inputs have labels (tests use `getByLabel`). `brand` mint is never a status.
+- Motion and hover follow DESIGN.md → Motion; `apps/web/src/lib/design-rules.test.ts` fails on `transition-all`, `ease-in`, `scale(0)`, `font-serif` and AA contrast misses.
 - Amounts: Czech format `148 500,00 Kč` with non-breaking spaces via the `Amount` component; JetBrains Mono only for IBAN/VS/keys, never for amounts.
 - The product name is `BRAND` from `@fakturky/core/brand`, never a literal.
 

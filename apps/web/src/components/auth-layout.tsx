@@ -77,7 +77,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       </main>
       <aside className="relative hidden overflow-hidden border-l bg-sidebar lg:flex lg:flex-col">
         <div className="relative z-10 max-w-lg space-y-5 px-12 pt-14 xl:px-16">
-          <h2 className="font-serif text-[40px] leading-[1.08] tracking-tight text-balance">
+          <h2 className="text-[40px] leading-[1.08] tracking-tight text-balance">
             {cs.authPanel.title}
           </h2>
           <ul className="space-y-2.5 text-[15px]">

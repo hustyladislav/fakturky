@@ -138,7 +138,7 @@ export function IcoDemo() {
             >
               <div className="label-caps">{t.supplier}</div>
               <div className="flex items-start justify-between gap-3">
-                <div className="font-serif text-xl leading-7">{supplier.name}</div>
+                <div className="text-xl leading-7">{supplier.name}</div>
                 <Badge variant="secondary" className="shrink-0">
                   {supplier.vatPayer ? t.vatPayer : t.nonPayer}
                 </Badge>

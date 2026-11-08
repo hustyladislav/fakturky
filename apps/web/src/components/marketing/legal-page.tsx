@@ -49,7 +49,7 @@ export function LegalPage({
         </aside>
         <main>
           <p className="label-caps mb-3">{cs.legal.eyebrow}</p>
-          <h1 className="font-serif text-[44px] leading-[1.08] font-medium tracking-[-0.02em] text-balance">
+          <h1 className="text-[44px] leading-[1.08] font-medium tracking-[-0.02em] text-balance">
             {title}
           </h1>
           <p className="mt-3 text-sm text-muted-foreground tabular-nums">
@@ -102,7 +102,7 @@ export function LegalSections({ sections }: { sections: readonly LegalSection[] 
     <>
       {sections.map((s, i) => (
         <section key={s.heading} id={`s-${i + 1}`} className="scroll-mt-8 pt-9 first:pt-0">
-          <h2 className="flex items-baseline gap-3 font-serif text-2xl leading-8 font-medium tracking-[-0.01em]">
+          <h2 className="flex items-baseline gap-3 text-2xl leading-8 font-medium tracking-[-0.01em]">
             <span className="label-caps w-5 shrink-0 font-sans tabular-nums">{i + 1}</span>
             {s.heading}
           </h2>

@@ -11,17 +11,16 @@ import {
 } from '@tanstack/react-router'
 import { RegisterServiceWorker } from '@/components/pwa/register-sw'
 import { cs } from '@/i18n/cs'
-import geistSerifRegular from '../../node_modules/geist/dist/fonts/geist-serif/GeistSerif-Regular.woff2?url'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
       { title: `${cs.brand} — ${cs.meta.title}` },
       { name: 'description', content: cs.meta.description },
-      { name: 'theme-color', content: '#F6F2EA', media: '(prefers-color-scheme: light)' },
-      { name: 'theme-color', content: '#121310', media: '(prefers-color-scheme: dark)' },
+      { name: 'theme-color', content: '#FFFFFF', media: '(prefers-color-scheme: light)' },
+      { name: 'theme-color', content: '#0E0F0C', media: '(prefers-color-scheme: dark)' },
       { property: 'og:type', content: 'website' },
       { property: 'og:locale', content: 'cs_CZ' },
       { property: 'og:site_name', content: cs.brand },
@@ -31,13 +30,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
     links: [
-      {
-        rel: 'preload',
-        href: geistSerifRegular,
-        as: 'font',
-        type: 'font/woff2',
-        crossOrigin: 'anonymous',
-      },
       { rel: 'stylesheet', href: appCss },
       { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
       { rel: 'icon', href: '/favicon-32.png', type: 'image/png', sizes: '32x32' },

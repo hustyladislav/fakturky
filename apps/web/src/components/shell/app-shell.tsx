@@ -242,7 +242,7 @@ function MobileTabs() {
   })
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-stretch border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label={cs.shell.navigation}
     >
       <Link to={overview.to} activeOptions={{ exact: true }} className={tab}>

@@ -1,4 +1,4 @@
-import { Button, buttonVariants } from '@fakturky/ui/components/button'
+import { Button } from '@fakturky/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,15 +81,17 @@ export function ShareButton({
   copied,
   onShare,
   variant = 'default',
+  size = 'default',
   className,
 }: {
   copied: boolean
   onShare: () => void
   variant?: 'default' | 'outline'
+  size?: 'default' | 'lg'
   className?: string
 }) {
   return (
-    <Button variant={variant} className={className} onClick={onShare}>
+    <Button variant={variant} size={size} className={className} onClick={onShare}>
       {copied ? <Check /> : <Share2 />}
       <span aria-live="polite">{copied ? t.shareCopied : t.share}</span>
     </Button>
@@ -124,13 +126,15 @@ export function PaySplitButton({
         <DropdownMenuTrigger
           aria-label={t.markPaidMore}
           disabled={disabled}
-          className={buttonVariants({
-            variant,
-            className: cn(
-              'h-full rounded-l-none border-l px-2',
-              variant === 'default' && 'border-l-primary-foreground/25',
-            ),
-          })}
+          render={
+            <Button
+              variant={variant}
+              className={cn(
+                'h-full rounded-l-none border-l px-2',
+                variant === 'default' && 'border-l-primary-foreground/25',
+              )}
+            />
+          }
         >
           <ChevronDown aria-hidden />
         </DropdownMenuTrigger>

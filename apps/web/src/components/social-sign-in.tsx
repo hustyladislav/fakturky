@@ -31,7 +31,7 @@ export function GoogleButton() {
     <Button
       type="button"
       variant="outline"
-      className="h-10 w-full"
+      className="h-11 w-full"
       onClick={() =>
         authClient.signIn.social({ provider: 'google', callbackURL: '/', newUserCallbackURL: '/' })
       }
@@ -62,7 +62,7 @@ export function MagicLinkButton({ getEmail }: { getEmail: () => string }) {
       <Button
         type="button"
         variant="ghost"
-        className="h-9 w-full text-muted-foreground"
+        className="h-11 w-full text-muted-foreground"
         disabled={pending}
         onClick={async () => {
           const email = getEmail().trim()

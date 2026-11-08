@@ -35,27 +35,43 @@ function Cell({ value, ours }: { value: string; ours?: boolean }) {
 /** Honest free-tier comparison: facts from the public price lists, with sources. */
 export function Comparison() {
   return (
-    <section id="srovnani" className="mx-auto max-w-[1200px] px-5 py-12 md:px-8 md:py-16">
-      <h2 className="max-w-3xl text-4xl leading-tight font-medium text-balance md:text-5xl">
+    <section id="srovnani" className="mx-auto max-w-[1200px] px-5 py-14 md:px-8 md:py-20">
+      <h2 className="max-w-3xl text-[32px] leading-[38px] tracking-[-0.02em] text-balance md:text-5xl md:leading-[50px]">
         {t.title}
       </h2>
       <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-pretty text-muted-foreground">
         {t.text}
       </p>
-      <div
-        className="mt-8 overflow-x-auto rounded-xl border bg-card focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-        role="region"
-        aria-label={t.caption}
-        tabIndex={0}
-      >
-        <table className="w-full min-w-[46rem] border-separate border-spacing-0 text-left text-sm">
+
+      <ul className="mt-8 divide-y border-y md:hidden">
+        {t.rows.map(([feature, us, fakturoid, idoklad]) => (
+          <li key={feature} className="space-y-2 py-4 text-sm">
+            <div className="font-medium">{feature}</div>
+            {(
+              [
+                [t.us, us, true],
+                [t.fakturoid, fakturoid, false],
+                [t.idoklad, idoklad, false],
+              ] as const
+            ).map(([name, value, ours]) => (
+              <div key={name} className="grid grid-cols-[6.5rem_1fr] gap-3">
+                <span className="text-muted-foreground">{name}</span>
+                <Cell value={value} ours={ours} />
+              </div>
+            ))}
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-10 hidden md:block">
+        <table className="w-full border-separate border-spacing-0 text-left text-sm">
           <caption className="sr-only">{t.caption}</caption>
           <thead>
             <tr className="[&>th]:border-b [&>th]:px-4 [&>th]:py-3 [&>th]:font-medium">
-              <th scope="col" className="w-[22%]">
+              <th scope="col" className="w-[22%] pl-0">
                 {t.feature}
               </th>
-              <th scope="col" className="w-[26%] bg-accent text-accent-foreground">
+              <th scope="col" className="w-[26%] bg-muted">
                 {t.us}
               </th>
               <th scope="col" className="w-[26%]">
@@ -66,13 +82,13 @@ export function Comparison() {
               </th>
             </tr>
           </thead>
-          <tbody className="[&_td]:border-b [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_th]:border-b [&_th]:px-4 [&_th]:py-3 [&_tr:last-child_td]:border-b-0 [&_tr:last-child_th]:border-b-0">
+          <tbody className="[&_td]:border-b [&_td]:px-4 [&_td]:py-3.5 [&_td]:align-top [&_th]:border-b [&_th]:px-4 [&_th]:py-3.5 [&_tr:last-child_td]:border-b-0 [&_tr:last-child_th]:border-b-0">
             {t.rows.map(([feature, us, fakturoid, idoklad]) => (
               <tr key={feature}>
-                <th scope="row" className="text-left font-medium">
+                <th scope="row" className="pl-0 text-left font-medium">
                   {feature}
                 </th>
-                <td className="bg-accent/50">
+                <td className="bg-muted">
                   <Cell value={us} ours />
                 </td>
                 <td>

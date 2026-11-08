@@ -24,7 +24,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     <AuthLayout>
       <div className="space-y-6">
         <div className="space-y-1.5">
-          <h1 className="text-[34px] leading-tight tracking-[-0.015em]">
+          <h1 className="text-[28px] leading-8 font-normal tracking-[-0.02em]">
             {signUp ? cs.auth.signUpTitle : cs.auth.signInTitle}
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -32,8 +32,6 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           </p>
         </div>
         <div className="space-y-4">
-          <GoogleButton />
-          <Divider />
           <form
             method="post"
             className="space-y-4"
@@ -64,35 +62,29 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           >
             {signUp && (
               <div className="space-y-2">
-                <Label htmlFor="name" className="label-caps">
-                  {cs.auth.name}
-                </Label>
-                <Input id="name" name="name" autoComplete="name" required className="h-10" />
+                <Label htmlFor="name">{cs.auth.name}</Label>
+                <Input id="name" name="name" autoComplete="name" required className="h-11" />
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email" className="label-caps">
-                {cs.auth.email}
-              </Label>
+              <Label htmlFor="email">{cs.auth.email}</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email webauthn"
                 required
-                className="h-10"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="label-caps">
-                {cs.auth.password}
-              </Label>
+              <Label htmlFor="password">{cs.auth.password}</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 minLength={8}
-                className="h-10"
+                className="h-11"
                 autoComplete={signUp ? 'new-password' : 'current-password webauthn'}
                 required
               />
@@ -103,10 +95,18 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
                 {error}
               </p>
             )}
-            <Button type="submit" className="h-10 w-full" disabled={pending || !hydrated}>
+            <Button
+              type="submit"
+              variant="brand"
+              size="lg"
+              className="h-11 w-full"
+              disabled={pending || !hydrated}
+            >
               {signUp ? cs.auth.signUpAction : cs.auth.signInAction}
             </Button>
           </form>
+          <Divider />
+          <GoogleButton />
           <MagicLinkButton
             getEmail={() =>
               (document.getElementById('email') as HTMLInputElement | null)?.value ?? ''
@@ -115,7 +115,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           {!signUp && (
             <Button
               variant="outline"
-              className="h-10 w-full"
+              className="h-11 w-full"
               onClick={async () => {
                 const result = await authClient.signIn.passkey()
                 if (result?.error) setError(cs.auth.invalidCredentials)
@@ -130,7 +130,10 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           )}
           <p className="text-center text-sm text-muted-foreground">
             {signUp ? cs.auth.haveAccount : cs.auth.noAccount}{' '}
-            <Link to={signUp ? '/prihlaseni' : '/registrace'} className="underline">
+            <Link
+              to={signUp ? '/prihlaseni' : '/registrace'}
+              className="text-foreground underline underline-offset-4"
+            >
               {signUp ? cs.auth.signInAction : cs.auth.signUpAction}
             </Link>
           </p>

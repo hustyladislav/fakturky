@@ -1,16 +1,10 @@
 import { Button } from '@fakturky/ui/components/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@fakturky/ui/components/card'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { RowList, SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 
@@ -51,7 +45,7 @@ function Row({ s }: { s: Series }) {
     }),
   )
   return (
-    <div className="space-y-3 rounded-lg border p-3">
+    <div className="space-y-3 py-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="font-medium">
           {t.types[s.documentType as keyof typeof t.types] ?? s.name}
@@ -102,18 +96,12 @@ function Row({ s }: { s: Series }) {
 export function NumberSeriesCard() {
   const list = useQuery(orpc.numberSeries.list.queryOptions({ input: {} }))
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle role="heading" aria-level={2}>
-          {t.title}
-        </CardTitle>
-        <CardDescription>{t.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <SettingsSection id="rady" title={t.title} description={t.description}>
+      <RowList>
         {list.data?.map((s) => (
           <Row key={`${s.id}:${s.pattern}:${s.nextValue}`} s={s} />
         ))}
-      </CardContent>
-    </Card>
+      </RowList>
+    </SettingsSection>
   )
 }

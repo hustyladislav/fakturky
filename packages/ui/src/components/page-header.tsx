@@ -68,7 +68,7 @@ function PageTabs({
     <div
       role="tablist"
       aria-label={label}
-      className={cn('hairline-b -mb-px flex gap-1 overflow-x-auto', className)}
+      className={cn('hairline-b -mb-px flex gap-6 overflow-x-auto', className)}
     >
       {items.map((t) => {
         const active = t.id === value
@@ -80,20 +80,15 @@ function PageTabs({
             aria-selected={active}
             onClick={() => onValueChange(t.id)}
             className={cn(
-              '-mb-px flex h-10 items-center gap-2 border-b-2 px-3 text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:rounded-md focus-visible:ring-3 focus-visible:ring-ring/50',
+              '-mb-px flex h-10 items-center gap-1.5 border-b-2 text-[13px] whitespace-nowrap transition-colors outline-none focus-visible:rounded-md focus-visible:ring-3 focus-visible:ring-ring/50',
               active
-                ? 'border-primary text-foreground'
+                ? 'border-primary font-medium text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
             {t.label}
             {t.count !== undefined && (
-              <span
-                className={cn(
-                  'rounded-full px-1.5 text-[11px] leading-5 font-semibold tabular-nums',
-                  active ? 'bg-primary/12 text-primary' : 'bg-muted text-muted-foreground',
-                )}
-              >
+              <span className="text-xs font-normal text-muted-foreground tabular-nums">
                 {t.count}
               </span>
             )}

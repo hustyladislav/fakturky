@@ -125,16 +125,15 @@ export const cs = {
     },
     signIn: 'Přihlásit se',
     start: 'Začít zdarma',
-    heroTitle: 'Fakturujte zdarma. Bez omezení.',
+    heroTitle: 'Faktury zdarma, bez limitů.',
     heroText:
-      'Přehledný fakturační program pro české živnostníky a firmy. Správná DPH, QR platba, údaje z ARES i export do ISDOC. Bez karty, bez reklam, s otevřeným kódem.',
-    heroNote: 'Vytvoření účtu trvá minutu.',
+      'Zadáte IČO, zbytek doplníme z ARES. DPH, QR platba i export do ISDOC jsou součástí, bez karty a bez reklam.',
+    heroNote: 'Účet si vytvoříte za minutu.',
     docs: 'Dokumentace API',
     hero: {
       kpiMonth: 'Obrat tento měsíc',
       kpiReceived: 'Zaplaceno tento měsíc',
       awaiting: 'Čeká na platbu',
-      paidToast: 'Platba spárována',
     },
     demoFields: (ico: string, dic: string | null) => `IČO ${ico}${dic ? ` · DIČ ${dic}` : ''}`,
     demo: {
@@ -205,13 +204,13 @@ export const cs = {
     },
     whyTitle: 'Proč zdarma?',
     whyText: [
-      `${BRAND.name} provozuje jeden člověk ve svém volném čase. Chtěl jsem fakturační program, který nenutí platit za počet faktur, a nenašel jsem ho, tak vznikl tento.`,
-      'Provoz se platí z dobrovolných darů. Žádné reklamy, žádné prodávání dat, žádné „odemkněte za 199 Kč“. Kód je otevřený na GitHubu, takže vidíte, co se s vašimi daty děje, a můžete si službu klidně spustit sami.',
+      `${BRAND.name} je projekt jednoho člověka. Chtěl jsem fakturační program, který nenutí platit za počet faktur, a nenašel jsem ho.`,
+      'Provoz se platí z dobrovolných darů. Žádné reklamy, žádné prodávání dat. Kód je otevřený na GitHubu, takže vidíte, co se s vašimi daty děje, a můžete si službu spustit sami.',
       'Když vám aplikace ušetří čas, můžete mi koupit kávu. Nemusíte.',
     ],
     whyCoffee: 'Kupte mi kávu',
     whyGithub: 'Kód na GitHubu',
-    featuresTitle: 'Všechno, co k fakturaci potřebujete',
+    featuresTitle: 'Co dostanete zdarma',
     features: [
       [
         'Neomezeně faktur a kontaktů',
@@ -306,15 +305,6 @@ export const cs = {
     updated: (date: string) => `Poslední aktualizace: ${date}`,
     draftNotice:
       'Koncept: tento text připravil provozovatel jako výchozí návrh a čeká na právní kontrolu. Do té doby berte znění jako informativní.',
-  },
-  authPanel: {
-    title: 'Faktury, které se píší samy. A zdarma.',
-    points: [
-      'Neomezený počet faktur a kontaktů',
-      'QR platba a údaje z ARES doplněné za vás',
-      'Správně vypočtená DPH a export do ISDOC',
-    ],
-    note: 'Provozuje jediný člověk, bez reklam a bez upsellu. Kód je otevřený na GitHubu.',
   },
   auth: {
     google: 'Pokračovat přes Google',
@@ -462,6 +452,14 @@ export const cs = {
       `${count} ${count === 1 ? 'doklad' : count < 5 && count > 0 ? 'doklady' : 'dokladů'}${unpaid ? ` · ${unpaid} neuhrazeno` : ''}`,
     monthTotal: (count: number, sum: string | null) =>
       `${count} ${count === 1 ? 'doklad' : count < 5 ? 'doklady' : 'dokladů'}${sum ? ` · vystaveno ${sum}` : ''}`,
+    searchShort: 'Hledat doklad…',
+    tabsLabel: 'Stav dokladů',
+    subtitleSum: {
+      draft: 'rozpracováno',
+      unpaid: 'neuhrazeno',
+      overdue: 'po splatnosti',
+      paid: 'zaplaceno',
+    },
     shown: (shown: number, total: number) => `Zobrazeno ${shown} z ${total}`,
     typeShort: {
       invoice: 'Faktura',
@@ -491,8 +489,10 @@ export const cs = {
       markPaid: 'Označit jako zaplacené',
       remind: 'Poslat upomínky',
       clear: 'Zrušit výběr',
-      paidDone: (n: number) =>
-        `Označeno jako zaplacené: ${n} ${n === 1 ? 'faktura' : n < 5 ? 'faktury' : 'faktur'}.`,
+      paidDone: (ok: number, failed: number) =>
+        failed === 0
+          ? `Označeno jako zaplacené: ${ok} ${ok === 1 ? 'faktura' : ok < 5 ? 'faktury' : 'faktur'}.`
+          : `Označeno jako zaplacené: ${ok}, nepodařilo se: ${failed}.`,
       remindDone: (ok: number, failed: number) =>
         failed === 0
           ? `Upomínky odeslány: ${ok}.`
@@ -676,7 +676,7 @@ export const cs = {
       markPaidMore: 'Další možnosti platby',
       markPaidOther: 'Jiná částka nebo datum…',
       undo: 'Vrátit zpět',
-      share: 'Sdílet',
+      share: 'Sdílet odkaz',
       shareCopied: 'Zkopírováno',
       shareText: (what: string, amount: string, due: string | null) =>
         `${what}, ${amount}${due ? `, splatnost ${due}` : ''}.`,
@@ -1020,6 +1020,7 @@ export const cs = {
       r41: 'Řádek 41 – přijatá plnění 12 %',
       inputBase: 'Základ daně',
       inputDeduction: 'Odpočet v plné výši',
+      inputInvalid: 'Zadejte částku, např. 12 345,50. Do výpočtu se zatím nezapočítává.',
       summaryOut: 'Daň na výstupu (ř. 62)',
       summaryDeduction: 'Odpočet daně (ř. 63)',
       summaryPay: 'Daň k úhradě (ř. 64)',
@@ -1112,7 +1113,11 @@ export const cs = {
     subtitle: (n: number, active: number) =>
       `${n} ${n === 1 ? 'šablona' : n < 5 ? 'šablony' : 'šablon'} · ${active === 0 ? 'nic se neopakuje' : `${active} se opakuje`}`,
     net: 'bez DPH',
-    nextShort: 'další',
+    nextShort: 'příští běh',
+    noRepeat: 'Neopakuje se',
+    menu: 'Další akce',
+    cancelRule: 'Zrušit opakování',
+    deleteTemplate: 'Smazat šablonu',
     today: 'Dnes',
     autoIssueShort: 'vystaví se samo',
     autoSendShort: 'vystaví a odešle',
@@ -1205,6 +1210,7 @@ export const cs = {
     },
     detail: {
       invoices: 'Faktury',
+      truncated: (n: number) => `Zobrazeno prvních ${n} dokladů, starší tu nejsou.`,
       noInvoices: 'Pro tento kontakt zatím nejsou žádné doklady.',
       info: 'Údaje',
       notes: 'Poznámka',
@@ -1287,17 +1293,15 @@ export const cs = {
   },
   onboarding: {
     pageTitle: 'Úvodní nastavení',
-    title: 'Vítejte! Pojďme nastavit vaše údaje',
+    title: 'Začněte svým IČO',
     description:
-      'Tyto údaje se objeví na vašich fakturách jako dodavatel. Stačí zadat IČO a zbytek doplníme z registru ARES.',
+      'Název, adresu i DIČ doplníme z registru ARES. Údaje se objeví na vašich fakturách jako dodavatel.',
     submit: 'Pokračovat',
     skip: 'Vyplním později',
     progressLabel: 'Postup nastavení',
-    steps: ['Firma', 'Zkontrolujte údaje', 'Bankovní účet', 'Hotovo'],
+    steps: ['Firma', 'Bankovní účet', 'Hotovo'],
     stepOf: (n: number, total: number) => `Krok ${n} z ${total}`,
     previewLabel: 'Tak to bude vypadat na dokladech',
-    aresHint:
-      'Zadejte IČO a doplníme z ARES název, adresu, DIČ, plátcovství DPH i zápis v rejstříku.',
     doneTitle: 'Máte hotovo',
     doneText: 'Firma je nastavená. Tak se bude objevovat na každé vaší faktuře.',
     firstInvoice: 'Vystavit první fakturu',

@@ -6,7 +6,7 @@ import { cs } from '@/i18n/cs'
 import { downloadCsv } from '@/lib/csv'
 import { client } from '@/lib/orpc'
 import { type Doc, isPayable, useDocActions } from './invoice-rows'
-import { crowns } from './summary-strip'
+import { crowns } from './money'
 
 const t = cs.invoices.bulk
 
@@ -23,31 +23,36 @@ export function BulkBar({
   sum: string
   onClear: () => void
 }) {
-  const { refresh, markUnpaid } = useDocActions()
+  const { refresh, undoPaid } = useDocActions()
   const payable = selected.filter(isPayable)
   const overdue = selected.filter((d) => d.displayStatus === 'overdue')
 
   const pay = useMutation({
     mutationFn: async () => {
-      const done: string[] = []
+      const done: Awaited<ReturnType<typeof client.documents.markPaid>>[] = []
       for (const d of payable) {
         try {
-          await client.documents.markPaid({ id: d.id })
-          done.push(d.id)
+          done.push(await client.documents.markPaid({ id: d.id }))
         } catch {
           // keep going: report what worked
         }
       }
-      return done
+      return { done, failed: payable.length - done.length }
     },
-    onSuccess: (done) => {
+    onSuccess: ({ done, failed }) => {
       refresh()
+      // Nothing changed: keep the selection so the user can retry.
+      if (done.length === 0) {
+        toast.error(t.paidDone(0, failed))
+        return
+      }
       onClear()
-      toast.success(t.paidDone(done.length), {
+      const notify = failed === 0 ? toast.success : toast.error
+      notify(t.paidDone(done.length, failed), {
         action: {
           label: cs.invoices.rowActions.undo,
           onClick: () => {
-            for (const id of done) markUnpaid.mutate({ id })
+            for (const paid of done) undoPaid(paid)
           },
         },
       })
@@ -82,7 +87,7 @@ export function BulkBar({
       aria-label={t.selected(selected.length)}
       className="shadow-floating fixed bottom-6 left-1/2 z-40 hidden -translate-x-1/2 items-center gap-1 rounded-xl bg-popover p-1.5 pl-4 md:flex motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
     >
-      <span className="pr-3 text-sm font-medium tabular-nums">
+      <span className="whitespace-nowrap pr-3 text-sm font-medium tabular-nums">
         {t.selected(selected.length)}
         <span className="ml-2 font-normal text-muted-foreground">{crowns(sum)}</span>
       </span>

@@ -1,13 +1,4 @@
-import { Badge } from '@fakturky/ui/components/badge'
 import { Button } from '@fakturky/ui/components/button'
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@fakturky/ui/components/card'
 import {
   Dialog,
   DialogContent,
@@ -25,6 +16,7 @@ import { ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { bankErrorMessage } from '@/components/bank/bank-errors'
+import { RowList, SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { COMMON_CURRENCIES, CURRENCY_CODES, currencyLabel } from '@/lib/currencies'
 import { orpc } from '@/lib/orpc'
@@ -56,66 +48,70 @@ export function BankAccountsCard() {
   )
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle role="heading" aria-level={2}>
-          {t.title}
-        </CardTitle>
-        <CardDescription>{t.description}</CardDescription>
-        <CardAction>
-          <NewBankAccount onCreated={refresh} />
-        </CardAction>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {list.data?.length === 0 && <p className="text-muted-foreground text-sm">{t.empty}</p>}
-        {list.data?.map((a) => (
-          <div
-            key={a.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
-          >
-            <div className="min-w-0 space-y-0.5">
-              <div className="flex items-center gap-2 font-medium">
-                {a.label}
-                <span className="text-muted-foreground text-xs">{a.currency}</span>
-                {a.defaultForCurrency && <Badge variant="secondary">{t.default}</Badge>}
-              </div>
-              <div className="text-muted-foreground text-sm tabular-nums">
-                {a.accountNumber ? `${a.accountNumber}/${a.bankCode} · ` : ''}
-                {a.iban}
-                {a.bic ? ` · ${a.bic}` : ''}
-              </div>
-              {a.fioConnected && (
-                <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-                  <Badge variant="secondary">{t.fio.connected}</Badge>
-                  {a.fioLastError ? (
-                    <span className="text-destructive">
-                      {bankErrorMessage({ message: a.fioLastError })}
-                    </span>
-                  ) : (
-                    <span>
-                      {a.fioLastSyncedAt
-                        ? t.fio.lastSync(formatDateTimeCs(a.fioLastSyncedAt))
-                        : t.fio.neverSynced}
-                    </span>
+    <SettingsSection
+      id="banka"
+      title={t.title}
+      description={t.description}
+      action={<NewBankAccount onCreated={refresh} />}
+    >
+      {list.data?.length === 0 && <p className="text-muted-foreground text-sm">{t.empty}</p>}
+      {!!list.data?.length && (
+        <RowList>
+          {list.data.map((a) => (
+            <div
+              key={a.id}
+              className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+            >
+              <div className="min-w-0 space-y-0.5">
+                <div className="flex flex-wrap items-baseline gap-x-2 text-sm font-medium">
+                  {a.label}
+                  <span className="text-muted-foreground text-xs font-normal">{a.currency}</span>
+                  {a.defaultForCurrency && (
+                    <span className="text-muted-foreground text-xs font-normal">· {t.default}</span>
                   )}
                 </div>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <FioToken account={a} onChanged={refresh} />
-              {!a.defaultForCurrency && (
-                <Button variant="outline" size="sm" onClick={() => setDefault.mutate({ id: a.id })}>
-                  {t.makeDefault}
+                <div className="text-muted-foreground text-sm tabular-nums break-all">
+                  {a.accountNumber ? `${a.accountNumber}/${a.bankCode} · ` : ''}
+                  {a.iban}
+                  {a.bic ? ` · ${a.bic}` : ''}
+                </div>
+                {a.fioConnected && (
+                  <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
+                    <span className="text-foreground">{t.fio.connected}</span>
+                    {a.fioLastError ? (
+                      <span className="text-destructive">
+                        {bankErrorMessage({ message: a.fioLastError })}
+                      </span>
+                    ) : (
+                      <span>
+                        {a.fioLastSyncedAt
+                          ? t.fio.lastSync(formatDateTimeCs(a.fioLastSyncedAt))
+                          : t.fio.neverSynced}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2 sm:justify-end">
+                <FioToken account={a} onChanged={refresh} />
+                {!a.defaultForCurrency && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDefault.mutate({ id: a.id })}
+                  >
+                    {t.makeDefault}
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => remove.mutate({ id: a.id })}>
+                  {t.delete}
                 </Button>
-              )}
-              <Button variant="ghost" size="sm" onClick={() => remove.mutate({ id: a.id })}>
-                {t.delete}
-              </Button>
+              </div>
             </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+          ))}
+        </RowList>
+      )}
+    </SettingsSection>
   )
 }
 
@@ -138,7 +134,7 @@ function NewBankAccount({ onCreated }: { onCreated: () => unknown }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button />}>{t.new}</DialogTrigger>
+      <DialogTrigger render={<Button variant="outline" />}>{t.new}</DialogTrigger>
       <DialogContent>
         <form
           className="space-y-4"

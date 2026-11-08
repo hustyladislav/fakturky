@@ -31,7 +31,7 @@ export function BusinessCard({
   const cityLine = [values.zip, values.city].filter(Boolean).join(' ')
   return (
     <figure
-      className={cn('sheet relative overflow-hidden p-5', className)}
+      className={cn('sheet relative m-0 overflow-hidden p-5', className)}
       aria-label={t.cardLabel}
       data-testid="business-card"
     >
@@ -70,9 +70,7 @@ export function BusinessCard({
       </dl>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground">
-        <span className="inline-flex h-6 items-center rounded-md bg-muted px-2 text-xs font-medium text-foreground">
-          {vatLabel[values.vatStatus]}
-        </span>
+        <span className="text-foreground">{vatLabel[values.vatStatus]}</span>
         {values.email && (
           <span className="inline-flex items-center gap-1.5">
             <Mail className="size-3.5" aria-hidden /> {values.email}

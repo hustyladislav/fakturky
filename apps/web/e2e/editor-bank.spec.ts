@@ -23,7 +23,7 @@ test('no bank account: inline mini-form in Platba, one-line confirm on Vystavit,
   await pickCustomer(page, 'Bez Účtu Odběratel')
   await fillLines(page, [{ description: 'Služba', quantity: '1', unitPrice: '1000' }])
 
-  // Platba shows the mini-form instead of an empty select.
+  // The mini-form stands in for the account select.
   await expect(
     page.getByText('Přidejte účet, ať faktura ponese číslo účtu a QR platbu.'),
   ).toBeVisible()
@@ -43,6 +43,8 @@ test('no bank account: inline mini-form in Platba, one-line confirm on Vystavit,
   const account = page.getByLabel('Číslo účtu nebo IBAN')
   await account.fill('19-2000145399/0800')
   await account.press('Enter')
+  // The account now lives behind the "Splatnost" summary row.
+  await page.getByRole('button', { name: /Splatnost za/ }).click()
   await expect(page.getByLabel('Bankovní účet', { exact: true })).toBeVisible()
   await page.keyboard.press('Control+Enter')
   await page.waitForURL(issuedUrl)

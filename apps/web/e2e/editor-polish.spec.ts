@@ -23,6 +23,8 @@ test('registry banner can be dismissed for good; "Neuložené změny" does not m
   await page.goto('/faktury/nova')
   await page.waitForLoadState('networkidle')
   await expect(page).toHaveTitle('Nová faktura · Fakturky')
+  // Vystavit is the page's one primary action; the shell's "new invoice" must not compete.
+  await expect(page.getByRole('link', { name: /^Nová faktura/ })).toHaveCount(0)
 
   const banner = page.getByText('V nastavení chybí zápis v rejstříku')
   await expect(banner).toBeVisible()

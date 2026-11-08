@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useRouterState } from '@tanstack/react-router'
 import {
   FileStack,
   FileText,
@@ -41,6 +42,13 @@ export const navItems: readonly NavItem[] = [
 ]
 
 /** Navigation entries visible to this organization (the DPH page is for VAT payers only). */
+/** The editor has its own action bar; "new invoice" there would only compete with "Vystavit". */
+export function useInEditor(): boolean {
+  return useRouterState({
+    select: (s) => /^\/faktury\/(nova|[^/]+\/upravit)$/.test(s.location.pathname),
+  })
+}
+
 export function useNavItems(): readonly NavItem[] {
   const profile = useQuery(orpc.businessProfile.get.queryOptions())
   const payer = profile.data?.vatStatus === 'payer'

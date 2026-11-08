@@ -373,6 +373,33 @@ export const cs = {
       immediate:
         'Obrat překročil 2 536 500 Kč: plátcem DPH jste se stali ihned. Okamžitě se obraťte na účetní nebo správce daně.',
     },
+    aging: {
+      title: 'Po splatnosti podle stáří',
+      approximate: 'orientačně',
+      buckets: {
+        d1_14: '1–14 dní',
+        d15_30: '15–30 dní',
+        d31_60: '31–60 dní',
+        d60plus: 'nad 60 dní',
+      },
+      count: (n: number) =>
+        n === 1 ? '1 faktura' : n >= 2 && n <= 4 ? `${n} faktury` : `${n} faktur`,
+    },
+    vatDeadline: {
+      period: (label: string) => `DPH za ${label}`,
+      by: (date: string) => `nejpozději\u00a0${date}`,
+      documents: (n: number) =>
+        n === 0
+          ? 'zatím žádné doklady'
+          : n === 1
+            ? '1\u00a0doklad'
+            : n <= 4
+              ? `${n}\u00a0doklady`
+              : `${n}\u00a0dokladů`,
+      warnings: (n: number) => (n === 1 ? '1\u00a0upozornění' : `${n}\u00a0upozornění`),
+      complete: 'Doplnit údaje pro podání',
+      open: 'Otevřít',
+    },
     chart: {
       title: 'Obrat',
       caption: (months: number) => `za posledních ${months} měsíců, bez DPH`,

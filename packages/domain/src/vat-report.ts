@@ -53,6 +53,29 @@ export function vatFilingDeadline(p: VatPeriod): IsoDate {
   return d
 }
 
+/**
+ * The period a "next filing" reminder should point at: the last completed period while today is on
+ * or before its deadline, afterwards the running one. There is no "filed" state, so it flips on the
+ * date alone.
+ */
+export function vatReminderPeriod(today: IsoDate, filing: 'monthly' | 'quarterly'): VatPeriod {
+  const year = Number(today.slice(0, 4))
+  const month = Number(today.slice(5, 7))
+  const running: VatPeriod =
+    filing === 'monthly'
+      ? { kind: 'month', year, month }
+      : { kind: 'quarter', year, quarter: Math.ceil(month / 3) }
+  const last: VatPeriod =
+    running.kind === 'month'
+      ? running.month === 1
+        ? { kind: 'month', year: year - 1, month: 12 }
+        : { kind: 'month', year, month: running.month - 1 }
+      : running.quarter === 1
+        ? { kind: 'quarter', year: year - 1, quarter: 4 }
+        : { kind: 'quarter', year, quarter: running.quarter - 1 }
+  return today <= vatFilingDeadline(last) ? last : running
+}
+
 // ---------------------------------------------------------------------------------------------
 // Input
 // ---------------------------------------------------------------------------------------------

@@ -7,6 +7,7 @@ import {
   isValidVatPeriod,
   vatFilingDeadline,
   vatPeriodRange,
+  vatReminderPeriod,
   type VatReportCustomer,
   type VatReportDocument,
   type VatReportRecapRow,
@@ -265,5 +266,29 @@ describe('foreign currency', () => {
       { id: 'e', type: 'invoice', number: '1', taxableDate: '2026-03-01', customer: A, missingExchangeRate: true, recap: [std('21', '100.00', '21.00')] },
     ])
     expect(r.warnings).toEqual([{ code: 'missing_exchange_rate', blocking: true, documentId: 'e', number: '1' }])
+  })
+})
+
+describe('vatReminderPeriod', () => {
+  // Q3 2026 ends 30. 9.; 25 days later is Sunday 25. 10., so the deadline moves to Monday 26. 10.
+  it('quarterly: stays on the last quarter up to and including the deadline day', () => {
+    const q3 = { kind: 'quarter', year: 2026, quarter: 3 }
+    expect(vatReminderPeriod('2026-10-01', 'quarterly')).toEqual(q3)
+    expect(vatReminderPeriod('2026-10-25', 'quarterly')).toEqual(q3)
+    expect(vatReminderPeriod('2026-10-26', 'quarterly')).toEqual(q3)
+  })
+  it('quarterly: moves to the running quarter the day after the deadline', () => {
+    expect(vatReminderPeriod('2026-10-27', 'quarterly')).toEqual({ kind: 'quarter', year: 2026, quarter: 4 })
+  })
+  it('monthly: May 2026 deadline is Thursday 25. 6.; flips on the 26th', () => {
+    expect(vatReminderPeriod('2026-06-25', 'monthly')).toEqual({ kind: 'month', year: 2026, month: 5 })
+    expect(vatReminderPeriod('2026-06-26', 'monthly')).toEqual({ kind: 'month', year: 2026, month: 6 })
+  })
+  it('crosses the year boundary', () => {
+    expect(vatReminderPeriod('2027-01-10', 'quarterly')).toEqual({ kind: 'quarter', year: 2026, quarter: 4 })
+    expect(vatReminderPeriod('2027-01-10', 'monthly')).toEqual({ kind: 'month', year: 2026, month: 12 })
+  })
+  it('first days of a month before the deadline still point back', () => {
+    expect(vatReminderPeriod('2026-11-08', 'monthly')).toEqual({ kind: 'month', year: 2026, month: 10 })
   })
 })

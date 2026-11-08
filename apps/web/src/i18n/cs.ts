@@ -459,6 +459,14 @@ export const cs = {
       `${count} ${count === 1 ? 'doklad' : count < 5 && count > 0 ? 'doklady' : 'dokladů'}${unpaid ? ` · ${unpaid} neuhrazeno` : ''}`,
     monthTotal: (count: number, sum: string | null) =>
       `${count} ${count === 1 ? 'doklad' : count < 5 ? 'doklady' : 'dokladů'}${sum ? ` · vystaveno ${sum}` : ''}`,
+    searchShort: 'Hledat doklad…',
+    tabsLabel: 'Stav dokladů',
+    subtitleSum: {
+      draft: 'rozpracováno',
+      unpaid: 'neuhrazeno',
+      overdue: 'po splatnosti',
+      paid: 'zaplaceno',
+    },
     shown: (shown: number, total: number) => `Zobrazeno ${shown} z ${total}`,
     typeShort: {
       invoice: 'Faktura',

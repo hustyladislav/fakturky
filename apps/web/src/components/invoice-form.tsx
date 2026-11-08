@@ -86,7 +86,7 @@ export function InvoiceForm({ id }: { id?: string }) {
           <PartiesSection draft={draft} isEdit={!!id} />
           <ItemsSection draft={draft} />
           <TermsSection draft={draft} />
-          <MoreOptions draft={draft} />
+          <MoreOptions draft={draft} isEdit={!!id} />
         </section>
         {wide && <PreviewPane doc={draft.sheetDoc} />}
       </div>

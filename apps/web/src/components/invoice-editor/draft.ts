@@ -118,8 +118,3 @@ export function fieldsFromDocument(d: StoredDocument, today: string): Omit<Draft
       : [emptyLine()],
   }
 }
-
-/** The "Další možnosti" block opens by itself when a stored draft already uses it. */
-export function usesMoreOptions(d: DraftFields): boolean {
-  return !!(d.introText || d.footerText || d.privateNote || d.orderNumber || d.language !== 'cs')
-}

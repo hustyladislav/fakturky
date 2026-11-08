@@ -11,17 +11,17 @@ import { Textarea } from '@fakturky/ui/components/textarea'
 import { ChevronDown } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { cs } from '@/i18n/cs'
-import { usesMoreOptions } from './draft'
+import { opensMoreOptions } from './opens-more-options'
 import type { InvoiceDraft } from './use-invoice-draft'
 
 const t = cs.invoices.form
 
 /** Texts, order number, language: out of the way until needed (open by itself for a draft that uses them). */
-export function MoreOptions({ draft }: { draft: InvoiceDraft }) {
+export function MoreOptions({ draft, isEdit }: { draft: InvoiceDraft; isEdit: boolean }) {
   const { fields, set, ready } = draft
   const [open, setOpen] = useState(false)
   useEffect(() => {
-    if (ready && usesMoreOptions(fields)) setOpen(true)
+    if (ready && opensMoreOptions(isEdit, fields)) setOpen(true)
   }, [ready])
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="border-t">

@@ -199,7 +199,7 @@ for (const v of variants) {
 
     await test.step('dashboard shows the unpaid amount before payment', async () => {
       await page.goto('/')
-      const unpaid = page.locator('[data-slot=kpi-card]', { hasText: 'Neuhrazeno' }).first()
+      const unpaid = page.locator('[data-slot=figure]', { hasText: 'Neuhrazeno' }).first()
       await expect(unpaid).toContainText(amountRe(v.total))
     })
 
@@ -213,11 +213,11 @@ for (const v of variants) {
 
     await test.step('dashboard KPIs update', async () => {
       await page.goto('/')
-      const unpaid = page.locator('[data-slot=kpi-card]', { hasText: 'Neuhrazeno' }).first()
+      const unpaid = page.locator('[data-slot=figure]', { hasText: 'Neuhrazeno' }).first()
       await expect(unpaid).toContainText('Vše je zaplaceno')
       await expect(unpaid).not.toContainText(amountRe(v.total))
       await expect(
-        page.locator('[data-slot=kpi-card]', { hasText: 'Po splatnosti' }).first(),
+        page.locator('[data-slot=figure]', { hasText: 'Po splatnosti' }).first(),
       ).toContainText('Žádná faktura po splatnosti')
       await expect(page.getByText('Poslední doklady')).toBeVisible()
     })

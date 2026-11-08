@@ -24,6 +24,7 @@ export function PromptDialog({
   confirmLabel,
   destructive,
   pending,
+  blocked: contentBlocked,
   input,
   onConfirm,
   children,
@@ -35,6 +36,8 @@ export function PromptDialog({
   confirmLabel: string
   destructive?: boolean
   pending?: boolean
+  /** The dialog's own content is not valid yet. */
+  blocked?: boolean
   input?: { label: string; defaultValue?: string; required?: boolean }
   /** Receives the (trimmed) input value; empty string when there is no input. */
   onConfirm: (value: string) => void
@@ -45,7 +48,7 @@ export function PromptDialog({
   useEffect(() => {
     if (open) setValue(input?.defaultValue ?? '')
   }, [open, input?.defaultValue])
-  const blocked = pending || (input?.required === true && value.trim() === '')
+  const blocked = pending || contentBlocked || (input?.required === true && value.trim() === '')
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>

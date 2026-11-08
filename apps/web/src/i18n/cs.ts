@@ -778,6 +778,7 @@ export const cs = {
       receiptSplit: 'Rozdělit mezi 21 % a 12 %',
       receiptAmount12: 'Částka v sazbě 12 % (vč. DPH)',
       receiptAmount21: (amount: string) => `Zbytek v sazbě 21 %: ${amount}`,
+      receiptAmountHint: 'Zadejte část platby v sazbě 12 %, menší než přijatá částka.',
       relatedTitle: 'Související doklady',
       relatedParent: 'Vychází z dokladu',
       receiptCreated:

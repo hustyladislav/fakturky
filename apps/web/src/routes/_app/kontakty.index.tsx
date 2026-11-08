@@ -1,3 +1,4 @@
+import { sum } from '@fakturky/domain/money'
 import { EmptyState } from '@fakturky/ui/components/empty-state'
 import { PageHeader } from '@fakturky/ui/components/page-header'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
@@ -7,9 +8,9 @@ import { useCallback, useMemo, useState } from 'react'
 import { NewContact } from '@/components/contacts/contact-dialogs'
 import { ContactList } from '@/components/contacts/contact-list'
 import { CsvDownload } from '@/components/csv-download'
-import { crowns } from '@/components/invoices/summary-strip'
 import { SearchField } from '@/components/search-field'
 import { cs } from '@/i18n/cs'
+import { crowns } from '@/lib/crowns'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
@@ -41,11 +42,11 @@ function Contacts() {
     )
   }, [list.data, term])
 
-  const totalOutstanding = (stats.data ?? []).reduce((n, s) => n + Number(s.outstanding), 0)
+  const totalOutstanding = sum((stats.data ?? []).map((s) => s.outstanding))
   const subtitle = list.data
     ? t.subtitle(
         list.data.length,
-        totalOutstanding > 0 ? crowns(totalOutstanding.toFixed(2)) : null,
+        totalOutstanding.gt(0) ? crowns(totalOutstanding.toFixed(2)) : null,
       )
     : undefined
 

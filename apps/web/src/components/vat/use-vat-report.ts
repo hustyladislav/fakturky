@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import { cs } from '@/i18n/cs'
 import type { client } from '@/lib/orpc'
 import { orpc } from '@/lib/orpc'
-import { parseInputAmount } from './parse-amount'
+import { parseInputAmount } from '@/lib/parse-amount'
 
 export type VatReport = RouterOutputs['vat']['report']
 export type VatProfile = RouterOutputs['businessProfile']['get']

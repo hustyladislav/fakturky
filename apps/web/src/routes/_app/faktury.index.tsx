@@ -16,12 +16,12 @@ import {
   nextSort,
   validateListSearch,
 } from '@/components/invoices/list-search'
-import { crowns } from '@/components/invoices/money'
 import { type Period } from '@/components/invoices/period-filter'
 import { type Stats, StatusTabs } from '@/components/invoices/status-tabs'
 import { useInvoiceList } from '@/components/invoices/use-invoice-list'
 import { useInvoiceSelection } from '@/components/invoices/use-invoice-selection'
 import { cs } from '@/i18n/cs'
+import { crowns } from '@/lib/crowns'
 import { pageHead } from '@/lib/head'
 
 const t = cs.invoices

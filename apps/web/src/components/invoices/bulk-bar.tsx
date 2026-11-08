@@ -3,10 +3,10 @@ import { useMutation } from '@tanstack/react-query'
 import { BellRing, Check, Download, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
+import { crowns } from '@/lib/crowns'
 import { downloadCsv } from '@/lib/csv'
 import { client } from '@/lib/orpc'
 import { type Doc, isPayable, useDocActions } from './invoice-rows'
-import { crowns } from './money'
 
 const t = cs.invoices.bulk
 

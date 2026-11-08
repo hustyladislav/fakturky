@@ -1,21 +1,14 @@
 import type { RouterOutputs } from '@fakturky/core/router'
 import { Amount } from '@fakturky/ui/components/amount'
-import { moneyParts } from '@fakturky/ui/lib/money'
 import { cn } from '@fakturky/ui/lib/utils'
 import type { ReactNode } from 'react'
 import { cs } from '@/i18n/cs'
 import { deltaPercent } from '@/lib/chart-scale'
-import { wholeCrowns } from './kpi-card'
+import { crowns } from '@/lib/crowns'
 
 type Summary = RouterOutputs['dashboard']['summary']
 
 const t = cs.overview.kpi
-
-/** `92 400 Kč` (whole crowns, non-breaking spaces) for running text. */
-function crowns(amount: string) {
-  const p = moneyParts(wholeCrowns(amount))
-  return `${p.integer} ${p.currency}`
-}
 
 function Figure({
   label,
@@ -82,9 +75,7 @@ export function MonthFigures({ s, className }: { s: Summary; className?: string 
   return (
     <dl className={cn('grid grid-cols-2 gap-x-6 gap-y-6', className)}>
       <Figure label={t.month} amount={s.monthTurnover} size="md" tone="ink">
-        <p>
-          {credit ? t.monthCredit(`−${crowns(s.monthCreditNotes.replace('-', ''))}`) : t.monthHint}
-        </p>
+        <p>{credit ? t.monthCredit(crowns(s.monthCreditNotes)) : t.monthHint}</p>
         <Trend current={Number(s.monthTurnover)} previous={Number(prev?.turnover ?? 0)} />
       </Figure>
       <Figure label={t.received} amount={s.monthReceived} size="md">

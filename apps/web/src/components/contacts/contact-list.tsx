@@ -6,8 +6,8 @@ import { cn } from '@fakturky/ui/lib/utils'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { FilePlus2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { crowns } from '@/components/invoices/summary-strip'
 import { cs } from '@/i18n/cs'
+import { crowns } from '@/lib/crowns'
 import { ContactMenu, useNewInvoiceFor } from './contact-menu'
 
 type Contact = RouterOutputs['contacts']['list'][number]

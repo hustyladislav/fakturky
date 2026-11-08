@@ -26,7 +26,7 @@ test('registry banner can be dismissed for good; "Neuložené změny" does not m
 
   const banner = page.getByText('V nastavení chybí zápis v rejstříku')
   await expect(banner).toBeVisible()
-  const sheet = page.locator('section.sheet').first()
+  const sheet = page.getByRole('region', { name: 'Doklad' })
   // Document-relative top, so scrolling while typing does not count as a shift.
   const top = () => sheet.evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
   const before = await top()

@@ -158,7 +158,8 @@ export function InvoiceForm({ id }: { id?: string }) {
     setPaymentMethod(d.paymentMethod)
     setLanguage(d.language as DocumentLanguage)
     setFooterText(d.footerText ?? '')
-    setLines([emptyLine(d.vatPayer ? '21' : '0')])
+    // Keep the row's key: replacing it remounts the input the user may already be typing in.
+    setLines((prev) => prev.map((l) => ({ ...l, vatRate: d.vatPayer ? '21' : '0' })))
     // Hand-off from the assistant (`prefillInvoiceForm`): applied once, on top of the defaults.
     const prefill = takeInvoicePrefill()
     if (prefill) applyPrefill(prefill)
@@ -525,11 +526,11 @@ export function InvoiceForm({ id }: { id?: string }) {
           <div className="space-y-3 p-5 max-sm:order-1 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               {id ? (
-                <span className="font-serif text-xl">{cs.invoices.type[type]}</span>
+                <span className="text-xl">{cs.invoices.type[type]}</span>
               ) : (
                 <NativeSelect
                   aria-label={t.documentType}
-                  className="w-auto min-w-52 font-serif"
+                  className="w-auto min-w-52"
                   value={docType}
                   onChange={(e) => setDocType(e.target.value as 'invoice' | 'proforma')}
                 >
@@ -553,7 +554,7 @@ export function InvoiceForm({ id }: { id?: string }) {
               <SectionTitle>{t.supplier}</SectionTitle>
               {supplier ? (
                 <div className="space-y-0.5 text-sm">
-                  <div className="font-serif text-[17px] leading-6">{supplier.legalName}</div>
+                  <div className="text-[17px] leading-6">{supplier.legalName}</div>
                   {supplierAddress?.street && (
                     <div className="text-muted-foreground max-sm:hidden">
                       {supplierAddress.street}

@@ -26,7 +26,7 @@ export function VatLimitCard({ vat, className }: { vat: VatLimit; className?: st
       <SectionLabel>{t.title}</SectionLabel>
       <div className="mt-4 flex items-baseline justify-between gap-3">
         <div className="min-w-0">
-          <div className="font-serif text-xl leading-7 tabular-nums">
+          <div className="text-xl leading-7 tabular-nums">
             <Money amount={vat.turnover} />
           </div>
           <div className="text-xs text-muted-foreground">{t.description(vat.year)}</div>

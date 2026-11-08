@@ -27,7 +27,7 @@ export const Route = createFileRoute('/f/$token')({
   },
   notFoundComponent: () => (
     <main className="mx-auto max-w-md p-6 pt-24 text-center">
-      <h1 className="font-serif text-3xl">404</h1>
+      <h1 className="text-3xl">404</h1>
       <p className="mt-2 text-muted-foreground">{t.notFound}</p>
     </main>
   ),
@@ -134,7 +134,7 @@ function PublicInvoice() {
             )}
             <div className="min-w-0">
               <p className="label-caps">{t.from}</p>
-              <p className="truncate font-serif text-lg leading-6">{supplierName}</p>
+              <p className="truncate text-lg leading-6">{supplierName}</p>
             </div>
           </div>
           <Button
@@ -166,7 +166,7 @@ function PublicInvoice() {
               <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 text-sm">
                 <div>
                   <dt className="label-caps">{t.documentHeading}</dt>
-                  <dd className="mt-0.5 font-serif text-base tabular-nums">{d.number}</dd>
+                  <dd className="mt-0.5 text-base tabular-nums">{d.number}</dd>
                 </div>
                 {d.type !== 'credit_note' && (
                   <div>

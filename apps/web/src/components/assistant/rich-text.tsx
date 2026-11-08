@@ -142,7 +142,7 @@ export function RichText({ text }: { text: string }) {
     const heading = /^#{1,4}\s+(.*)$/.exec(raw)
     if (heading) {
       blocks.push(
-        <p key={key} className="font-serif text-base">
+        <p key={key} className="text-base">
           <Inline line={heading[1] ?? ''} />
         </p>,
       )

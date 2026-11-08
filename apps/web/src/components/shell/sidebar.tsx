@@ -340,7 +340,6 @@ export function NewInvoiceButton() {
   return (
     <div className="ml-2 hidden items-stretch md:flex">
       <Button
-        size="lg"
         className="rounded-r-none"
         nativeButton={false}
         render={<Link to={NEW_INVOICE_PATH as never} />}
@@ -354,7 +353,7 @@ export function NewInvoiceButton() {
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label={cs.shell.newInvoiceMenu}
-          className="flex h-9 w-8 items-center justify-center rounded-r-lg border-l border-primary-foreground/25 bg-primary text-primary-foreground outline-none transition-colors hover:bg-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="flex h-9 w-8 items-center justify-center rounded-r-lg border-l pointer-coarse:h-11 border-primary-foreground/25 bg-primary text-primary-foreground outline-none transition-colors hover:bg-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <ChevronDown className="size-4" aria-hidden />
         </DropdownMenuTrigger>

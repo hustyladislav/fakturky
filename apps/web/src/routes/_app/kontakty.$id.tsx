@@ -169,11 +169,11 @@ function ContactDetail() {
         </Stat>
         <Stat label={t.stats.last} hint={lastDate ? formatDate(lastDate) : t.stats.lastNone}>
           {lastDate ? (
-            <span className="font-serif text-[28px] leading-8 tracking-[-0.01em]">
+            <span className="text-[28px] leading-8 tracking-[-0.01em]">
               <RelativeDate date={s?.lastInvoiceDate} />
             </span>
           ) : (
-            <span className="font-serif text-[28px] leading-8 text-muted-foreground">—</span>
+            <span className="text-[28px] leading-8 text-muted-foreground">—</span>
           )}
         </Stat>
       </div>

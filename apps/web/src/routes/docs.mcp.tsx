@@ -59,7 +59,7 @@ function Step({
 }) {
   return (
     <section id={id} className="sheet scroll-mt-8 space-y-3 p-5 sm:p-6">
-      <h2 className="flex items-center gap-3 font-serif text-xl leading-7 font-medium">
+      <h2 className="flex items-center gap-3 text-xl leading-7 font-medium">
         <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 font-sans text-xs font-semibold text-primary tabular-nums">
           {n}
         </span>
@@ -129,7 +129,7 @@ function DocsMcp() {
         <main className="space-y-5">
           <header className="mb-6 space-y-3">
             <p className="label-caps">{d.eyebrow}</p>
-            <h1 className="font-serif text-[44px] leading-[1.08] font-medium tracking-[-0.02em] text-balance">
+            <h1 className="text-[44px] leading-[1.08] font-medium tracking-[-0.02em] text-balance">
               {d.title}
             </h1>
             <p className="text-[17px] leading-relaxed text-muted-foreground">{d.intro}</p>

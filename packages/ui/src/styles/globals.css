@@ -1,19 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter/wght.css";
+@import "@fontsource-variable/inter/opsz.css";
 @import "@fontsource-variable/jetbrains-mono/wght.css";
-
-/* Geist Serif (Vercel, SIL OFL 1.1), self-hosted from the `geist` package. Single weight (400) -> display only;
-   never request 500/600 on serif elements (synthetic bold is disabled below). Preloaded from the root route. */
-@font-face {
-  font-family: "Geist Serif";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("../../node_modules/geist/dist/fonts/geist-serif/GeistSerif-Regular.woff2")
-    format("woff2");
-}
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
@@ -61,14 +50,19 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Geist Serif", ui-serif, Georgia, serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   --radius-input: 6px;
-  --radius-button: 8px;
+  --radius-button: 6px;
   --radius-card: 12px;
+  /* Emil Kowalski's curves: built-in CSS easings are too weak. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @theme inline {
@@ -76,99 +70,99 @@
 }
 
 :root {
-  --background: #f2ede3;
-  --foreground: #1b1a17;
-  --card: #fffefb;
-  --card-foreground: #1b1a17;
+  --background: #ffffff;
+  --foreground: #11120f;
+  --card: #ffffff;
+  --card-foreground: #11120f;
   --popover: #ffffff;
-  --popover-foreground: #1b1a17;
-  --primary: #1f4d3c;
-  --primary-foreground: #f6f2ea;
-  --secondary: #ebe5d8;
-  --secondary-foreground: #1b1a17;
-  --muted: #ebe5d8;
-  --muted-foreground: #6b665b;
-  --accent: #e1ebe3;
-  --accent-foreground: #1f4d3c;
-  --destructive: #a12f22;
-  --border: #e0d8c8;
-  --input: #9a917d;
-  --ring: color-mix(in srgb, #1f4d3c 40%, transparent);
-  --chart-1: #1f4d3c;
+  --popover-foreground: #11120f;
+  --primary: #1a1b18;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f1;
+  --secondary-foreground: #11120f;
+  --muted: #f4f4f1;
+  --muted-foreground: #62635c;
+  --accent: #f4f4f1;
+  --accent-foreground: #11120f;
+  --brand: #8ff0b6;
+  --brand-foreground: #11120f;
+  --destructive: #b8281b;
+  --border: #e8e8e3;
+  --input: #8a8b83;
+  --ring: color-mix(in srgb, #11120f 28%, transparent);
+  --chart-1: #1a1b18;
   --chart-2: #b7791f;
-  --chart-3: #3f6e8c;
-  --chart-4: #a12f22;
-  --chart-5: #8a8472;
-  --radius: 0.5rem;
-  --sidebar: #f2ede3;
-  --sidebar-foreground: #1b1a17;
-  --sidebar-primary: #1f4d3c;
-  --sidebar-primary-foreground: #f6f2ea;
-  --sidebar-accent: #fffefb;
-  --sidebar-accent-foreground: #1b1a17;
-  --sidebar-border: #e0d8c8;
-  --sidebar-ring: color-mix(in srgb, #1f4d3c 40%, transparent);
-  --success: #2f6a2e;
-  --warning: #9a5b0b;
+  --chart-3: #2f6c9c;
+  --chart-4: #b8281b;
+  --chart-5: #a3a49b;
+  --radius: 0.375rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #11120f;
+  --sidebar-primary: #1a1b18;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f4f4f1;
+  --sidebar-accent-foreground: #11120f;
+  --sidebar-border: #e8e8e3;
+  --sidebar-ring: color-mix(in srgb, #11120f 28%, transparent);
+  --success: #17703c;
+  --warning: #8f5508;
   --sheet: var(--card);
-  --shadow-sheet:
-    0 0 0 1px var(--border), 0 1px 2px rgb(40 30 10 / 0.04), 0 8px 24px -12px rgb(40 30 10 / 0.1);
+  --shadow-sheet: 0 0 0 1px var(--border);
   --shadow-popover:
-    0 0 0 1px var(--border), 0 2px 4px rgb(40 30 10 / 0.05), 0 16px 40px -8px rgb(40 30 10 / 0.18);
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.2 -.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.1'/%3E%3C/svg%3E");
-  --avatar-1: #1f4d3c;
+    0 0 0 1px var(--border), 0 2px 4px rgb(17 18 15 / 0.04), 0 12px 32px -8px rgb(17 18 15 / 0.14);
+  --avatar-1: #17703c;
   --avatar-2: #a8660f;
-  --avatar-3: #3f6e8c;
-  --avatar-4: #a12f22;
+  --avatar-3: #2f6c9c;
+  --avatar-4: #b8281b;
   --avatar-5: #6b4f8a;
   --avatar-6: #5f6b2f;
-  --info: #2f5d7c;
+  --info: #255f8e;
 }
 
 .dark {
-  --background: #0f100d;
-  --foreground: #eee9dd;
-  --card: #1a1b17;
-  --card-foreground: #eee9dd;
-  --popover: #1f201b;
-  --popover-foreground: #eee9dd;
-  --primary: #8cc4a4;
-  --primary-foreground: #0f1a14;
-  --secondary: #22231e;
-  --secondary-foreground: #eee9dd;
-  --muted: #22231e;
-  --muted-foreground: #9c978a;
-  --accent: #1d2b24;
-  --accent-foreground: #8cc4a4;
-  --destructive: #e27b6a;
-  --border: #2b2c26;
-  --input: #4a4b42;
-  --ring: color-mix(in srgb, #8cc4a4 50%, transparent);
-  --chart-1: #8cc4a4;
+  --background: #0e0f0c;
+  --foreground: #f3f3ee;
+  --card: #0e0f0c;
+  --card-foreground: #f3f3ee;
+  --popover: #1a1b18;
+  --popover-foreground: #f3f3ee;
+  --primary: #f3f3ee;
+  --primary-foreground: #11120f;
+  --secondary: #1d1e1a;
+  --secondary-foreground: #f3f3ee;
+  --muted: #1d1e1a;
+  --muted-foreground: #a2a39a;
+  --accent: #1d1e1a;
+  --accent-foreground: #f3f3ee;
+  --brand: #8ff0b6;
+  --brand-foreground: #11120f;
+  --destructive: #f0806f;
+  --border: #292a25;
+  --input: #65665e;
+  --ring: color-mix(in srgb, #f3f3ee 34%, transparent);
+  --chart-1: #f3f3ee;
   --chart-2: #e0a84f;
   --chart-3: #8fb4d1;
-  --chart-4: #e27b6a;
-  --chart-5: #9c978a;
-  --sidebar: #0f100d;
-  --sidebar-foreground: #eee9dd;
-  --sidebar-primary: #8cc4a4;
-  --sidebar-primary-foreground: #0f1a14;
-  --sidebar-accent: #1a1b17;
-  --sidebar-accent-foreground: #eee9dd;
-  --sidebar-border: #2b2c26;
-  --sidebar-ring: color-mix(in srgb, #8cc4a4 50%, transparent);
-  --success: #8fcb8a;
+  --chart-4: #f0806f;
+  --chart-5: #6f7068;
+  --sidebar: #0e0f0c;
+  --sidebar-foreground: #f3f3ee;
+  --sidebar-primary: #f3f3ee;
+  --sidebar-primary-foreground: #11120f;
+  --sidebar-accent: #1d1e1a;
+  --sidebar-accent-foreground: #f3f3ee;
+  --sidebar-border: #292a25;
+  --sidebar-ring: color-mix(in srgb, #f3f3ee 34%, transparent);
+  --success: #7fd8a0;
   --warning: #e0a84f;
   --sheet: var(--card);
-  --shadow-sheet:
-    0 0 0 1px var(--border), 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  --shadow-sheet: 0 0 0 1px var(--border);
   --shadow-popover:
-    0 0 0 1px var(--border), 0 2px 4px rgb(0 0 0 / 0.35), 0 16px 40px -8px rgb(0 0 0 / 0.65);
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.2 -.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E");
-  --avatar-1: #8cc4a4;
+    0 0 0 1px var(--border), 0 2px 4px rgb(0 0 0 / 0.3), 0 12px 32px -8px rgb(0 0 0 / 0.6);
+  --avatar-1: #7fd8a0;
   --avatar-2: #e0a84f;
   --avatar-3: #8fb4d1;
-  --avatar-4: #e27b6a;
+  --avatar-4: #f0806f;
   --avatar-5: #b9a3d6;
   --avatar-6: #b8c47a;
   --info: #8fb4d1;
@@ -186,16 +180,24 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background-image: var(--grain);
-    background-attachment: fixed;
     font-feature-settings: "tnum", "lnum", "cv11";
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
   }
   h1,
   h2 {
-    font-family: var(--font-serif);
     font-weight: 400;
-    font-synthesis: none;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+  }
+  a,
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+  button,
+  [role="button"] {
+    user-select: none;
   }
   input[type="checkbox"],
   input[type="radio"] {
@@ -207,8 +209,8 @@
     border-color: var(--input);
     background-color: var(--card);
     transition:
-      box-shadow 120ms,
-      border-color 120ms;
+      box-shadow 120ms var(--ease-out),
+      border-color 120ms var(--ease-out);
   }
   select:not([data-slot]):focus-visible,
   textarea:not([data-slot]):focus-visible {
@@ -219,15 +221,20 @@
   kbd {
     font-family: var(--font-sans);
   }
-  .font-serif {
-    font-weight: 400;
-    font-synthesis: none;
+}
+
+/* iOS zooms the page into any field under 16px; unlayered so it beats `text-sm` utilities. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"], [type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
   }
 }
 
-/* ---- Design v2 primitives ------------------------------------------------ */
+/* ---- Design primitives --------------------------------------------------- */
 
-/** Paper sheet on the desk: hairline + soft two-layer shadow. Never nest sheets. */
+/** Bordered panel: hairline, no shadow. Never nest panels. */
 @utility sheet {
   background-color: var(--sheet);
   border-radius: var(--radius-card);
@@ -239,12 +246,12 @@
   box-shadow: var(--shadow-popover);
 }
 
-/** The PDF's micro-label: 11px / 600 / .08em / uppercase / muted. */
+/** Eyebrow micro-label: 11px / 500 / .04em / uppercase / muted. */
 @utility label-caps {
   font-size: 11px;
   line-height: 1.3;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
@@ -257,28 +264,23 @@
   border-bottom: 1px solid var(--border);
 }
 
-/** Row hover: background tint, actions nudge up 1px (see `.row-actions`). */
+/** Row hover: instant tint (seen tens of times a day, so no transition). */
 @utility row-hover {
-  transition: background-color 120ms;
-  &:hover {
-    background-color: color-mix(in srgb, var(--foreground) 3.5%, transparent);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-color: color-mix(in srgb, var(--foreground) 3.5%, transparent);
+    }
   }
 }
 
 @utility row-actions {
   opacity: 0;
-  transform: translateY(1px);
-  transition:
-    opacity 120ms,
-    transform 120ms;
   :is(.row-hover:hover, .row-hover:focus-within) > &,
   :is(.row-hover:hover, .row-hover:focus-within) & {
     opacity: 1;
-    transform: none;
   }
   @media (hover: none) {
     opacity: 1;
-    transform: none;
   }
 }
 
@@ -317,7 +319,7 @@
   }
 }
 
-/* Route transitions: only the content area cross-fades and slides 8px (the shell stays put). */
+/* Route change happens all day: the new page only fades, nothing travels. */
 @utility vt-page {
   view-transition-name: page;
 }
@@ -327,10 +329,11 @@
     animation-duration: 0s;
   }
   ::view-transition-old(page) {
-    animation: vt-out 110ms ease-in both;
+    animation: none;
+    opacity: 0;
   }
   ::view-transition-new(page) {
-    animation: vt-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation: vt-in 140ms var(--ease-out) both;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -340,28 +343,25 @@
     animation: none !important;
   }
 }
-@keyframes vt-out {
-  to {
-    opacity: 0;
-  }
-}
 @keyframes vt-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
 }
 
-/* Popover/dialog spring: scale .98 -> 1 in 140 ms (applied via data-starting-style). */
+/* Popovers grow from their trigger; exit is faster than enter. */
 @utility pop-in {
   transform-origin: var(--transform-origin);
   transition:
-    opacity 140ms ease,
-    scale 140ms cubic-bezier(0.34, 1.4, 0.64, 1);
+    opacity 160ms var(--ease-out),
+    scale 160ms var(--ease-out);
   &[data-starting-style],
   &[data-ending-style] {
     opacity: 0;
-    scale: 0.98;
+    scale: 0.97;
+  }
+  &[data-ending-style] {
+    transition-duration: 100ms;
   }
   @media (prefers-reduced-motion: reduce) {
     transition: opacity 80ms;

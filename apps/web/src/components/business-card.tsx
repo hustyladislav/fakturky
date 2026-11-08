@@ -47,12 +47,7 @@ export function BusinessCard({
           <Avatar name={name || '?'} size="lg" shape="square" />
         )}
         <div className="min-w-0 pt-0.5">
-          <p
-            className={cn(
-              'font-serif text-xl leading-6 break-words',
-              !name && 'text-muted-foreground/60',
-            )}
-          >
+          <p className={cn('text-xl leading-6 break-words', !name && 'text-muted-foreground/60')}>
             {name || t.cardPlaceholder}
           </p>
           <p className="mt-1 text-[13px] leading-5 text-muted-foreground">

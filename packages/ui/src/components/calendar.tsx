@@ -20,7 +20,7 @@ function Calendar({ className, classNames, ...props }: React.ComponentProps<type
         months: cn(d.months, 'relative flex flex-col gap-4'),
         month: cn(d.month, 'flex w-full flex-col gap-3'),
         month_caption: cn(d.month_caption, 'flex h-8 items-center justify-center px-8'),
-        caption_label: cn(d.caption_label, 'font-serif text-[15px] capitalize'),
+        caption_label: cn(d.caption_label, 'text-[15px] capitalize'),
         nav: cn(d.nav, 'absolute inset-x-0 top-0 flex items-center justify-between'),
         button_previous: cn(d.button_previous, navButton),
         button_next: cn(d.button_next, navButton),

@@ -52,7 +52,7 @@ export function ContactMenu({
     <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="ghost" size="icon-sm" aria-label={cs.contacts.menu} />}
+          render={<Button variant="ghost" size="icon" aria-label={cs.contacts.menu} />}
         >
           <MoreHorizontal aria-hidden />
         </DropdownMenuTrigger>

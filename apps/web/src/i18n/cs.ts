@@ -1109,7 +1109,11 @@ export const cs = {
     subtitle: (n: number, active: number) =>
       `${n} ${n === 1 ? 'šablona' : n < 5 ? 'šablony' : 'šablon'} · ${active === 0 ? 'nic se neopakuje' : `${active} se opakuje`}`,
     net: 'bez DPH',
-    nextShort: 'další',
+    nextShort: 'příští běh',
+    noRepeat: 'Neopakuje se',
+    menu: 'Další akce',
+    cancelRule: 'Zrušit opakování',
+    deleteTemplate: 'Smazat šablonu',
     today: 'Dnes',
     autoIssueShort: 'vystaví se samo',
     autoSendShort: 'vystaví a odešle',

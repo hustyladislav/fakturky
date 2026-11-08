@@ -1,4 +1,3 @@
-import { Avatar } from '@fakturky/ui/components/avatar'
 import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
@@ -164,7 +163,6 @@ export function CustomerCard({
     const line = [a?.street, [a?.zip, a?.city].filter(Boolean).join(' ')].filter(Boolean)
     return (
       <div className="flex items-start gap-3">
-        <Avatar name={value.name} size="md" />
         <div className="min-w-0 flex-1 text-sm">
           <div className="text-[17px] leading-6">{value.name}</div>
           {line.map((l) => (
@@ -182,7 +180,7 @@ export function CustomerCard({
         </div>
         <button
           type="button"
-          className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-muted-foreground text-sm hover:bg-muted hover:text-foreground"
+          className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-muted-foreground text-sm hover:bg-muted hover:text-foreground pointer-coarse:min-h-11"
           onClick={() => onChange(null)}
         >
           <X className="size-3.5" aria-hidden /> {t.customerChange}
@@ -214,7 +212,8 @@ export function CustomerCard({
           placeholder={t.customerSearch}
           aria-label={t.customer}
           autoComplete="off"
-          className="h-10 bg-card"
+          enterKeyHint="search"
+          className="h-10"
         />
         {open && (
           <div
@@ -223,7 +222,9 @@ export function CustomerCard({
           >
             {own.length > 0 && (
               <div className="py-1">
-                <div className="label-caps px-3 pt-2 pb-1">{t.customerYours}</div>
+                <div className="px-3 pt-2 pb-1 text-muted-foreground text-xs">
+                  {t.customerYours}
+                </div>
                 {own.map((c, i) => (
                   <button
                     key={c.id}
@@ -235,7 +236,6 @@ export function CustomerCard({
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => pick({ id: c.id, name: c.name, ico: c.ico })}
                   >
-                    <Avatar name={c.name} size="xs" />
                     <span className="min-w-0 flex-1 truncate">{c.name}</span>
                     {c.ico && <span className="text-muted-foreground tabular-nums">{c.ico}</span>}
                   </button>
@@ -244,7 +244,7 @@ export function CustomerCard({
             )}
             {aresNew && (
               <div className="py-1">
-                <div className="label-caps px-3 pt-2 pb-1">{t.customerAres}</div>
+                <div className="px-3 pt-2 pb-1 text-muted-foreground text-xs">{t.customerAres}</div>
                 <button
                   id={optionId(own.length)}
                   type="button"
@@ -273,17 +273,16 @@ export function CustomerCard({
       </div>
 
       {!open && !q && recent.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="label-caps">{t.customerRecent}</div>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-x-1 gap-y-0">
+          <span className="text-muted-foreground text-sm">{t.customerRecent}:</span>
+          <div className="contents">
             {recent.map((c) => (
               <button
                 key={c.id}
                 type="button"
                 onClick={() => pick({ id: c.id, name: c.name })}
-                className="flex max-w-full items-center gap-1.5 rounded-full border bg-card py-1 pr-3 pl-1 text-sm transition-colors hover:bg-muted"
+                className="max-w-full rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted pointer-coarse:min-h-11"
               >
-                <Avatar name={c.name} size="xs" />
                 <span className="truncate">{c.name}</span>
               </button>
             ))}
@@ -294,7 +293,13 @@ export function CustomerCard({
       {creating ? (
         <NewCustomer onCancel={() => setCreating(false)} onCreated={pick} />
       ) : (
-        <Button type="button" variant="ghost" size="sm" onClick={() => setCreating(true)}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="-ml-2.5"
+          onClick={() => setCreating(true)}
+        >
           <Plus /> {t.customerNew}
         </Button>
       )}

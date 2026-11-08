@@ -1,6 +1,5 @@
 import { isValidIco, normalizeIco } from '@fakturky/domain/ico'
 import { InvoiceSheet } from '@fakturky/pdf/html'
-import { Badge } from '@fakturky/ui/components/badge'
 import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
@@ -72,10 +71,12 @@ export function IcoDemo() {
   const doc = useMemo(() => demoInvoiceFor(supplier, t.placeholderName), [supplier])
 
   return (
-    <section id="demo" className="mx-auto max-w-[1200px] px-5 py-12 md:px-8 md:py-16">
+    <section id="demo" className="mx-auto max-w-[1200px] px-5 py-14 md:px-8 md:py-20">
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14">
         <div>
-          <h2 className="text-4xl leading-tight font-medium text-balance md:text-5xl">{t.title}</h2>
+          <h2 className="text-[32px] leading-[38px] tracking-[-0.02em] text-balance md:text-5xl md:leading-[50px]">
+            {t.title}
+          </h2>
           <p className="mt-4 text-[17px] leading-relaxed text-pretty text-muted-foreground">
             {t.text}
           </p>
@@ -94,9 +95,9 @@ export function IcoDemo() {
                 placeholder={t.placeholder}
                 aria-invalid={state.kind === 'error' || undefined}
                 aria-describedby="demo-status"
-                className="h-11 text-base tabular-nums"
+                className="h-12 text-base tabular-nums"
               />
-              <Button type="submit" size="lg" className="h-11 shrink-0 px-4">
+              <Button type="submit" size="lg" className="h-12 shrink-0 px-4">
                 {state.kind === 'loading' ? (
                   <Loader2 className="animate-spin" data-icon="inline-start" aria-hidden />
                 ) : (
@@ -123,7 +124,7 @@ export function IcoDemo() {
                     setValue(ico)
                     run(ico)
                   }}
-                  className="rounded-full border bg-card px-3 py-1 tabular-nums transition-colors hover:bg-background focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  className="inline-flex min-h-9 items-center px-1 tabular-nums underline underline-offset-4 transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none pointer-coarse:min-h-11"
                 >
                   {ico}
                 </button>
@@ -133,15 +134,15 @@ export function IcoDemo() {
 
           {supplier && (
             <div
-              className="sheet mt-6 space-y-1 p-5 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
+              className="mt-6 space-y-1 border-t pt-4 motion-safe:animate-in motion-safe:fade-in"
               data-testid="demo-supplier"
             >
-              <div className="label-caps">{t.supplier}</div>
+              <div className="text-[13px] text-muted-foreground">{t.supplier}</div>
               <div className="flex items-start justify-between gap-3">
                 <div className="text-xl leading-7">{supplier.name}</div>
-                <Badge variant="secondary" className="shrink-0">
+                <span className="shrink-0 text-[13px] text-muted-foreground">
                   {supplier.vatPayer ? t.vatPayer : t.nonPayer}
-                </Badge>
+                </span>
               </div>
               <div className="text-sm text-muted-foreground tabular-nums">
                 {cs.landing.demoFields(supplier.ico, supplier.dic)}
@@ -156,7 +157,7 @@ export function IcoDemo() {
 
         <div className="min-w-0">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">{t.invoiceTitle}</span>
+            <span className="text-[13px] text-muted-foreground">{t.invoiceTitle}</span>
             <Button
               variant="outline"
               size="sm"
@@ -167,7 +168,7 @@ export function IcoDemo() {
               <ArrowRight data-icon="inline-end" />
             </Button>
           </div>
-          <div className="mx-auto max-w-[34rem] overflow-hidden rounded-[3px] shadow-[0_0_0_1px_var(--border),0_4px_8px_rgb(0_0_0/0.05),0_30px_60px_-24px_rgb(0_0_0/0.3)]">
+          <div className="mx-auto max-w-[34rem] overflow-hidden rounded-[3px] shadow-[0_0_0_1px_var(--border),0_12px_30px_-16px_rgb(0_0_0/0.25)]">
             <InvoiceSheet doc={doc} maxScale={1.4} headingLevel={3} decorative density="compact" />
           </div>
         </div>

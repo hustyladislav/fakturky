@@ -1,8 +1,7 @@
-import { Input } from '@fakturky/ui/components/input'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useIsMobile } from '@fakturky/ui/hooks/use-mobile'
-import { Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { SearchField } from '@/components/search-field'
 import { cs } from '@/i18n/cs'
 import { type DocType, TYPES } from './list-search'
 import { type Period, PeriodFilter } from './period-filter'
@@ -49,20 +48,12 @@ export function FilterBar({
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
-      <div className="relative min-w-0 basis-full sm:flex-1 sm:basis-0 sm:max-w-sm">
-        <Search
-          className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden
-        />
-        <Input
-          className="border-transparent bg-muted/60 pl-8 dark:bg-muted/60"
-          placeholder={isMobile ? t.searchShort : t.search}
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
-          aria-label={cs.common.search}
-          enterKeyHint="search"
-        />
-      </div>
+      <SearchField
+        className="basis-full sm:max-w-sm sm:flex-1 sm:basis-0"
+        placeholder={isMobile ? t.searchShort : t.search}
+        value={term}
+        onChange={(e) => setTerm(e.target.value)}
+      />
       <NativeSelect
         className="flex-1 sm:w-44 sm:flex-none [&_select]:h-9 [&_select]:border-transparent [&_select]:bg-muted/60 pointer-coarse:[&_select]:h-11 dark:[&_select]:bg-muted/60"
         aria-label={t.columns.type}

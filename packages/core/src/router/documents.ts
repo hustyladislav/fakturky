@@ -17,6 +17,13 @@ import {
 
 const idInput = z.object({ id: z.string().min(1) })
 const tag = ['Documents']
+// Optional so existing callers (REST, MCP, CLI) keep listing everything.
+const periodFrom = isoDate
+  .optional()
+  .describe(
+    'First day of a period, YYYY-MM-DD, by DUZP (issue date when none). A period excludes drafts.',
+  )
+const periodTo = isoDate.optional().describe('Last day of the period, YYYY-MM-DD (inclusive)')
 const statBucket = z.object({ count: z.number(), sum: z.string().describe('CZK, decimal string') })
 
 async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
@@ -304,6 +311,8 @@ export const documentsRouter = {
           .optional()
           .describe('Only documents of this type'),
         contactId: z.string().min(1).optional().describe('Only documents of this contact'),
+        from: periodFrom,
+        to: periodTo,
         sort: z
           .enum(['issueDate', 'dueDate', 'number', 'customer', 'total'])
           .default('issueDate')
@@ -328,7 +337,7 @@ export const documentsRouter = {
       method: 'GET',
       path: '/documents/stats',
       summary:
-        'Counts and CZK sums per status bucket; unpaid and overdue sum what is still owed. Optional search and type narrow all buckets.',
+        'Counts and CZK sums per status bucket; unpaid and overdue sum what is still owed. Optional search, type and period (from/to) narrow all buckets.',
       tags: tag,
     },
   })
@@ -339,6 +348,8 @@ export const documentsRouter = {
           .enum(['invoice', 'proforma', 'credit_note', 'payment_receipt'])
           .optional()
           .describe('Only documents of this type'),
+        from: periodFrom,
+        to: periodTo,
       }),
     )
     .output(

@@ -22,7 +22,7 @@ export function ShortcutsHelp() {
   ]
   return (
     <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
-      <DialogContent className="max-w-md" closeLabel={cs.common.close}>
+      <DialogContent instant className="max-w-md" closeLabel={cs.common.close}>
         <DialogHeader>
           <DialogTitle>{cs.shortcuts.title}</DialogTitle>
         </DialogHeader>

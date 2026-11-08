@@ -15,6 +15,7 @@ import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
+import { undoPaidInput } from './undo-paid'
 
 export type Doc = RouterOutputs['documents']['list'][number]
 
@@ -58,13 +59,20 @@ export function useDocActions() {
     qc.invalidateQueries({ queryKey: orpc.documents.key() })
     qc.invalidateQueries({ queryKey: orpc.dashboard.key() })
   }
-  const markUnpaid = useMutation(orpc.documents.markUnpaid.mutationOptions({ onSuccess: refresh }))
+  const markUnpaid = useMutation(
+    orpc.documents.markUnpaid.mutationOptions({
+      onSuccess: refresh,
+      onError: (e) => toast.error(apiErrorMessage(e)),
+    }),
+  )
+  const undoPaid = (paid: Parameters<typeof undoPaidInput>[0]) =>
+    markUnpaid.mutate(undoPaidInput(paid))
   const markPaid = useMutation(
     orpc.documents.markPaid.mutationOptions({
       onSuccess: (d) => {
         refresh()
         toast.success(t.rowActions.markedPaid, {
-          action: { label: t.rowActions.undo, onClick: () => markUnpaid.mutate({ id: d.id }) },
+          action: { label: t.rowActions.undo, onClick: () => undoPaid(d) },
         })
       },
       onError: (e) => toast.error(apiErrorMessage(e)),
@@ -79,7 +87,7 @@ export function useDocActions() {
       onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
-  return { markPaid, markUnpaid, duplicate, refresh }
+  return { markPaid, undoPaid, duplicate, refresh }
 }
 
 function ActionButton({

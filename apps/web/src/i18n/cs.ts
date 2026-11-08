@@ -472,8 +472,10 @@ export const cs = {
       markPaid: 'Označit jako zaplacené',
       remind: 'Poslat upomínky',
       clear: 'Zrušit výběr',
-      paidDone: (n: number) =>
-        `Označeno jako zaplacené: ${n} ${n === 1 ? 'faktura' : n < 5 ? 'faktury' : 'faktur'}.`,
+      paidDone: (ok: number, failed: number) =>
+        failed === 0
+          ? `Označeno jako zaplacené: ${ok} ${ok === 1 ? 'faktura' : ok < 5 ? 'faktury' : 'faktur'}.`
+          : `Označeno jako zaplacené: ${ok}, nepodařilo se: ${failed}.`,
       remindDone: (ok: number, failed: number) =>
         failed === 0
           ? `Upomínky odeslány: ${ok}.`

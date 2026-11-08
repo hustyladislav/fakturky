@@ -1,14 +1,13 @@
 import type { RouterOutputs } from '@fakturky/core/router'
 import { Amount } from '@fakturky/ui/components/amount'
-import { Avatar } from '@fakturky/ui/components/avatar'
 import { Button } from '@fakturky/ui/components/button'
-import { SectionLabel } from '@fakturky/ui/components/page-header'
 import { RelativeDate } from '@fakturky/ui/components/relative-date'
+import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { BellRing, Check } from 'lucide-react'
 import { toast } from 'sonner'
+import { ErrorState } from '@/components/error-state'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
@@ -22,6 +21,10 @@ export function sortByDue(docs: Doc[]): Doc[] {
   return [...docs].sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999'))
 }
 
+const quietLink =
+  'inline-flex h-9 items-center text-sm text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:h-11'
+
+/** One open invoice: who, what, how late, and the reminder one tap away. */
 function Row({ doc }: { doc: Doc }) {
   const qc = useQueryClient()
   const overdue = doc.displayStatus === 'overdue'
@@ -36,45 +39,44 @@ function Row({ doc }: { doc: Doc }) {
     }),
   )
   return (
-    <li className="row-hover relative flex items-start gap-3 px-5 py-3">
-      <Avatar name={name} size="md" className="mt-0.5" />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-3">
-          <Link
-            to="/faktury/$id"
-            params={{ id: doc.id }}
-            className="line-clamp-2 min-w-0 text-sm font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-ring/60 focus-visible:after:ring-inset"
-          >
-            {name}
-          </Link>
-          <Amount value={doc.remaining} currency={doc.currency} size="inline" hideZeroFraction />
-        </div>
-        <div className="mt-0.5 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span className="min-w-0 truncate">
-            <span className="tabular-nums">{doc.number}</span>
-            <span aria-hidden> · </span>
-            <RelativeDate
-              date={doc.dueDate}
-              tone="due"
-              className={cn(overdue && 'font-medium text-destructive')}
-            />
-          </span>
-          <Button
-            variant="ghost"
-            size="xs"
-            disabled={remind.isPending}
-            aria-label={t.remindFor(name)}
-            onClick={() => remind.mutate({ id: doc.id, reminder: overdue })}
-            className={cn(
-              'relative z-10 -my-1 shrink-0 text-primary hover:bg-primary/10 max-sm:[&_svg]:hidden',
-              !overdue && 'row-actions focus-visible:opacity-100',
-            )}
-          >
-            {remind.isSuccess ? <Check /> : <BellRing />}
-            {t.remind}
-          </Button>
-        </div>
-      </div>
+    <li className="row-hover relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 border-b py-2 last:border-b-0 @2xl:grid-cols-[minmax(0,1fr)_17rem_7rem_7.5rem]">
+      <Link
+        to="/faktury/$id"
+        params={{ id: doc.id }}
+        className="col-start-1 row-start-1 line-clamp-2 min-w-0 text-sm font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-ring/60 focus-visible:after:ring-inset"
+      >
+        {name}
+      </Link>
+      <span className="col-start-1 row-start-2 min-w-0 truncate text-[13px] text-muted-foreground @2xl:col-start-2 @2xl:row-start-1">
+        <span className="tabular-nums">{doc.number}</span>
+        <span aria-hidden> · </span>
+        {t.due}{' '}
+        <RelativeDate
+          date={doc.dueDate}
+          tone="due"
+          className={cn(overdue && 'font-medium text-destructive')}
+        />
+      </span>
+      <Amount
+        value={doc.remaining}
+        currency={doc.currency}
+        size="inline"
+        hideZeroFraction
+        className="col-start-2 row-start-1 text-right @2xl:col-start-3"
+      />
+      <Button
+        variant="ghost"
+        size="xs"
+        disabled={remind.isPending}
+        aria-label={t.remindFor(name)}
+        onClick={() => remind.mutate({ id: doc.id, reminder: overdue })}
+        className={cn(
+          'relative z-10 col-start-2 row-start-2 -mr-2 justify-self-end text-[13px] pointer-coarse:h-11 pointer-coarse:px-3 @2xl:col-start-4 @2xl:row-start-1',
+          !overdue && 'row-actions focus-visible:opacity-100',
+        )}
+      >
+        {t.remind}
+      </Button>
     </li>
   )
 }
@@ -82,36 +84,45 @@ function Row({ doc }: { doc: Doc }) {
 /** Open invoices, most overdue first, with an inline "Připomenout". */
 export function AwaitingList({
   docs,
+  status,
+  onRetry,
   total,
   className,
 }: {
   docs: Doc[]
+  status: 'pending' | 'error' | 'success'
+  onRetry: () => unknown
   total: number
   className?: string
 }) {
-  const rows = sortByDue(docs).slice(0, 6)
+  const rows = sortByDue(docs).slice(0, 8)
   return (
-    <section className={cn('sheet @container pt-5 pb-2', className)}>
-      <SectionLabel
-        className="px-5"
-        action={
-          total > rows.length ? (
-            <Link
-              to="/faktury"
-              search={{ filter: 'unpaid' }}
-              className="text-xs font-medium text-primary underline-offset-4 hover:underline"
-            >
+    <section className={cn('@container', className)}>
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-xl leading-7">{t.title}</h2>
+        <div className="flex items-center gap-4">
+          <Link to="/banka" className={quietLink}>
+            {t.uploadStatement}
+          </Link>
+          {total > rows.length && (
+            <Link to="/faktury" search={{ filter: 'unpaid' }} className={quietLink}>
               {t.all(total)}
             </Link>
-          ) : undefined
-        }
-      >
-        {t.title}
-      </SectionLabel>
-      {rows.length === 0 ? (
-        <p className="px-5 py-8 text-center text-sm text-muted-foreground">{t.empty}</p>
+          )}
+        </div>
+      </div>
+      {status === 'pending' ? (
+        <div className="mt-2 space-y-2 border-t pt-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : status === 'error' ? (
+        <ErrorState onRetry={onRetry} className="border-t" />
+      ) : rows.length === 0 ? (
+        <p className="border-t py-8 text-sm text-muted-foreground">{t.empty}</p>
       ) : (
-        <ul className="mt-2 divide-y divide-border/60">
+        <ul className="mt-2 border-t">
           {rows.map((d) => (
             <Row key={d.id} doc={d} />
           ))}

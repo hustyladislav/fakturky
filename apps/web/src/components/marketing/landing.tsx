@@ -3,19 +3,7 @@ import { Button } from '@fakturky/ui/components/button'
 import { Logo } from '@fakturky/ui/components/logo'
 import { ThemeToggle } from '@fakturky/ui/components/theme'
 import { Link } from '@tanstack/react-router'
-import {
-  ArrowRight,
-  Bot,
-  Calculator,
-  CalendarSync,
-  Coffee,
-  FileCheck2,
-  Infinity as InfinityIcon,
-  Plug,
-  QrCode,
-  Search,
-  Terminal,
-} from 'lucide-react'
+import { ArrowRight, Coffee } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { cs } from '@/i18n/cs'
 import { Comparison } from './comparison'
@@ -37,7 +25,10 @@ function Github({ className, ...props }: React.ComponentProps<'svg'> & { 'data-i
 }
 
 const t = cs.landing
-const featureIcons = [InfinityIcon, QrCode, Search, Calculator, CalendarSync, FileCheck2]
+
+const container = 'mx-auto max-w-[1200px] px-5 md:px-8'
+const h2 =
+  'text-[32px] leading-[38px] tracking-[-0.02em] text-balance md:text-5xl md:leading-[50px]'
 
 export function Landing() {
   return (
@@ -59,29 +50,27 @@ export function Landing() {
 }
 
 function SiteHeader() {
+  const link = 'text-muted-foreground transition-colors hover:text-foreground'
   return (
-    <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-6 px-5 md:px-8">
+    <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
+      <div className={`${container} flex h-14 items-center gap-6`}>
         <Link to="/">
-          <Logo name={BRAND.name} markClassName="size-8" />
+          <Logo name={BRAND.name} markClassName="size-7" />
         </Link>
-        <nav
-          className="hidden items-center gap-6 text-sm text-muted-foreground md:flex"
-          aria-label="Sekce"
-        >
-          <a href="#funkce" className="hover:text-foreground">
+        <nav className="hidden items-center gap-6 text-sm md:flex" aria-label="Sekce">
+          <a href="#funkce" className={link}>
             {t.nav.features}
           </a>
-          <a href="#srovnani" className="hover:text-foreground">
+          <a href="#srovnani" className={link}>
             {t.nav.compare}
           </a>
-          <a href="#proc-zdarma" className="hover:text-foreground">
+          <a href="#proc-zdarma" className={link}>
             {t.nav.why}
           </a>
-          <a href="#ai" className="hover:text-foreground">
+          <a href="#ai" className={link}>
             {t.nav.ai}
           </a>
-          <a href="#faq" className="hover:text-foreground">
+          <a href="#faq" className={link}>
             {t.nav.faq}
           </a>
         </nav>
@@ -107,55 +96,65 @@ function SiteHeader() {
 
 function Hero() {
   return (
-    <section className="mx-auto max-w-[1200px] px-5 pt-10 pb-4 md:px-8 md:pt-16 md:pb-8">
+    <section className={`${container} pt-14 pb-12 md:pt-24 md:pb-20`}>
       <div className="mx-auto max-w-3xl text-center">
-        <h1 className="text-5xl leading-[1.05] font-medium tracking-tight text-balance md:text-7xl">
+        <h1 className="text-[40px] leading-[42px] font-normal tracking-[-0.02em] text-balance md:text-[64px] md:leading-[64px]">
           {t.heroTitle}
         </h1>
-        <p className="mx-auto mt-5 max-w-2xl text-lg text-pretty text-muted-foreground">
+        <p className="mx-auto mt-5 max-w-xl text-lg text-pretty text-muted-foreground">
           {t.heroText}
         </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Button
-            size="lg"
-            className="h-11 px-5 text-base"
-            nativeButton={false}
-            render={<Link to="/registrace" />}
-          >
-            {t.start}
-            <ArrowRight data-icon="inline-end" />
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            className="h-11 px-5 text-base"
-            nativeButton={false}
-            render={<a href={BRAND.repoUrl} target="_blank" rel="noreferrer" />}
-          >
-            <Github data-icon="inline-start" />
-            GitHub
-          </Button>
-        </div>
-        <p className="mt-4 text-sm text-muted-foreground">{t.heroNote}</p>
+        <Button
+          variant="brand"
+          size="lg"
+          className="mt-8 h-12 px-6 text-base"
+          nativeButton={false}
+          render={<Link to="/registrace" />}
+        >
+          {t.start}
+          <ArrowRight data-icon="inline-end" />
+        </Button>
+        <p className="mt-3 text-sm text-muted-foreground">{t.heroNote}</p>
       </div>
-      <HeroComposition />
+      <div className="mt-12 md:mt-16">
+        <HeroComposition />
+      </div>
+    </section>
+  )
+}
+
+function Features() {
+  return (
+    <section id="funkce" className="bg-muted py-14 md:py-20">
+      <div className={container}>
+        <h2 className={`max-w-2xl ${h2}`}>{t.featuresTitle}</h2>
+        <ul className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+          {t.features.map(([title, text]) => (
+            <li key={title} className="border-t border-foreground/15 pt-4">
+              <h3 className="text-base font-medium">{title}</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">{text}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   )
 }
 
 function Why() {
   return (
-    <section id="proc-zdarma" className="border-y bg-card py-12 md:py-16">
-      <div className="mx-auto grid max-w-[1200px] gap-10 px-5 md:grid-cols-[1fr_1.4fr] md:px-8">
-        <h2 className="text-4xl leading-tight font-medium md:text-5xl">{t.whyTitle}</h2>
+    <section id="proc-zdarma" className="bg-muted py-14 md:py-20">
+      <div className={`${container} grid gap-8 md:grid-cols-[1fr_1.4fr] md:gap-14`}>
+        <h2 className={h2}>{t.whyTitle}</h2>
         <div className="space-y-4 text-[17px] leading-relaxed text-pretty">
           {t.whyText.map((p) => (
             <p key={p}>{p}</p>
           ))}
           <div className="flex flex-wrap gap-3 pt-2">
             <Button
-              nativeButton={false}
+              variant="outline"
               size="lg"
+              nativeButton={false}
               render={<a href={BRAND.supportUrl} target="_blank" rel="noreferrer" />}
             >
               <Coffee data-icon="inline-start" />
@@ -177,51 +176,22 @@ function Why() {
   )
 }
 
-function Features() {
-  return (
-    <section id="funkce" className="mx-auto max-w-[1200px] px-5 py-12 md:px-8 md:py-16">
-      <h2 className="max-w-2xl text-4xl leading-tight font-medium text-balance md:text-5xl">
-        {t.featuresTitle}
-      </h2>
-      <ul className="mt-8 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 lg:grid-cols-3">
-        {t.features.map(([title, text], i) => {
-          const Icon = featureIcons[i] ?? InfinityIcon
-          return (
-            <li key={title} className="bg-background p-6">
-              <Icon className="size-5 text-primary" aria-hidden />
-              <h3 className="mt-4 text-base font-semibold">{title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{text}</p>
-            </li>
-          )
-        })}
-      </ul>
-    </section>
-  )
-}
-
 function ForAssistants() {
-  const icons = [Plug, Bot, Terminal]
   return (
-    <section id="ai" className="border-y bg-sidebar py-12 md:py-16">
-      <div className="mx-auto grid max-w-[1200px] gap-10 px-5 md:px-8 lg:grid-cols-2">
+    <section id="ai" className="py-14 md:py-20">
+      <div className={`${container} grid gap-10 lg:grid-cols-2 lg:gap-14`}>
         <div>
-          <h2 className="text-4xl leading-tight font-medium md:text-5xl">{t.aiTitle}</h2>
-          <p className="mt-4 max-w-lg text-[17px] leading-relaxed text-pretty">{t.aiText}</p>
-          <ul className="mt-8 space-y-4">
-            {t.aiCards.map(([title, text], i) => {
-              const Icon = icons[i] ?? Plug
-              return (
-                <li key={title} className="flex gap-3">
-                  <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-                    <Icon className="size-4" aria-hidden />
-                  </span>
-                  <div>
-                    <div className="font-medium">{title}</div>
-                    <div className="text-sm text-muted-foreground">{text}</div>
-                  </div>
-                </li>
-              )
-            })}
+          <h2 className={h2}>{t.aiTitle}</h2>
+          <p className="mt-4 max-w-lg text-[17px] leading-relaxed text-pretty text-muted-foreground">
+            {t.aiText}
+          </p>
+          <ul className="mt-8 divide-y border-y">
+            {t.aiCards.map(([title, text]) => (
+              <li key={title} className="py-3.5">
+                <div className="font-medium">{title}</div>
+                <div className="text-sm text-muted-foreground">{text}</div>
+              </li>
+            ))}
           </ul>
           <Button
             variant="outline"
@@ -244,7 +214,7 @@ function Snippet({ title, children }: { title: string; children: string }) {
   return (
     <figure className="min-w-0">
       <figcaption className="mb-1.5 text-xs font-medium text-muted-foreground">{title}</figcaption>
-      <pre className="overflow-x-auto rounded-xl border bg-card p-4 font-mono text-[13px] leading-relaxed">
+      <pre className="overflow-x-auto rounded-lg bg-muted p-4 font-mono text-[13px] leading-relaxed">
         <code>{children}</code>
       </pre>
     </figure>
@@ -272,7 +242,7 @@ function ApiExample() {
       <Snippet title={t.aiConfigTitle}>{mcp}</Snippet>
       <p className="-mt-2 text-xs text-muted-foreground">
         {t.aiConfigHint}{' '}
-        <a href="/docs/mcp" className="text-primary underline underline-offset-4">
+        <a href="/docs/mcp" className="text-foreground underline underline-offset-4">
           {t.aiMcpDocs}
         </a>
       </p>
@@ -284,23 +254,25 @@ function ApiExample() {
 
 function Faq() {
   return (
-    <section id="faq" className="mx-auto max-w-3xl px-5 py-12 md:px-8 md:py-16">
-      <h2 className="text-4xl leading-tight font-medium md:text-5xl">{t.faqTitle}</h2>
-      <div className="mt-8 divide-y border-y">
-        {t.faq.map(([q, a]) => (
-          <details key={q} className="group py-4">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium [&::-webkit-details-marker]:hidden">
-              {q}
-              <span
-                className="text-xl text-muted-foreground transition-transform group-open:rotate-45"
-                aria-hidden
-              >
-                +
-              </span>
-            </summary>
-            <p className="mt-2 text-muted-foreground">{a}</p>
-          </details>
-        ))}
+    <section id="faq" className="bg-muted py-14 md:py-20">
+      <div className="mx-auto max-w-3xl px-5 md:px-8">
+        <h2 className={h2}>{t.faqTitle}</h2>
+        <div className="mt-8 divide-y divide-foreground/15 border-y border-foreground/15">
+          {t.faq.map(([q, a]) => (
+            <details key={q} className="group">
+              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-3 font-medium [&::-webkit-details-marker]:hidden">
+                {q}
+                <span
+                  className="text-xl text-muted-foreground transition-transform duration-150 ease-out group-open:rotate-45"
+                  aria-hidden
+                >
+                  +
+                </span>
+              </summary>
+              <p className="pb-4 text-muted-foreground">{a}</p>
+            </details>
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -308,21 +280,18 @@ function Faq() {
 
 function FinalCta() {
   return (
-    <section className="mx-auto max-w-[1200px] px-5 pb-14 md:px-8 md:pb-20">
-      <div className="rounded-xl border bg-accent px-6 py-10 text-center md:py-14">
-        <h2 className="mx-auto max-w-2xl text-4xl leading-tight font-medium text-balance text-accent-foreground md:text-5xl">
-          {t.ctaTitle}
-        </h2>
-        <Button
-          size="lg"
-          className="mt-8 h-11 px-6 text-base"
-          nativeButton={false}
-          render={<Link to="/registrace" />}
-        >
-          {t.start}
-          <ArrowRight data-icon="inline-end" />
-        </Button>
-      </div>
+    <section className={`${container} py-16 text-center md:py-24`}>
+      <h2 className={`mx-auto max-w-2xl ${h2}`}>{t.ctaTitle}</h2>
+      <Button
+        variant="brand"
+        size="lg"
+        className="mt-8 h-12 px-6 text-base"
+        nativeButton={false}
+        render={<Link to="/registrace" />}
+      >
+        {t.start}
+        <ArrowRight data-icon="inline-end" />
+      </Button>
     </section>
   )
 }

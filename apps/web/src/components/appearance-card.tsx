@@ -1,17 +1,10 @@
 import { Button } from '@fakturky/ui/components/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@fakturky/ui/components/card'
-import { FilePicker } from '@fakturky/ui/components/file-picker'
 import { Label } from '@fakturky/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { RowList, SettingsRow, SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { client, orpc } from '@/lib/orpc'
 import { AppearancePreview } from './appearance-preview'
@@ -38,6 +31,7 @@ function AssetRow({
   onSaved: () => void
 }) {
   const queryClient = useQueryClient()
+  const fileInput = useRef<HTMLInputElement>(null)
   const refresh = () => queryClient.invalidateQueries({ queryKey: orpc.appearance.key() })
   const upload = useMutation({
     mutationFn: async (file: File) =>
@@ -60,36 +54,43 @@ function AssetRow({
     }),
   )
   return (
-    <div className="space-y-2">
-      <Label htmlFor={`asset-${kind}`}>{t[kind]}</Label>
-      <div className="flex flex-wrap items-center gap-3">
-        {src ? (
-          <img
-            src={src}
-            alt={t[kind]}
-            className="h-12 max-w-40 rounded border bg-white object-contain p-1"
-          />
-        ) : (
-          <span className="text-muted-foreground text-sm">{t.none}</span>
-        )}
-        <FilePicker
-          id={`asset-${kind}`}
-          buttonLabel={cs.common.chooseFile}
-          emptyLabel={cs.common.noFile}
-          accept="image/png,image/jpeg"
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            if (f) upload.mutate(f)
-            e.target.value = ''
-          }}
+    <SettingsRow label={<Label htmlFor={`asset-${kind}`}>{t[kind]}</Label>}>
+      {src ? (
+        <img
+          src={src}
+          alt={t[kind]}
+          className="h-10 max-w-32 rounded border bg-white object-contain p-1"
         />
-        {src && (
-          <Button variant="ghost" size="sm" onClick={() => remove.mutate({ kind })}>
-            {t.remove}
-          </Button>
-        )}
-      </div>
-    </div>
+      ) : (
+        <span className="text-muted-foreground text-sm">{t.none}</span>
+      )}
+      <input
+        ref={fileInput}
+        id={`asset-${kind}`}
+        type="file"
+        className="sr-only"
+        tabIndex={-1}
+        accept="image/png,image/jpeg"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) upload.mutate(f)
+          e.target.value = ''
+        }}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        aria-label={`${cs.common.chooseFile}: ${t[kind]}`}
+        onClick={() => fileInput.current?.click()}
+      >
+        {cs.common.chooseFile}
+      </Button>
+      {src && (
+        <Button variant="ghost" size="sm" onClick={() => remove.mutate({ kind })}>
+          {t.remove}
+        </Button>
+      )}
+    </SettingsRow>
   )
 }
 
@@ -128,18 +129,11 @@ export function AppearanceCard() {
   }, [color, a?.accentColor, mutate])
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle role="heading" aria-level={2}>
-          {t.title}
-        </CardTitle>
-        <CardDescription>{t.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]">
-        <div className="order-2 space-y-4 lg:order-1">
-          <div className="space-y-2">
-            <Label htmlFor="accent">{t.accent}</Label>
-            <div className="flex items-center gap-2">
+    <SettingsSection id="vzhled" title={t.title} description={t.description}>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
+        <div className="min-w-0 space-y-4">
+          <RowList>
+            <SettingsRow label={<Label htmlFor="accent">{t.accent}</Label>}>
               <input
                 id="accent"
                 type="color"
@@ -159,20 +153,21 @@ export function AppearanceCard() {
                   {t.resetColor}
                 </Button>
               )}
-            </div>
-          </div>
-          <AssetRow kind="logo" src={a?.logo ?? null} onSaved={flashSaved} />
-          <AssetRow kind="signature" src={a?.signature ?? null} onSaved={flashSaved} />
+            </SettingsRow>
+            <AssetRow kind="logo" src={a?.logo ?? null} onSaved={flashSaved} />
+            <AssetRow kind="signature" src={a?.signature ?? null} onSaved={flashSaved} />
+            <SettingsRow label={<Label htmlFor="show-brand">{t.showBrand}</Label>}>
+              <input
+                id="show-brand"
+                type="checkbox"
+                className="size-4"
+                checked={a?.showBrand ?? true}
+                disabled={!a || update.isPending}
+                onChange={(e) => update.mutate({ showBrand: e.target.checked })}
+              />
+            </SettingsRow>
+          </RowList>
           <p className="text-muted-foreground text-xs">{t.hint}</p>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={a?.showBrand ?? true}
-              disabled={!a || update.isPending}
-              onChange={(e) => update.mutate({ showBrand: e.target.checked })}
-            />
-            {t.showBrand}
-          </label>
           <p
             className="flex min-h-5 items-center gap-1.5 text-muted-foreground text-xs"
             role="status"
@@ -188,7 +183,7 @@ export function AppearanceCard() {
             )}
           </p>
         </div>
-        <div className="order-1 space-y-3 lg:sticky lg:top-20 lg:order-2 lg:self-start">
+        <div className="min-w-0 space-y-3 lg:sticky lg:top-20 lg:self-start">
           <AppearancePreview
             accent={accent}
             logo={a?.logo ?? null}
@@ -198,7 +193,7 @@ export function AppearanceCard() {
           />
           <p className="text-muted-foreground text-xs">{t.issuedKeep}</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </SettingsSection>
   )
 }

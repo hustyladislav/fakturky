@@ -1,22 +1,14 @@
-import { Amount } from '@fakturky/ui/components/amount'
-import { Avatar } from '@fakturky/ui/components/avatar'
 import { Button } from '@fakturky/ui/components/button'
 import { EmptyState } from '@fakturky/ui/components/empty-state'
-import { Kbd } from '@fakturky/ui/components/kbd'
-import { PageHeader, SectionLabel } from '@fakturky/ui/components/page-header'
+import { PageHeader } from '@fakturky/ui/components/page-header'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
-import { moneyParts } from '@fakturky/ui/lib/money'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { FilePlus2, Landmark, Layers, Sparkles } from 'lucide-react'
-import { ActivityFeed } from '@/components/dashboard/activity-feed'
 import { AwaitingList } from '@/components/dashboard/awaiting-list'
-import { Delta, KpiCard, wholeCrowns } from '@/components/dashboard/kpi-card'
+import { MonthFigures, OutstandingFigures } from '@/components/dashboard/figure-strip'
+import { RecentDocuments } from '@/components/dashboard/recent-documents'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
 import { VatLimitCard } from '@/components/dashboard/vat-limit'
-import { InvoiceStatus } from '@/components/invoice-status'
-import { useShell } from '@/components/shell/shell-context'
-import { useModKey } from '@/components/shell/use-mod-key'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
@@ -28,257 +20,90 @@ export const Route = createFileRoute('/_app/prehled')({
 
 const t = cs.overview
 
-/** `92 400 Kč` (whole crowns, non-breaking spaces) for running text. */
-function crowns(amount: string) {
-  const p = moneyParts(wholeCrowns(amount))
-  return `${p.integer}\u00a0${p.currency}`
-}
-
-function today() {
-  return new Intl.DateTimeFormat('cs-CZ', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date())
-}
-
-function QuickActions() {
-  const shell = useShell()
-  const mod = useModKey()
+function FirstInvoice({ noBankAccount }: { noBankAccount: boolean }) {
   return (
-    <nav
-      aria-label={t.quick.title}
-      className="-mx-4 mb-6 flex scroll-px-4 gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden"
+    <EmptyState
+      illustration="invoices"
+      title={t.emptyTitle}
+      className="mb-8"
+      action={
+        noBankAccount ? (
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button nativeButton={false} render={<Link to="/nastaveni" hash="banka" />}>
+              {t.addBankAccount}
+            </Button>
+            <Button variant="outline" nativeButton={false} render={<Link to="/faktury/nova" />}>
+              {cs.invoices.emptyCta}
+            </Button>
+          </div>
+        ) : (
+          <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
+            {cs.invoices.emptyCta}
+          </Button>
+        )
+      }
     >
-      <Button
-        nativeButton={false}
-        render={<Link to="/faktury/nova" />}
-        size="lg"
-        className="shrink-0 px-3.5"
-      >
-        <FilePlus2 />
-        {t.quick.newInvoice}
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        nativeButton={false}
-        render={<Link to="/sablony" />}
-        className="shrink-0 bg-card px-3.5"
-      >
-        <Layers />
-        {t.quick.fromTemplate}
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        nativeButton={false}
-        render={<Link to="/banka" />}
-        className="shrink-0 bg-card px-3.5"
-      >
-        <Landmark />
-        {t.quick.uploadStatement}
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        onClick={() => shell.setAssistantOpen(true)}
-        className="shrink-0 bg-card px-3.5"
-      >
-        <Sparkles />
-        {t.quick.askAssistant}
-        <Kbd className="ml-1 hidden sm:inline-flex">{mod} J</Kbd>
-      </Button>
-    </nav>
+      {t.emptyText}
+    </EmptyState>
   )
 }
 
+function Loading() {
+  return (
+    <div className="space-y-10" aria-busy="true">
+      <div className="grid gap-6 @md:grid-cols-2">
+        <Skeleton className="h-24 rounded-md" />
+        <Skeleton className="h-24 rounded-md" />
+      </div>
+      <Skeleton className="h-64 rounded-md" />
+    </div>
+  )
+}
+
+/**
+ * Přehled answers "who owes me?" first: outstanding and overdue figures, then the people who owe
+ * it with a one-tap reminder. Turnover, chart and recent documents follow for the quieter reading.
+ */
 function Overview() {
   const summary = useQuery(orpc.dashboard.summary.queryOptions({ input: {} }))
   const recent = useQuery(orpc.documents.list.queryOptions({ input: { limit: 5 } }))
   const unpaid = useQuery(
     orpc.documents.list.queryOptions({ input: { filter: 'unpaid', limit: 200 } }),
   )
-  const activity = useQuery(orpc.dashboard.activity.queryOptions({ input: { limit: 6 } }))
-  const s = summary.data
   const bankAccounts = useQuery(orpc.bankAccounts.list.queryOptions({ input: {} }))
+  const s = summary.data
   const noBankAccount = bankAccounts.isSuccess && bankAccounts.data.length === 0
   const hasDocs = (recent.data?.length ?? 0) > 0
 
-  const prev = s?.months.at(-2)
-  const monthN = Number(s?.monthTurnover ?? 0)
-  const spark = s?.months.slice(-6)
-
-  const subtitle = s ? (
-    <>
-      {s.monthIssuedCount > 0
-        ? t.summary.issued(s.monthIssuedCount, monthN > 0 ? crowns(s.monthTurnover) : null)
-        : t.summary.none}{' '}
-      {t.summary.awaiting(s.unpaidCount)}
-    </>
-  ) : undefined
-
   return (
     <div className="@container mx-auto max-w-[1200px]">
-      <PageHeader eyebrow={today()} title={t.greeting} subtitle={subtitle} className="mb-5" />
+      <PageHeader title={t.greeting} className="mb-8" />
 
-      <QuickActions />
-
-      {recent.isSuccess && !hasDocs && (
-        <EmptyState
-          illustration="invoices"
-          title={t.emptyTitle}
-          className="mb-6 bg-card"
-          action={
-            noBankAccount ? (
-              <div className="flex flex-wrap justify-center gap-2">
-                <Button nativeButton={false} render={<Link to="/nastaveni" hash="banka" />}>
-                  {t.addBankAccount}
-                </Button>
-                <Button variant="outline" nativeButton={false} render={<Link to="/faktury/nova" />}>
-                  {cs.invoices.emptyCta}
-                </Button>
-              </div>
-            ) : (
-              <Button nativeButton={false} render={<Link to="/faktury/nova" />}>
-                {cs.invoices.emptyCta}
-              </Button>
-            )
-          }
-        >
-          {t.emptyText}
-        </EmptyState>
-      )}
+      {recent.isSuccess && !hasDocs && <FirstInvoice noBankAccount={noBankAccount} />}
 
       {summary.isError && <p className="text-sm text-muted-foreground">{cs.common.error}</p>}
-
-      {summary.isPending && (
-        <div className="space-y-5" aria-busy="true">
-          <div className="grid grid-cols-2 gap-4 @4xl:grid-cols-4">
-            {[0, 1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-[142px] rounded-xl" />
-            ))}
-          </div>
-          <Skeleton className="h-[340px] rounded-xl" />
-        </div>
-      )}
+      {summary.isPending && <Loading />}
 
       {s && (
-        <div className="space-y-5">
-          {/* KPIs: 4 across on desktop, 2x2 on tablet, a snap carousel on phones */}
-          <div className="-mx-4 flex scroll-px-4 snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] @xl:mx-0 @xl:grid @xl:grid-cols-2 @xl:gap-4 @xl:overflow-visible @xl:px-0 @xl:pb-0 @4xl:grid-cols-4 [&::-webkit-scrollbar]:hidden">
-            <KpiCard
-              className="w-[calc(100%-3.25rem)] shrink-0 snap-start @xl:w-auto"
-              label={t.kpi.month}
-              amount={s.monthTurnover}
-              tone="ink"
-              delta={
-                <Delta
-                  current={monthN}
-                  previous={Number(prev?.turnover ?? 0)}
-                  neutral={Number(s.monthCreditNotes) < 0}
-                />
-              }
-              hint={
-                Number(s.monthCreditNotes) < 0
-                  ? t.kpi.monthCredit(`−${crowns(s.monthCreditNotes.replace('-', ''))}`)
-                  : t.kpi.monthHint
-              }
-              spark={spark?.map((m) => Number(m.turnover))}
-            />
-            <KpiCard
-              className="w-[calc(100%-3.25rem)] shrink-0 snap-start @xl:w-auto"
-              label={t.kpi.unpaid}
-              amount={s.unpaid}
-              hint={t.kpi.unpaidHint(s.unpaidCount)}
-            />
-            <KpiCard
-              className="w-[calc(100%-3.25rem)] shrink-0 snap-start @xl:w-auto"
-              label={t.kpi.overdue}
-              amount={s.overdue}
-              tone={s.overdueCount > 0 ? 'overdue' : undefined}
-              hint={
-                s.overdueCount > 0
-                  ? t.kpi.overdueHint(s.overdueCount, s.oldestOverdueDays)
-                  : t.kpi.none
-              }
-            />
-            <KpiCard
-              className="w-[calc(100%-3.25rem)] shrink-0 snap-start @xl:w-auto"
-              label={t.kpi.received}
-              amount={s.monthReceived}
-              delta={
-                <Delta current={Number(s.monthReceived)} previous={Number(prev?.received ?? 0)} />
-              }
-              hint={t.kpi.receivedHint}
-              spark={spark?.map((m) => Number(m.received))}
-            />
-          </div>
+        // Phone: owed, who owes, then the month. Wide: one figure strip, then who owes.
+        <div className="grid gap-y-10 @4xl:grid-cols-4 @4xl:gap-y-0">
+          <OutstandingFigures s={s} className="order-1 @4xl:col-span-2 @4xl:border-b @4xl:pb-8" />
+          <MonthFigures
+            s={s}
+            className="order-3 @4xl:order-2 @4xl:col-span-2 @4xl:border-b @4xl:border-l @4xl:pb-8 @4xl:pl-8"
+          />
+          <AwaitingList
+            docs={unpaid.data ?? []}
+            total={s.unpaidCount}
+            className="order-2 @4xl:order-3 @4xl:col-span-4 @4xl:mt-8"
+          />
 
-          <div className="flex flex-col gap-5 @4xl:grid @4xl:grid-cols-[minmax(0,1fr)_23rem] @4xl:items-start">
-            <div className="contents @4xl:flex @4xl:min-w-0 @4xl:flex-col @4xl:gap-5">
-              <RevenueChart months={s.months} className="order-2" />
-              {hasDocs && (
-                <section className="sheet @container order-4 pt-5 pb-2">
-                  <SectionLabel
-                    className="px-5"
-                    action={
-                      <Link
-                        to="/faktury"
-                        search={{ filter: 'all' }}
-                        className="whitespace-nowrap text-xs font-medium text-primary underline-offset-4 hover:underline"
-                      >
-                        {t.allInvoices}
-                      </Link>
-                    }
-                  >
-                    {t.recent}
-                  </SectionLabel>
-                  <ul className="mt-2 divide-y divide-border/60">
-                    {recent.data?.map((d) => (
-                      <li key={d.id} className="row-hover relative">
-                        <Link
-                          to={d.status === 'draft' ? '/faktury/$id/upravit' : '/faktury/$id'}
-                          params={{ id: d.id }}
-                          className="flex items-center gap-3 px-5 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset"
-                        >
-                          <Avatar name={d.customerName ?? '?'} size="md" />
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium">
-                              {d.customerName ?? '—'}
-                            </div>
-                            <div className="truncate text-xs text-muted-foreground tabular-nums">
-                              {d.number ??
-                                (d.type === 'credit_note'
-                                  ? t.draftCreditNote
-                                  : cs.invoices.draftNumber)}
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 flex-col items-end gap-1 @md:flex-row @md:items-center @md:gap-4">
-                            <Amount
-                              value={d.total}
-                              currency={d.currency}
-                              hideZeroFraction
-                              tone={d.status === 'draft' ? 'muted' : 'default'}
-                            />
-                            <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
-                          </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
+          <div className="order-4 grid gap-x-12 gap-y-10 @4xl:col-span-4 @4xl:mt-12 @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] @4xl:items-start">
+            <div className="space-y-10">
+              <RevenueChart months={s.months} />
+              {s.vatLimit && <VatLimitCard vat={s.vatLimit} />}
             </div>
-
-            <div className="contents @4xl:flex @4xl:min-w-0 @4xl:flex-col @4xl:gap-5">
-              <AwaitingList docs={unpaid.data ?? []} total={s.unpaidCount} className="order-1" />
-              {s.vatLimit ? (
-                <VatLimitCard vat={s.vatLimit} className="order-3" />
-              ) : (
-                <ActivityFeed events={activity.data ?? []} className="order-3" />
-              )}
-            </div>
+            {hasDocs && <RecentDocuments docs={recent.data ?? []} />}
           </div>
         </div>
       )}

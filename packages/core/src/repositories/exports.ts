@@ -3,7 +3,7 @@ import { schema } from '@fakturky/db'
 import { Decimal, parseDecimal, toFixed } from '@fakturky/domain'
 import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { toCsv } from '../csv'
-import { deriveStatus } from './documents'
+import { deriveStatus, periodWhere } from './documents'
 
 const {
   document,
@@ -104,11 +104,26 @@ export const exportsRepo = {
     )
   },
 
-  async documentsCsv(db: Db, orgId: string) {
+  async documentsCsv(
+    db: Db,
+    orgId: string,
+    opts: {
+      from?: string
+      to?: string
+      type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt'
+    } = {},
+  ) {
     const rows = await db
       .select()
       .from(document)
-      .where(and(eq(document.organizationId, orgId), isNull(document.deletedAt)))
+      .where(
+        and(
+          eq(document.organizationId, orgId),
+          isNull(document.deletedAt),
+          opts.type ? eq(document.type, opts.type) : undefined,
+          periodWhere(opts.from, opts.to),
+        ),
+      )
       .orderBy(desc(document.issueDate), desc(document.createdAt))
     const paid = new Map<string, Decimal>()
     if (rows.length > 0) {

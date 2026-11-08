@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { signUp, testEmail } from './helpers'
+import { onboardManually, signUp, testEmail } from './helpers'
 
 test.use({ viewport: { width: 390, height: 844 } })
 
@@ -9,8 +9,7 @@ test('phone editor: items right after the customer, dates folded into a summary 
   await signUp(page, testEmail('ed-mobile'))
   await page.waitForLoadState('networkidle')
   // Manual profile without a registry note, so the banner would show on a desktop.
-  await page.getByLabel('Obchodní jméno / jméno a příjmení').fill('Mobilní Test')
-  await page.getByRole('button', { name: 'Pokračovat' }).click()
+  await onboardManually(page, 'Mobilní Test')
   await page.getByRole('button', { name: 'Přeskočit' }).click()
   await page.getByRole('link', { name: 'Vystavit první fakturu' }).click()
   await page.waitForURL(/\/faktury\/nova$/)

@@ -12,11 +12,13 @@ export function useInvoiceList({
   filter = 'all',
   q,
   type,
+  from,
+  to,
   sort = 'issueDate',
   dir = 'desc',
 }: ListSearch) {
   const stats = useQuery({
-    ...orpc.documents.stats.queryOptions({ input: { search: q || undefined, type } }),
+    ...orpc.documents.stats.queryOptions({ input: { search: q || undefined, type, from, to } }),
     placeholderData: keepPreviousData,
   })
   const list = useInfiniteQuery({
@@ -25,6 +27,8 @@ export function useInvoiceList({
         filter,
         search: q || undefined,
         type,
+        from,
+        to,
         sort,
         dir,
         limit: PAGE,

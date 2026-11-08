@@ -45,7 +45,9 @@ test('unknown IČO and invalid bank account are rejected with helpful copy', asy
   await page.getByRole('button', { name: 'Načíst z ARES' }).click()
   await expect(page.getByText('IČO se nepodařilo najít v ARES. Vyplňte údaje ručně.')).toBeVisible()
 
-  // Manual fallback still works.
+  // The manual path keeps what was typed and still works.
+  await page.getByRole('button', { name: 'Nemám IČO / vyplnit ručně' }).click()
+  await expect(page.getByLabel('IČO')).toHaveValue('27082440')
   await page.getByLabel('Obchodní jméno / jméno a příjmení').fill('Ruční Zadání')
   await page.getByRole('button', { name: 'Pokračovat' }).click()
   await skipOnboardingBank(page)

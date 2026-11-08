@@ -4,6 +4,7 @@ import {
   createContact,
   fillLines,
   issueInvoice,
+  onboardManually,
   signUp,
   testEmail,
 } from './helpers'
@@ -13,8 +14,7 @@ test('registry banner can be dismissed for good; "Neuložené změny" does not m
 }) => {
   await signUp(page, testEmail('ed-polish'))
   await page.waitForLoadState('networkidle')
-  await page.getByLabel('Obchodní jméno / jméno a příjmení').fill('Polish Test')
-  await page.getByRole('button', { name: 'Pokračovat' }).click()
+  await onboardManually(page, 'Polish Test')
   await page.getByRole('button', { name: 'Přeskočit' }).click()
   await page.getByRole('button', { name: 'Přejít na přehled' }).click()
   await addBankAccount(page)

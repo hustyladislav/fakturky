@@ -1,3 +1,5 @@
+import { isValidIsoDate } from '@fakturky/domain/dates'
+
 export const TYPES = ['invoice', 'proforma', 'credit_note', 'payment_receipt'] as const
 export const FILTERS = ['all', 'draft', 'unpaid', 'overdue', 'paid'] as const
 export const SORTS = ['issueDate', 'dueDate', 'number', 'customer', 'total'] as const
@@ -11,9 +13,15 @@ export interface ListSearch {
   filter?: Filter
   q?: string
   type?: DocType
+  /** Period by DUZP, both `YYYY-MM-DD` and inclusive; either end may be open. */
+  from?: string
+  to?: string
   sort?: Sort
   dir?: Dir
 }
+
+/** A hand-edited URL with a bad date falls back to "no bound" instead of a server error. */
+const isoParam = (v: unknown) => (typeof v === 'string' && isValidIsoDate(v) ? v : undefined)
 
 /** Plain validation (no zod): keeps the schema library out of the client bundle. */
 export function validateListSearch(search: Record<string, unknown>): ListSearch {
@@ -21,6 +29,8 @@ export function validateListSearch(search: Record<string, unknown>): ListSearch 
     filter: FILTERS.find((f) => f === search.filter),
     type: TYPES.find((x) => x === search.type),
     q: typeof search.q === 'string' && search.q ? search.q : undefined,
+    from: isoParam(search.from),
+    to: isoParam(search.to),
     sort: SORTS.find((x) => x === search.sort),
     dir: search.dir === 'asc' || search.dir === 'desc' ? search.dir : undefined,
   }

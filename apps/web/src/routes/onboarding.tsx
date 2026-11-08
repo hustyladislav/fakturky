@@ -112,7 +112,6 @@ function BankStep({ onDone }: { onDone: () => void }) {
 function Onboarding() {
   const navigate = useNavigate()
   const { data: profile } = useQuery(orpc.businessProfile.get.queryOptions())
-  const appearance = useQuery(orpc.appearance.get.queryOptions({ input: {} }))
   const [values, setValues] = useState<ProfileValues | null>(null)
   const [saved, setSaved] = useState(false)
   const [bankDone, setBankDone] = useState(false)
@@ -135,51 +134,39 @@ function Onboarding() {
             <BankStep onDone={() => setBankDone(true)} />
           </div>
         ) : (
-          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] lg:justify-center lg:gap-20">
-            <div>
-              <p className="text-[13px] text-muted-foreground">{t.stepOf(1, 3)}</p>
-              <h1 className="mt-2 text-[28px] leading-8 font-normal tracking-[-0.02em] text-balance">
-                {t.title}
-              </h1>
-              <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-                {t.description}
-              </p>
-              <div className="mt-7">
-                {profile && (
-                  <BusinessProfileForm
-                    profile={profile}
-                    submitLabel={t.submit}
-                    onValuesChange={setValues}
-                    onSaved={() => setSaved(true)}
-                  />
-                )}
-                {profile && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="mt-2 h-11 w-full text-muted-foreground"
-                    onClick={async () => {
-                      // Finishing onboarding stamps onboardedAt; keep whatever is already stored.
-                      await client.businessProfile.update({ legalName: profile.legalName })
-                      await go()
-                    }}
-                  >
-                    {t.skip}
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <aside className="hidden lg:sticky lg:top-8 lg:block">
-              <p className="mb-3 text-[13px] text-muted-foreground">{t.previewLabel}</p>
-              {values && (
-                <BusinessCard
-                  values={values}
-                  logo={appearance.data?.logo ?? null}
-                  accent={appearance.data?.accentColor ?? null}
+          <div className="mx-auto max-w-md">
+            <p className="text-[13px] text-muted-foreground">{t.stepOf(1, 3)}</p>
+            <h1 className="mt-2 text-[28px] leading-8 font-normal tracking-[-0.02em] text-balance">
+              {t.title}
+            </h1>
+            <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
+              {t.description}
+            </p>
+            <div className="mt-7">
+              {profile && (
+                <BusinessProfileForm
+                  mode="ico-first"
+                  profile={profile}
+                  submitLabel={t.submit}
+                  onValuesChange={setValues}
+                  onSaved={() => setSaved(true)}
                 />
               )}
-            </aside>
+              {profile && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="mt-2 h-11 w-full text-muted-foreground"
+                  onClick={async () => {
+                    // Finishing onboarding stamps onboardedAt; keep whatever is already stored.
+                    await client.businessProfile.update({ legalName: profile.legalName })
+                    await go()
+                  }}
+                >
+                  {t.skip}
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </main>

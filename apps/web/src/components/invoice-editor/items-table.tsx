@@ -11,6 +11,12 @@ import type { FormLine } from '@/lib/document-sheet'
 
 const t = cs.invoices.form
 
+/** Quiet cells: an underline at rest (3:1 against the page), a fill on hover and focus. */
+const cell =
+  'rounded-none border-0 border-b border-input bg-transparent px-1 shadow-none hover:bg-muted/50 focus-visible:border-foreground focus-visible:bg-muted/40 focus-visible:ring-0 dark:bg-transparent'
+const selectCell =
+  '[&_select]:h-9 pointer-coarse:[&_select]:h-11 [&_select]:rounded-none [&_select]:border-0 [&_select]:border-b [&_select]:bg-transparent [&_select]:pl-1 [&_select]:hover:bg-muted/50 [&_select]:focus-visible:border-foreground [&_select]:focus-visible:bg-muted/40 [&_select]:focus-visible:ring-0 dark:[&_select]:bg-transparent'
+
 export type Line = FormLine & { key: number }
 
 export const VAT_RATES = ['21', '12']
@@ -57,6 +63,7 @@ function VatSelect({
     : cs.invoices.vatTreatment[value as keyof typeof cs.invoices.vatTreatment]
   return (
     <NativeSelect
+      className={selectCell}
       aria-label={t.vatRate}
       title={shown}
       value={value}
@@ -83,7 +90,7 @@ function VatSelect({
 /** Mini column label shown only in the stacked (narrow) layout; the table layout has real headers. */
 function Tiny({ children }: { children: string }) {
   return (
-    <span aria-hidden className="label-caps mb-1 block @[38rem]:hidden">
+    <span aria-hidden className="mb-1 block text-muted-foreground text-xs @[38rem]:hidden">
       {children}
     </span>
   )
@@ -179,7 +186,7 @@ export function ItemsTable({
     <div className="@container" role="group" aria-label={t.items}>
       <div
         aria-hidden
-        className="label-caps hidden gap-x-2 pb-2 @[38rem]:grid"
+        className="hidden gap-x-2 pb-1 text-muted-foreground text-xs @[38rem]:grid"
         style={{ gridTemplateColumns: cols }}
       >
         <span />
@@ -192,7 +199,7 @@ export function ItemsTable({
         <span />
       </div>
 
-      <ol className="divide-y divide-border border-y">
+      <ol className="divide-y divide-border border-t">
         {lines.map((l, i) => {
           const total = rowTotals[i]
           return (
@@ -217,7 +224,7 @@ export function ItemsTable({
                 setOverKey(null)
               }}
               className={cn(
-                'relative grid scroll-mb-32 grid-cols-6 gap-x-2 gap-y-2 py-3 transition-colors @[38rem]:items-center @[38rem]:py-2 @[38rem]:[grid-template-columns:var(--cols)]',
+                'group relative grid scroll-mb-32 grid-cols-6 gap-x-2 gap-y-2 py-3 transition-colors @[38rem]:items-center @[38rem]:py-2 @[38rem]:[grid-template-columns:var(--cols)]',
                 dragKey === l.key && 'opacity-40',
                 overKey === l.key &&
                   dragKey !== l.key &&
@@ -244,7 +251,7 @@ export function ItemsTable({
                   setDragKey(null)
                   setOverKey(null)
                 }}
-                className="hidden size-5 cursor-grab items-center justify-center rounded text-muted-foreground/60 outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing disabled:pointer-events-none disabled:opacity-30 @[38rem]:flex"
+                className="hidden size-5 cursor-grab items-center justify-center rounded text-muted-foreground opacity-0 outline-none hover:text-foreground focus-visible:opacity-100 focus-visible:ring-3 group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:ring-ring/50 active:cursor-grabbing disabled:pointer-events-none disabled:opacity-30 @[38rem]:flex"
               >
                 <GripVertical className="size-4" aria-hidden />
               </button>
@@ -258,6 +265,8 @@ export function ItemsTable({
                   data-line-desc=""
                   aria-label={t.description}
                   placeholder={t.description}
+                  enterKeyHint="next"
+                  className={cell}
                   value={l.description}
                   onChange={(e) => setLine(l.key, { description: e.target.value })}
                 />
@@ -267,7 +276,8 @@ export function ItemsTable({
                 <Input
                   aria-label={t.quantity}
                   inputMode="decimal"
-                  className="text-right tabular-nums"
+                  enterKeyHint="next"
+                  className={cn(cell, 'text-right tabular-nums')}
                   value={l.quantity}
                   onChange={(e) => setLine(l.key, { quantity: e.target.value })}
                 />
@@ -276,6 +286,8 @@ export function ItemsTable({
                 <Tiny>{t.unit}</Tiny>
                 <Input
                   aria-label={t.unit}
+                  enterKeyHint="next"
+                  className={cell}
                   value={l.unit}
                   onChange={(e) => setLine(l.key, { unit: e.target.value })}
                 />
@@ -286,7 +298,8 @@ export function ItemsTable({
                   aria-label={t.unitPrice}
                   placeholder="0,00"
                   inputMode="decimal"
-                  className="text-right tabular-nums"
+                  enterKeyHint="next"
+                  className={cn(cell, 'text-right tabular-nums')}
                   value={l.unitPrice}
                   onChange={(e) => setLine(l.key, { unitPrice: e.target.value })}
                 />
@@ -327,6 +340,8 @@ export function ItemsTable({
                   <Input
                     aria-label={t.vatNote}
                     placeholder={t.vatNotePlaceholder}
+                    enterKeyHint="next"
+                    className={cell}
                     value={l.vatNote}
                     onChange={(e) => setLine(l.key, { vatNote: e.target.value })}
                   />

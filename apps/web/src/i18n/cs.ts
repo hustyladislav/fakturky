@@ -345,15 +345,6 @@ export const cs = {
   overview: {
     title: 'Přehled',
     greeting: 'Dobrý den',
-    summary: {
-      issued: (count: number, total: string | null) =>
-        `Tento měsíc jste vystavili ${count} ${count === 1 ? 'fakturu' : count < 5 ? 'faktury' : 'faktur'}${total ? ` za ${total}` : ''}.`,
-      none: 'Tento měsíc jste zatím nic nevystavili.',
-      awaiting: (count: number) =>
-        count === 0
-          ? 'Nic nečeká na platbu.'
-          : `${count} ${count === 1 ? 'čeká' : 'čekají'} na platbu.`,
-    },
     kpi: {
       month: 'Obrat tento měsíc',
       monthHint: 'bez DPH, včetně dobropisů',
@@ -416,26 +407,11 @@ export const cs = {
       reminded: 'Připomínka odeslána.',
       remindFor: (name: string) => `Připomenout platbu: ${name}`,
       empty: 'Žádné faktury nečekají na platbu.',
-    },
-    quick: {
-      title: 'Rychlé akce',
-      newInvoice: 'Nová faktura',
-      fromTemplate: 'Ze šablony',
+      due: 'Splatnost',
       uploadStatement: 'Nahrát výpis',
-      askAssistant: 'Zeptat se asistenta',
     },
     recent: 'Poslední doklady',
     draftCreditNote: 'Dobropis · koncept',
-    activity: {
-      title: 'Aktivita',
-      empty: 'Zatím se nic nestalo.',
-      issued: 'Vystaveno',
-      paid: 'Zaplaceno',
-      partially_paid: 'Částečná platba',
-      sent: 'Odesláno',
-      reminded: 'Upomínka odeslána',
-      bank_matched: 'Spárováno z banky',
-    },
     allInvoices: 'Všechny faktury',
     emptyTitle: 'Začněte první fakturou',
     addBankAccount: 'Přidat bankovní účet',
@@ -459,6 +435,14 @@ export const cs = {
       `${count} ${count === 1 ? 'doklad' : count < 5 && count > 0 ? 'doklady' : 'dokladů'}${unpaid ? ` · ${unpaid} neuhrazeno` : ''}`,
     monthTotal: (count: number, sum: string | null) =>
       `${count} ${count === 1 ? 'doklad' : count < 5 ? 'doklady' : 'dokladů'}${sum ? ` · vystaveno ${sum}` : ''}`,
+    searchShort: 'Hledat doklad…',
+    tabsLabel: 'Stav dokladů',
+    subtitleSum: {
+      draft: 'rozpracováno',
+      unpaid: 'neuhrazeno',
+      overdue: 'po splatnosti',
+      paid: 'zaplaceno',
+    },
     shown: (shown: number, total: number) => `Zobrazeno ${shown} z ${total}`,
     typeShort: {
       invoice: 'Faktura',
@@ -488,8 +472,10 @@ export const cs = {
       markPaid: 'Označit jako zaplacené',
       remind: 'Poslat upomínky',
       clear: 'Zrušit výběr',
-      paidDone: (n: number) =>
-        `Označeno jako zaplacené: ${n} ${n === 1 ? 'faktura' : n < 5 ? 'faktury' : 'faktur'}.`,
+      paidDone: (ok: number, failed: number) =>
+        failed === 0
+          ? `Označeno jako zaplacené: ${ok} ${ok === 1 ? 'faktura' : ok < 5 ? 'faktury' : 'faktur'}.`
+          : `Označeno jako zaplacené: ${ok}, nepodařilo se: ${failed}.`,
       remindDone: (ok: number, failed: number) =>
         failed === 0
           ? `Upomínky odeslány: ${ok}.`
@@ -673,7 +659,7 @@ export const cs = {
       markPaidMore: 'Další možnosti platby',
       markPaidOther: 'Jiná částka nebo datum…',
       undo: 'Vrátit zpět',
-      share: 'Sdílet',
+      share: 'Sdílet odkaz',
       shareCopied: 'Zkopírováno',
       shareText: (what: string, amount: string, due: string | null) =>
         `${what}, ${amount}${due ? `, splatnost ${due}` : ''}.`,
@@ -1110,7 +1096,11 @@ export const cs = {
     subtitle: (n: number, active: number) =>
       `${n} ${n === 1 ? 'šablona' : n < 5 ? 'šablony' : 'šablon'} · ${active === 0 ? 'nic se neopakuje' : `${active} se opakuje`}`,
     net: 'bez DPH',
-    nextShort: 'další',
+    nextShort: 'příští běh',
+    noRepeat: 'Neopakuje se',
+    menu: 'Další akce',
+    cancelRule: 'Zrušit opakování',
+    deleteTemplate: 'Smazat šablonu',
     today: 'Dnes',
     autoIssueShort: 'vystaví se samo',
     autoSendShort: 'vystaví a odešle',
@@ -1203,6 +1193,7 @@ export const cs = {
     },
     detail: {
       invoices: 'Faktury',
+      truncated: (n: number) => `Zobrazeno prvních ${n} dokladů, starší tu nejsou.`,
       noInvoices: 'Pro tento kontakt zatím nejsou žádné doklady.',
       info: 'Údaje',
       notes: 'Poznámka',

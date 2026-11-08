@@ -161,7 +161,7 @@ function ShellInner({
 
       <div
         className={cn(
-          'transition-[padding] duration-200 md:pl-16 lg:pl-[15.5rem] lg:group-data-[collapsed=true]/shell:pl-16',
+          'md:pl-16 lg:pl-[15.5rem] lg:group-data-[collapsed=true]/shell:pl-16',
           assistantOpen && 'lg:pr-[380px]',
         )}
       >
@@ -176,7 +176,7 @@ function ShellInner({
             onPointerEnter={() => void import('./command-palette')}
             onFocus={() => void import('./command-palette')}
             onClick={() => setPaletteOpen(true)}
-            className="sheet !rounded-lg ml-auto flex h-9 items-center gap-2 px-3 text-sm text-muted-foreground transition-colors hover:text-foreground md:w-80 md:justify-between xl:w-[26rem]"
+            className="ml-auto flex h-9 items-center gap-2 rounded-md bg-muted/60 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:w-70 md:justify-between"
           >
             <span className="flex items-center gap-2">
               <Search className="size-4" aria-hidden />
@@ -234,7 +234,7 @@ function ShellInner({
 
 function MobileTabs() {
   const tab =
-    'flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground data-[status=active]:text-primary [&_svg]:size-5'
+    'flex h-full flex-1 flex-col transition-transform duration-150 ease-out items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground active:scale-[0.97] data-[status=active]:text-foreground [&_svg]:size-5'
   const [overview, invoices, contacts] = navItems as readonly [NavItem, NavItem, NavItem]
   // The editor has its own sticky action bar; a second "+" there only crowds it.
   const inEditor = useRouterState({
@@ -242,7 +242,7 @@ function MobileTabs() {
   })
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] items-stretch border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label={cs.shell.navigation}
     >
       <Link to={overview.to} activeOptions={{ exact: true }} className={tab}>
@@ -258,9 +258,9 @@ function MobileTabs() {
           <Link
             to={NEW_INVOICE_PATH as never}
             aria-label={cs.shell.newInvoice}
-            className="-mt-5 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25 active:translate-y-px"
+            className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform duration-150 ease-out active:scale-[0.97]"
           >
-            <Plus className="size-6" aria-hidden />
+            <Plus className="size-5" aria-hidden />
           </Link>
         )}
       </div>

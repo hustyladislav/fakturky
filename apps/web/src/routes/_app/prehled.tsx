@@ -94,6 +94,8 @@ function Overview() {
           />
           <AwaitingList
             docs={unpaid.data ?? []}
+            status={unpaid.status}
+            onRetry={unpaid.refetch}
             total={s.unpaidCount}
             className="order-2 @4xl:order-3 @4xl:col-span-4 @4xl:mt-8"
           />

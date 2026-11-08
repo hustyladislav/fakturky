@@ -2,10 +2,12 @@ import type { RouterOutputs } from '@fakturky/core/router'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Button } from '@fakturky/ui/components/button'
 import { RelativeDate } from '@fakturky/ui/components/relative-date'
+import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { ErrorState } from '@/components/error-state'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
@@ -82,10 +84,14 @@ function Row({ doc }: { doc: Doc }) {
 /** Open invoices, most overdue first, with an inline "Připomenout". */
 export function AwaitingList({
   docs,
+  status,
+  onRetry,
   total,
   className,
 }: {
   docs: Doc[]
+  status: 'pending' | 'error' | 'success'
+  onRetry: () => unknown
   total: number
   className?: string
 }) {
@@ -105,7 +111,15 @@ export function AwaitingList({
           )}
         </div>
       </div>
-      {rows.length === 0 ? (
+      {status === 'pending' ? (
+        <div className="mt-2 space-y-2 border-t pt-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : status === 'error' ? (
+        <ErrorState onRetry={onRetry} className="border-t" />
+      ) : rows.length === 0 ? (
         <p className="border-t py-8 text-sm text-muted-foreground">{t.empty}</p>
       ) : (
         <ul className="mt-2 border-t">

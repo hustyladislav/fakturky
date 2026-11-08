@@ -21,7 +21,7 @@ function overdueDaysOf(d: DocumentDetail): number {
 
 type Mode = 'draft' | 'open' | 'paid' | 'cancelled' | 'creditNote' | 'receipt'
 
-function modeOf(d: DocumentDetail): Mode {
+export function modeOf(d: DocumentDetail): Mode {
   if (d.status === 'draft') return 'draft'
   if (d.status === 'cancelled') return 'cancelled'
   if (d.type === 'credit_note') return 'creditNote'
@@ -102,8 +102,8 @@ export function Summary({ d, children }: { d: DocumentDetail; children?: ReactNo
         </div>
       )}
 
-      <dl className="mt-3 space-y-1.5 text-sm">
-        {mode === 'draft' && <p className="text-muted-foreground">{t.hero.draftHint}</p>}
+      {mode === 'draft' && <p className="mt-3 text-sm text-muted-foreground">{t.hero.draftHint}</p>}
+      <dl className="mt-3 space-y-1.5 text-sm empty:hidden">
         {mode === 'open' && d.dueDate && (
           <Row label={t.hero.dueOn}>
             <RelativeDate date={d.dueDate} tone="due" />
@@ -131,14 +131,14 @@ export function Summary({ d, children }: { d: DocumentDetail; children?: ReactNo
               <Amount value={p.amount} currency={d.currency} size="sm" />
             </Row>
           ))}
-        {lastBank && (
-          <p className="text-muted-foreground" data-testid="paid-by-transfer">
-            {d.status === 'paid'
-              ? t.paidByTransfer(formatDateCs(lastBank.paidOn))
-              : t.partlyPaidByTransfer(formatDateCs(lastBank.paidOn))}
-          </p>
-        )}
       </dl>
+      {lastBank && (
+        <p className="mt-1.5 text-sm text-muted-foreground" data-testid="paid-by-transfer">
+          {d.status === 'paid'
+            ? t.paidByTransfer(formatDateCs(lastBank.paidOn))
+            : t.partlyPaidByTransfer(formatDateCs(lastBank.paidOn))}
+        </p>
+      )}
 
       {children && <div className="mt-5 space-y-2">{children}</div>}
     </section>

@@ -186,7 +186,7 @@ export function MoreMenu({
             )
           }
           return (
-            <DropdownMenuItem key={a} onClick={() => ctrl.run(a)}>
+            <DropdownMenuItem key={a} disabled={ctrl.pending[a]} onClick={() => ctrl.run(a)}>
               <Icon aria-hidden /> {item.label}
             </DropdownMenuItem>
           )

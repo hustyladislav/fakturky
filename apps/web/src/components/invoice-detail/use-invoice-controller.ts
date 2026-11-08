@@ -178,13 +178,21 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
   const pending: Partial<Record<ActionId, boolean>> = {
     issue: issue.isPending,
     pay: markPaid.isPending,
-    cancel: cancel.isPending,
+    send: send.isPending,
+    markUnpaid: markUnpaid.isPending,
+    duplicate: duplicate.isPending,
     final: finalInvoice.isPending,
     receipt: receipt.isPending,
+    template: saveTemplate.isPending,
+    credit: creditNote.isPending,
+    cancel: cancel.isPending,
+    delete: remove.isPending,
   }
 
   /** Runs an action that is not a plain link (edit and pdf are links). */
   const run = (action: ActionId) => {
+    // One in flight per action: a second click or menu pick must not create a second document.
+    if (pending[action]) return
     switch (action) {
       case 'issue':
         return issue.mutate({ id })

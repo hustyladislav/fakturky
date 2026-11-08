@@ -10,7 +10,7 @@ import { DocumentPaper } from '@/components/invoice-detail/document-paper'
 import { PayPanel, SendPanel } from '@/components/invoice-detail/panels'
 import { PaymentSection } from '@/components/invoice-detail/payment'
 import { PublicLinkSection, RelatedDocs } from '@/components/invoice-detail/related'
-import { Summary } from '@/components/invoice-detail/summary'
+import { modeOf, Summary } from '@/components/invoice-detail/summary'
 import { Timeline } from '@/components/invoice-detail/timeline'
 import type { InvoiceController } from '@/components/invoice-detail/use-invoice-controller'
 import { cs } from '@/i18n/cs'
@@ -73,7 +73,7 @@ export function InvoiceDetailView({
 
       <div className="flex flex-col gap-6 pb-28 md:pb-8 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-x-12">
         <aside
-          aria-label={t.hero.open}
+          aria-label={t.hero[modeOf(d)]}
           className="contents lg:col-start-2 lg:row-start-1 lg:flex lg:flex-col lg:gap-6"
         >
           <div className="order-1">

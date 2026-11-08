@@ -1,11 +1,4 @@
 import { Button } from '@fakturky/ui/components/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@fakturky/ui/components/card'
 import { PageHeader } from '@fakturky/ui/components/page-header'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useQuery } from '@tanstack/react-query'
@@ -18,6 +11,7 @@ import { BusinessCard } from '@/components/business-card'
 import { BusinessProfileForm, type ProfileValues } from '@/components/business-profile-form'
 import { NumberSeriesCard } from '@/components/number-series-card'
 import { DataExport, ReminderSettings } from '@/components/reminder-settings'
+import { SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
@@ -83,21 +77,18 @@ function useInitialHashScroll() {
 
 function SettingsNav({ active, onPick }: { active: SectionId; onPick: (id: SectionId) => void }) {
   return (
-    <nav
-      aria-label={cs.settings.navLabel}
-      className="sticky top-14 z-20 -mx-4 overflow-x-auto border-b bg-background/90 px-4 backdrop-blur lg:top-20 lg:mx-0 lg:self-start lg:overflow-visible lg:border-b-0 lg:bg-transparent lg:px-0 lg:backdrop-blur-none"
-    >
-      <ul className="flex gap-1 py-2 lg:flex-col lg:py-0">
+    <nav aria-label={cs.settings.navLabel} className="lg:sticky lg:top-20 lg:self-start">
+      <ul className="-mt-2 flex flex-wrap gap-x-5 lg:mt-0 lg:flex-col lg:gap-x-0 lg:border-l">
         {SECTIONS.map((s) => (
-          <li key={s.id} className="shrink-0">
+          <li key={s.id}>
             <a
               href={`#${s.id}`}
               aria-current={active === s.id ? 'location' : undefined}
               onClick={() => onPick(s.id)}
               className={cn(
-                'relative flex h-9 items-center whitespace-nowrap rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground',
+                'flex h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground lg:-ml-px lg:h-9 lg:border-l lg:border-transparent lg:pl-4',
                 active === s.id &&
-                  'sheet !rounded-lg text-foreground before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary max-lg:before:hidden',
+                  'text-foreground underline underline-offset-8 lg:border-foreground lg:no-underline',
               )}
             >
               {s.label}
@@ -106,14 +97,6 @@ function SettingsNav({ active, onPick }: { active: SectionId; onPick: (id: Secti
         ))}
       </ul>
     </nav>
-  )
-}
-
-function Section({ id, children }: { id: SectionId; children: React.ReactNode }) {
-  return (
-    <section id={id} className="scroll-mt-32 lg:scroll-mt-20">
-      {children}
-    </section>
   )
 }
 
@@ -145,28 +128,22 @@ function Settings() {
           profile ? cs.settings.subtitle(profile.legalName, profile.ico ?? null) : undefined
         }
       />
-      <div className="grid gap-4 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10">
+      <div className="grid gap-6 lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-14">
         <SettingsNav active={active} onPick={setPicked} />
-        <div className="min-w-0 max-w-[60rem] space-y-6 [&_[data-slot=label]]:label-caps">
-          <Section id="firma">
-            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]">
-              <Card>
-                <CardHeader>
-                  <CardTitle role="heading" aria-level={2}>
-                    {cs.settings.profileTitle}
-                  </CardTitle>
-                  <CardDescription>{cs.settings.profileDescription}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {profile && (
-                    <BusinessProfileForm
-                      profile={profile}
-                      submitLabel={cs.common.save}
-                      onValuesChange={setPreview}
-                    />
-                  )}
-                </CardContent>
-              </Card>
+        <div className="min-w-0 max-w-[52rem] space-y-10">
+          <SettingsSection
+            id="firma"
+            title={cs.settings.profileTitle}
+            description={cs.settings.profileDescription}
+          >
+            <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_18rem]">
+              {profile && (
+                <BusinessProfileForm
+                  profile={profile}
+                  submitLabel={cs.common.save}
+                  onValuesChange={setPreview}
+                />
+              )}
               {preview && (
                 <BusinessCard
                   values={preview}
@@ -176,38 +153,23 @@ function Settings() {
                 />
               )}
             </div>
-          </Section>
-          <Section id="banka">
-            <BankAccountsCard />
-          </Section>
-          <Section id="rady">
-            <NumberSeriesCard />
-          </Section>
-          <Section id="vzhled">
-            <AppearanceCard />
-          </Section>
-          <Section id="emaily">
-            <ReminderSettings />
-          </Section>
-          <Section id="api">
-            <ApiKeys />
-          </Section>
-          <Section id="import">
-            <Card>
-              <CardHeader>
-                <CardTitle role="heading" aria-level={2}>
-                  {cs.import.settingsCardTitle}
-                </CardTitle>
-                <CardDescription>{cs.import.settingsCardDescription}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button render={<Link to="/import" />}>{cs.import.open}</Button>
-              </CardContent>
-            </Card>
-          </Section>
-          <Section id="ucet">
-            <DataExport />
-          </Section>
+          </SettingsSection>
+          <BankAccountsCard />
+          <NumberSeriesCard />
+          <AppearanceCard />
+          <ReminderSettings />
+          <ApiKeys />
+          <SettingsSection
+            id="import"
+            title={cs.import.settingsCardTitle}
+            description={cs.import.settingsCardDescription}
+            action={
+              <Button variant="outline" render={<Link to="/import" />}>
+                {cs.import.open}
+              </Button>
+            }
+          />
+          <DataExport />
         </div>
       </div>
     </div>

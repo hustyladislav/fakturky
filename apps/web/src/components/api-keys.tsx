@@ -1,13 +1,5 @@
 import { Button } from '@fakturky/ui/components/button'
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@fakturky/ui/components/card'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -18,18 +10,11 @@ import {
 } from '@fakturky/ui/components/dialog'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@fakturky/ui/components/table'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { PromptDialog } from '@/components/prompt-dialog'
+import { RowList, SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
 
@@ -69,7 +54,23 @@ export function ApiKeys() {
   })
 
   return (
-    <Card>
+    <SettingsSection
+      id="api"
+      title={cs.apiKeys.title}
+      description={
+        <>
+          {cs.apiKeys.description}{' '}
+          <a className="underline" href="/docs/api">
+            {cs.apiKeys.docsLink}
+          </a>
+          {' · '}
+          <a className="underline" href="/docs/mcp">
+            {cs.apiKeys.mcpLink}
+          </a>
+        </>
+      }
+      action={organizationId && <NewKey organizationId={organizationId} />}
+    >
       <PromptDialog
         open={revoking !== null}
         onOpenChange={(o) => !o && setRevoking(null)}
@@ -83,59 +84,28 @@ export function ApiKeys() {
           setRevoking(null)
         }}
       />
-      <CardHeader>
-        <CardTitle role="heading" aria-level={2}>
-          {cs.apiKeys.title}
-        </CardTitle>
-        <CardDescription>
-          {cs.apiKeys.description}{' '}
-          <a className="underline" href="/docs/api">
-            {cs.apiKeys.docsLink}
-          </a>
-          {' · '}
-          <a className="underline" href="/docs/mcp">
-            {cs.apiKeys.mcpLink}
-          </a>
-        </CardDescription>
-        {organizationId && (
-          <CardAction>
-            <NewKey organizationId={organizationId} />
-          </CardAction>
-        )}
-      </CardHeader>
-      <CardContent>
-        {list.data?.length === 0 ? (
-          <p className="text-muted-foreground">{cs.apiKeys.empty}</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{cs.apiKeys.name}</TableHead>
-                <TableHead>{cs.apiKeys.prefix}</TableHead>
-                <TableHead>{cs.apiKeys.created}</TableHead>
-                <TableHead>{cs.apiKeys.lastUsed}</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {list.data?.map((k) => (
-                <TableRow key={k.id}>
-                  <TableCell className="font-medium">{k.name}</TableCell>
-                  <TableCell className="font-mono text-sm">{k.start}…</TableCell>
-                  <TableCell>{formatDate(k.createdAt)}</TableCell>
-                  <TableCell>{formatDate(k.lastRequest)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setRevoking(k.id)}>
-                      {cs.apiKeys.revoke}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+      {list.data?.length === 0 && (
+        <p className="text-sm text-muted-foreground">{cs.apiKeys.empty}</p>
+      )}
+      {!!list.data?.length && (
+        <RowList>
+          {list.data.map((k) => (
+            <div key={k.id} className="flex items-center justify-between gap-4 py-3">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-medium">{k.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-mono">{k.start}…</span> · {cs.apiKeys.created}{' '}
+                  {formatDate(k.createdAt)} · {cs.apiKeys.lastUsed} {formatDate(k.lastRequest)}
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setRevoking(k.id)}>
+                {cs.apiKeys.revoke}
+              </Button>
+            </div>
+          ))}
+        </RowList>
+      )}
+    </SettingsSection>
   )
 }
 
@@ -164,7 +134,7 @@ function NewKey({ organizationId }: { organizationId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogTrigger render={<Button />}>{cs.apiKeys.new}</DialogTrigger>
+      <DialogTrigger render={<Button variant="outline" />}>{cs.apiKeys.new}</DialogTrigger>
       <DialogContent>
         {secret ? (
           <div className="space-y-4">

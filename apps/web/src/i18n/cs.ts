@@ -514,6 +514,20 @@ export const cs = {
       cancelled: 'Stornovaná',
     },
     allTypes: 'Všechny typy',
+    period: {
+      label: 'Období',
+      all: 'Všechna období',
+      thisMonth: 'Tento měsíc',
+      lastMonth: 'Minulý měsíc',
+      thisQuarter: 'Toto čtvrtletí',
+      thisYear: 'Letos',
+      custom: 'Vlastní',
+      from: 'Od',
+      to: 'Do',
+      pickDate: 'Vyberte datum',
+      // Shown in the empty-result sentence: "Nic nenalezeno: … · období 1. 10. 2026 – 31. 10. 2026"
+      summary: (from: string | null, to: string | null) => `období ${from ?? '…'} – ${to ?? '…'}`,
+    },
     columns: {
       type: 'Typ',
       number: 'Číslo',

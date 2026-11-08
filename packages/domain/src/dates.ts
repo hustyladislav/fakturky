@@ -111,3 +111,48 @@ export function firstOccurrence(from: string, dayOfMonth: number): string {
   return nextOccurrence(thisMonth, 'monthly', dayOfMonth)
 }
 
+/** Inclusive calendar range, both ends `YYYY-MM-DD`. */
+export interface DatePeriod {
+  from: IsoDate
+  to: IsoDate
+}
+
+export const PERIOD_PRESETS = ['thisMonth', 'lastMonth', 'thisQuarter', 'thisYear'] as const
+export type PeriodPreset = (typeof PERIOD_PRESETS)[number]
+
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
+function monthsRange(y: number, month: number, months = 1): DatePeriod {
+  const end = new Date(Date.UTC(y, month - 1 + months, 0))
+  return {
+    from: `${y}-${pad2(month)}-01`,
+    to: `${end.getUTCFullYear()}-${pad2(end.getUTCMonth() + 1)}-${pad2(end.getUTCDate())}`,
+  }
+}
+
+/** Whole calendar periods around `today` (a Prague date); the end day is included. */
+export function periodPreset(preset: PeriodPreset, today: IsoDate = todayPrague()): DatePeriod {
+  const { y, m } = parseIso(today)
+  switch (preset) {
+    case 'thisMonth':
+      return monthsRange(y, m)
+    case 'lastMonth':
+      return m === 1 ? monthsRange(y - 1, 12) : monthsRange(y, m - 1)
+    case 'thisQuarter':
+      return monthsRange(y, Math.floor((m - 1) / 3) * 3 + 1, 3)
+    case 'thisYear':
+      return monthsRange(y, 1, 12)
+  }
+}
+
+/** File-name part for a period: `2026-10` for one whole month, otherwise the bounds that were given. */
+export function periodFileLabel(from: IsoDate | undefined, to: IsoDate | undefined): string {
+  if (from && to) {
+    const month = monthsRange(Number(from.slice(0, 4)), Number(from.slice(5, 7)))
+    return month.from === from && month.to === to ? from.slice(0, 7) : `${from}_${to}`
+  }
+  if (from) return `od-${from}`
+  if (to) return `do-${to}`
+  return ''
+}
+

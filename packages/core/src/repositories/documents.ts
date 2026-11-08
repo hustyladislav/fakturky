@@ -287,7 +287,21 @@ async function lastPaidOn(db: Db | Tx, orgId: string, ids: string[]) {
 /** `recent` (last touched first) is internal: the command palette, not a public sort. */
 export type ListSort = 'issueDate' | 'dueDate' | 'number' | 'customer' | 'total' | 'recent'
 
-/** WHERE for list/stats: tenant scope, filter chip, type and free-text search (joins `contact`). */
+/**
+ * Documents whose DUZP (issue date when none) falls in `from`..`to`, both ends inclusive.
+ * A period means issued paperwork: drafts carry a provisional date and never match.
+ */
+export function periodWhere(from?: string, to?: string) {
+  if (!from && !to) return undefined
+  const date = sql`coalesce(${document.taxableDate}, ${document.issueDate})`
+  return and(
+    ne(document.status, 'draft'),
+    from ? sql`${date} >= ${from}` : undefined,
+    to ? sql`${date} <= ${to}` : undefined,
+  )
+}
+
+/** WHERE for list/stats: tenant scope, filter chip, type, period and free-text search (joins `contact`). */
 function listWhere(
   orgId: string,
   opts: {
@@ -295,6 +309,8 @@ function listWhere(
     search?: string
     type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt'
     contactId?: string
+    from?: string
+    to?: string
   },
 ) {
   const today = todayPrague()
@@ -317,6 +333,7 @@ function listWhere(
     statusWhere,
     opts.type ? eq(document.type, opts.type) : undefined,
     opts.contactId ? eq(document.contactId, opts.contactId) : undefined,
+    periodWhere(opts.from, opts.to),
     term ? documentSearch(term) : undefined,
   )
 }
@@ -462,6 +479,8 @@ export const documentsRepo = {
       search?: string
       type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt'
       contactId?: string
+      from?: string
+      to?: string
       sort?: ListSort
       dir?: 'asc' | 'desc'
       limit: number
@@ -537,7 +556,12 @@ export const documentsRepo = {
   async stats(
     db: Db,
     orgId: string,
-    opts: { search?: string; type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt' },
+    opts: {
+      search?: string
+      type?: 'invoice' | 'proforma' | 'credit_note' | 'payment_receipt'
+      from?: string
+      to?: string
+    },
   ) {
     const today = todayPrague()
     const rows = await db

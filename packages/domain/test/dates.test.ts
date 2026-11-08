@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, daysOverdue, DUE_DAY_PRESETS, dueDate, formatDateCs, formatDateDotted, isOverdue, isoWeekday, isValidIsoDate, isWeekend, todayPrague } from '../src/dates.ts'
+import { addDays, daysOverdue, DUE_DAY_PRESETS, dueDate, formatDateCs, formatDateDotted, isOverdue, isoWeekday, isValidIsoDate, isWeekend, periodFileLabel, periodPreset, todayPrague } from '../src/dates.ts'
+
+describe('period presets', () => {
+  it('are whole months with the end day included, across leap years and year ends', () => {
+    expect(periodPreset('thisMonth', '2026-11-08')).toEqual({ from: '2026-11-01', to: '2026-11-30' })
+    expect(periodPreset('lastMonth', '2026-01-15')).toEqual({ from: '2025-12-01', to: '2025-12-31' })
+    expect(periodPreset('lastMonth', '2024-03-01')).toEqual({ from: '2024-02-01', to: '2024-02-29' })
+  })
+  it('cover the quarter and the year', () => {
+    expect(periodPreset('thisQuarter', '2026-11-08')).toEqual({ from: '2026-10-01', to: '2026-12-31' })
+    expect(periodPreset('thisQuarter', '2026-03-31')).toEqual({ from: '2026-01-01', to: '2026-03-31' })
+    expect(periodPreset('thisYear', '2026-11-08')).toEqual({ from: '2026-01-01', to: '2026-12-31' })
+  })
+  it('name the export file after the period', () => {
+    expect(periodFileLabel('2026-10-01', '2026-10-31')).toBe('2026-10')
+    expect(periodFileLabel('2026-10-01', '2026-12-31')).toBe('2026-10-01_2026-12-31')
+    expect(periodFileLabel('2026-10-01', undefined)).toBe('od-2026-10-01')
+    expect(periodFileLabel(undefined, '2026-10-31')).toBe('do-2026-10-31')
+    expect(periodFileLabel(undefined, undefined)).toBe('')
+  })
+})
 
 describe('todayPrague', () => {
   it('uses the Prague calendar date', () => {

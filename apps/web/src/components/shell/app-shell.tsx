@@ -234,7 +234,7 @@ function ShellInner({
 
 function MobileTabs() {
   const tab =
-    'flex h-full flex-1 flex-col transition-transform duration-150 ease-out items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground active:scale-[0.97] data-[status=active]:text-foreground [&_svg]:size-5'
+    'flex h-full flex-1 flex-col transition-transform duration-150 ease-out items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground active:scale-[0.97] motion-reduce:active:scale-100 data-[status=active]:text-foreground [&_svg]:size-5'
   const [overview, invoices, contacts] = navItems as readonly [NavItem, NavItem, NavItem]
   // The editor has its own sticky action bar; a second "+" there only crowds it.
   const inEditor = useRouterState({
@@ -242,7 +242,7 @@ function MobileTabs() {
   })
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] items-stretch border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label={cs.shell.navigation}
     >
       <Link to={overview.to} activeOptions={{ exact: true }} className={tab}>
@@ -258,7 +258,7 @@ function MobileTabs() {
           <Link
             to={NEW_INVOICE_PATH as never}
             aria-label={cs.shell.newInvoice}
-            className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform duration-150 ease-out active:scale-[0.97]"
+            className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform duration-150 ease-out active:scale-[0.97] motion-reduce:active:scale-100"
           >
             <Plus className="size-5" aria-hidden />
           </Link>

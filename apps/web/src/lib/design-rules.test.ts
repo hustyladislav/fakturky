@@ -7,6 +7,7 @@ const css = readFileSync(join(repo, 'packages/ui/src/styles/globals.css'), 'utf8
 
 function tokens(selector: string): Record<string, string> {
   const start = css.indexOf(`\n${selector} {`)
+  if (start < 0) throw new Error(`No ${selector} block in globals.css`)
   const block = css.slice(start, css.indexOf('\n}', start))
   return Object.fromEntries(
     [...block.matchAll(/--([\w-]+):\s*(#[0-9a-f]{6});/gi)].map((m) => [m[1], m[2]]),

@@ -659,7 +659,7 @@ export const cs = {
       markPaidMore: 'Další možnosti platby',
       markPaidOther: 'Jiná částka nebo datum…',
       undo: 'Vrátit zpět',
-      share: 'Sdílet',
+      share: 'Sdílet odkaz',
       shareCopied: 'Zkopírováno',
       shareText: (what: string, amount: string, due: string | null) =>
         `${what}, ${amount}${due ? `, splatnost ${due}` : ''}.`,

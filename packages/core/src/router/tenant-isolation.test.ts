@@ -30,6 +30,8 @@ type Case =
   | { kind: 'external' }
 
 const SECRET = 'ORG-A-ONLY-SECRET'
+// A period wide enough to contain org A's issued document: a missing org filter would leak it.
+const WIDE = { from: '2000-01-01', to: '2100-12-31' }
 // 1×1 PNG
 const PNG =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=='
@@ -122,7 +124,7 @@ const cases: Record<string, Case> = {
   'dashboard.activity': { kind: 'scoped', run: (b) => b.dashboard.activity({}) },
   'dashboard.summary': { kind: 'scoped', run: (b) => b.dashboard.summary({}) },
 
-  'exports.documents': { kind: 'scoped', run: (b) => b.exports.documents({}) },
+  'exports.documents': { kind: 'scoped', run: (b) => b.exports.documents({ ...WIDE }) },
   'numberSeries.list': { kind: 'scoped', run: (b) => b.numberSeries.list({}) },
   'numberSeries.update': {
     kind: 'foreign',
@@ -175,8 +177,14 @@ const cases: Record<string, Case> = {
   'documents.isdoc': { kind: 'foreign', run: (b, a) => b.documents.isdoc({ id: a.issuedId }) },
   'documents.defaults': { kind: 'scoped', run: (b) => b.documents.defaults({}) },
   'search.global': { kind: 'scoped', run: (b) => b.search.global({ query: SECRET }) },
-  'documents.list': { kind: 'scoped', run: (b) => b.documents.list({ search: SECRET }) },
-  'documents.stats': { kind: 'scoped', run: (b) => b.documents.stats({ search: SECRET }) },
+  'documents.list': {
+    kind: 'scoped',
+    run: (b) => b.documents.list({ from: WIDE.from, to: WIDE.to }),
+  },
+  'documents.stats': {
+    kind: 'scoped',
+    run: (b) => b.documents.stats({ from: WIDE.from, to: WIDE.to }),
+  },
   'documents.get': { kind: 'foreign', run: (b, a) => b.documents.get({ id: a.issuedId }) },
   'documents.createDraft': {
     // Referencing org A's contact / bank account from org B's new document must fail.
@@ -410,6 +418,16 @@ describe('tenant isolation', () => {
       }
       expect(out, `${path} leaked org A id`).not.toContain(orgA)
     }
+  })
+
+  test('a period filter is applied inside the tenant: A sees its document, B sees none', async () => {
+    // Control: the WIDE period does contain org A's issued document, so B's empty result is the org filter at work.
+    expect((await aApi.documents.list({ ...WIDE })).map((d) => d.id)).toEqual([a.issuedId])
+    expect((await aApi.documents.stats({ ...WIDE })).all.count).toBe(1)
+    expect((await aApi.exports.documents({ ...WIDE })).csv).toContain(SECRET)
+    expect(await bApi.documents.list({ ...WIDE })).toEqual([])
+    expect((await bApi.documents.stats({ ...WIDE })).all.count).toBe(0)
+    expect((await bApi.exports.documents({ ...WIDE })).csv.trim().split('\n')).toHaveLength(1)
   })
 
   test('public endpoints accept only the unguessable token, never internal ids', async () => {

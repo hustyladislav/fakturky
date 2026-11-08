@@ -1,3 +1,4 @@
+import { formatDateCs } from '@fakturky/domain/dates'
 import { Button } from '@fakturky/ui/components/button'
 import { EmptyState } from '@fakturky/ui/components/empty-state'
 import { PageHeader } from '@fakturky/ui/components/page-header'
@@ -16,6 +17,7 @@ import {
   validateListSearch,
 } from '@/components/invoices/list-search'
 import { crowns } from '@/components/invoices/money'
+import { type Period } from '@/components/invoices/period-filter'
 import { type Stats, StatusTabs } from '@/components/invoices/status-tabs'
 import { useInvoiceList } from '@/components/invoices/use-invoice-list'
 import { useInvoiceSelection } from '@/components/invoices/use-invoice-selection'
@@ -54,24 +56,28 @@ function ListSkeleton() {
 
 function InvoiceList() {
   const search = Route.useSearch()
-  const { filter = 'all', q, type, sort = 'issueDate', dir = 'desc' } = search
+  const { filter = 'all', q, type, from, to, sort = 'issueDate', dir = 'desc' } = search
   const navigate = useNavigate({ from: Route.fullPath })
   const [resetKey, setResetKey] = useState(0)
 
   const list = useInvoiceList(search)
-  const selection = useInvoiceSelection(list.rows, `${filter}|${q}|${type}|${sort}|${dir}`)
+  const selection = useInvoiceSelection(
+    list.rows,
+    `${filter}|${q}|${type}|${from}|${to}|${sort}|${dir}`,
+  )
 
   const onSearch = useCallback(
     (next: string | undefined) => navigate({ search: (s) => ({ ...s, q: next }), replace: true }),
     [navigate],
   )
   const onType = (next: DocType | undefined) => navigate({ search: (s) => ({ ...s, type: next }) })
+  const onPeriod = (p: Period) => navigate({ search: (s) => ({ ...s, from: p.from, to: p.to }) })
   const onFilter = (f: Filter) =>
     navigate({ search: (s) => ({ ...s, filter: f === 'all' ? undefined : f }) })
   const onSort = (column: Parameters<typeof nextSort>[1]) =>
     navigate({ search: (s) => ({ ...s, ...nextSort({ sort, dir }, column) }) })
 
-  const noDocsAtAll = list.stats?.all.count === 0 && !q && !type
+  const noDocsAtAll = list.stats?.all.count === 0 && !q && !type && !from && !to
   const filteredEmpty = list.isLoaded && list.rows.length === 0 && !noDocsAtAll
 
   return (
@@ -82,7 +88,7 @@ function InvoiceList() {
           subtitle={subtitleFor(list.stats, filter)}
           actions={
             <div className="hidden sm:block">
-              <CsvDownload kind="documents" />
+              <CsvDownload kind="documents" scope={{ from, to, type }} />
             </div>
           }
         />
@@ -102,7 +108,16 @@ function InvoiceList() {
         ) : (
           <>
             <StatusTabs stats={list.stats} value={filter} onChange={onFilter} />
-            <FilterBar key={resetKey} q={q} type={type} onSearch={onSearch} onType={onType} />
+            <FilterBar
+              key={resetKey}
+              q={q}
+              type={type}
+              from={from}
+              to={to}
+              onSearch={onSearch}
+              onType={onType}
+              onPeriod={onPeriod}
+            />
 
             {list.isPending ? (
               <ListSkeleton />
@@ -112,6 +127,14 @@ function InvoiceList() {
                 title={t.emptyFilteredBy(q ?? null, [
                   ...(filter !== 'all' ? [String(t.filters[filter])] : []),
                   ...(type ? [String(t.type[type])] : []),
+                  ...(from || to
+                    ? [
+                        t.period.summary(
+                          from ? formatDateCs(from) : null,
+                          to ? formatDateCs(to) : null,
+                        ),
+                      ]
+                    : []),
                 ])}
                 action={
                   <Button

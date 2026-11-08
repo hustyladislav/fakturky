@@ -31,13 +31,19 @@ export async function signUp(page: Page, email: string) {
   await page.waitForURL(/\/onboarding$/)
 }
 
-/** Onboarding: look the supplier up by IČO (mock ARES) and save. */
+/** Onboarding: look the supplier up by IČO (mock ARES; eight digits look themselves up) and save. */
 export async function onboardByIco(page: Page, ico: string, expectedName: string) {
   await page.getByLabel('IČO').fill(ico)
-  await page.getByRole('button', { name: 'Načíst z ARES' }).click()
-  await expect(page.getByLabel('Obchodní jméno / jméno a příjmení')).toHaveValue(expectedName)
+  await expect(page.getByTestId('profile-summary')).toContainText(expectedName)
   await page.getByRole('button', { name: 'Pokračovat' }).click()
   await skipOnboardingBank(page)
+}
+
+/** Onboarding without an IČO: open the manual form, fill the name and save (no ARES). */
+export async function onboardManually(page: Page, legalName: string) {
+  await page.getByRole('button', { name: 'Nemám IČO / vyplnit ručně' }).click()
+  await page.getByLabel('Obchodní jméno / jméno a příjmení').fill(legalName)
+  await page.getByRole('button', { name: 'Pokračovat' }).click()
 }
 
 /** Onboarding bank step -> "Přeskočit" -> done screen -> dashboard. */

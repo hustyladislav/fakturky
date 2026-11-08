@@ -19,11 +19,8 @@ test('sign-up to first issued invoice with the keyboard only, timed', async ({ p
   await page.waitForURL(/\/onboarding$/)
   await page.getByLabel('IČO').focus()
   await page.keyboard.type(ICO.nonPayerSupplier)
-  await expect(page.getByLabel('Obchodní jméno / jméno a příjmení')).toHaveValue(
-    'E2E Neplátce Novák',
-  )
-  await page.keyboard.press('Tab') // IČO -> lookup button
-  await page.keyboard.press('Tab') // -> name field
+  await expect(page.getByTestId('profile-summary')).toContainText('E2E Neplátce Novák')
+  await expect(page.getByRole('button', { name: 'Pokračovat' })).toBeFocused()
   await page.keyboard.press('Enter') // submits the form
 
   // Bank step: the field is focused.

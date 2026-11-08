@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { ICO, signUp, skipOnboardingBank, testEmail } from './helpers'
+import { ICO, onboardManually, signUp, skipOnboardingBank, testEmail } from './helpers'
 
 test('onboarding bank step: Czech number shows IBAN and BIC live, Enter saves and the first-invoice button is focused', async ({
   page,
@@ -7,10 +7,7 @@ test('onboarding bank step: Czech number shows IBAN and BIC live, Enter saves an
   await signUp(page, testEmail('onb-bank'))
   await page.waitForLoadState('networkidle')
   await page.getByLabel('IČO').fill(ICO.nonPayerSupplier)
-  await page.getByRole('button', { name: 'Načíst z ARES' }).click()
-  await expect(page.getByLabel('Obchodní jméno / jméno a příjmení')).toHaveValue(
-    'E2E Neplátce Novák',
-  )
+  await expect(page.getByTestId('profile-summary')).toContainText('E2E Neplátce Novák')
   await page.getByRole('button', { name: 'Pokračovat' }).click()
 
   const account = page.getByLabel('Číslo účtu nebo IBAN')
@@ -29,8 +26,7 @@ test('onboarding bank step can be skipped; the dashboard then offers "Přidat ba
 }) => {
   await signUp(page, testEmail('onb-skip'))
   await page.waitForLoadState('networkidle')
-  await page.getByLabel('Obchodní jméno / jméno a příjmení').fill('Bez Účtu')
-  await page.getByRole('button', { name: 'Pokračovat' }).click()
+  await onboardManually(page, 'Bez Účtu')
   await skipOnboardingBank(page)
   await expect(page.getByRole('link', { name: 'Přidat bankovní účet' })).toBeVisible()
 })

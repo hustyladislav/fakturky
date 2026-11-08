@@ -3,10 +3,12 @@ import { Button } from '@fakturky/ui/components/button'
 import { FieldError } from '@fakturky/ui/components/field-error'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
-import { NativeSelect } from '@fakturky/ui/components/native-select'
+import { ORPCError } from '@orpc/client'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { ProfileFields } from '@/components/business-profile-fields'
+import { FoundSummary, IcoEntry } from '@/components/business-profile-ico-first'
 import { cs } from '@/i18n/cs'
 import { client, orpc } from '@/lib/orpc'
 
@@ -25,14 +27,21 @@ export type ProfileValues = {
   phone: string
 }
 
+/** `full`: every field at once (Nastavení). `ico-first`: onboarding, one question, then an ARES summary. */
+export type ProfileFormMode = 'full' | 'ico-first'
+
+type IcoFirstPhase = 'ico' | 'found' | 'manual'
+
 export function BusinessProfileForm({
   profile,
   submitLabel,
+  mode = 'full',
   onSaved,
   onValuesChange,
 }: {
   profile: Profile
   submitLabel: string
+  mode?: ProfileFormMode
   onSaved?: () => void | Promise<void>
   /** Live values, for a preview next to the form. */
   onValuesChange?: (values: ProfileValues) => void
@@ -51,15 +60,25 @@ export function BusinessProfileForm({
     phone: profile.phone ?? '',
   })
   const [icoError, setIcoError] = useState<string | null>(null)
+  const icoFirst = mode === 'ico-first'
+  const [phase, setPhase] = useState<IcoFirstPhase>('ico')
+  const [editing, setEditing] = useState(false)
+  const continueButton = useRef<HTMLButtonElement>(null)
+  // Only the newest request may fill the form: an older, slower answer must not overwrite it.
+  const latestLookup = useRef('')
   useEffect(() => onValuesChange?.(values), [values, onValuesChange])
   const set = (key: keyof typeof values) => (e: { target: { value: string } }) => {
-    if (key === 'ico') setIcoError(null)
+    if (key === 'ico') {
+      setIcoError(null)
+      latestLookup.current = ''
+    }
     setValues((v) => ({ ...v, [key]: e.target.value }))
   }
 
   const lookup = useMutation({
     mutationFn: (ico: string) => client.businessProfile.lookupIco({ ico }),
-    onSuccess: (s) => {
+    onSuccess: (s, ico) => {
+      if (ico !== latestLookup.current) return
       setValues((v) => ({
         ...v,
         ico: s.ico,
@@ -77,10 +96,25 @@ export function BusinessProfileForm({
         registryNote: s.registryNote ?? v.registryNote,
       }))
       setIcoError(null)
-      toast.success(cs.profile.icoFound)
+      if (!icoFirst) toast.success(cs.profile.icoFound)
+      else setPhase((p) => (p === 'ico' ? 'found' : p))
     },
-    onError: () => setIcoError(cs.profile.icoNotFound),
+    onError: (error, ico) => {
+      if (ico !== latestLookup.current) return
+      const code = error instanceof ORPCError ? error.code : null
+      setIcoError(
+        !icoFirst || code === 'NOT_FOUND'
+          ? cs.profile.icoNotFound
+          : code === 'BAD_REQUEST'
+            ? cs.profile.icoInvalid
+            : cs.profile.icoAresDown,
+      )
+    },
   })
+  const runLookup = (ico: string) => {
+    latestLookup.current = ico
+    lookup.mutate(ico)
+  }
 
   // A complete, valid IČO looks itself up; the button stays as a fallback for short or padded numbers.
   const lastAuto = useRef('')
@@ -88,8 +122,14 @@ export function BusinessProfileForm({
     const ico = values.ico.replace(/\s/g, '')
     if (!isValidIco(ico) || ico.length !== 8 || ico === lastAuto.current) return
     lastAuto.current = ico
+    latestLookup.current = ico
     lookup.mutate(ico)
   }, [values.ico, lookup.mutate])
+
+  // Enter should continue straight from the summary.
+  useEffect(() => {
+    if (phase === 'found') continueButton.current?.focus()
+  }, [phase])
 
   const save = useMutation({
     mutationFn: () =>
@@ -111,92 +151,92 @@ export function BusinessProfileForm({
     onError: () => toast.error(cs.common.error),
   })
 
+  const icoRow = (
+    <div className="space-y-2">
+      <Label htmlFor="ico">{cs.profile.ico}</Label>
+      <div className="flex gap-2">
+        <Input
+          id="ico"
+          inputMode="numeric"
+          aria-invalid={icoError ? true : undefined}
+          aria-describedby={icoError ? 'ico-error' : undefined}
+          value={values.ico}
+          onChange={set('ico')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && values.ico) {
+              e.preventDefault()
+              runLookup(values.ico)
+            }
+          }}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!values.ico || lookup.isPending}
+          onClick={() => runLookup(values.ico)}
+        >
+          {lookup.isPending ? cs.common.loading : cs.profile.icoLookup}
+        </Button>
+      </div>
+      <FieldError id="ico-error">{icoError}</FieldError>
+    </div>
+  )
+
   return (
     <form
       className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault()
+        if (icoFirst && phase === 'ico') {
+          if (values.ico && !lookup.isPending) runLookup(values.ico)
+          return
+        }
         save.mutate()
       }}
     >
-      <div className="space-y-2">
-        <Label htmlFor="ico">{cs.profile.ico}</Label>
-        <div className="flex gap-2">
-          <Input
-            id="ico"
-            inputMode="numeric"
-            aria-invalid={icoError ? true : undefined}
-            aria-describedby={icoError ? 'ico-error' : undefined}
-            value={values.ico}
-            onChange={set('ico')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && values.ico) {
-                e.preventDefault()
-                lookup.mutate(values.ico)
-              }
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!values.ico || lookup.isPending}
-            onClick={() => lookup.mutate(values.ico)}
-          >
-            {lookup.isPending ? cs.common.loading : cs.profile.icoLookup}
+      {icoFirst && phase === 'ico' ? (
+        <IcoEntry
+          values={values}
+          set={set}
+          error={icoError}
+          pending={lookup.isPending}
+          onManual={() => {
+            latestLookup.current = ''
+            setPhase('manual')
+          }}
+        />
+      ) : icoFirst && phase === 'found' ? (
+        <FoundSummary
+          ref={continueButton}
+          values={values}
+          set={set}
+          editing={editing}
+          saving={save.isPending}
+          submitLabel={submitLabel}
+          onToggleEditing={() => setEditing((v) => !v)}
+          onChangeIco={() => {
+            // The summary described that company; a different IČO must not inherit its details.
+            setValues((v) => ({
+              ...v,
+              legalName: '',
+              dic: '',
+              street: '',
+              city: '',
+              zip: '',
+              registryNote: '',
+            }))
+            setPhase('ico')
+          }}
+        />
+      ) : (
+        <>
+          {icoRow}
+          <ProfileFields values={values} set={set} vatStatus />
+          <Button type="submit" disabled={save.isPending}>
+            {submitLabel}
           </Button>
-        </div>
-        <FieldError id="ico-error">{icoError}</FieldError>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="legalName">{cs.profile.legalName}</Label>
-        <Input id="legalName" value={values.legalName} onChange={set('legalName')} required />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="dic">{cs.profile.dic}</Label>
-          <Input id="dic" value={values.dic} onChange={set('dic')} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="vatStatus">{cs.profile.vatStatus}</Label>
-          <NativeSelect id="vatStatus" value={values.vatStatus} onChange={set('vatStatus')}>
-            <option value="non_payer">{cs.profile.vatNonPayer}</option>
-            <option value="payer">{cs.profile.vatPayer}</option>
-            <option value="identified_person">{cs.profile.vatIdentified}</option>
-          </NativeSelect>
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="street">{cs.profile.street}</Label>
-        <Input id="street" value={values.street} onChange={set('street')} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="city">{cs.profile.city}</Label>
-          <Input id="city" value={values.city} onChange={set('city')} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="zip">{cs.profile.zip}</Label>
-          <Input id="zip" value={values.zip} onChange={set('zip')} />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="registryNote">{cs.profile.registryNote}</Label>
-        <Input id="registryNote" value={values.registryNote} onChange={set('registryNote')} />
-        <p className="text-xs text-muted-foreground">{cs.profile.registryNoteHint}</p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="email">{cs.profile.email}</Label>
-          <Input id="email" type="email" value={values.email} onChange={set('email')} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">{cs.profile.phone}</Label>
-          <Input id="phone" type="tel" value={values.phone} onChange={set('phone')} />
-        </div>
-      </div>
-      <Button type="submit" disabled={save.isPending}>
-        {submitLabel}
-      </Button>
+        </>
+      )}
     </form>
   )
 }

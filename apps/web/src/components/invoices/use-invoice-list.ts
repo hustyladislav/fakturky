@@ -48,6 +48,8 @@ export function useInvoiceList({
     stats: stats.data,
     isPending: list.isPending,
     isLoaded: list.isSuccess,
+    isLoadingError: list.isLoadingError,
+    refetch: () => list.refetch(),
     rows,
     groups,
     grouped,

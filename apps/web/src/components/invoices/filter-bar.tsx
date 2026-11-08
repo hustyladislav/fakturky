@@ -2,7 +2,7 @@ import { Input } from '@fakturky/ui/components/input'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useIsMobile } from '@fakturky/ui/hooks/use-mobile'
 import { Search } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cs } from '@/i18n/cs'
 import { type DocType, TYPES } from './list-search'
 
@@ -25,9 +25,19 @@ export function FilterBar({
 }) {
   const isMobile = useIsMobile()
   const [term, setTerm] = useState(q ?? '')
+  const lastSent = useRef(q ?? '')
+  // The URL can change without typing (back button, palette): follow it instead of writing the old term back.
+  useEffect(() => {
+    if ((q ?? '') === lastSent.current) return
+    lastSent.current = q ?? ''
+    setTerm(q ?? '')
+  }, [q])
   useEffect(() => {
     if ((q ?? '') === term) return
-    const h = setTimeout(() => onSearch(term || undefined), 250)
+    const h = setTimeout(() => {
+      lastSent.current = term
+      onSearch(term || undefined)
+    }, 250)
     return () => clearTimeout(h)
   }, [term, q, onSearch])
 

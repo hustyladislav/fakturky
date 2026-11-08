@@ -1,3 +1,4 @@
+import { Decimal } from '@fakturky/domain/money'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { czkTotal } from '@/lib/invoice-groups'
@@ -81,7 +82,7 @@ export function useInvoiceSelection(rows: Doc[], resetKey: string) {
   const selectedDocs = rows.filter((d) => selected.has(d.id))
   const selectedSum = selectedDocs
     .filter((d) => d.status === 'issued' || d.status === 'paid')
-    .reduce((n, d) => n + Number(czkTotal(d).toFixed(2)), 0)
+    .reduce((sum, d) => sum.plus(czkTotal(d)), new Decimal(0))
     .toFixed(2)
   const allSelected = rows.length > 0 && selected.size === rows.length
 

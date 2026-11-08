@@ -5,6 +5,7 @@ import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useCallback, useState } from 'react'
 import { CsvDownload } from '@/components/csv-download'
+import { ErrorState } from '@/components/error-state'
 import { BulkBar } from '@/components/invoices/bulk-bar'
 import { FilterBar } from '@/components/invoices/filter-bar'
 import { InvoiceTable } from '@/components/invoices/invoice-table'
@@ -86,7 +87,9 @@ function InvoiceList() {
           }
         />
 
-        {noDocsAtAll ? (
+        {list.isLoadingError ? (
+          <ErrorState onRetry={list.refetch} />
+        ) : noDocsAtAll ? (
           <EmptyState
             illustration="invoices"
             title={t.empty}

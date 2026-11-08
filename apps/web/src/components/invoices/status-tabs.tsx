@@ -17,9 +17,9 @@ export function StatusTabs({
 }) {
   return (
     <div
-      role="tablist"
+      role="group"
       aria-label={cs.invoices.tabsLabel}
-      className="hairline-b mb-4 flex justify-between gap-3 sm:justify-start sm:gap-6"
+      className="hairline-b mb-4 flex justify-between gap-3 max-[359px]:gap-1 sm:justify-start sm:gap-6"
     >
       {FILTERS.map((f) => {
         const active = value === f
@@ -29,11 +29,10 @@ export function StatusTabs({
           <button
             key={f}
             type="button"
-            role="tab"
-            aria-selected={active}
+            aria-pressed={active}
             onClick={() => onChange(f)}
             className={cn(
-              '-mb-px flex flex-col items-start gap-0.5 border-b-2 py-2 text-[13px] whitespace-nowrap outline-none focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 sm:h-11 sm:flex-row sm:items-center sm:gap-2 sm:py-0 sm:text-sm',
+              '-mb-px flex flex-col items-start gap-0.5 border-b-2 py-2 text-[13px] whitespace-nowrap max-[359px]:text-xs outline-none focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 sm:h-11 sm:flex-row sm:items-center sm:gap-2 sm:py-0 sm:text-sm',
               active
                 ? 'border-primary font-medium text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground',

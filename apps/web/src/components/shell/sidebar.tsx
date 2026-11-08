@@ -47,7 +47,7 @@ import { useShell } from './shell-context'
 import { useModKey } from './use-mod-key'
 
 export const navLink =
-  'group/nav relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-foreground/[0.045] hover:text-sidebar-foreground data-[status=active]:sheet data-[status=active]:!rounded-lg data-[status=active]:text-sidebar-foreground max-lg:justify-center max-lg:px-0 lg:group-data-[collapsed=true]/shell:justify-center lg:group-data-[collapsed=true]/shell:px-0 [&_svg]:size-4 [&_svg]:shrink-0'
+  'group/nav relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-muted hover:text-sidebar-foreground data-[status=active]:bg-muted data-[status=active]:text-sidebar-foreground max-lg:justify-center max-lg:px-0 lg:group-data-[collapsed=true]/shell:justify-center lg:group-data-[collapsed=true]/shell:px-0 [&_svg]:size-4 [&_svg]:shrink-0'
 
 /** Hide a label when the sidebar shows icons only (always below lg, or collapsed with ⌘\). */
 export const labelCls = 'max-lg:sr-only lg:group-data-[collapsed=true]/shell:sr-only'
@@ -64,8 +64,8 @@ export function Sidebar({ user }: { user: { name: string; email: string } }) {
   const { toggleSidebar, sidebarCollapsed } = useShell()
   const modKey = useModKey()
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-16 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex lg:w-[15.5rem] lg:group-data-[collapsed=true]/shell:w-16">
-      <div className="flex h-14 items-center px-3 max-lg:justify-center max-lg:px-0 lg:group-data-[collapsed=true]/shell:justify-center lg:group-data-[collapsed=true]/shell:px-0">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-16 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex lg:w-[15.5rem] lg:group-data-[collapsed=true]/shell:w-16">
+      <div className="flex h-14 items-center px-3 max-lg:justify-center max-lg:px-2 lg:group-data-[collapsed=true]/shell:justify-center lg:group-data-[collapsed=true]/shell:px-2">
         <OrgSwitcher />
       </div>
       <nav className="flex-1 space-y-0.5 px-3 py-3 max-lg:px-2" aria-label={cs.shell.navigation}>
@@ -79,18 +79,12 @@ export function Sidebar({ user }: { user: { name: string; email: string } }) {
               className={navLink}
               title={item.label}
             >
-              <span
-                aria-hidden
-                className="absolute top-2.5 bottom-2.5 left-0 hidden w-0.5 rounded-full bg-primary group-data-[status=active]/nav:block"
-              />
               <item.icon aria-hidden />
               <span className={labelCls}>{item.label}</span>
               {count > 0 && (
                 <>
                   <span
-                    className={cn(
-                      'ml-auto rounded-full bg-destructive/15 px-1.5 text-[11px] leading-5 font-semibold text-destructive tabular-nums group-hover/nav:hidden max-lg:hidden lg:group-data-[collapsed=true]/shell:hidden',
-                    )}
+                    className="ml-auto text-xs font-medium text-destructive tabular-nums group-hover/nav:hidden max-lg:hidden lg:group-data-[collapsed=true]/shell:hidden"
                     title={`${count} ${cs.shell.overdueCount}`}
                   >
                     {count}
@@ -115,8 +109,7 @@ export function Sidebar({ user }: { user: { name: string; email: string } }) {
           )
         })}
       </nav>
-      <div className="space-y-0.5 px-3 pb-3 max-lg:px-2">
-        <div className="hairline mb-2" />
+      <div className="space-y-0.5 border-t border-sidebar-border px-3 py-3 max-lg:px-2">
         <button
           type="button"
           onClick={toggleSidebar}
@@ -129,26 +122,6 @@ export function Sidebar({ user }: { user: { name: string; email: string } }) {
             {modKey} \
           </Kbd>
         </button>
-        <a
-          href={BRAND.supportUrl}
-          target="_blank"
-          rel="noreferrer"
-          className={navLink}
-          title={cs.shell.coffee}
-        >
-          <Coffee aria-hidden />
-          <span className={labelCls}>{cs.shell.coffee}</span>
-        </a>
-        <a
-          href={BRAND.issuesUrl}
-          target="_blank"
-          rel="noreferrer"
-          className={navLink}
-          title={cs.shell.feedback}
-        >
-          <MessageSquare aria-hidden />
-          <span className={labelCls}>{cs.shell.feedback}</span>
-        </a>
         <AccountMenu user={user} />
       </div>
     </aside>
@@ -162,14 +135,9 @@ function OrgSwitcher() {
   const ico = profile.data?.ico
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex h-11 w-full min-w-0 items-center gap-2.5 rounded-lg px-2 text-left outline-none transition-colors hover:bg-foreground/[0.045] focus-visible:ring-3 focus-visible:ring-ring/50 max-lg:justify-center max-lg:px-0 lg:group-data-[collapsed=true]/shell:justify-center lg:group-data-[collapsed=true]/shell:px-0">
-        <LogoMark letter={BRAND.name.charAt(0)} className="size-8" />
-        <span className={cn('min-w-0 flex-1', labelCls)}>
-          <span className="block truncate text-sm leading-tight font-semibold">{name}</span>
-          <span className="block truncate text-[11px] leading-tight text-muted-foreground tabular-nums">
-            {ico ? `IČO ${ico}` : BRAND.name}
-          </span>
-        </span>
+      <DropdownMenuTrigger className="flex h-9 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 max-lg:justify-center max-lg:px-0 lg:group-data-[collapsed=true]/shell:justify-center lg:group-data-[collapsed=true]/shell:px-0">
+        <LogoMark letter={BRAND.name.charAt(0)} className="size-6" />
+        <span className={cn('min-w-0 flex-1 truncate text-sm font-medium', labelCls)}>{name}</span>
         <ChevronsUpDown className={cn('size-4 text-muted-foreground', labelCls)} aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="start" className="w-64">
@@ -222,7 +190,7 @@ function ThemePicker() {
             }}
             className={cn(
               'flex h-7 flex-1 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 [&_svg]:size-4',
-              pref === p && 'sheet !rounded-md text-foreground',
+              pref === p && 'bg-background text-foreground shadow-xs',
             )}
           >
             <Icon aria-hidden />
@@ -238,9 +206,9 @@ export function AccountMenu({ user }: { user: { name: string; email: string } })
   const queryClient = useQueryClient()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex h-12 w-full items-center gap-3 rounded-lg px-2 text-left outline-none transition-colors hover:bg-foreground/[0.045] focus-visible:ring-3 focus-visible:ring-ring/50 max-lg:justify-center lg:group-data-[collapsed=true]/shell:justify-center">
+      <DropdownMenuTrigger className="flex h-11 w-full items-center gap-3 rounded-md px-2 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 max-lg:justify-center lg:group-data-[collapsed=true]/shell:justify-center">
         <span className="sr-only lg:hidden">{cs.shell.account}</span>
-        <Avatar name={user.name} size="md" />
+        <Avatar name={user.name} size="sm" />
         <span className={cn('min-w-0 flex-1', labelCls)}>
           <span className="block truncate text-sm font-medium">{user.name}</span>
           <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
@@ -255,6 +223,15 @@ export function AccountMenu({ user }: { user: { name: string; email: string } })
           <Settings aria-hidden />
           {cs.nav.settings}
         </DropdownMenuItem>
+        <DropdownMenuItem render={<a href={BRAND.supportUrl} target="_blank" rel="noreferrer" />}>
+          <Coffee aria-hidden />
+          {cs.shell.coffee}
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<a href={BRAND.issuesUrl} target="_blank" rel="noreferrer" />}>
+          <MessageSquare aria-hidden />
+          {cs.shell.feedback}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {
             clearAssistantStorage()
@@ -340,20 +317,21 @@ export function NewInvoiceButton() {
   return (
     <div className="ml-2 hidden items-stretch md:flex">
       <Button
+        variant="brand"
         className="rounded-r-none"
         nativeButton={false}
         render={<Link to={NEW_INVOICE_PATH as never} />}
       >
         <Plus data-icon="inline-start" />
         {cs.shell.newInvoice}
-        <Kbd className="ml-1 border-primary-foreground/30 bg-transparent text-primary-foreground/80">
+        <Kbd className="ml-1 border-brand-foreground/25 bg-transparent text-brand-foreground/70">
           N
         </Kbd>
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label={cs.shell.newInvoiceMenu}
-          className="flex h-9 w-8 items-center justify-center rounded-r-lg border-l pointer-coarse:h-11 border-primary-foreground/25 bg-primary text-primary-foreground outline-none transition-colors hover:bg-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="flex h-9 w-8 items-center justify-center rounded-r-lg border-l pointer-coarse:h-11 border-brand-foreground/15 bg-brand text-brand-foreground outline-none transition-colors hover:bg-brand/80 focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <ChevronDown className="size-4" aria-hidden />
         </DropdownMenuTrigger>

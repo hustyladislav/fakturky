@@ -1601,6 +1601,23 @@ export const documentsRepo = {
           )
         }
       }
+      // Before the delete: the foreign key nulls `paymentId`, which would lose the link to the payment.
+      await tx
+        .update(bankTransaction)
+        .set({
+          matchStatus: 'unmatched',
+          matchedDocumentId: null,
+          paymentId: null,
+          matchedAmount: null,
+        })
+        .where(
+          and(
+            eq(bankTransaction.organizationId, orgId),
+            eq(bankTransaction.matchedDocumentId, id),
+            eq(bankTransaction.matchStatus, 'matched'),
+            paymentId ? eq(bankTransaction.paymentId, paymentId) : undefined,
+          ),
+        )
       const removed = await tx
         .delete(payment)
         .where(
@@ -1611,23 +1628,8 @@ export const documentsRepo = {
           ),
         )
         .returning({ id: payment.id })
-      // Bank transactions that were paired with this document's payments become available again.
-      if (removed.length > 0) {
-        await tx
-          .update(bankTransaction)
-          .set({
-            matchStatus: 'unmatched',
-            matchedDocumentId: null,
-            paymentId: null,
-            matchedAmount: null,
-          })
-          .where(
-            and(
-              eq(bankTransaction.organizationId, orgId),
-              eq(bankTransaction.matchedDocumentId, id),
-              eq(bankTransaction.matchStatus, 'matched'),
-            ),
-          )
+      if (paymentId && removed.length === 0) {
+        throw new DocumentError('NOT_FOUND', 'Payment not found on this document')
       }
       await tx.update(document).set({ status: 'issued', paidAt: null }).where(scoped(orgId, id))
       await logActivity(tx, orgId, actorId, id, 'unpaid')

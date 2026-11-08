@@ -200,7 +200,7 @@ export function RevenueChart({ months, className }: { months: Month[]; className
                   <div
                     role="presentation"
                     className={cn(
-                      'shadow-floating pointer-events-none absolute z-20 w-56 rounded-lg bg-popover p-3 text-xs opacity-0 transition-opacity duration-100',
+                      'shadow-floating pointer-events-none absolute z-20 w-44 rounded-lg @md:w-56 bg-popover p-3 text-xs opacity-0 transition-opacity duration-100',
                       'peer-hover:opacity-100 peer-focus:opacity-100',
                       tipAlign,
                     )}

@@ -75,7 +75,9 @@ function SiteHeader() {
           </a>
         </nav>
         <div className="ml-auto flex items-center gap-1">
-          <ThemeToggle labels={cs.theme} />
+          <div className="max-[359px]:hidden">
+            <ThemeToggle labels={cs.theme} />
+          </div>
           <Button
             variant="ghost"
             size="lg"

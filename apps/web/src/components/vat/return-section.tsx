@@ -144,7 +144,7 @@ export function ReturnSection({
                   {t.rows[row.key]}
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-2 pl-12 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2 pl-12 text-sm">
                 <span className="flex flex-wrap gap-x-3">
                   <span className="whitespace-nowrap">
                     <span className="text-muted-foreground">{t.base}: </span>

@@ -6,7 +6,7 @@ import { cs } from '@/i18n/cs'
 import { downloadCsv } from '@/lib/csv'
 import { client } from '@/lib/orpc'
 import { type Doc, isPayable, useDocActions } from './invoice-rows'
-import { crowns } from './summary-strip'
+import { crowns } from './money'
 
 const t = cs.invoices.bulk
 
@@ -82,7 +82,7 @@ export function BulkBar({
       aria-label={t.selected(selected.length)}
       className="shadow-floating fixed bottom-6 left-1/2 z-40 hidden -translate-x-1/2 items-center gap-1 rounded-xl bg-popover p-1.5 pl-4 md:flex motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
     >
-      <span className="pr-3 text-sm font-medium tabular-nums">
+      <span className="whitespace-nowrap pr-3 text-sm font-medium tabular-nums">
         {t.selected(selected.length)}
         <span className="ml-2 font-normal text-muted-foreground">{crowns(sum)}</span>
       </span>

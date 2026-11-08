@@ -345,15 +345,6 @@ export const cs = {
   overview: {
     title: 'Přehled',
     greeting: 'Dobrý den',
-    summary: {
-      issued: (count: number, total: string | null) =>
-        `Tento měsíc jste vystavili ${count} ${count === 1 ? 'fakturu' : count < 5 ? 'faktury' : 'faktur'}${total ? ` za ${total}` : ''}.`,
-      none: 'Tento měsíc jste zatím nic nevystavili.',
-      awaiting: (count: number) =>
-        count === 0
-          ? 'Nic nečeká na platbu.'
-          : `${count} ${count === 1 ? 'čeká' : 'čekají'} na platbu.`,
-    },
     kpi: {
       month: 'Obrat tento měsíc',
       monthHint: 'bez DPH, včetně dobropisů',
@@ -416,26 +407,11 @@ export const cs = {
       reminded: 'Připomínka odeslána.',
       remindFor: (name: string) => `Připomenout platbu: ${name}`,
       empty: 'Žádné faktury nečekají na platbu.',
-    },
-    quick: {
-      title: 'Rychlé akce',
-      newInvoice: 'Nová faktura',
-      fromTemplate: 'Ze šablony',
+      due: 'Splatnost',
       uploadStatement: 'Nahrát výpis',
-      askAssistant: 'Zeptat se asistenta',
     },
     recent: 'Poslední doklady',
     draftCreditNote: 'Dobropis · koncept',
-    activity: {
-      title: 'Aktivita',
-      empty: 'Zatím se nic nestalo.',
-      issued: 'Vystaveno',
-      paid: 'Zaplaceno',
-      partially_paid: 'Částečná platba',
-      sent: 'Odesláno',
-      reminded: 'Upomínka odeslána',
-      bank_matched: 'Spárováno z banky',
-    },
     allInvoices: 'Všechny faktury',
     emptyTitle: 'Začněte první fakturou',
     addBankAccount: 'Přidat bankovní účet',
@@ -459,6 +435,14 @@ export const cs = {
       `${count} ${count === 1 ? 'doklad' : count < 5 && count > 0 ? 'doklady' : 'dokladů'}${unpaid ? ` · ${unpaid} neuhrazeno` : ''}`,
     monthTotal: (count: number, sum: string | null) =>
       `${count} ${count === 1 ? 'doklad' : count < 5 ? 'doklady' : 'dokladů'}${sum ? ` · vystaveno ${sum}` : ''}`,
+    searchShort: 'Hledat doklad…',
+    tabsLabel: 'Stav dokladů',
+    subtitleSum: {
+      draft: 'rozpracováno',
+      unpaid: 'neuhrazeno',
+      overdue: 'po splatnosti',
+      paid: 'zaplaceno',
+    },
     shown: (shown: number, total: number) => `Zobrazeno ${shown} z ${total}`,
     typeShort: {
       invoice: 'Faktura',

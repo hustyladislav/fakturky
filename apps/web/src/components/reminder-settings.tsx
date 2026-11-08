@@ -1,26 +1,17 @@
 import { Button } from '@fakturky/ui/components/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@fakturky/ui/components/card'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { client, orpc } from '@/lib/orpc'
 
 export function DataExport() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle role="heading" aria-level={2}>
-          {cs.settings.exportTitle}
-        </CardTitle>
-        <CardDescription>{cs.settings.exportDescription}</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <SettingsSection
+      id="ucet"
+      title={cs.settings.exportTitle}
+      description={cs.settings.exportDescription}
+      action={
         <Button
           variant="outline"
           onClick={async () => {
@@ -39,8 +30,8 @@ export function DataExport() {
         >
           {cs.settings.exportButton}
         </Button>
-      </CardContent>
-    </Card>
+      }
+    />
   )
 }
 
@@ -57,24 +48,21 @@ export function ReminderSettings() {
     }),
   )
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle role="heading" aria-level={2}>
-          {cs.settings.remindersTitle}
-        </CardTitle>
-        <CardDescription>{cs.settings.remindersDescription}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={profile.data?.autoRemind ?? false}
-            disabled={!profile.data || save.isPending}
-            onChange={(e) => save.mutate({ autoRemind: e.target.checked })}
-          />
-          {cs.settings.remindersToggle}
-        </label>
-      </CardContent>
-    </Card>
+    <SettingsSection
+      id="emaily"
+      title={cs.settings.remindersTitle}
+      description={cs.settings.remindersDescription}
+    >
+      <label className="flex min-h-11 items-center gap-3 text-sm">
+        <input
+          type="checkbox"
+          className="size-4"
+          checked={profile.data?.autoRemind ?? false}
+          disabled={!profile.data || save.isPending}
+          onChange={(e) => save.mutate({ autoRemind: e.target.checked })}
+        />
+        {cs.settings.remindersToggle}
+      </label>
+    </SettingsSection>
   )
 }

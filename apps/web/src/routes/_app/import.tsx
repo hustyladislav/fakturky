@@ -1,19 +1,14 @@
 import type { RouterOutputs } from '@fakturky/core/router'
 import { Button } from '@fakturky/ui/components/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@fakturky/ui/components/card'
 import { FilePicker } from '@fakturky/ui/components/file-picker'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
+import { PageHeader } from '@fakturky/ui/components/page-header'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
+import { SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 
@@ -32,7 +27,7 @@ function Result({ summary }: { summary: Summary }) {
     </p>
   )
   return (
-    <div className="space-y-2 rounded-lg border bg-muted/40 p-4 text-sm" role="status">
+    <div className="hairline space-y-2 pt-4 text-sm" role="status">
       <p className="font-medium">{summary.dryRun ? t.resultPreview : t.resultDone}</p>
       {row(t.contacts, summary.contacts)}
       {row(t.documents, summary.documents)}
@@ -85,12 +80,8 @@ function FakturoidCard() {
     )
   }
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t.fakturoidTitle}</CardTitle>
-        <CardDescription>{t.fakturoidDescription}</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <SettingsSection title={t.fakturoidTitle} description={t.fakturoidDescription}>
+      <div>
         <form
           className="space-y-4"
           autoComplete="off"
@@ -142,8 +133,8 @@ function FakturoidCard() {
             <Result summary={summary} />
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </SettingsSection>
   )
 }
 
@@ -170,12 +161,8 @@ function FileCard() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t.fileTitle}</CardTitle>
-        <CardDescription>{t.fileDescription}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <SettingsSection title={t.fileTitle} description={t.fileDescription}>
+      <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="file-kind">{t.fileKind}</Label>
           <NativeSelect
@@ -212,19 +199,23 @@ function FileCard() {
           </Button>
         </div>
         {summary && <Result summary={summary} />}
-      </CardContent>
-    </Card>
+      </div>
+    </SettingsSection>
   )
 }
 
 function ImportPage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <Link to="/nastaveni" className="text-muted-foreground text-sm hover:underline">
-        ← {t.back}
-      </Link>
-      <h1 className="text-2xl font-semibold">{t.title}</h1>
-      <p className="text-muted-foreground text-sm">{t.intro}</p>
+    <div className="mx-auto max-w-3xl space-y-10">
+      <div className="space-y-4">
+        <Link
+          to="/nastaveni"
+          className="inline-flex min-h-11 items-center text-muted-foreground text-sm hover:text-foreground"
+        >
+          ← {t.back}
+        </Link>
+        <PageHeader className="mb-0" title={t.title} subtitle={t.intro} />
+      </div>
       <FakturoidCard />
       <FileCard />
     </div>

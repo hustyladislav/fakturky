@@ -36,16 +36,15 @@ Details and where each rule is pinned: [docs/agents/security.md](docs/agents/sec
 
 ## Proof before "done"
 
-While iterating: LSP diagnostics, `pnpm typecheck`, `pnpm test <file>`.
-Scale proof to the change: copy/CSS/docs → the affected test · logic → `pnpm check` ·
-UI → + before/after screenshots (video for motion or flows) · risky paths (money, numbering, auth, tenancy, CI, scripts) → + `pnpm e2e`.
-Every "done" names what was **not** verified. In doubt, less proof and ask. Never merge onto a
-red `main`.
+Every "done" carries **irrefutable** proof scaled to the change and names what was **not** verified:
+what counts and how much → [docs/agents/verification.md](docs/agents/verification.md). Never merge onto a red `main`.
 
 ## Before you touch…
 
 - Shipping: branches, PRs, CI, deploys, dependency and model versions → [docs/agents/delivery.md](docs/agents/delivery.md)
 - Any UI: components, styling, Tailwind, shadcn, a new screen, Czech copy → [docs/agents/ui.md](docs/agents/ui.md)
+- Before/after screenshots or video for a PR, or starting a local server → [docs/agents/pr-evidence.md](docs/agents/pr-evidence.md)
+- A result that looks wrong, a flaky test, a wrong server → [docs/agents/known-traps.md](docs/agents/known-traps.md); add what you learn there
 - An oRPC procedure, REST, MCP, CLI or the assistant's tools → [docs/agents/api.md](docs/agents/api.md)
 - Environments, env vars, database, migrations, hosting, cron → [docs/agents/environment.md](docs/agents/environment.md)
 - Secrets, auth, tenancy, public endpoints, headers → [docs/agents/security.md](docs/agents/security.md)
@@ -57,6 +56,8 @@ red `main`.
 - English in code, comments, commits and docs; **user-facing UI copy is Czech** (natural Czech, correct diacritics) in `apps/web/src/i18n/cs.ts`. Never hardcode the product name — import `BRAND` from `@fakturky/core/brand`.
 - Every PR body follows the `pr` skill ([.agents/skills/pr](.agents/skills/pr/SKILL.md)); a hook enforces its sections.
 - Small, focused PRs with tests. Conventional Commits (`feat:`, `fix:`, `chore:` …).
+- Deep modules: a small interface with lots of behaviour behind it. Split a large component along what callers need to know, never into pass-throughs.
+- Params, props and schema fields are required by default; make one optional or defaulted only for a good reason.
 - Comments only for what the code can't say: the non-obvious why, an invariant, a decision reference. One line, two at most; no history, no narrating the change, no restating names or types. Very short, fragments fine.
 - Only a decision that shapes the system (architecture, infrastructure, a backend vendor or core toolchain, a platform-wide money/security/legal rule) gets an entry in [docs/decisions/](docs/decisions/README.md), in the same PR. Calibrate on [examples.md](docs/decisions/examples.md); in doubt, leave it out.
 - Before adding complexity for an unlikely race or security edge case, give the user the failure mode, its likelihood and the cost, and get their buy-in.
@@ -65,24 +66,7 @@ red `main`.
 
 ## Code Review Rules
 
-<!-- Read by automated reviewers (Codex, CodeRabbit). Keep it to checks a linter can't do. -->
-### Correctness
-
-- Money math must use `Decimal`; VAT computed per rate on the recap, rounded to 2 decimals (see `docs/DOMAIN.md`).
-- Document numbers are allocated only at issue, inside a transaction; never reused.
-- Issued documents use snapshots; edits to contacts/profile must not alter issued documents.
-
-### Security
-
-- Every DB access is scoped by `organizationId` from the authenticated context — flag any query that is not.
-- Inputs validated with Zod at the procedure boundary; outputs never leak other tenants' data or secrets.
-- Public endpoints (`/f/:token`, ARES proxy) must not expose private notes, internal IDs of other entities, or allow enumeration.
-- No secrets, tokens or PII in logs, error messages, or client bundles.
-
-### Product
-
-- UI strings in Czech and in `i18n/cs.ts`; no English leaking into the UI.
-- New features must be reachable from UI, REST, MCP and CLI (one oRPC procedure with `meta.mcp`; see `docs/agents/api.md`).
+Reviewing a PR or diff → read [REVIEW.md](REVIEW.md) first.
 
 ## Writing agent instructions
 

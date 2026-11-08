@@ -1,7 +1,7 @@
 # UI: shadcn/ui (Base UI) on Tailwind v4, Czech copy
 
-Every new or touched screen is built from shadcn components (Base UI flavour, `base-nova` style). Use the `shadcn`
-and `frontend-design` skills. Design system: [DESIGN.md](../DESIGN.md) (tokens, type, motion, mobile, user stories, the invoice document, Czech copy).
+Every new or touched screen is built from shadcn components (Base UI flavour, `base-nova` style). Use the `shadcn`,
+`frontend-design`, `emil-design-eng` and `mobile-native` skills (`review-animations` for a motion review). Design system: [DESIGN.md](../DESIGN.md) (tokens, type, motion, mobile, user stories, the invoice document, Czech copy).
 
 ## Where things live
 - `packages/ui/src/components/*` — shadcn components restyled once to the project tokens, plus app primitives (`amount`, `avatar`, `empty-state`, `date-picker`, `currency-combobox`…). Add with `pnpm dlx shadcn@latest add <name>` from `apps/web` (config in `apps/web/components.json`); never `--overwrite` without reading the diff.
@@ -26,6 +26,5 @@ and `frontend-design` skills. Design system: [DESIGN.md](../DESIGN.md) (tokens, 
 - State status, then next action; never celebrate money that wasn't verified ("Označeno jako zaplacené"). "Pro AI asistenty", never "pro agenty". "Kup mi kávu" never on success screens or modals.
 
 ## Proof
-Before/after screenshots at 1440 and 390 px, light and dark, in the PR. Run the a11y e2e (axe, `apps/web/e2e/a11y.spec.ts`)
-for touched pages. Wait for hydration and finished transitions before clicking or measuring in tests. Seed local demo data
-with `pnpm db:seed` against a running `pnpm dev`.
+
+[verification.md](verification.md) and [pr-evidence.md](pr-evidence.md). Run the a11y e2e (axe, `apps/web/e2e/a11y.spec.ts`) for touched pages. Wait for hydration and finished transitions before clicking or measuring in tests.

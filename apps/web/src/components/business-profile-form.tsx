@@ -64,15 +64,21 @@ export function BusinessProfileForm({
   const [phase, setPhase] = useState<IcoFirstPhase>('ico')
   const [editing, setEditing] = useState(false)
   const continueButton = useRef<HTMLButtonElement>(null)
+  // Only the newest request may fill the form: an older, slower answer must not overwrite it.
+  const latestLookup = useRef('')
   useEffect(() => onValuesChange?.(values), [values, onValuesChange])
   const set = (key: keyof typeof values) => (e: { target: { value: string } }) => {
-    if (key === 'ico') setIcoError(null)
+    if (key === 'ico') {
+      setIcoError(null)
+      latestLookup.current = ''
+    }
     setValues((v) => ({ ...v, [key]: e.target.value }))
   }
 
   const lookup = useMutation({
     mutationFn: (ico: string) => client.businessProfile.lookupIco({ ico }),
-    onSuccess: (s) => {
+    onSuccess: (s, ico) => {
+      if (ico !== latestLookup.current) return
       setValues((v) => ({
         ...v,
         ico: s.ico,
@@ -91,17 +97,24 @@ export function BusinessProfileForm({
       }))
       setIcoError(null)
       if (!icoFirst) toast.success(cs.profile.icoFound)
-      else if (phase === 'ico') setPhase('found')
+      else setPhase((p) => (p === 'ico' ? 'found' : p))
     },
-    onError: (error) =>
+    onError: (error, ico) => {
+      if (ico !== latestLookup.current) return
+      const code = error instanceof ORPCError ? error.code : null
       setIcoError(
-        icoFirst && error instanceof ORPCError && error.code === 'BAD_GATEWAY'
-          ? cs.profile.icoAresDown
-          : icoFirst && error instanceof ORPCError && error.code === 'BAD_REQUEST'
+        !icoFirst || code === 'NOT_FOUND'
+          ? cs.profile.icoNotFound
+          : code === 'BAD_REQUEST'
             ? cs.profile.icoInvalid
-            : cs.profile.icoNotFound,
-      ),
+            : cs.profile.icoAresDown,
+      )
+    },
   })
+  const runLookup = (ico: string) => {
+    latestLookup.current = ico
+    lookup.mutate(ico)
+  }
 
   // A complete, valid IČO looks itself up; the button stays as a fallback for short or padded numbers.
   const lastAuto = useRef('')
@@ -109,6 +122,7 @@ export function BusinessProfileForm({
     const ico = values.ico.replace(/\s/g, '')
     if (!isValidIco(ico) || ico.length !== 8 || ico === lastAuto.current) return
     lastAuto.current = ico
+    latestLookup.current = ico
     lookup.mutate(ico)
   }, [values.ico, lookup.mutate])
 
@@ -151,7 +165,7 @@ export function BusinessProfileForm({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && values.ico) {
               e.preventDefault()
-              lookup.mutate(values.ico)
+              runLookup(values.ico)
             }
           }}
         />
@@ -159,7 +173,7 @@ export function BusinessProfileForm({
           type="button"
           variant="outline"
           disabled={!values.ico || lookup.isPending}
-          onClick={() => lookup.mutate(values.ico)}
+          onClick={() => runLookup(values.ico)}
         >
           {lookup.isPending ? cs.common.loading : cs.profile.icoLookup}
         </Button>
@@ -174,7 +188,7 @@ export function BusinessProfileForm({
       onSubmit={(e) => {
         e.preventDefault()
         if (icoFirst && phase === 'ico') {
-          if (values.ico && !lookup.isPending) lookup.mutate(values.ico)
+          if (values.ico && !lookup.isPending) runLookup(values.ico)
           return
         }
         save.mutate()
@@ -186,7 +200,10 @@ export function BusinessProfileForm({
           set={set}
           error={icoError}
           pending={lookup.isPending}
-          onManual={() => setPhase('manual')}
+          onManual={() => {
+            latestLookup.current = ''
+            setPhase('manual')
+          }}
         />
       ) : icoFirst && phase === 'found' ? (
         <FoundSummary
@@ -197,7 +214,19 @@ export function BusinessProfileForm({
           saving={save.isPending}
           submitLabel={submitLabel}
           onToggleEditing={() => setEditing((v) => !v)}
-          onChangeIco={() => setPhase('ico')}
+          onChangeIco={() => {
+            // The summary described that company; a different IČO must not inherit its details.
+            setValues((v) => ({
+              ...v,
+              legalName: '',
+              dic: '',
+              street: '',
+              city: '',
+              zip: '',
+              registryNote: '',
+            }))
+            setPhase('ico')
+          }}
         />
       ) : (
         <>

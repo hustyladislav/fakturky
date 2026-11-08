@@ -86,3 +86,31 @@ test.describe('onboarding ARES prefill', () => {
     await expect(page.getByTestId('profile-summary')).toBeHidden()
   })
 })
+
+test('a slow ARES answer for an older IČO never replaces the newer one', async ({ page }) => {
+  await signUp(page, testEmail('ares-race'))
+  await page.route(/lookup/i, async (route) => {
+    if (route.request().postData()?.includes(ICO.nonPayerSupplier)) {
+      await new Promise((r) => setTimeout(r, 1500))
+    }
+    await route.continue()
+  })
+  await page.getByLabel('IČO').fill(ICO.nonPayerSupplier)
+  await page.getByLabel('IČO').fill(ICO.payerSupplier)
+  await expect(page.getByTestId('profile-summary')).toContainText('E2E Plátce s.r.o.')
+  await page.waitForTimeout(2000)
+  await expect(page.getByTestId('profile-summary')).toContainText('E2E Plátce s.r.o.')
+})
+
+test('choosing manual entry is not undone by a lookup still in flight', async ({ page }) => {
+  await signUp(page, testEmail('ares-manual'))
+  await page.route(/lookup/i, async (route) => {
+    await new Promise((r) => setTimeout(r, 1500))
+    await route.continue()
+  })
+  await page.getByLabel('IČO').fill(ICO.nonPayerSupplier)
+  await page.getByRole('button', { name: /vyplnit ručně/ }).click()
+  await page.getByLabel('Obchodní jméno / jméno a příjmení').fill('Moje firma ručně')
+  await page.waitForTimeout(2000)
+  await expect(page.getByLabel('Obchodní jméno / jméno a příjmení')).toHaveValue('Moje firma ručně')
+})

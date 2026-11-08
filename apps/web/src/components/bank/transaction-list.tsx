@@ -1,4 +1,5 @@
 import type { RouterOutputs } from '@fakturky/core/router'
+import { formatMoney } from '@fakturky/domain'
 import { formatDateCs } from '@fakturky/domain/dates'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Button } from '@fakturky/ui/components/button'
@@ -59,7 +60,7 @@ function Row({ tx, onPair }: { tx: Tx; onPair: (target: PairTarget) => void }) {
           <span className="font-medium break-words">{tx.counterpartyName ?? '—'}</span>
           {tx.overpaid && (
             <span className="text-[13px] text-destructive">
-              {t.overpaid(`${tx.overpaid} ${tx.currency}`)}
+              {t.overpaid(formatMoney(tx.overpaid, tx.currency))}
             </span>
           )}
         </div>

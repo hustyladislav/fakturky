@@ -3,6 +3,7 @@ import { PageHeader } from '@fakturky/ui/components/page-header'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { ErrorState } from '@/components/error-state'
 import { TemplateList } from '@/components/templates/template-list'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
@@ -29,10 +30,14 @@ function Templates() {
     <div className="mx-auto max-w-[1200px] pb-20 sm:pb-0">
       <PageHeader
         title={t.title}
-        subtitle={templates.data ? t.subtitle(templates.data.length, activeRules) : undefined}
+        subtitle={
+          templates.data && rules.data ? t.subtitle(templates.data.length, activeRules) : undefined
+        }
       />
 
-      {(templates.isPending || rules.isPending) && (
+      {templates.isError && <ErrorState onRetry={() => templates.refetch()} />}
+      {rules.isError && <ErrorState onRetry={() => rules.refetch()} />}
+      {(templates.isPending || (templates.data && rules.isPending)) && (
         <div aria-busy="true">
           {[0, 1, 2].map((i) => (
             <div key={i} className="flex h-[3.75rem] items-center border-b">
@@ -46,7 +51,7 @@ function Templates() {
           {t.empty}
         </EmptyState>
       )}
-      {templates.data && rules.data && templates.data.length > 0 && (
+      {templates.data && templates.data.length > 0 && !rules.isPending && (
         <TemplateList templates={templates.data} rules={rules.data} openRepeatFor={opakovat} />
       )}
     </div>

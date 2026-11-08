@@ -3,19 +3,12 @@ import { parseDecimal, sum, toFixed } from '@fakturky/domain'
 import { formatDateCs } from '@fakturky/domain/dates'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Button } from '@fakturky/ui/components/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@fakturky/ui/components/dropdown-menu'
 import { RelativeDate } from '@fakturky/ui/components/relative-date'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { MoreHorizontal, Pause, Play, Repeat, Trash2, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Pause, Play, Trash2, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
@@ -77,8 +70,7 @@ function useTemplateActions(onRuleCreated: () => void) {
   return { use, del, create, update, delRule }
 }
 
-function Schedule({ rule }: { rule: Rule | undefined }) {
-  if (!rule) return <span className="text-muted-foreground">{t.noRepeat}</span>
+function Schedule({ rule }: { rule: Rule }) {
   return (
     <span className={cn(!rule.active && 'text-muted-foreground')}>
       {t.frequency[rule.frequency]}
@@ -101,8 +93,10 @@ function Schedule({ rule }: { rule: Rule | undefined }) {
 }
 
 /**
- * Flat template rows: name and net total, the schedule with its next run, one-tap "Použít".
- * `openRepeatFor` opens that template's repeat form on arrival (from the "Nastavit opakování" toast).
+ * Flat template rows: name and net total, one-tap "Použít", and every recurring rule of the template
+ * with its own pause/resume and cancel. `openRepeatFor` opens that template's repeat form once on
+ * arrival (from the "Nastavit opakování" toast).
+ * `rules === undefined` means they failed to load: templates still render, without schedules.
  */
 export function TemplateList({
   templates,
@@ -110,16 +104,16 @@ export function TemplateList({
   openRepeatFor,
 }: {
   templates: Template[]
-  rules: Rule[]
+  rules: Rule[] | undefined
   openRepeatFor: string | undefined
 }) {
   const [repeatFor, setRepeatFor] = useState<string | null>(openRepeatFor ?? null)
   const { use, del, create, update, delRule } = useTemplateActions(() => setRepeatFor(null))
-  const ruleByTemplate = new Map(rules.map((r) => [r.templateId, r]))
+  const arrived = useRef(false)
 
-  // Bring the template the toast pointed at into view once it is rendered.
   useEffect(() => {
-    if (!openRepeatFor || !templates.some((x) => x.id === openRepeatFor)) return
+    if (arrived.current || !openRepeatFor || !templates.some((x) => x.id === openRepeatFor)) return
+    arrived.current = true
     setRepeatFor(openRepeatFor)
     document.getElementById(`tpl-${openRepeatFor}`)?.scrollIntoView({ block: 'center' })
   }, [openRepeatFor, templates])
@@ -127,21 +121,19 @@ export function TemplateList({
   return (
     <ul className="border-t">
       {templates.map((tpl) => {
-        const rule = ruleByTemplate.get(tpl.id)
+        const own = (rules ?? []).filter((r) => r.templateId === tpl.id)
         const currency = tpl.body.currency ?? 'CZK'
         const net = toFixed(
           sum(tpl.body.lines.map((l) => parseDecimal(l.quantity).times(l.unitPrice))),
         )
         const showForm = repeatFor === tpl.id
-        const toggleRepeat = () => setRepeatFor(showForm ? null : tpl.id)
-        const togglePause = () => rule && update.mutate({ id: rule.id, active: !rule.active })
         return (
           <li
             id={`tpl-${tpl.id}`}
             key={tpl.id}
             className="row-hover border-b py-3 sm:-mx-3 sm:px-3 sm:py-3.5"
           >
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,19rem)_15rem]">
+            <div className="flex items-center justify-between gap-x-4">
               <div className="min-w-0">
                 <h2 className="truncate text-[15px] font-medium">{tpl.name}</h2>
                 <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[13px] text-muted-foreground">
@@ -150,14 +142,15 @@ export function TemplateList({
                   <span>
                     <Amount value={net} currency={currency} size="sm" hideZeroFraction /> {t.net}
                   </span>
+                  {rules && own.length === 0 && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span>{t.noRepeat}</span>
+                    </>
+                  )}
                 </p>
               </div>
-
-              <div className="col-start-1 row-start-2 min-w-0 text-[13px] sm:col-start-2 sm:row-start-1 sm:text-sm">
-                <Schedule rule={rule} />
-              </div>
-
-              <div className="col-start-2 row-span-2 row-start-1 flex items-center gap-1 sm:col-start-3 sm:row-span-1 sm:justify-end">
+              <div className="flex shrink-0 items-center gap-1">
                 <Button
                   variant="outline"
                   disabled={use.isPending}
@@ -165,64 +158,61 @@ export function TemplateList({
                 >
                   {t.use}
                 </Button>
-                {rule ? (
+                {rules && (
                   <Button
                     variant="ghost"
-                    className="text-muted-foreground max-sm:hidden"
-                    onClick={togglePause}
-                  >
-                    {rule.active ? <Pause aria-hidden /> : <Play aria-hidden />}
-                    {rule.active ? t.pause : t.resume}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    className="text-muted-foreground max-sm:hidden"
+                    className="text-muted-foreground"
                     aria-expanded={showForm}
-                    onClick={toggleRepeat}
+                    onClick={() => setRepeatFor(showForm ? null : tpl.id)}
                   >
                     {t.repeat}
                   </Button>
                 )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`${t.menu}: ${tpl.name}`}
-                        className="text-muted-foreground"
-                      />
-                    }
-                  >
-                    <MoreHorizontal aria-hidden />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="bottom" align="end" className="min-w-52">
-                    {rule ? (
-                      <DropdownMenuItem className="sm:hidden" onClick={togglePause}>
-                        {rule.active ? <Pause aria-hidden /> : <Play aria-hidden />}
-                        {rule.active ? t.pause : t.resume}
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem className="sm:hidden" onClick={toggleRepeat}>
-                        <Repeat aria-hidden /> {t.repeat}
-                      </DropdownMenuItem>
-                    )}
-                    {rule && (
-                      <DropdownMenuItem onClick={() => delRule.mutate({ id: rule.id })}>
-                        <X aria-hidden /> {t.cancelRule}
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator className={cn(!rule && 'sm:hidden')} />
-                    <DropdownMenuItem onClick={() => del.mutate({ id: tpl.id })}>
-                      <Trash2 aria-hidden /> {t.deleteTemplate}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground"
+                  aria-label={`${t.deleteTemplate}: ${tpl.name}`}
+                  onClick={() => del.mutate({ id: tpl.id })}
+                >
+                  <Trash2 aria-hidden />
+                </Button>
               </div>
             </div>
 
-            {showForm && !rule && (
+            {own.length > 0 && (
+              <ul className="mt-1">
+                {own.map((r) => (
+                  <li
+                    key={r.id}
+                    className="flex flex-wrap items-center justify-between gap-x-4 text-[13px] sm:text-sm"
+                  >
+                    <Schedule rule={r} />
+                    <span className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        className="text-muted-foreground"
+                        disabled={update.isPending}
+                        onClick={() => update.mutate({ id: r.id, active: !r.active })}
+                      >
+                        {r.active ? <Pause aria-hidden /> : <Play aria-hidden />}
+                        {r.active ? t.pause : t.resume}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="text-muted-foreground"
+                        disabled={delRule.isPending}
+                        onClick={() => delRule.mutate({ id: r.id })}
+                      >
+                        <X aria-hidden /> {t.cancelRule}
+                      </Button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {showForm && (
               <div className="pt-4 pb-1">
                 <RepeatForm
                   templateId={tpl.id}

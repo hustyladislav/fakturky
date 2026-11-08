@@ -15,12 +15,13 @@ type Stat = RouterOutputs['contacts']['stats'][number]
 type SortKey = 'name' | 'invoiced' | 'outstanding' | 'last'
 
 const t = cs.contacts
+const czech = new Intl.Collator('cs')
 
 function sortValue(c: Contact, s: Stat | undefined, key: SortKey) {
   if (key === 'invoiced') return Number(s?.invoiced ?? 0)
   if (key === 'outstanding') return Number(s?.outstanding ?? 0)
   if (key === 'last') return s?.lastInvoiceDate ?? ''
-  return c.name.toLowerCase()
+  return c.name
 }
 
 function SortHeader({
@@ -94,7 +95,7 @@ function NewInvoiceButton({ contact }: { contact: Contact }) {
 }
 
 /**
- * Flat contact list: table from the `@3xl` container width up, two-line rows below.
+ * Flat contact list: table from the `@4xl` container width up (its fixed columns need 46rem plus a name column), two-line rows below.
  * Owns sorting; the caller owns data and the search term.
  */
 export function ContactList({
@@ -113,8 +114,16 @@ export function ContactList({
     return [...contacts].sort((a, b) => {
       const x = sortValue(a, byId.get(a.id), sort)
       const y = sortValue(b, byId.get(b.id), sort)
-      const r = x < y ? -1 : x > y ? 1 : a.name.localeCompare(b.name, 'cs')
-      return dir === 'asc' ? r : -r
+      const r =
+        typeof x === 'string' && typeof y === 'string'
+          ? czech.compare(x, y)
+          : x < y
+            ? -1
+            : x > y
+              ? 1
+              : 0
+      const byName = r || czech.compare(a.name, b.name)
+      return dir === 'asc' ? byName : -byName
     })
   }, [contacts, byId, sort, dir])
 
@@ -128,7 +137,7 @@ export function ContactList({
 
   return (
     <>
-      <ul className="@3xl:hidden">
+      <ul className="@4xl:hidden">
         {rows.map((c) => {
           const s = byId.get(c.id)
           const overdue = s && Number(s.overdue) > 0
@@ -171,14 +180,14 @@ export function ContactList({
         })}
       </ul>
 
-      <table className="-mx-3 hidden w-[calc(100%+1.5rem)] border-separate border-spacing-0 table-fixed text-sm @3xl:table">
+      <table className="-mx-3 hidden w-[calc(100%+1.5rem)] border-separate border-spacing-0 table-fixed text-sm @4xl:table">
         <colgroup>
           <col />
-          <col className="w-32" />
-          <col className="w-44" />
-          <col className="w-36" />
+          <col className="w-28" />
           <col className="w-40" />
-          <col className="w-[15rem]" />
+          <col className="w-32" />
+          <col className="w-36" />
+          <col className="w-48" />
         </colgroup>
         <thead>
           <tr>
@@ -211,7 +220,11 @@ export function ContactList({
             return (
               <tr
                 key={c.id}
-                onClick={() => navigate({ to: '/kontakty/$id', params: { id: c.id } })}
+                onClick={(e) => {
+                  // Links and buttons inside the row handle their own clicks (incl. ctrl/cmd-click).
+                  if ((e.target as Element).closest('a,button')) return
+                  navigate({ to: '/kontakty/$id', params: { id: c.id } })
+                }}
                 className="row-hover cursor-pointer"
               >
                 <td className="h-14 max-w-0 px-3">

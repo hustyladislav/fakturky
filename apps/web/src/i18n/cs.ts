@@ -1206,6 +1206,7 @@ export const cs = {
     },
     detail: {
       invoices: 'Faktury',
+      truncated: (n: number) => `Zobrazeno prvních ${n} dokladů, starší tu nejsou.`,
       noInvoices: 'Pro tento kontakt zatím nejsou žádné doklady.',
       info: 'Údaje',
       notes: 'Poznámka',

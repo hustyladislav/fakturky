@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { ICO, signUp, testEmail } from './helpers'
+import { ICO, onboardByIco, signUp, testEmail } from './helpers'
 
 test.describe('onboarding ARES prefill', () => {
   test('eight valid digits look the company up with no button; the summary, VAT status and the details expander carry DIČ, spisová značka and the card', async ({
@@ -113,4 +113,18 @@ test('choosing manual entry is not undone by a lookup still in flight', async ({
   await page.getByLabel('Obchodní jméno / jméno a příjmení').fill('Moje firma ručně')
   await page.waitForTimeout(2000)
   await expect(page.getByLabel('Obchodní jméno / jméno a příjmení')).toHaveValue('Moje firma ručně')
+})
+
+test('reopening Nastavení keeps a manual edit instead of re-reading ARES', async ({ page }) => {
+  await signUp(page, testEmail('ares-settings'))
+  await onboardByIco(page, ICO.nonPayerSupplier, 'E2E Neplátce Novák')
+  await page.goto('/nastaveni')
+  await page.waitForLoadState('networkidle')
+  await page.getByLabel('Ulice a číslo').fill('Moje ulice 1')
+  await page.getByRole('button', { name: 'Uložit', exact: true }).first().click()
+  await expect(page.getByText('Údaje byly uloženy.')).toBeVisible()
+
+  await page.reload()
+  await page.waitForLoadState('networkidle')
+  await expect(page.getByLabel('Ulice a číslo')).toHaveValue('Moje ulice 1')
 })

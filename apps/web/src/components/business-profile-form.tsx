@@ -71,6 +71,8 @@ export function BusinessProfileForm({
     if (key === 'ico') {
       setIcoError(null)
       latestLookup.current = ''
+      // Typing the same number back must look it up again: its answer was just discarded.
+      lastAuto.current = ''
     }
     setValues((v) => ({ ...v, [key]: e.target.value }))
   }
@@ -116,8 +118,8 @@ export function BusinessProfileForm({
     lookup.mutate(ico)
   }
 
-  // A complete, valid IČO looks itself up; the button stays as a fallback for short or padded numbers.
-  const lastAuto = useRef('')
+  // A newly typed, valid IČO looks itself up (never the saved one: it would overwrite manual edits).
+  const lastAuto = useRef(profile.ico ?? '')
   useEffect(() => {
     const ico = values.ico.replace(/\s/g, '')
     if (!isValidIco(ico) || ico.length !== 8 || ico === lastAuto.current) return

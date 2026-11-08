@@ -5,7 +5,7 @@ import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { RefreshCw, Sparkles, Upload } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { BankEmpty, type BankFilter } from '@/components/bank/bank-empty'
 import { useBankSync } from '@/components/bank/bank-mutations'
 import { PairDialog } from '@/components/bank/pair-dialog'
@@ -16,6 +16,7 @@ import { SearchField } from '@/components/search-field'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
+import { useUrlSearchTerm } from '@/lib/use-url-search-term'
 
 const FILTERS = ['unmatched', 'matched', 'ignored', 'outgoing'] as const satisfies BankFilter[]
 
@@ -37,17 +38,13 @@ const t = cs.bank
 function BankPage() {
   const { filter = 'unmatched', q, ucet } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const [term, setTerm] = useState(q ?? '')
+  const commitSearch = useCallback(
+    (next: string | undefined) => navigate({ search: (s) => ({ ...s, q: next }), replace: true }),
+    [navigate],
+  )
+  const [term, setTerm] = useUrlSearchTerm(q, commitSearch)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [pairing, setPairing] = useState<PairTarget | null>(null)
-
-  useEffect(() => {
-    const h = setTimeout(() => {
-      if ((q ?? '') !== term)
-        navigate({ search: (s) => ({ ...s, q: term || undefined }), replace: true })
-    }, 250)
-    return () => clearTimeout(h)
-  }, [term, q, navigate])
 
   const accounts = useQuery(orpc.bankAccounts.list.queryOptions({ input: {} }))
   const list = useQuery(

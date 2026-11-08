@@ -1,8 +1,8 @@
 import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useIsMobile } from '@fakturky/ui/hooks/use-mobile'
-import { useEffect, useRef, useState } from 'react'
 import { SearchField } from '@/components/search-field'
 import { cs } from '@/i18n/cs'
+import { useUrlSearchTerm } from '@/lib/use-url-search-term'
 import { type DocType, TYPES } from './list-search'
 import { type Period, PeriodFilter } from './period-filter'
 
@@ -29,22 +29,7 @@ export function FilterBar({
   onPeriod: (period: Period) => void
 }) {
   const isMobile = useIsMobile()
-  const [term, setTerm] = useState(q ?? '')
-  const lastSent = useRef(q ?? '')
-  // The URL can change without typing (back button, palette): follow it instead of writing the old term back.
-  useEffect(() => {
-    if ((q ?? '') === lastSent.current) return
-    lastSent.current = q ?? ''
-    setTerm(q ?? '')
-  }, [q])
-  useEffect(() => {
-    if ((q ?? '') === term) return
-    const h = setTimeout(() => {
-      lastSent.current = term
-      onSearch(term || undefined)
-    }, 250)
-    return () => clearTimeout(h)
-  }, [term, q, onSearch])
+  const [term, setTerm] = useUrlSearchTerm(q, onSearch)
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">

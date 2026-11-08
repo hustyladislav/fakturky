@@ -97,7 +97,9 @@ export function PeriodPicker({
 
       <details className="group">
         <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm text-muted-foreground hover:text-foreground">
-          {t.options.title}
+          {t.options.title}:{' '}
+          {options.euSupplyKind === 'services' ? t.options.euServices : t.options.euGoods} ·{' '}
+          {t.options.rcCodes[options.reverseChargeCode]}
         </summary>
         <div className="grid gap-4 pt-2 sm:grid-cols-2">
           <div className="space-y-2">

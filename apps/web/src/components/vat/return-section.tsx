@@ -1,4 +1,5 @@
 import { Amount } from '@fakturky/ui/components/amount'
+import { FieldError } from '@fakturky/ui/components/field-error'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { Money } from '@fakturky/ui/components/money'
@@ -24,7 +25,9 @@ type Figures = {
   r65: string
 }
 
+/** `exempt` is informational: not a return row, no number and no drill-down. */
 type Row = { key: string; base: string; vat?: string }
+const isExempt = (row: Row) => row.key === 'exempt'
 
 function ManualInputVat({ manual }: { manual: VatManual }) {
   const field = (name: keyof typeof manual.value, label: string) => (
@@ -41,7 +44,10 @@ function ManualInputVat({ manual }: { manual: VatManual }) {
         onKeyDown={(e) => {
           if (e.key === 'Enter') manual.commit()
         }}
+        aria-invalid={manual.errors[name] ? true : undefined}
+        aria-describedby={manual.errors[name] ? `m-${name}-error` : undefined}
       />
+      <FieldError id={`m-${name}-error`}>{manual.errors[name] ? t.inputInvalid : null}</FieldError>
     </div>
   )
   return (
@@ -119,9 +125,10 @@ export function ReturnSection({
     { key: '25', base: f.r25 },
     { key: '26', base: f.r26 },
   ]
-  const exempt = report.dp3.exempt ?? { base: '0.00', vat: '0.00' }
   const count = (key: string) =>
     report.contributions.filter((c) => c.rowKey === `dp3.${key}`).length
+  if (count('exempt') > 0)
+    rows.push({ key: 'exempt', base: (report.dp3.exempt ?? { base: '0.00' }).base })
 
   return (
     <SettingsSection title={t.title} description={t.description} className="@container">
@@ -131,9 +138,11 @@ export function ReturnSection({
             <li key={row.key} className="space-y-1.5 py-3">
               <div className="flex items-baseline gap-3">
                 <span className="w-9 shrink-0 text-xs text-muted-foreground tabular-nums">
-                  {row.key}
+                  {isExempt(row) ? '' : row.key}
                 </span>
-                <span className="text-sm">{t.rows[row.key]}</span>
+                <span className={cn('text-sm', isExempt(row) && 'text-muted-foreground')}>
+                  {t.rows[row.key]}
+                </span>
               </div>
               <div className="flex items-center justify-between gap-2 pl-12 text-sm">
                 <span className="flex flex-wrap gap-x-3">
@@ -148,7 +157,9 @@ export function ReturnSection({
                     </span>
                   )}
                 </span>
-                <DrillButton rowKey={`dp3.${row.key}`} count={count(row.key)} drill={drill} />
+                {!isExempt(row) && (
+                  <DrillButton rowKey={`dp3.${row.key}`} count={count(row.key)} drill={drill} />
+                )}
               </div>
             </li>
           ))}
@@ -174,9 +185,12 @@ export function ReturnSection({
             </thead>
             <tbody className="border-y">
               {rows.map((row) => (
-                <tr key={row.key} className="border-b last:border-0">
+                <tr
+                  key={row.key}
+                  className={cn('border-b last:border-0', isExempt(row) && 'text-muted-foreground')}
+                >
                   <td className="py-2.5 pr-3 text-xs text-muted-foreground tabular-nums">
-                    {row.key}
+                    {isExempt(row) ? '' : row.key}
                   </td>
                   <td className="py-2.5 pr-3">{t.rows[row.key]}</td>
                   <td className="py-2.5 pr-3 text-right">
@@ -186,21 +200,12 @@ export function ReturnSection({
                     {row.vat !== undefined ? <Money amount={row.vat} /> : '–'}
                   </td>
                   <td className="py-1 text-right">
-                    <DrillButton rowKey={`dp3.${row.key}`} count={count(row.key)} drill={drill} />
+                    {!isExempt(row) && (
+                      <DrillButton rowKey={`dp3.${row.key}`} count={count(row.key)} drill={drill} />
+                    )}
                   </td>
                 </tr>
               ))}
-              {count('exempt') > 0 && (
-                <tr className="text-muted-foreground">
-                  <td className="py-2.5 pr-3" />
-                  <td className="py-2.5 pr-3">{t.rows.exempt}</td>
-                  <td className="py-2.5 pr-3 text-right">
-                    <Money amount={exempt.base} />
-                  </td>
-                  <td />
-                  <td />
-                </tr>
-              )}
             </tbody>
           </table>
         </div>

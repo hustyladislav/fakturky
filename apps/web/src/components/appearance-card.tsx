@@ -1,5 +1,4 @@
 import { Button } from '@fakturky/ui/components/button'
-import { FilePicker } from '@fakturky/ui/components/file-picker'
 import { Label } from '@fakturky/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check } from 'lucide-react'
@@ -32,6 +31,7 @@ function AssetRow({
   onSaved: () => void
 }) {
   const queryClient = useQueryClient()
+  const fileInput = useRef<HTMLInputElement>(null)
   const refresh = () => queryClient.invalidateQueries({ queryKey: orpc.appearance.key() })
   const upload = useMutation({
     mutationFn: async (file: File) =>
@@ -64,10 +64,12 @@ function AssetRow({
       ) : (
         <span className="text-muted-foreground text-sm">{t.none}</span>
       )}
-      <FilePicker
+      <input
+        ref={fileInput}
         id={`asset-${kind}`}
-        buttonLabel={cs.common.chooseFile}
-        emptyLabel={cs.common.noFile}
+        type="file"
+        className="sr-only"
+        tabIndex={-1}
         accept="image/png,image/jpeg"
         onChange={(e) => {
           const f = e.target.files?.[0]
@@ -75,6 +77,14 @@ function AssetRow({
           e.target.value = ''
         }}
       />
+      <Button
+        type="button"
+        variant="outline"
+        aria-label={`${cs.common.chooseFile}: ${t[kind]}`}
+        onClick={() => fileInput.current?.click()}
+      >
+        {cs.common.chooseFile}
+      </Button>
       {src && (
         <Button variant="ghost" size="sm" onClick={() => remove.mutate({ kind })}>
           {t.remove}

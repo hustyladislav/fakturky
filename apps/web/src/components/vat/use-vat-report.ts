@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 import { cs } from '@/i18n/cs'
 import type { client } from '@/lib/orpc'
 import { orpc } from '@/lib/orpc'
+import { parseInputAmount } from './parse-amount'
 
 export type VatReport = RouterOutputs['vat']['report']
 export type VatProfile = RouterOutputs['businessProfile']['get']
@@ -17,8 +18,6 @@ export type ManualInput = {
   r41Base: string
   r41Deduction: string
 }
-
-const AMOUNT = /^-?\d+([.,]\d{1,2})?$/
 
 /** The most recently finished period: what is due next. */
 function previousPeriod(kind: PeriodKind, today: string) {
@@ -48,10 +47,15 @@ export function useVatReport(profile: VatProfile) {
   const [committed, setCommitted] = useState(manual)
 
   const currentYear = Number(today.slice(0, 4))
-  const inputVat = useMemo(() => {
+  const { inputVat, errors } = useMemo(() => {
     const out: Record<string, string> = {}
-    for (const [k, v] of Object.entries(committed)) if (AMOUNT.test(v.trim())) out[k] = v.trim()
-    return Object.keys(out).length ? out : undefined
+    const bad: Partial<Record<keyof ManualInput, true>> = {}
+    for (const [k, v] of Object.entries(committed)) {
+      const parsed = parseInputAmount(v)
+      if (parsed === 'invalid') bad[k as keyof ManualInput] = true
+      else if (parsed !== null) out[k] = parsed
+    }
+    return { inputVat: Object.keys(out).length ? out : undefined, errors: bad }
   }, [committed])
 
   const input: VatReportInput = {
@@ -81,7 +85,7 @@ export function useVatReport(profile: VatProfile) {
       setIdx: (i: number) => setPeriod({ year, idx: i }),
     },
     options: { euSupplyKind, setEuSupplyKind, reverseChargeCode, setReverseChargeCode },
-    manual: { value: manual, set: setManual, commit: () => setCommitted(manual) },
+    manual: { value: manual, set: setManual, commit: () => setCommitted(manual), errors },
   }
 }
 

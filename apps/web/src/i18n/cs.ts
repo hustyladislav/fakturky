@@ -1017,6 +1017,7 @@ export const cs = {
       r41: 'Řádek 41 – přijatá plnění 12 %',
       inputBase: 'Základ daně',
       inputDeduction: 'Odpočet v plné výši',
+      inputInvalid: 'Zadejte částku, např. 12 345,50. Do výpočtu se zatím nezapočítává.',
       summaryOut: 'Daň na výstupu (ř. 62)',
       summaryDeduction: 'Odpočet daně (ř. 63)',
       summaryPay: 'Daň k úhradě (ř. 64)',

@@ -53,7 +53,7 @@ function Row({ tx, onPair }: { tx: Tx; onPair: (target: PairTarget) => void }) {
   return (
     <li
       data-testid="bank-row"
-      className="row-hover grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b py-3 sm:-mx-3 sm:px-3 sm:grid-cols-[minmax(0,1fr)_auto_9rem]"
+      className="row-hover grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b py-3 sm:grid-cols-[minmax(0,1fr)_auto_9rem]"
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">

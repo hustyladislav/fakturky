@@ -1,15 +1,14 @@
 import { EmptyState } from '@fakturky/ui/components/empty-state'
-import { Input } from '@fakturky/ui/components/input'
 import { PageHeader } from '@fakturky/ui/components/page-header'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Search } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { NewContact } from '@/components/contacts/contact-dialogs'
 import { ContactList } from '@/components/contacts/contact-list'
 import { CsvDownload } from '@/components/csv-download'
 import { crowns } from '@/components/invoices/summary-strip'
+import { SearchField } from '@/components/search-field'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
@@ -69,19 +68,12 @@ function Contacts() {
         </EmptyState>
       ) : (
         <>
-          <div className="relative mb-2 sm:w-80">
-            <Search
-              className="absolute top-2.5 left-2.5 size-4 text-muted-foreground pointer-coarse:top-3.5"
-              aria-hidden
-            />
-            <Input
-              className="pl-8"
-              placeholder={t.search}
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              aria-label={cs.common.search}
-            />
-          </div>
+          <SearchField
+            className="mb-2 sm:w-80"
+            placeholder={t.search}
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+          />
 
           {list.isPending ? (
             <div aria-busy="true">

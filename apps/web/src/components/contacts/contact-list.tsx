@@ -180,7 +180,7 @@ export function ContactList({
         })}
       </ul>
 
-      <table className="-mx-3 hidden w-[calc(100%+1.5rem)] border-separate border-spacing-0 table-fixed text-sm @4xl:table">
+      <table className="hidden w-full border-separate border-spacing-0 table-fixed text-sm @4xl:table [&_td:first-child]:pl-0 [&_th:first-child]:pl-0 [&_td:last-child]:pr-0 [&_th:last-child]:pr-0">
         <colgroup>
           <col />
           <col className="w-28" />

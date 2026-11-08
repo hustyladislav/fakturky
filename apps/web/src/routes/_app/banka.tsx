@@ -1,11 +1,10 @@
 import { Button } from '@fakturky/ui/components/button'
-import { Input } from '@fakturky/ui/components/input'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { PageHeader, PageTabs } from '@fakturky/ui/components/page-header'
 import { Skeleton } from '@fakturky/ui/components/skeleton'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { RefreshCw, Search, Sparkles, Upload } from 'lucide-react'
+import { RefreshCw, Sparkles, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { BankEmpty, type BankFilter } from '@/components/bank/bank-empty'
 import { useBankSync } from '@/components/bank/bank-mutations'
@@ -13,6 +12,7 @@ import { PairDialog } from '@/components/bank/pair-dialog'
 import { type PairTarget, TransactionList } from '@/components/bank/transaction-list'
 import { UploadStatementDialog } from '@/components/bank/upload-statement-dialog'
 import { ErrorState } from '@/components/error-state'
+import { SearchField } from '@/components/search-field'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
@@ -119,19 +119,12 @@ function BankPage() {
       />
 
       <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative sm:w-80">
-          <Search
-            className="absolute top-2.5 left-2.5 size-4 text-muted-foreground pointer-coarse:top-3.5"
-            aria-hidden
-          />
-          <Input
-            className="pl-8"
-            placeholder={t.search}
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            aria-label={cs.common.search}
-          />
-        </div>
+        <SearchField
+          className="sm:w-80"
+          placeholder={t.search}
+          value={term}
+          onChange={(e) => setTerm(e.target.value)}
+        />
         {accountList.length > 1 && (
           <NativeSelect
             className="sm:w-60"

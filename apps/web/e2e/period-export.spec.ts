@@ -105,3 +105,30 @@ test('a custom range with no documents keeps the filters on screen', async ({ pa
   await page.getByRole('button', { name: 'Zrušit filtry' }).click()
   await expect(page.getByText('Jediný').locator('visible=true').first()).toBeVisible()
 })
+
+test('Back from an edited custom range returns to the preset it started from', async ({ page }) => {
+  await signUp(page, testEmail('period-back'))
+  await onboardByIco(page, ICO.nonPayerSupplier, 'E2E Neplátce Novák')
+  await addBankAccount(page)
+  await issueOn(page, 'Jediný s.r.o.', todayPrague())
+  await page.goto('/faktury')
+  await page.waitForLoadState('networkidle')
+  const period = page.getByLabel('Období')
+
+  await period.selectOption({ label: 'Minulý měsíc' })
+  await expect(period).toHaveValue('lastMonth')
+  await page.waitForLoadState('networkidle')
+  await period.selectOption({ label: 'Vlastní' })
+  await expect(period).toHaveValue('custom')
+  await page.getByLabel('Od', { exact: true }).click()
+  await page
+    .getByRole('grid')
+    .getByRole('button', { name: /\b15\b/ })
+    .first()
+    .click()
+  await expect(page).toHaveURL(/from=\d{4}-\d{2}-15/)
+
+  await page.goBack()
+  await expect(period).toHaveValue('lastMonth')
+  await expect(page.getByLabel('Od', { exact: true })).toHaveCount(0)
+})

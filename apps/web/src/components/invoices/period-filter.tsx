@@ -27,6 +27,8 @@ function matchPreset({ from, to }: Period): PeriodPreset | null {
   )
 }
 
+const boundsKey = ({ from, to }: Period) => `${from ?? ''}|${to ?? ''}`
+
 const field = 'h-9 border-transparent bg-muted/60 pointer-coarse:h-11 dark:bg-muted/60'
 
 /**
@@ -40,24 +42,32 @@ export function PeriodFilter({
 }: Period & { onChange: (period: Period) => void }) {
   const matched = matchPreset({ from, to })
   const hasPeriod = !!(from || to)
-  const [custom, setCustom] = useState(hasPeriod && !matched)
-  const showCustom = hasPeriod && (custom || !matched)
+  // "Vlastní" on bounds that equal a preset holds only while the URL stays on those bounds.
+  const [customAt, setCustomAt] = useState<string | null>(null)
+  const showCustom = hasPeriod && (!matched || customAt === boundsKey({ from, to }))
   const value = showCustom ? 'custom' : (matched ?? '')
 
   const pick = (next: string) => {
     if (next === 'custom') {
-      setCustom(true)
-      if (!hasPeriod) onChange(periodPreset('thisMonth'))
+      const bounds = hasPeriod ? { from, to } : periodPreset('thisMonth')
+      setCustomAt(boundsKey(bounds))
+      if (!hasPeriod) onChange(bounds)
       return
     }
-    setCustom(false)
+    setCustomAt(null)
     const preset = PRESETS.find((p) => p === next)
     onChange(preset ? periodPreset(preset) : { from: undefined, to: undefined })
   }
 
   // Keep the range ordered: moving one end past the other drags the other along.
-  const setFrom = (v: string) => onChange({ from: v, to: to && to < v ? v : to })
-  const setTo = (v: string) => onChange({ from: from && from > v ? v : from, to: v })
+  const setFrom = (v: string) => {
+    setCustomAt(null)
+    onChange({ from: v, to: to && to < v ? v : to })
+  }
+  const setTo = (v: string) => {
+    setCustomAt(null)
+    onChange({ from: from && from > v ? v : from, to: v })
+  }
 
   return (
     <>

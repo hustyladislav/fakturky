@@ -1,5 +1,6 @@
 import type { RouterOutputs } from '@fakturky/core/router'
 import { todayPrague } from '@fakturky/domain/dates'
+import { vatReminderPeriod } from '@fakturky/domain/vat-report'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { cs } from '@/i18n/cs'
@@ -19,12 +20,10 @@ export type ManualInput = {
   r41Deduction: string
 }
 
-/** The most recently finished period: what is due next. */
-function previousPeriod(kind: PeriodKind, today: string) {
-  const [y = 0, m = 1] = today.split('-').map(Number)
-  if (kind === 'month') return m === 1 ? { year: y - 1, idx: 12 } : { year: y, idx: m - 1 }
-  const q = Math.ceil(m / 3)
-  return q === 1 ? { year: y - 1, idx: 4 } : { year: y, idx: q - 1 }
+/** Opens on the period Přehled's filing reminder names, so its link lands on the same return. */
+function duePeriod(kind: PeriodKind, today: string) {
+  const p = vatReminderPeriod(today, kind === 'month' ? 'monthly' : 'quarterly')
+  return { year: p.year, idx: p.kind === 'month' ? p.month : p.quarter }
 }
 
 /**
@@ -35,7 +34,7 @@ export function useVatReport(profile: VatProfile) {
   const today = todayPrague()
   const filingKind: PeriodKind = profile.vatFiling?.period === 'quarterly' ? 'quarter' : 'month'
   const [kind, setKindState] = useState<PeriodKind>(filingKind)
-  const [{ year, idx }, setPeriod] = useState(() => previousPeriod(filingKind, today))
+  const [{ year, idx }, setPeriod] = useState(() => duePeriod(filingKind, today))
   const [euSupplyKind, setEuSupplyKind] = useState<'services' | 'goods'>('services')
   const [reverseChargeCode, setReverseChargeCode] = useState('4')
   const [manual, setManual] = useState<ManualInput>({
@@ -79,7 +78,7 @@ export function useVatReport(profile: VatProfile) {
         kind === 'month' ? `${cs.vat.months[idx - 1]} ${year}` : `${cs.vat.quarter(idx)} ${year}`,
       setKind: (next: PeriodKind) => {
         setKindState(next)
-        setPeriod(previousPeriod(next, today))
+        setPeriod(duePeriod(next, today))
       },
       setYear: (y: number) => setPeriod({ year: y, idx }),
       setIdx: (i: number) => setPeriod({ year, idx: i }),

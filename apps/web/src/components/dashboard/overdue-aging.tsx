@@ -13,23 +13,24 @@ const t = cs.overview.aging
 export const AGING_ROW_CAP = 200
 
 /**
- * One quiet row: how late the overdue money is. Hidden while loading, on error, when nothing is
- * overdue, and when the loaded rows do not cover every open invoice (sums would be wrong).
+ * One quiet row: how late the overdue invoices are (not proformas, like the headline). Hidden while
+ * loading, on error, when nothing is overdue, and when the list hit its cap (sums would be wrong).
  */
 export function OverdueAging({
   docs,
   status,
-  unpaidCount,
   className,
 }: {
   docs: Doc[] | undefined
   status: 'pending' | 'error' | 'success'
-  unpaidCount: number
   className?: string
 }) {
   const aging = useMemo(
-    () => (docs && unpaidCount <= AGING_ROW_CAP ? receivablesAging(docs) : null),
-    [docs, unpaidCount],
+    () =>
+      docs && docs.length < AGING_ROW_CAP
+        ? receivablesAging(docs.filter((d) => d.type === 'invoice'))
+        : null,
+    [docs],
   )
   if (status !== 'success' || !aging || aging.buckets.every((b) => b.count === 0)) return null
   return (

@@ -91,7 +91,7 @@ function Overview() {
         <div className="grid gap-y-10 @4xl:grid-cols-4 @4xl:gap-y-0">
           <div className="order-1 space-y-6 @4xl:col-span-2 @4xl:border-b @4xl:pb-8">
             <OutstandingFigures s={s} />
-            <OverdueAging docs={unpaid.data} status={unpaid.status} unpaidCount={s.unpaidCount} />
+            <OverdueAging docs={unpaid.data} status={unpaid.status} />
           </div>
           <MonthFigures
             s={s}

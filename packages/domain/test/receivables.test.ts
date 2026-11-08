@@ -62,6 +62,13 @@ describe('receivablesAging', () => {
     expect(r.approximate).toBe(true)
   })
 
+  it('counts a foreign balance without a CZK value but never sums it as crowns', () => {
+    const eur = doc(5, { currency: 'EUR', total: '100.00', paidAmount: '0', totalCzk: null })
+    const r = receivablesAging([eur], TODAY)
+    expect(r.buckets[0]).toEqual({ key: 'd1_14', count: 1, sumCzk: '0.00' })
+    expect(r.approximate).toBe(true)
+  })
+
   it('is exact for CZK only and avoids float drift', () => {
     const r = receivablesAging([doc(5, { total: '0.10' }), doc(5, { total: '0.20' })], TODAY)
     expect(r.buckets[0]?.sumCzk).toBe('0.30')

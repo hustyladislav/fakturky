@@ -27,7 +27,7 @@ export interface AgingBucket {
 
 export interface ReceivablesAging {
   buckets: AgingBucket[]
-  /** True when a foreign-currency balance is included, so the sums are approximate. */
+  /** True when a foreign-currency balance is involved, so the sums are approximate. */
   approximate: boolean
 }
 
@@ -60,13 +60,11 @@ export function receivablesAging(
     const left = total.minus(parseDecimal(d.paidAmount))
     if (!left.gt(0)) continue
     const foreign = d.currency !== 'CZK'
-    const czk =
-      !foreign || total.isZero() || !d.totalCzk
-        ? left
-        : left.times(parseDecimal(d.totalCzk)).div(total)
     if (foreign) approximate = true
     count[key]++
-    sum[key] = sum[key].plus(czk)
+    if (!foreign) sum[key] = sum[key].plus(left)
+    // Without a recorded rate the balance has no honest CZK value; it stays counted, not summed.
+    else if (d.totalCzk) sum[key] = sum[key].plus(left.times(parseDecimal(d.totalCzk)).div(total))
   }
   return {
     buckets: AGING_BUCKETS.map((key) => ({ key, count: count[key], sumCzk: toFixed(sum[key], 2) })),

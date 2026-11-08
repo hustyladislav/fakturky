@@ -1,6 +1,5 @@
 import { InvoiceSheet, type InvoiceSheetInput } from '@fakturky/pdf/html'
 import { Amount } from '@fakturky/ui/components/amount'
-import { Avatar } from '@fakturky/ui/components/avatar'
 import { Button } from '@fakturky/ui/components/button'
 import { LogoMark } from '@fakturky/ui/components/logo'
 import { RelativeDate } from '@fakturky/ui/components/relative-date'
@@ -77,7 +76,7 @@ function PayRow({
 }) {
   return (
     <div className="py-2.5">
-      <dt className="label-caps">{label}</dt>
+      <dt className="text-[13px] text-muted-foreground">{label}</dt>
       <dd className="mt-0.5 flex items-center justify-between gap-3">
         <span className={`min-w-0 text-sm tabular-nums break-all ${strong ? 'font-semibold' : ''}`}>
           {value}
@@ -119,21 +118,19 @@ function PublicInvoice() {
   const sheet = d.sheet as unknown as InvoiceSheetInput
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto w-full max-w-[1180px] px-4 pt-5 pb-12 sm:px-6 lg:pt-9">
-        <header className="mb-5 flex items-center justify-between gap-4 lg:mb-7 print:hidden">
+    <div className="min-h-svh bg-background text-foreground">
+      <div className="mx-auto w-full max-w-[1180px] px-5 pt-5 pb-12 sm:px-6 lg:pt-9">
+        <header className="mb-6 flex items-center justify-between gap-4 lg:mb-8 print:hidden">
           <div className="flex min-w-0 items-center gap-3">
-            {d.appearance.logo ? (
+            {d.appearance.logo && (
               <img
                 src={d.appearance.logo}
                 alt=""
                 className="h-9 max-w-36 rounded-md object-contain"
               />
-            ) : (
-              <Avatar name={supplierName} size="md" shape="square" />
             )}
             <div className="min-w-0">
-              <p className="label-caps">{t.from}</p>
+              <p className="text-[13px] text-muted-foreground">{t.from}</p>
               <p className="truncate text-lg leading-6">{supplierName}</p>
             </div>
           </div>
@@ -146,31 +143,29 @@ function PublicInvoice() {
             <Printer /> {t.print}
           </Button>
         </header>
-        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1fr)_368px] lg:gap-9">
-          <aside className="order-first space-y-4 lg:sticky lg:top-6 lg:order-last print:hidden">
-            <section className="sheet p-5 sm:p-6" aria-label={t.payHeading}>
+        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-10 lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-14">
+          <aside className="space-y-6 lg:sticky lg:top-6 print:hidden" aria-label={t.payHeading}>
+            <section>
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="label-caps">
-                    {open ? t.toPay : d.status === 'paid' ? t.paidAmount : t.totalLabel}
-                  </p>
-                  <div className="mt-1.5">
-                    <Amount value={heroValue} currency={d.currency} size="hero" />
-                  </div>
-                </div>
-                <StatusBadge status={status} overdueDays={overdueDays} className="mt-0.5">
+                <p className="text-[13px] text-muted-foreground">
+                  {open ? t.toPay : d.status === 'paid' ? t.paidAmount : t.totalLabel}
+                </p>
+                <StatusBadge status={status} overdueDays={overdueDays}>
                   {statusLabel}
                 </StatusBadge>
               </div>
+              <div className="mt-1">
+                <Amount value={heroValue} currency={d.currency} size="hero" />
+              </div>
 
-              <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 text-sm">
+              <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 text-sm">
                 <div>
-                  <dt className="label-caps">{t.documentHeading}</dt>
-                  <dd className="mt-0.5 text-base tabular-nums">{d.number}</dd>
+                  <dt className="text-[13px] text-muted-foreground">{t.documentHeading}</dt>
+                  <dd className="mt-0.5 tabular-nums">{d.number}</dd>
                 </div>
                 {d.type !== 'credit_note' && (
                   <div>
-                    <dt className="label-caps">{t.dueOn}</dt>
+                    <dt className="text-[13px] text-muted-foreground">{t.dueOn}</dt>
                     <dd className="mt-0.5">
                       {open ? (
                         <>
@@ -188,73 +183,38 @@ function PublicInvoice() {
               </dl>
 
               {d.status === 'paid' && (
-                <p className="mt-4 flex items-start gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success">
+                <p className="mt-4 flex items-start gap-2 text-sm text-success">
                   <Check className="mt-0.5 size-4 shrink-0" />
                   {t.paidNote}
                 </p>
               )}
               {d.status === 'cancelled' && (
-                <p className="mt-4 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
-                  {t.cancelledNote}
-                </p>
+                <p className="mt-4 text-sm text-muted-foreground">{t.cancelledNote}</p>
               )}
               {d.status === 'issued' && !payable && (
-                <p className="mt-4 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
-                  {t.noPaymentNote}
-                </p>
-              )}
-
-              {payable && (
-                <div className="mt-5 border-t pt-5">
-                  <h2 className="label-caps mb-4 text-center">{t.payHeading}</h2>
-                  {d.qr && (
-                    <figure
-                      className="mb-5 flex flex-col items-center gap-3"
-                      data-testid="public-qr"
-                    >
-                      <div className="rounded-xl border bg-white p-1.5">
-                        <PaymentQr qr={d.qr} className="size-52 rounded-lg sm:size-56" />
-                      </div>
-                      <figcaption className="max-w-[17rem] text-center text-xs text-muted-foreground">
-                        <span className="label-caps block text-foreground">
-                          {d.qr.kind === 'spayd' ? cs.paymentQr.platba : cs.paymentQr.epc}
-                        </span>
-                        <span className="mt-1 block">{t.scanHint}</span>
-                      </figcaption>
-                    </figure>
-                  )}
-                  <dl className="divide-y">
-                    {d.bank?.account && (
-                      <PayRow
-                        label={t.account}
-                        value={d.bank.account}
-                        copy={d.bank.account}
-                        strong
-                      />
-                    )}
-                    {d.variableSymbol && (
-                      <PayRow
-                        label={t.variableSymbol}
-                        value={d.variableSymbol}
-                        copy={d.variableSymbol}
-                        strong
-                      />
-                    )}
-                    <PayRow
-                      label={t.amountField}
-                      value={`${Number(d.remaining).toLocaleString('cs-CZ', { minimumFractionDigits: 2 })} ${d.currency === 'CZK' ? 'Kč' : d.currency}`}
-                      copy={d.remaining}
-                    />
-                    {d.bank && <PayRow label={t.iban} value={d.bank.iban} copy={d.bank.iban} />}
-                  </dl>
-                </div>
+                <p className="mt-4 text-sm text-muted-foreground">{t.noPaymentNote}</p>
               )}
             </section>
 
+            {payable && d.qr && (
+              <figure className="flex flex-col items-center gap-3" data-testid="public-qr">
+                <div className="rounded-xl border bg-white p-1.5">
+                  <PaymentQr qr={d.qr} className="size-56 rounded-lg" />
+                </div>
+                <figcaption className="max-w-[17rem] text-center text-[13px] text-muted-foreground">
+                  <span className="block font-medium text-foreground">
+                    {d.qr.kind === 'spayd' ? cs.paymentQr.platba : cs.paymentQr.epc}
+                  </span>
+                  <span className="mt-1 block">{t.scanHint}</span>
+                </figcaption>
+              </figure>
+            )}
+
             <div className="grid grid-cols-2 gap-2" aria-label={t.files}>
               <Button
+                variant="brand"
                 size="lg"
-                className="h-10"
+                className="h-11"
                 nativeButton={false}
                 render={<a href={`/f/${token}/pdf`} download />}
               >
@@ -263,27 +223,54 @@ function PublicInvoice() {
               <Button
                 variant="outline"
                 size="lg"
-                className="h-10"
+                className="h-11"
                 nativeButton={false}
                 render={<a href={`/f/${token}/isdoc`} download />}
               >
                 <FileCode2 /> ISDOC
               </Button>
             </div>
+
+            {payable && (
+              <section aria-labelledby="pay-details">
+                <h2 id="pay-details" className="border-b pb-2 text-[13px] text-muted-foreground">
+                  {t.payHeading}
+                </h2>
+                <dl className="divide-y">
+                  {d.bank?.account && (
+                    <PayRow label={t.account} value={d.bank.account} copy={d.bank.account} strong />
+                  )}
+                  {d.variableSymbol && (
+                    <PayRow
+                      label={t.variableSymbol}
+                      value={d.variableSymbol}
+                      copy={d.variableSymbol}
+                      strong
+                    />
+                  )}
+                  <PayRow
+                    label={t.amountField}
+                    value={`${Number(d.remaining).toLocaleString('cs-CZ', { minimumFractionDigits: 2 })} ${d.currency === 'CZK' ? 'Kč' : d.currency}`}
+                    copy={d.remaining}
+                  />
+                  {d.bank && <PayRow label={t.iban} value={d.bank.iban} copy={d.bank.iban} />}
+                </dl>
+              </section>
+            )}
           </aside>
 
           <main>
-            <div className="overflow-hidden rounded-[3px] shadow-[0_0_0_1px_var(--border),0_2px_4px_rgb(0_0_0/0.05),0_24px_48px_-20px_rgb(0_0_0/0.22)] print:shadow-none">
+            <div className="overflow-hidden rounded-[3px] shadow-[0_0_0_1px_var(--border),0_12px_30px_-16px_rgb(0_0_0/0.25)] print:shadow-none">
               <InvoiceSheet doc={sheet} qr={d.qr} maxScale={1.4} headingLevel={2} />
             </div>
           </main>
         </div>
         {d.appearance.showBrand && (
-          <footer className="mt-10 flex items-center justify-center gap-2 text-xs text-muted-foreground print:hidden">
+          <footer className="mt-12 flex items-center justify-center gap-2 text-xs text-muted-foreground print:hidden">
             <LogoMark letter={cs.brand} className="size-4" />
             {t.issuedIn(cs.brand)}
           </footer>
-        )}{' '}
+        )}
       </div>
     </div>
   )

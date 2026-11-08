@@ -5,7 +5,6 @@ import { ThemeToggle } from '@fakturky/ui/components/theme'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
-import { Check, Sparkles } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { QuickAccountForm } from '@/components/bank/quick-account-form'
 import { BusinessCard } from '@/components/business-card'
@@ -27,54 +26,24 @@ export const Route = createFileRoute('/onboarding')({
 
 const t = cs.onboarding
 
-type Step = 1 | 2 | 3 | 4
+type Step = 1 | 2 | 3
 
-/** 1 Firma -> 2 Zkontrolujte údaje -> 3 Bankovní účet -> 4 Hotovo. Steps 1-2 follow what the user has filled in. */
+/** 1 Firma -> 2 Bankovní účet -> 3 Hotovo: a hairline per step, filled up to the current one. */
 function Progress({ step }: { step: Step }) {
   return (
-    <ol className="flex items-center gap-1 sm:gap-3" aria-label={t.progressLabel}>
-      {t.steps.map((label, i) => {
-        const n = i + 1
-        const done = n < step || step === 4
-        const current = n === step && step !== 4
-        return (
-          <li key={label} className="flex items-center gap-1 sm:gap-3">
-            {i > 0 && (
-              <span
-                aria-hidden
-                className={cn(
-                  'h-px w-3 sm:w-10',
-                  n <= step ? 'bg-primary' : 'bg-border',
-                  'transition-colors',
-                )}
-              />
-            )}
-            <span
-              className="flex items-center gap-2 text-sm"
-              aria-current={current ? 'step' : undefined}
-            >
-              <span
-                className={cn(
-                  'flex size-6 items-center justify-center rounded-full text-xs font-semibold tabular-nums transition-colors',
-                  done && 'bg-primary text-primary-foreground',
-                  current && 'bg-primary/12 text-primary ring-2 ring-primary/40',
-                  !done && !current && 'bg-muted text-muted-foreground',
-                )}
-              >
-                {done ? <Check className="size-3.5" strokeWidth={3} /> : n}
-              </span>
-              <span
-                className={cn(
-                  'max-sm:hidden',
-                  current || done ? 'font-medium text-foreground' : 'text-muted-foreground',
-                )}
-              >
-                {label}
-              </span>
-            </span>
-          </li>
-        )
-      })}
+    <ol className="flex w-24 gap-1 sm:w-40" aria-label={t.progressLabel}>
+      {t.steps.map((label, i) => (
+        <li
+          key={label}
+          aria-current={i + 1 === step ? 'step' : undefined}
+          className={cn(
+            'h-0.5 flex-1 rounded-full transition-colors duration-200 ease-out',
+            i + 1 <= step ? 'bg-primary' : 'bg-border',
+          )}
+        >
+          <span className="sr-only">{label}</span>
+        </li>
+      ))}
     </ol>
   )
 }
@@ -85,8 +54,8 @@ function Finish({ values, onGo }: { values: ProfileValues; onGo: () => void }) {
   useEffect(() => firstInvoice.current?.focus(), [])
   return (
     <div className="finish-motion mx-auto flex max-w-md flex-col items-center py-6 text-center">
-      <span className="flex size-20 animate-[pop-soft_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both] items-center justify-center rounded-full bg-primary/12">
-        <svg viewBox="0 0 24 24" className="size-10 text-primary" fill="none" aria-hidden>
+      <span className="flex size-20 animate-[pop-soft_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both] items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <svg viewBox="0 0 24 24" className="size-10" fill="none" aria-hidden>
           <path
             d="M5 12.5l4.5 4.5L19 7.5"
             stroke="currentColor"
@@ -97,19 +66,21 @@ function Finish({ values, onGo }: { values: ProfileValues; onGo: () => void }) {
           />
         </svg>
       </span>
-      <h1 className="mt-6 text-[34px] leading-tight tracking-[-0.015em]">{t.doneTitle}</h1>
+      <h1 className="mt-6 text-[28px] leading-8 font-normal tracking-[-0.02em]">{t.doneTitle}</h1>
       <p className="mt-2 text-muted-foreground">{t.doneText}</p>
       <BusinessCard values={values} className="mt-8 w-full text-left" />
       <div className="mt-8 flex w-full flex-col gap-2 sm:flex-row">
         <Button
           ref={firstInvoice}
-          className="h-10 flex-1"
+          variant="brand"
+          size="lg"
+          className="h-11 flex-1"
           nativeButton={false}
           render={<Link to="/faktury/nova" />}
         >
-          <Sparkles /> {t.firstInvoice}
+          {t.firstInvoice}
         </Button>
-        <Button variant="outline" className="h-10 flex-1" onClick={onGo}>
+        <Button variant="ghost" size="lg" className="h-11 flex-1" onClick={onGo}>
           {t.toDashboard}
         </Button>
       </div>
@@ -126,10 +97,12 @@ function BankStep({ onDone }: { onDone: () => void }) {
   }
   return (
     <div>
-      <p className="label-caps mb-3">{t.stepOf(3, 4)}</p>
-      <h1 className="text-[34px] leading-[1.1] tracking-[-0.015em] text-balance">{t.bankTitle}</h1>
+      <p className="text-[13px] text-muted-foreground">{t.stepOf(2, 3)}</p>
+      <h1 className="mt-2 text-[28px] leading-8 font-normal tracking-[-0.02em] text-balance">
+        {t.bankTitle}
+      </h1>
       <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{t.bankDescription}</p>
-      <div className="sheet mt-7 p-5 sm:p-6 [&_[data-slot=label]]:label-caps">
+      <div className="mt-7">
         <QuickAccountForm autoFocus onCreated={done} onSkip={onDone} />
       </div>
     </div>
@@ -144,40 +117,34 @@ function Onboarding() {
   const [saved, setSaved] = useState(false)
   const [bankDone, setBankDone] = useState(false)
   const go = () => navigate({ to: '/prehled' })
-  const step: Step = saved
-    ? bankDone
-      ? 4
-      : 3
-    : values && values.ico && values.legalName.trim() && values.street
-      ? 2
-      : 1
+  const step: Step = saved ? (bankDone ? 3 : 2) : 1
 
   return (
     <div className="min-h-svh">
-      <header className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
-        <Logo name={BRAND.name} markClassName="size-8" />
+      <header className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-5 sm:px-6">
+        <Logo name={BRAND.name} markClassName="size-7" />
         <Progress step={step} />
         <ThemeToggle labels={cs.theme} />
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 pt-6 pb-16 sm:pt-10">
+      <main className="mx-auto max-w-5xl px-5 pt-6 pb-[max(4rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-12">
         {saved && values && bankDone ? (
           <Finish values={values} onGo={go} />
         ) : saved ? (
-          <div className="mx-auto max-w-lg">
+          <div className="mx-auto max-w-md">
             <BankStep onDone={() => setBankDone(true)} />
           </div>
         ) : (
-          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)] lg:gap-14">
+          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] lg:justify-center lg:gap-20">
             <div>
-              <p className="label-caps mb-3">{t.stepOf(step, 4)}</p>
-              <h1 className="text-[34px] leading-[1.1] tracking-[-0.015em] text-balance">
+              <p className="text-[13px] text-muted-foreground">{t.stepOf(1, 3)}</p>
+              <h1 className="mt-2 text-[28px] leading-8 font-normal tracking-[-0.02em] text-balance">
                 {t.title}
               </h1>
               <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
                 {t.description}
               </p>
-              <div className="sheet mt-7 p-5 sm:p-6 [&_[data-slot=label]]:label-caps">
+              <div className="mt-7">
                 {profile && (
                   <BusinessProfileForm
                     profile={profile}
@@ -190,7 +157,7 @@ function Onboarding() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="mt-2 w-full"
+                    className="mt-2 h-11 w-full text-muted-foreground"
                     onClick={async () => {
                       // Finishing onboarding stamps onboardedAt; keep whatever is already stored.
                       await client.businessProfile.update({ legalName: profile.legalName })
@@ -203,8 +170,8 @@ function Onboarding() {
               </div>
             </div>
 
-            <aside className="lg:sticky lg:top-8">
-              <p className="label-caps mb-3">{t.previewLabel}</p>
+            <aside className="hidden lg:sticky lg:top-8 lg:block">
+              <p className="mb-3 text-[13px] text-muted-foreground">{t.previewLabel}</p>
               {values && (
                 <BusinessCard
                   values={values}
@@ -212,7 +179,6 @@ function Onboarding() {
                   accent={appearance.data?.accentColor ?? null}
                 />
               )}
-              <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{t.aresHint}</p>
             </aside>
           </div>
         )}

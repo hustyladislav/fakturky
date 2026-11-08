@@ -28,6 +28,7 @@
     "./qr/png": "./src/qr/png.ts",
     "./isdoc": "./src/isdoc.ts",
     "./vat-report": "./src/vat-report.ts",
+    "./receivables": "./src/receivables.ts",
     "./vat-xml": "./src/vat-xml.ts",
     "./bank": "./src/bank/index.ts"
   },

@@ -1,7 +1,6 @@
 import type { RouterOutputs } from '@fakturky/core/router'
 import { formatDateCs } from '@fakturky/domain/dates'
 import { Amount } from '@fakturky/ui/components/amount'
-import { Avatar } from '@fakturky/ui/components/avatar'
 import { Button } from '@fakturky/ui/components/button'
 import { RelativeDate } from '@fakturky/ui/components/relative-date'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@fakturky/ui/components/tooltip'
@@ -16,6 +15,7 @@ import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
+import { undoPaidInput } from './undo-paid'
 
 export type Doc = RouterOutputs['documents']['list'][number]
 
@@ -30,40 +30,6 @@ export function overdueDays(d: Doc): number | undefined {
   if (d.displayStatus !== 'overdue') return undefined
   const due = parseIsoDate(d.dueDate)
   return due ? diffDays(startOfDay(new Date()), due) : undefined
-}
-
-/** Types other than a plain invoice get a small label next to the number. */
-function TypeLabel({ d }: { d: Doc }) {
-  if (d.type === 'invoice') return null
-  return (
-    <span className="rounded bg-muted px-1.5 py-px text-[10.5px] font-semibold tracking-wide whitespace-nowrap text-muted-foreground uppercase">
-      {t.typeShort[d.type as keyof typeof t.typeShort] ?? d.type}
-    </span>
-  )
-}
-
-function Secondary({ d, link }: { d: Doc; link?: boolean }) {
-  return (
-    <span className="flex min-w-0 items-center gap-2 text-xs whitespace-nowrap text-muted-foreground">
-      {d.number ? (
-        link ? (
-          <Link
-            to={docPath(d)}
-            params={{ id: d.id }}
-            tabIndex={-1}
-            className="font-mono text-[11.5px] tracking-tight tabular-nums"
-          >
-            {d.number}
-          </Link>
-        ) : (
-          <span className="font-mono text-[11.5px] tracking-tight tabular-nums">{d.number}</span>
-        )
-      ) : (
-        <span className="italic">{t.noNumber}</span>
-      )}
-      <TypeLabel d={d} />
-    </span>
-  )
 }
 
 /** "3. 11." from an ISO day. */
@@ -93,13 +59,20 @@ export function useDocActions() {
     qc.invalidateQueries({ queryKey: orpc.documents.key() })
     qc.invalidateQueries({ queryKey: orpc.dashboard.key() })
   }
-  const markUnpaid = useMutation(orpc.documents.markUnpaid.mutationOptions({ onSuccess: refresh }))
+  const markUnpaid = useMutation(
+    orpc.documents.markUnpaid.mutationOptions({
+      onSuccess: refresh,
+      onError: (e) => toast.error(apiErrorMessage(e)),
+    }),
+  )
+  const undoPaid = (paid: Parameters<typeof undoPaidInput>[0]) =>
+    markUnpaid.mutate(undoPaidInput(paid))
   const markPaid = useMutation(
     orpc.documents.markPaid.mutationOptions({
       onSuccess: (d) => {
         refresh()
         toast.success(t.rowActions.markedPaid, {
-          action: { label: t.rowActions.undo, onClick: () => markUnpaid.mutate({ id: d.id }) },
+          action: { label: t.rowActions.undo, onClick: () => undoPaid(d) },
         })
       },
       onError: (e) => toast.error(apiErrorMessage(e)),
@@ -114,7 +87,7 @@ export function useDocActions() {
       onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
-  return { markPaid, markUnpaid, duplicate, refresh }
+  return { markPaid, undoPaid, duplicate, refresh }
 }
 
 function ActionButton({
@@ -175,7 +148,12 @@ function isInteractive(target: EventTarget | null) {
   return target instanceof Element && !!target.closest('a,button,input,label,[role=checkbox]')
 }
 
-/** One table row: select, avatar + client/number, dates, amount, status, quick actions. */
+const typeShort = (d: Doc) =>
+  d.type === 'invoice' ? null : (t.typeShort[d.type as keyof typeof t.typeShort] ?? d.type)
+
+const CELL = 'border-b border-border/70'
+
+/** Desktop table row: select, name, number, dates, amount, status; quick actions on hover/focus. */
 export function InvoiceRow({
   d,
   selected,
@@ -189,22 +167,22 @@ export function InvoiceRow({
 }) {
   const navigate = useNavigate()
   const name = d.customerName ?? '—'
-  const go = () => navigate({ to: docPath(d), params: { id: d.id } })
+  const type = typeShort(d)
   return (
     <tr
       data-doc-id={d.id}
       data-active={active || undefined}
       aria-selected={selected}
       onClick={(e) => {
-        if (!isInteractive(e.target)) go()
+        if (!isInteractive(e.target)) navigate({ to: docPath(d), params: { id: d.id } })
       }}
       className={cn(
-        'row-hover group/row cursor-pointer',
+        'row-hover cursor-pointer',
         selected && 'bg-primary/[0.05]',
         active && 'bg-primary/[0.06] [&>td:first-child]:shadow-[inset_2px_0_0_var(--primary)]',
       )}
     >
-      <td className="w-10 border-b border-border/60 pl-4">
+      <td className={cn(CELL, 'w-9 pl-1')}>
         <input
           type="checkbox"
           checked={selected}
@@ -213,76 +191,77 @@ export function InvoiceRow({
           className="size-4 cursor-pointer align-middle"
         />
       </td>
-      <td className="max-w-0 border-b border-border/60 py-2.5 pr-3 pl-2">
-        <div className="flex items-center gap-3">
-          <Avatar name={name} size="md" />
-          <div className="min-w-0">
-            <Link
-              to={docPath(d)}
-              params={{ id: d.id }}
-              className="block truncate text-sm font-medium outline-none focus-visible:underline"
-            >
-              {name}
-            </Link>
-            <Secondary d={d} link />
-          </div>
-        </div>
+      <td className={cn(CELL, 'max-w-0 py-3 pr-4')}>
+        <Link
+          to={docPath(d)}
+          params={{ id: d.id }}
+          className="block truncate text-sm font-medium outline-none focus-visible:underline"
+        >
+          {name}
+        </Link>
       </td>
-      <td className="hidden border-b border-border/60 px-3 text-sm whitespace-nowrap text-muted-foreground tabular-nums @4xl:table-cell">
+      <td className={cn(CELL, 'pr-4 text-sm whitespace-nowrap text-muted-foreground tabular-nums')}>
+        {d.number ? (
+          <Link to={docPath(d)} params={{ id: d.id }} tabIndex={-1}>
+            {d.number}
+          </Link>
+        ) : (
+          <span className="italic">{t.noNumber}</span>
+        )}
+        {type && <span className="ml-2 text-xs">{type}</span>}
+      </td>
+      <td className={cn(CELL, 'pr-4 text-sm whitespace-nowrap text-muted-foreground tabular-nums')}>
         {d.issueDate ? formatDateCs(d.issueDate) : '—'}
       </td>
-      <td className="border-b border-border/60 px-3 text-sm whitespace-nowrap">
+      <td className={cn(CELL, 'pr-4 text-sm whitespace-nowrap')}>
         <DueCell d={d} />
       </td>
-      <td className="border-b border-border/60 px-3 text-right whitespace-nowrap">
+      <td className={cn(CELL, 'pr-4 text-right whitespace-nowrap')}>
         <Amount value={d.total} currency={d.currency} size="inline" />
       </td>
-      <td className="border-b border-border/60 px-3">
-        <InvoiceStatus
-          status={d.displayStatus}
-          viaAssistant={d.viaAssistant}
-          overdueDays={overdueDays(d)}
-        />
+      <td className={cn(CELL, 'pr-2')}>
+        <InvoiceStatus status={d.displayStatus} viaAssistant={d.viaAssistant} />
       </td>
-      <td className="w-[7.5rem] border-b border-border/60 pr-3">
+      <td className={cn(CELL, 'w-28 pr-1')}>
         <RowActions d={d} />
       </td>
     </tr>
   )
 }
 
-/** Phone card: client, amount, status and due date. */
-export function InvoiceCard({ d }: { d: Doc }) {
-  const navigate = useNavigate()
+/** Phone row (56 px+, one link): name and amount, then number, due state and status. */
+export function InvoiceCompactRow({ d }: { d: Doc }) {
   const name = d.customerName ?? '—'
+  // Overdue and paid statuses already say it; the date only adds value for open documents.
+  const showDue = ['draft', 'issued', 'partially_paid'].includes(d.displayStatus) && !!d.dueDate
   return (
     <li>
-      <button
-        type="button"
-        onClick={() => navigate({ to: docPath(d), params: { id: d.id } })}
-        className="row-hover flex w-full items-start gap-3 border-b border-border/60 px-4 py-3 text-left outline-none focus-visible:bg-muted/60"
+      <Link
+        to={docPath(d)}
+        params={{ id: d.id }}
+        className="flex min-h-14 flex-col justify-center gap-0.5 border-b border-border/70 py-1.5 outline-none active:bg-accent focus-visible:bg-accent"
       >
-        <Avatar name={name} size="md" className="mt-0.5" />
-        <span className="min-w-0 flex-1">
-          <span className="flex items-baseline justify-between gap-3">
-            <span className="truncate text-sm font-medium">{name}</span>
-            <Amount value={d.total} currency={d.currency} size="inline" />
-          </span>
-          <span className="mt-0.5 flex items-center justify-between gap-3">
-            <Secondary d={d} />
-            <span className="shrink-0 text-xs">
-              <DueCell d={d} />
-            </span>
-          </span>
-          <span className="mt-2 block">
-            <InvoiceStatus
-              status={d.displayStatus}
-              viaAssistant={d.viaAssistant}
-              overdueDays={overdueDays(d)}
-            />
-          </span>
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="truncate text-[15px] leading-5 font-medium">{name}</span>
+          <Amount value={d.total} currency={d.currency} size="inline" className="shrink-0" />
         </span>
-      </button>
+        <span className="flex items-baseline justify-between gap-3 text-[13px] leading-[18px] text-muted-foreground">
+          <span className="min-w-0 truncate tabular-nums">
+            {d.number ?? t.noNumber}
+            {showDue && (
+              <>
+                {' · '}
+                <DueCell d={d} />
+              </>
+            )}
+          </span>
+          <InvoiceStatus
+            status={d.displayStatus}
+            viaAssistant={d.viaAssistant}
+            overdueDays={overdueDays(d)}
+          />
+        </span>
+      </Link>
     </li>
   )
 }

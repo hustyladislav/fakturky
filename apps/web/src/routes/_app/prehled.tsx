@@ -6,8 +6,10 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { AwaitingList } from '@/components/dashboard/awaiting-list'
 import { MonthFigures, OutstandingFigures } from '@/components/dashboard/figure-strip'
+import { OverdueAging } from '@/components/dashboard/overdue-aging'
 import { RecentDocuments } from '@/components/dashboard/recent-documents'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
+import { VatDeadline } from '@/components/dashboard/vat-deadline'
 import { VatLimitCard } from '@/components/dashboard/vat-limit'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
@@ -87,7 +89,10 @@ function Overview() {
       {s && (
         // Phone: owed, who owes, then the month. Wide: one figure strip, then who owes.
         <div className="grid gap-y-10 @4xl:grid-cols-4 @4xl:gap-y-0">
-          <OutstandingFigures s={s} className="order-1 @4xl:col-span-2 @4xl:border-b @4xl:pb-8" />
+          <div className="order-1 space-y-6 @4xl:col-span-2 @4xl:border-b @4xl:pb-8">
+            <OutstandingFigures s={s} />
+            <OverdueAging docs={unpaid.data} status={unpaid.status} />
+          </div>
           <MonthFigures
             s={s}
             className="order-3 @4xl:order-2 @4xl:col-span-2 @4xl:border-b @4xl:border-l @4xl:pb-8 @4xl:pl-8"
@@ -103,7 +108,7 @@ function Overview() {
           <div className="order-4 grid gap-x-12 gap-y-10 @4xl:col-span-4 @4xl:mt-12 @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] @4xl:items-start">
             <div className="space-y-10">
               <RevenueChart months={s.months} />
-              {s.vatLimit && <VatLimitCard vat={s.vatLimit} />}
+              {s.vatLimit ? <VatLimitCard vat={s.vatLimit} /> : <VatDeadline />}
             </div>
             {hasDocs && <RecentDocuments docs={recent.data ?? []} />}
           </div>

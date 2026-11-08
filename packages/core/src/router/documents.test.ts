@@ -153,11 +153,27 @@ describe('documents', () => {
     const issued = await api.documents.issue({ id: (await draft(orgA)).id })
     await api.documents.markPaid({ id: issued.id, amount: '500' })
     const full = await api.documents.markPaid({ id: issued.id })
-    const last = full.payments.find((p) => Number(p.amount) === 1500)
+    const last = full.payments.at(-1)
+    expect(Number(last?.amount)).toBe(1500)
     const undone = await api.documents.markUnpaid({ id: issued.id, paymentId: last?.id })
     expect(undone.status).toBe('issued')
     expect(undone.payments.map((p) => Number(p.amount))).toEqual([500])
     expect(undone.remaining).toBe('1500.00')
+  })
+
+  test('markUnpaid with an unknown paymentId changes nothing', async () => {
+    const api = clientFor(handle, principal(orgA))
+    const issued = await api.documents.issue({ id: (await draft(orgA)).id })
+    const other = await api.documents.issue({ id: (await draft(orgA)).id })
+    const elsewhere = (await api.documents.markPaid({ id: other.id })).payments[0]?.id
+    await api.documents.markPaid({ id: issued.id })
+
+    await expect(
+      api.documents.markUnpaid({ id: issued.id, paymentId: elsewhere }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    const after = await api.documents.get({ id: issued.id })
+    expect(after.status).toBe('paid')
+    expect(after.payments).toHaveLength(1)
   })
 
   test('a partial credit note credits a VAT-inclusive amount, spread over the rates', async () => {

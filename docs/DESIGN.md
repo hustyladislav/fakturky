@@ -74,18 +74,18 @@ Rounded-square mark with the first letter of the brand + a period ("F."). One-co
 
 ## Shell
 
-- Desktop: left sidebar, top bar with search (⌘K) and "Nová faktura" (N), right AI panel (⌘J). Tablet: icon sidebar.
-- Mobile: bottom tab bar (Přehled, Faktury, +, Kontakty, Více).
+- Desktop: left sidebar, top bar with search (⌘K) and "Nová faktura" (N; hidden inside the editor), right AI panel (⌘J). Tablet: icon sidebar.
+- Mobile: bottom tab bar (Přehled, Faktury, +, Kontakty, Více); the editor replaces "+" with its own action bar.
 
 ## Key screens
 
-- **Dashboard:** greeting without vocative ("Dobrý den"), KPI row (Obrat tento měsíc, Neuhrazeno, Po splatnosti),
-  "Limit obratu pro registraci k DPH" tracker for non-payers, recent documents, monthly bar chart, one
-  narrative nudge with inline action ("1 faktura je 5 dní po splatnosti — Připomenout").
-- **New invoice:** flat cards (Odběratel → Údaje → Položky → Platba), live A4 preview on the right (desktop ≥1280),
-  ARES results grouped "Vaši odběratelé" / "Registr ARES", auto number and VS marked "auto", DUZP labeled
-  "DUZP (datum zdanitelného plnění)" with a hint, weekend-due-date hint (computed, never hardcoded), recurring
-  toggle, "Uložit jako šablonu". Primary action "Vystavit"; sending is a separate step with confirmation.
+- **Přehled:** greeting without vocative ("Dobrý den"), then who owes money: Neuhrazeno and Po splatnosti as the largest
+  figures, an aging strip, and "Čeká na platbu" with one-tap Připomenout. The month's Obrat and Zaplaceno sit beside
+  them; a bar chart and recent documents follow. VAT payers get the next filing deadline; non-payers the turnover limit tracker.
+- **New invoice:** one flat document (Odběratel → Položky → Platba, then "Další možnosti"), live A4 preview on the right
+  (desktop ≥1280), sticky action bar with the total. ARES results grouped "Vaši odběratelé" / "Registr ARES", number and VS
+  assigned at issue, weekend-due-date hint (computed, never hardcoded). "Vystavit" is the screen's one primary action;
+  sending is a separate step with confirmation.
 - **Invoice detail:** document preview, status timeline (Vytvořena → Vystavena → Odeslána → Zobrazena →
   Zaplacena), actions: Stáhnout PDF, Odeslat, Označit jako zaplacenou (full-width on mobile), Duplikovat,
   Vytvořit opravný doklad, Stornovat. "Označeno ručně" when payment wasn't matched from a bank.

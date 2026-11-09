@@ -45,8 +45,13 @@ apps/web            TanStack Start app: routes, server routes (/api/rpc, /api/v1
 packages/domain     Pure, dependency-light Czech invoicing logic (no DB, no IO except integrations)
   src/              money, vat, numbering, iban, czech-account, bank-codes, spayd, epc-qr, isdoc, dates, ico
   src/integrations/ ares, cnb-rates, vies (fetch-based, injectable fetch for tests)
-packages/core       Zod schemas + oRPC router (THE source of truth for operations), repositories, services
-  src/router/       oRPC procedures grouped by resource (contacts, documents, payments, bank-accounts, ...)
+packages/core       THE source of truth for operations: one folder per feature, a small kernel around them
+  src/<feature>/    router.ts (oRPC procedures), repo.ts (queries, always by orgId), schema.ts (Zod), tests
+  src/documents/    the largest feature: repo.ts composes queries, drafts, issue, derived, payments, send, lifecycle
+  src/router/       composes the feature routers; tenant-isolation.test.ts covers every procedure
+  src/jobs.ts       scheduled work across organizations (recurring, reminders, bank sync); cron routes only authorise
+  src/orpc.ts       `procedure`: auth, tenant context, and the one place a DomainError becomes an oRPC error
+  src/agent*, mcp/  adapters that turn procedure metadata into assistant and MCP tools
   src/brand.ts      product name, URLs, support links
 packages/db         Drizzle schema, migrations, client factory (Neon in prod, PGlite in tests)
 packages/pdf        React-PDF invoice templates, fonts, QR rendering
@@ -101,7 +106,7 @@ Browser ──mutation────▶ /api/rpc (RPCHandler) ──────�
 Agent   ──MCP─────────▶ /mcp (mcp-handler; OAuth JWT or API key) ───▶ procedure (tool per procedure)
 CLI/API ──HTTP────────▶ /api/v1 (OpenAPIHandler, API key) ──────────▶ procedure
 Public  ──────────────▶ /f/:token (web invoice, PDF, ISDOC) ─────────▶ documents.getPublic
-Cron    ──────────────▶ /api/cron/* (CRON_SECRET) ───────────────────▶ recurring.run, reminders.run, rates.sync
+Cron    ──────────────▶ /api/cron/* (CRON_SECRET) ───────────────────▶ jobs.recurring, jobs.reminders, jobs.bankSync
 ```
 
 Each procedure declares metadata: `{ mcp: { name, title, readOnly, destructive, idempotent }, openapi: { method, path } }`.

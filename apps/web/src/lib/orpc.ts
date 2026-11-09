@@ -1,9 +1,10 @@
 import type { Router } from '@fakturky/core/router'
-import { type ClientLink, createORPCClient } from '@orpc/client'
+import { type ClientLink, createORPCClient, onError } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'
 import type { RouterClient } from '@orpc/server'
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
 import { createIsomorphicFn } from '@tanstack/react-start'
+import { reportIfSessionRefused } from '@/lib/app-access'
 
 type Client = RouterClient<Router>
 
@@ -19,7 +20,13 @@ const resolveLink = createIsomorphicFn()
       },
     }),
   )
-  .client((): ClientLink<object> => new RPCLink({ url: () => `${window.location.origin}/api/rpc` }))
+  .client(
+    (): ClientLink<object> =>
+      new RPCLink({
+        url: () => `${window.location.origin}/api/rpc`,
+        interceptors: [onError(reportIfSessionRefused)],
+      }),
+  )
 
 const link: ClientLink<object> = {
   call: (path, input, options) => resolveLink().call(path, input, options),

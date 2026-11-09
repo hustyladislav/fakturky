@@ -1,3 +1,4 @@
+import { ORPCError } from '@orpc/client'
 import type { QueryClient } from '@tanstack/react-query'
 import { redirect } from '@tanstack/react-router'
 import { getAppAccessFn } from '@/server/session'
@@ -25,7 +26,10 @@ export function recheckAppAccess(client: QueryClient) {
   void client.prefetchQuery(accessQuery)
 }
 
-/** A procedure refused this session, so the remembered pass is wrong. */
-export function forgetAppAccessIfUnauthorized(client: QueryClient, error: unknown) {
-  if ((error as { code?: unknown }).code === 'UNAUTHORIZED') client.removeQueries({ queryKey })
+export const SESSION_REFUSED_EVENT = 'app-access:session-refused'
+
+/** For the API client: every call passes through it, whoever handles the error afterwards. */
+export function reportIfSessionRefused(error: unknown) {
+  if (error instanceof ORPCError && error.code === 'UNAUTHORIZED')
+    window.dispatchEvent(new Event(SESSION_REFUSED_EVENT))
 }

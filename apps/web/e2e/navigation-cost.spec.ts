@@ -46,6 +46,25 @@ test('returning to a tab shows the account another tab switched to', async ({ pa
   await expect(page.getByText(newAccount).first()).toBeVisible()
 })
 
+test('a refused API call outside the query cache still sends the next click to login', async ({
+  page,
+  context,
+}) => {
+  await openDashboard(page, 'nav-refused')
+  await link(page, '/faktury').click()
+  await expect(page).toHaveURL(/\/faktury$/)
+
+  await context.clearCookies()
+  const exportRefused = page.waitForResponse(
+    (r) => r.url().includes('/api/rpc/exports') && r.status() === 401,
+  )
+  await page.getByRole('button', { name: 'Export do CSV' }).click()
+  await exportRefused
+  await link(page, '/prehled').click()
+
+  await expect(page).toHaveURL(/\/prihlaseni$/)
+})
+
 test('a tab left open finds out on its next click that the session is gone', async ({
   page,
   context,

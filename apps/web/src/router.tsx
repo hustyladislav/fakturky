@@ -1,9 +1,8 @@
-import { QueryCache, QueryClient } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query'
 import { createRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import { createIsomorphicFn } from '@tanstack/react-start'
 import { RouteError } from '@/components/route-error'
-import { forgetAppAccessIfUnauthorized } from '@/lib/app-access'
 import { createMutationCache } from '@/lib/mutation-errors'
 import { routeTree } from './routeTree.gen'
 import { nonceStore } from './server/nonce'
@@ -14,10 +13,8 @@ const requestNonce = createIsomorphicFn()
   .client(() => undefined)
 
 export function getRouter() {
-  const onFailure = (error: unknown) => forgetAppAccessIfUnauthorized(queryClient, error)
-  const queryClient: QueryClient = new QueryClient({
-    queryCache: new QueryCache({ onError: onFailure }),
-    mutationCache: createMutationCache(onFailure),
+  const queryClient = new QueryClient({
+    mutationCache: createMutationCache(),
     // One quick retry, then show the error state (the default 3 retries leave skeletons up for ~7 s offline).
     defaultOptions: { queries: { staleTime: 30_000, retry: 1, retryDelay: 1000 } },
   })

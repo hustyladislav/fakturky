@@ -1,6 +1,12 @@
+import { ORPCError } from '@orpc/client'
 import { QueryClient } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { forgetAppAccessIfUnauthorized, recheckAppAccess, requireAppAccess } from '@/lib/app-access'
+import {
+  recheckAppAccess,
+  reportIfSessionRefused,
+  requireAppAccess,
+  SESSION_REFUSED_EVENT,
+} from '@/lib/app-access'
 import { getAppAccessFn } from '@/server/session'
 
 vi.mock('@/server/session', () => ({ getAppAccessFn: vi.fn() }))
@@ -65,24 +71,27 @@ describe('recheckAppAccess', () => {
   })
 })
 
-describe('forgetAppAccessIfUnauthorized', () => {
-  it('makes the next page switch ask the server after a 401', async () => {
-    const client = new QueryClient()
-    ask.mockReset()
-    ask.mockResolvedValue(pass)
-    await requireAppAccess(client)
-    forgetAppAccessIfUnauthorized(client, { code: 'UNAUTHORIZED' })
-    await requireAppAccess(client)
-    expect(ask).toHaveBeenCalledTimes(2)
+describe('reportIfSessionRefused', () => {
+  const heard = vi.fn()
+
+  beforeEach(() => {
+    heard.mockReset()
+    vi.stubGlobal('window', new EventTarget())
+    window.addEventListener(SESSION_REFUSED_EVENT, heard)
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('announces a call the server refused for lack of a session', () => {
+    reportIfSessionRefused(new ORPCError('UNAUTHORIZED'))
+    expect(heard).toHaveBeenCalledOnce()
   })
 
-  it('keeps the pass when a procedure fails for any other reason', async () => {
-    const client = new QueryClient()
-    ask.mockReset()
-    ask.mockResolvedValue(pass)
-    await requireAppAccess(client)
-    forgetAppAccessIfUnauthorized(client, { code: 'NOT_FOUND' })
-    await requireAppAccess(client)
-    expect(ask).toHaveBeenCalledOnce()
+  it.each([
+    ['another API error', new ORPCError('NOT_FOUND')],
+    ['a network failure', new TypeError('fetch failed')],
+    ['a rejection without an error', null],
+  ])('stays quiet for %s', (_, error) => {
+    reportIfSessionRefused(error)
+    expect(heard).not.toHaveBeenCalled()
   })
 })

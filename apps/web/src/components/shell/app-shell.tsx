@@ -28,7 +28,7 @@ import { clearAssistantStorage } from '@/components/assistant/assistant-storage'
 import { InstallHint } from '@/components/pwa/install-hint'
 import { PALETTE_POOL } from '@/components/shell/palette-search'
 import { cs } from '@/i18n/cs'
-import { recheckAppAccess } from '@/lib/app-access'
+import { recheckAppAccess, SESSION_REFUSED_EVENT } from '@/lib/app-access'
 import { orpc } from '@/lib/orpc'
 import { type NavItem, NEW_INVOICE_PATH, navItems, useInEditor, useNavItems } from './nav'
 import { useRecordRecent } from './recent-pages'
@@ -77,7 +77,11 @@ export function AppShell({
   useEffect(() => {
     const recheck = () => recheckAppAccess(shellQueryClient)
     window.addEventListener('focus', recheck)
-    return () => window.removeEventListener('focus', recheck)
+    window.addEventListener(SESSION_REFUSED_EVENT, recheck)
+    return () => {
+      window.removeEventListener('focus', recheck)
+      window.removeEventListener(SESSION_REFUSED_EVENT, recheck)
+    }
   }, [shellQueryClient])
   const [helpOpen, setHelpOpen] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)

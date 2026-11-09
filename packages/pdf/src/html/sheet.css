@@ -11,7 +11,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url("../../fonts/GeistSerif-Regular.ttf") format("truetype");
+  src: url("../../fonts/GeistSerif-Regular.woff2") format("woff2");
 }
 
 .fk-sheet-wrap {

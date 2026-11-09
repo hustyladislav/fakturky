@@ -37,7 +37,9 @@ Call \`get_onboarding_status\`. Each step has a \`status\`, a \`kind\`, an \`ins
 
 - \`auto\`: do it.
 - \`ask\`: put \`ask.question\` to the user with \`ask.options\`, then do what \`instruction\` says with the answer.
-- \`human\`: only the user can do it. Give them the link (\`path\` is relative to ${origin}) and the one thing to do there.
+- \`human\`: only the user can do it. Give them the link and the one thing to do there.
+
+A \`path\` is relative to ${origin}.
 
 After each step call it again, passing in \`settled\` the ids of steps the user answered with nothing to save or declined. Stop when \`next\` is null.
 

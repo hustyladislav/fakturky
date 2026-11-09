@@ -1,14 +1,9 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { AppShell } from '@/components/shell/app-shell'
-import { getOnboardedFn, getSessionFn } from '@/server/session'
+import { requireAppAccess } from '@/lib/app-access'
 
 export const Route = createFileRoute('/_app')({
-  beforeLoad: async () => {
-    const session = await getSessionFn()
-    if (!session) throw redirect({ to: '/prihlaseni' })
-    if (!(await getOnboardedFn())) throw redirect({ to: '/onboarding' })
-    return { user: session.user }
-  },
+  beforeLoad: async ({ context }) => ({ user: await requireAppAccess(context.queryClient) }),
   component: Layout,
 })
 

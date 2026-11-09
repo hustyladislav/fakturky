@@ -52,15 +52,17 @@ function Logo({
   name,
   className,
   markClassName,
+  nameClassName,
 }: {
   name: string
   className?: string
   markClassName?: string
+  nameClassName?: string
 }) {
   return (
     <span className={cn('inline-flex items-center gap-2.5', className)}>
       <LogoMark letter={name.charAt(0)} className={markClassName} />
-      <span className="text-xl tracking-tight">{name}</span>
+      <span className={cn('text-xl tracking-tight', nameClassName)}>{name}</span>
     </span>
   )
 }

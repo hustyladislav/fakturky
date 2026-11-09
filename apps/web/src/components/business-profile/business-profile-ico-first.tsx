@@ -4,8 +4,12 @@ import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { ChevronDown } from 'lucide-react'
 import { forwardRef } from 'react'
-import { ProfileFields, type SetField, VatStatusSelect } from '@/components/business-profile-fields'
-import type { ProfileValues } from '@/components/business-profile-form'
+import {
+  ProfileFields,
+  type SetField,
+  VatStatusSelect,
+} from '@/components/business-profile/business-profile-fields'
+import type { ProfileValues } from '@/components/business-profile/business-profile-form'
 import { cs } from '@/i18n/cs'
 
 const t = cs.onboarding

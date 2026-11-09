@@ -1,7 +1,7 @@
 import { Avatar } from '@fakturky/ui/components/avatar'
 import { cn } from '@fakturky/ui/lib/utils'
 import { Mail, Phone } from 'lucide-react'
-import type { ProfileValues } from '@/components/business-profile-form'
+import type { ProfileValues } from '@/components/business-profile/business-profile-form'
 import { cs } from '@/i18n/cs'
 
 const t = cs.profile

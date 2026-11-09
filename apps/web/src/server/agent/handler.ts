@@ -22,7 +22,7 @@ import {
   toServerSentEventsResponse,
 } from '@tanstack/ai'
 import { vercelGatewayText } from '@tanstack/ai-vercel-gateway'
-import { clientToolDefinitions } from '../../lib/agent-client-tools'
+import { clientToolDefinitions } from '../../components/assistant/agent-client-tools'
 import { buildServerTools } from './tools'
 
 /** Conversations are small; anything bigger is a bug or abuse and would also be expensive. */

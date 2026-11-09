@@ -7,8 +7,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { QuickAccountForm } from '@/components/bank/quick-account-form'
-import { BusinessCard } from '@/components/business-card'
-import { BusinessProfileForm, type ProfileValues } from '@/components/business-profile-form'
+import { BusinessCard } from '@/components/business-profile/business-card'
+import {
+  BusinessProfileForm,
+  type ProfileValues,
+} from '@/components/business-profile/business-profile-form'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { client, orpc } from '@/lib/orpc'

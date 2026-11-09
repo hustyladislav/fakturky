@@ -3,8 +3,8 @@ import { parseDecimal } from '@fakturky/domain/money'
 import { Amount } from '@fakturky/ui/components/amount'
 import { cn } from '@fakturky/ui/lib/utils'
 import type { ReactNode } from 'react'
+import { deltaPercent } from '@/components/dashboard/chart-scale'
 import { cs } from '@/i18n/cs'
-import { deltaPercent } from '@/lib/chart-scale'
 import { crowns } from '@/lib/crowns'
 
 type Summary = RouterOutputs['dashboard']['summary']

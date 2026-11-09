@@ -1,6 +1,6 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { groupByMonth } from '@/lib/invoice-groups'
+import { groupByMonth } from '@/components/invoices/invoice-groups'
 import { orpc } from '@/lib/orpc'
 import type { Doc } from './invoice-rows'
 import type { ListSearch } from './list-search'

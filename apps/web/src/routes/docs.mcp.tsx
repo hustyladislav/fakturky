@@ -2,8 +2,9 @@ import { BRAND } from '@fakturky/core/brand'
 import { Logo } from '@fakturky/ui/components/logo'
 import { ThemeToggle } from '@fakturky/ui/components/theme'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowUpRight, Check, Copy } from 'lucide-react'
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { ArrowUpRight } from 'lucide-react'
+import { type ReactNode, useEffect, useState } from 'react'
+import { CopyButton } from '@/components/copy-button'
 import { cs } from '@/i18n/cs'
 
 export const Route = createFileRoute('/docs/mcp')({
@@ -13,9 +14,6 @@ export const Route = createFileRoute('/docs/mcp')({
 
 /** Terminal-style block (always dark, like the PDF's ink on paper is always light) with a copy button. */
 function Code({ children, label }: { children: string; label?: string }) {
-  const [done, setDone] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  useEffect(() => () => clearTimeout(timer.current), [])
   return (
     <div className="group relative overflow-hidden rounded-xl bg-[#1b1c17] text-[#ece6d6] shadow-[0_0_0_1px_rgb(0_0_0/0.25)]">
       {label && (
@@ -24,24 +22,11 @@ function Code({ children, label }: { children: string; label?: string }) {
         </div>
       )}
       <pre className="overflow-x-auto p-4 pr-14 font-mono text-[13px] leading-6">{children}</pre>
-      <button
-        type="button"
-        onClick={() => {
-          navigator.clipboard
-            ?.writeText(children)
-            .then(() => {
-              setDone(true)
-              clearTimeout(timer.current)
-              timer.current = setTimeout(() => setDone(false), 1600)
-            })
-            .catch(() => {})
-        }}
-        className="absolute top-2 right-2 inline-flex size-8 items-center justify-center rounded-md text-[#a9a391] transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
-        aria-label={done ? cs.docsMcp.copied : cs.docsMcp.copy}
-        title={done ? cs.docsMcp.copied : cs.docsMcp.copy}
-      >
-        {done ? <Check className="size-4 text-[#8cc4a4]" /> : <Copy className="size-4" />}
-      </button>
+      <CopyButton
+        text={children}
+        labels={cs.docsMcp}
+        className="absolute top-2 right-2 text-[#a9a391] hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/40 data-copied:text-[#8cc4a4]"
+      />
     </div>
   )
 }

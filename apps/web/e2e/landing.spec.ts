@@ -27,3 +27,38 @@ test('comparison table names its sources', async ({ page }) => {
     'https://www.fakturoid.cz/cenik',
   )
 })
+
+test('hero figures do not overlap on a tablet', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 1024 })
+  await page.goto('/')
+  const month = await page.getByText('148 500').boundingBox()
+  const received = await page.getByText('112 300').boundingBox()
+  if (!month || !received) throw new Error('hero figures not rendered')
+  const apart =
+    month.x + month.width <= received.x ||
+    received.x + received.width <= month.x ||
+    month.y + month.height <= received.y ||
+    received.y + received.height <= month.y
+  expect(apart).toBe(true)
+})
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 320, height: 700 }, hasTouch: true, isMobile: true })
+
+  test('the header offers sign-in without overflowing', async ({ page }) => {
+    await page.goto('/')
+    const signIn = page.getByRole('banner').getByRole('link', { name: 'Přihlásit se' })
+    await expect(signIn).toBeInViewport()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
+  })
+
+  test('an anchor jump keeps the heading clear of the sticky header', async ({ page }) => {
+    await page.goto('/#srovnani')
+    await page.waitForLoadState('networkidle')
+    await page.evaluate(() => document.getElementById('srovnani')?.scrollIntoView())
+    const header = await page.getByRole('banner').boundingBox()
+    const heading = await page.locator('#srovnani h2').boundingBox()
+    if (!header || !heading) throw new Error('header or heading missing')
+    expect(heading.y).toBeGreaterThanOrEqual(header.y + header.height + 24)
+  })
+})

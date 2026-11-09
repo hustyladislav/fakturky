@@ -7,7 +7,7 @@ Every new or touched screen is built from shadcn components (Base UI flavour, `b
 - `packages/ui/src/components/*` — shadcn components restyled once to the project tokens, plus app primitives (`amount`, `avatar`, `empty-state`, `date-picker`, `currency-combobox`…). Add with `pnpm dlx shadcn@latest add <name>` from `apps/web` (config in `apps/web/components.json`); never `--overwrite` without reading the diff.
 - `packages/ui/src/styles/globals.css` — the only theme file: tokens feed the shadcn roles and Tailwind's `@theme`, light and dark.
 - `apps/web/src/i18n/cs.ts` — every user-facing string (typed). Documents (PDF/public page) also support `sk` and `en`.
-- `apps/web/src/components`, `apps/web/src/routes` — screens.
+- `apps/web/src/routes` — screens; `apps/web/src/components/<feature>/` — everything one feature owns: components, hooks, helpers and their tests. The `components/` root and `apps/web/src/lib` hold only what several features share.
 
 ## Rules
 - Compose primitives before writing custom markup; variants before ad-hoc classes.

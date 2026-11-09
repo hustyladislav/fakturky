@@ -1,33 +1,15 @@
 // Drafts: unnumbered, freely editable, deletable.
 import { type Db, schema } from '@fakturky/db'
 import { addDays, todayPrague, type VatTreatment } from '@fakturky/domain'
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { bankAccountsRepo } from '../bank-accounts/repo'
 import { DomainError } from '../errors'
 import { assertVatLines, totalColumns, totalsFor, vatOn, writeLines } from './lines'
 import { get } from './queries'
 import type { DraftInput, DraftPatch } from './schema'
-import { loadProfile, logActivity, scoped, type Tx } from './shared'
+import { loadProfile, logActivity, scoped } from './shared'
 
-const { document, documentLine, businessProfile, contact, orgAsset } = schema
-
-/** Freezes the document look (colour, brand line, logo/signature versions) at issue. */
-async function appearanceSnapshot(db: Db | Tx, orgId: string) {
-  const [p] = await db
-    .select({ accentColor: businessProfile.accentColor, showBrand: businessProfile.showBrand })
-    .from(businessProfile)
-    .where(eq(businessProfile.organizationId, orgId))
-  const assets = await db
-    .select({ id: orgAsset.id, kind: orgAsset.kind })
-    .from(orgAsset)
-    .where(and(eq(orgAsset.organizationId, orgId), isNull(orgAsset.supersededAt)))
-  return {
-    accentColor: p?.accentColor ?? null,
-    showBrand: p?.showBrand ?? true,
-    logoAssetId: assets.find((a) => a.kind === 'logo')?.id ?? null,
-    signatureAssetId: assets.find((a) => a.kind === 'signature')?.id ?? null,
-  }
-}
+const { document, documentLine, contact } = schema
 
 export async function createDraft(
   db: Db,
@@ -88,7 +70,6 @@ export async function createDraft(
         relatedDocumentId: opts.relatedDocumentId ?? null,
         contactId: input.contactId ?? null,
         bankAccountId: bank?.id ?? null,
-        appearance: await appearanceSnapshot(tx, orgId),
         issueDate,
         taxableDate: input.taxableDate ?? issueDate,
         dueDate: input.dueDate ?? addDays(issueDate, dueDays),

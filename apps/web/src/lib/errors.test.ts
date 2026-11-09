@@ -7,7 +7,7 @@ import { apiErrorMessage, serverErrorMessage } from '@/lib/errors'
 const PACKAGES = join(__dirname, '../../../../packages')
 // Upstream failures and developer-facing checks: the generic Czech message is the right one.
 const INTERNAL =
-  /^(DocumentForExport|No ČNB|Duplicate tool name|Tool \$\{|Request failed|Invalid XML|Invalid ISO|Invalid decimal|Invalid IČO|Invalid VAT|Invalid Czech bank account$|Invalid pattern|Invalid workplace|Unsupported VAT ID|Unrecognized|Malformed|Unexpected (QR|VIES)|EPC amount|Use either|XML too large|No XML|ARES responded|VIES responded|ČNB|Fio responded)/
+  /^(DocumentForExport|No ČNB|Duplicate tool name|Tool \$\{|Request failed|Invalid XML|Invalid ISO|Invalid decimal|Invalid IČO|Invalid VAT|Invalid Czech bank account$|Invalid workplace|Unsupported VAT ID|Unrecognized|Malformed|Unexpected (QR|VIES)|EPC amount|Use either|XML too large|No XML|ARES responded|VIES responded|ČNB|Fio responded)/
 const THROWN =
   /new (?:DocumentError|ORPCError|[A-Za-z]*Error)\(\s*(?:'[A-Z_]+'\s*,\s*)?(?:\{\s*message:\s*)?(['`])((?:[^'`\\]|\\.)*?)\1/g
 

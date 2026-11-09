@@ -27,5 +27,6 @@ export function serverErrorMessage(message: string | undefined): string {
   if (allocations?.[1]) return cs.serverErrorsDynamic.allocations(allocations[1])
   const credit = message.match(/^The credited amount exceeds .*\((.+)\)$/)
   if (credit?.[1]) return cs.serverErrorsDynamic.creditExceeded(credit[1])
+  if (message.startsWith('Invalid pattern, stray brace')) return cs.serverErrorsDynamic.strayBrace
   return cs.common.error
 }

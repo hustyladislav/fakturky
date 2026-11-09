@@ -11,7 +11,7 @@ import { Kbd } from '@fakturky/ui/components/kbd'
 import { LogoMark } from '@fakturky/ui/components/logo'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import {
   Coffee,
   Ellipsis,
@@ -29,7 +29,7 @@ import { InstallHint } from '@/components/pwa/install-hint'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 import { PALETTE_POOL } from '@/lib/palette-search'
-import { type NavItem, NEW_INVOICE_PATH, navItems, useNavItems } from './nav'
+import { type NavItem, NEW_INVOICE_PATH, navItems, useInEditor, useNavItems } from './nav'
 import { useRecordRecent } from './recent-pages'
 import { ShellContext, type ShellState, useShell as useShellState } from './shell-context'
 import { Breadcrumbs, NewInvoiceButton, Sidebar } from './sidebar'
@@ -147,6 +147,7 @@ function ShellInner({
   if (assistantOpen && !assistantMounted) setAssistantMounted(true)
   useShortcuts()
   useRecordRecent()
+  const inEditor = useInEditor()
   const modKey = useModKey()
 
   return (
@@ -201,7 +202,7 @@ function ShellInner({
             >
               <PanelRight />
             </Button>
-            <NewInvoiceButton />
+            {!inEditor && <NewInvoiceButton />}
           </div>
         </header>
         <main
@@ -236,10 +237,7 @@ function MobileTabs() {
   const tab =
     'flex h-full flex-1 flex-col transition-transform duration-150 ease-out items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground active:scale-[0.97] motion-reduce:active:scale-100 data-[status=active]:text-foreground [&_svg]:size-5'
   const [overview, invoices, contacts] = navItems as readonly [NavItem, NavItem, NavItem]
-  // The editor has its own sticky action bar; a second "+" there only crowds it.
-  const inEditor = useRouterState({
-    select: (s) => /^\/faktury\/(nova|[^/]+\/upravit)$/.test(s.location.pathname),
-  })
+  const inEditor = useInEditor()
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"

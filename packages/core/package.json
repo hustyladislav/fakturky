@@ -9,6 +9,7 @@
     "./router": "./src/router/index.ts",
     "./agent-tools": "./src/agent-tools/index.ts",
     "./mcp": "./src/mcp/index.ts",
+    "./onboarding": "./src/onboarding/index.ts",
     "./agent": "./src/agent/index.ts",
     "./auth": "./src/auth.ts",
     "./context": "./src/context.ts",

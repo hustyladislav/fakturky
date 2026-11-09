@@ -42,6 +42,7 @@ const line = { description: SECRET, quantity: '1', unitPrice: '100', vatRate: '2
 
 const cases: Record<string, Case> = {
   'account.whoami': { kind: 'scoped', run: (b) => b.account.whoami({}) },
+  'onboarding.status': { kind: 'scoped', run: (b) => b.onboarding.status({}) },
   'bankAccounts.list': { kind: 'scoped', run: (b) => b.bankAccounts.list({}) },
   'bankAccounts.create': {
     kind: 'scoped',

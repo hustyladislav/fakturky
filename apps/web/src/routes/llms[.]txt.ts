@@ -17,12 +17,16 @@ async function render(origin: string): Promise<string> {
 
 ${BRAND.name} issues Czech invoices and proformas (VAT per rate with 2-decimal rounding, gap-free document numbers allocated at issue, QR payment codes, ISDOC export). The UI is in Czech. Money amounts are decimal strings (e.g. "1210.50"), never floats. Issued documents are immutable snapshots; correct them by cancelling or duplicating into a new draft.
 
+## Set it up for your user
+
+Follow [the setup runbook](${origin}/start). It connects you, then walks the \`get_onboarding_status\` checklist.
+
 ## Connect an agent
 
 - [MCP server](${origin}/mcp): remote, Streamable HTTP, stateless. OAuth 2.1 (Client ID Metadata Documents; discovery at ${origin}/.well-known/oauth-protected-resource/mcp) or \`Authorization: Bearer fk_…\` with an API key.
 - [MCP setup guide](${origin}/docs/mcp): Claude, Claude Code, ChatGPT, Cursor.
 - [REST API reference](${origin}/docs/api) and [OpenAPI spec](${origin}/api/v1/openapi.json): base URL \`${origin}/api/v1\`, bearer API key.
-- [CLI](${BRAND.repoUrl}/tree/main/packages/cli): \`npx fakturky login\`, then \`fakturky <group> <action>\` (e.g. \`fakturky contacts list --json\`).
+- [CLI](${BRAND.repoUrl}/tree/main/packages/cli): source only for now, not published to npm yet. Use MCP or REST.
 - API keys are created by the user in the app: Nastavení → API klíče. A key acts on exactly one organization.
 
 ## MCP tools

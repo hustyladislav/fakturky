@@ -8,8 +8,8 @@ import {
   suggestMatches,
 } from '@fakturky/domain/bank'
 import { and, asc, eq, gt, inArray, isNull, ne } from 'drizzle-orm'
-import { BankError } from './repo'
 import { paidSums } from '../documents/repo'
+import { BankError } from './repo'
 
 const { bankTransaction, document, payment, activity } = schema
 

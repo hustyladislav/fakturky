@@ -1,7 +1,7 @@
 import { type DbHandle, schema } from '@fakturky/db'
 import { afterAll, beforeAll, expect, test } from 'vitest'
-import { firstOccurrence, nextOccurrence, recurringRepo } from './repo'
 import { clientFor, createTestDb, seedOrg } from '../testing'
+import { firstOccurrence, nextOccurrence, recurringRepo } from './repo'
 
 let handle: DbHandle
 beforeAll(async () => {

@@ -1,11 +1,7 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
 import { and, asc, eq, isNull, ne } from 'drizzle-orm'
-import {
-  type BankAccountInput,
-  type BankAccountPatch,
-  resolveAccount,
-} from './schema'
+import { type BankAccountInput, type BankAccountPatch, resolveAccount } from './schema'
 
 const { bankAccount } = schema
 

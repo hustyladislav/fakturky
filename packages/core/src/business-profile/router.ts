@@ -2,13 +2,9 @@ import { IntegrationError, lookupByIco, normalizeIco } from '@fakturky/domain'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
-import { businessProfileRepo } from './repo'
-import {
-  aresSubjectSchema,
-  businessProfilePatchSchema,
-  businessProfileSchema,
-} from './schema'
 import { cached, enforceRateLimit } from '../upstream-guard'
+import { businessProfileRepo } from './repo'
+import { aresSubjectSchema, businessProfilePatchSchema, businessProfileSchema } from './schema'
 
 export const businessProfileRouter = {
   get: procedure({

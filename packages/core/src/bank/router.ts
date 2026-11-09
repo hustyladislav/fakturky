@@ -3,8 +3,8 @@ import { parseStatement, StatementParseError } from '@fakturky/domain/bank'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
-import { BankError, bankRepo, type TransactionSource } from './repo'
 import { bankMatchingRepo } from './matching'
+import { BankError, bankRepo, type TransactionSource } from './repo'
 import {
   bankListInputSchema,
   bankListOutputSchema,
@@ -19,12 +19,11 @@ import {
 const tag = ['Bank']
 const MAX_RESULT_ROWS = 500
 
-/** Maps repository failures onto oRPC errors with readable messages. */
+/** An unreadable statement is the caller's input, not a server fault. */
 export async function guardBank<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn()
   } catch (e) {
-    if (e instanceof BankError) throw new ORPCError(e.code, { message: e.message })
     if (e instanceof StatementParseError) throw new ORPCError('BAD_REQUEST', { message: e.message })
     throw e
   }

@@ -2,7 +2,7 @@ import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
 import { and, eq, isNull } from 'drizzle-orm'
 import type { DocumentLook } from '../context'
-import { DocumentError } from '../documents/repo'
+import { DomainError } from '../errors'
 
 const { orgAsset, businessProfile } = schema
 
@@ -91,23 +91,21 @@ export const appearanceRepo = {
       .set(patch)
       .where(eq(businessProfile.organizationId, orgId))
       .returning({ id: businessProfile.id })
-    if (!row) throw new DocumentError('PRECONDITION_FAILED', 'Fill in your business profile first')
+    if (!row) throw new DomainError('PRECONDITION_FAILED', 'Fill in your business profile first')
     return this.get(db, orgId)
   },
 
   async setAsset(db: Db, orgId: string, kind: AssetKind, base64: string) {
     const bytes = Buffer.from(base64, 'base64')
     if (bytes.length === 0 || bytes.length > MAX_BYTES) {
-      throw new DocumentError('BAD_REQUEST', 'The image must be at most 300 KB', ['image.size'])
+      throw new DomainError('BAD_REQUEST', 'The image must be at most 300 KB', ['image.size'])
     }
     const type = inspect(new Uint8Array(bytes))
     if (type === null) {
-      throw new DocumentError('BAD_REQUEST', 'Only PNG and JPEG images are supported', [
-        'image.type',
-      ])
+      throw new DomainError('BAD_REQUEST', 'Only PNG and JPEG images are supported', ['image.type'])
     }
     if (type === 'corrupt') {
-      throw new DocumentError('BAD_REQUEST', 'The image file is damaged or incomplete', [
+      throw new DomainError('BAD_REQUEST', 'The image file is damaged or incomplete', [
         'image.corrupt',
       ])
     }

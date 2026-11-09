@@ -1,8 +1,6 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 import { procedure } from '../orpc'
 import { ASSET_KINDS, appearanceRepo } from './repo'
-import { DocumentError } from '../documents/repo'
 
 const tag = ['Appearance']
 const appearanceSchema = z.object({
@@ -11,20 +9,6 @@ const appearanceSchema = z.object({
   logo: z.string().nullable().describe('data: URL, private to the organization'),
   signature: z.string().nullable().describe('data: URL, private to the organization'),
 })
-
-async function guard<T>(fn: () => Promise<T>): Promise<T> {
-  try {
-    return await fn()
-  } catch (e) {
-    if (e instanceof DocumentError) {
-      throw new ORPCError(e.code, {
-        message: e.message,
-        ...(e.fields ? { data: { fields: e.fields } } : {}),
-      })
-    }
-    throw e
-  }
-}
 
 export const appearanceRouter = {
   get: procedure({
@@ -69,7 +53,7 @@ export const appearanceRouter = {
     )
     .output(appearanceSchema)
     .handler(({ context, input }) =>
-      guard(() => appearanceRepo.update(context.db, context.principal.organizationId, input)),
+      appearanceRepo.update(context.db, context.principal.organizationId, input),
     ),
 
   setAsset: procedure({
@@ -87,13 +71,11 @@ export const appearanceRouter = {
     .input(z.object({ kind: z.enum(ASSET_KINDS), dataBase64: z.string().min(8).max(500_000) }))
     .output(appearanceSchema)
     .handler(({ context, input }) =>
-      guard(() =>
-        appearanceRepo.setAsset(
-          context.db,
-          context.principal.organizationId,
-          input.kind,
-          input.dataBase64,
-        ),
+      appearanceRepo.setAsset(
+        context.db,
+        context.principal.organizationId,
+        input.kind,
+        input.dataBase64,
       ),
     ),
 
@@ -114,8 +96,6 @@ export const appearanceRouter = {
     .input(z.object({ kind: z.enum(ASSET_KINDS) }))
     .output(appearanceSchema)
     .handler(({ context, input }) =>
-      guard(() =>
-        appearanceRepo.deleteAsset(context.db, context.principal.organizationId, input.kind),
-      ),
+      appearanceRepo.deleteAsset(context.db, context.principal.organizationId, input.kind),
     ),
 }

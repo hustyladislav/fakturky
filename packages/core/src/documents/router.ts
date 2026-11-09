@@ -2,10 +2,11 @@ import type { Db } from '@fakturky/db'
 import { generateIsdoc } from '@fakturky/domain'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
-import { MailError } from '../context'
-import { toDocumentForExport } from './export'
+import { orNotFound } from '../errors'
 import { procedure } from '../orpc'
-import { DocumentError, documentsRepo } from './repo'
+import { toDocumentForExport } from './export'
+import { renderIssuedPdf } from './pdf'
+import { documentsRepo } from './repo'
 import {
   documentDetailSchema,
   documentSchema,
@@ -14,7 +15,6 @@ import {
   isoDate,
   listFilterSchema,
 } from './schema'
-import { renderIssuedPdf } from './pdf'
 
 const idInput = z.object({ id: z.string().min(1) })
 const tag = ['Documents']
@@ -27,24 +27,7 @@ const periodFrom = isoDate
 const periodTo = isoDate.optional().describe('Last day of the period, YYYY-MM-DD (inclusive)')
 const statBucket = z.object({ count: z.number(), sum: z.string().describe('CZK, decimal string') })
 
-async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
-  try {
-    const out = await fn()
-    if (out === null) throw new ORPCError('NOT_FOUND', { message: 'Document not found' })
-    return out
-  } catch (e) {
-    if (e instanceof DocumentError) {
-      throw new ORPCError(e.code, {
-        message: e.message,
-        ...(e.fields ? { data: { fields: e.fields } } : {}),
-      })
-    }
-    if (e instanceof MailError) {
-      throw new ORPCError('SERVICE_UNAVAILABLE', { message: e.reason, data: { reason: e.reason } })
-    }
-    throw e
-  }
-}
+const guard = <T>(fn: () => Promise<T | null>) => orNotFound(fn, 'Document not found')
 
 /** Drafts produced on the assistant's behalf (duplicate, credit note, …) carry the same provenance as createDraft. */
 async function assistantTag<T extends { id: string } | null>(

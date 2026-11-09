@@ -10,25 +10,14 @@ import {
 } from '@fakturky/domain/bank'
 import { and, asc, desc, eq, gt, ilike, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 import { CryptoError, decryptSecret, encryptSecret } from '../crypto'
+import { DomainError } from '../errors'
 
 const { bankAccount, bankTransaction, document } = schema
 
 type AccountRow = typeof bankAccount.$inferSelect
 
-/** Domain-level failure; the router maps `code` onto an oRPC error. */
-export class BankError extends Error {
-  constructor(
-    readonly code:
-      | 'NOT_FOUND'
-      | 'BAD_REQUEST'
-      | 'CONFLICT'
-      | 'TOO_MANY_REQUESTS'
-      | 'PRECONDITION_FAILED',
-    message: string,
-  ) {
-    super(message)
-  }
-}
+/** A bank-side refusal; the sync loops tell it apart from an unexpected failure. */
+export class BankError extends DomainError {}
 
 export type TransactionSource = 'csv' | 'abo' | 'camt' | 'fio_api'
 

@@ -1,5 +1,6 @@
 import { ORPCError, os } from '@orpc/server'
-import type { AuthedContext, BaseContext } from './context'
+import { type AuthedContext, type BaseContext, MailError } from './context'
+import { DomainError } from './errors'
 import type { ProcedureMeta } from './meta'
 
 const base = os.$context<BaseContext>().$meta<ProcedureMeta>({})
@@ -10,8 +11,26 @@ const requireOrg = base.middleware(async ({ context, next }) => {
   return next({ context: context as AuthedContext })
 })
 
-export const publicProcedure = base
-export const authed = base.use(requireOrg)
+/** The one place domain failures become oRPC errors, so no handler can leak one as a 500. */
+const translateErrors = base.middleware(async ({ next }) => {
+  try {
+    return await next()
+  } catch (e) {
+    if (e instanceof DomainError) {
+      throw new ORPCError(e.code, {
+        message: e.message,
+        ...(e.fields ? { data: { fields: e.fields } } : {}),
+      })
+    }
+    if (e instanceof MailError) {
+      throw new ORPCError('SERVICE_UNAVAILABLE', { message: e.reason, data: { reason: e.reason } })
+    }
+    throw e
+  }
+})
+
+export const publicProcedure = base.use(translateErrors)
+export const authed = publicProcedure.use(requireOrg)
 
 /** Declare a procedure with its MCP / REST metadata in one place. */
 export function procedure(meta: ProcedureMeta) {

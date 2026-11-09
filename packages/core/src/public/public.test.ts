@@ -2,8 +2,8 @@ import { type DbHandle, schema } from '@fakturky/db'
 import { generateIsdoc } from '@fakturky/domain'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { toDocumentForExport } from '../documents/export'
-import { publicDocumentsRepo } from './repo'
 import { clientFor, createTestDb, seedOrg } from '../testing'
+import { publicDocumentsRepo } from './repo'
 
 let handle: DbHandle
 beforeAll(async () => {

@@ -1,24 +1,14 @@
 import type { Db } from '@fakturky/db'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
-import { procedure } from '../orpc'
-import { DocumentError, documentsRepo } from '../documents/repo'
-import { recurringRepo, templatesRepo } from './repo'
+import { documentsRepo } from '../documents/repo'
 import { documentDetailSchema, isoDate } from '../documents/schema'
+import { orNotFound } from '../errors'
+import { procedure } from '../orpc'
+import { recurringRepo, templatesRepo } from './repo'
 
 const idInput = z.object({ id: z.string().min(1) })
 const tag = ['Templates']
-
-async function guard<T>(fn: () => Promise<T | null>, what = 'Not found'): Promise<T> {
-  try {
-    const out = await fn()
-    if (out === null) throw new ORPCError('NOT_FOUND', { message: what })
-    return out
-  } catch (e) {
-    if (e instanceof DocumentError) throw new ORPCError(e.code, { message: e.message })
-    throw e
-  }
-}
 
 const templateSchema = z.object({
   id: z.string(),
@@ -85,7 +75,7 @@ export const templatesRouter = {
     .input(z.object({ documentId: z.string().min(1), name: z.string().trim().min(1).max(100) }))
     .output(templateSchema)
     .handler(({ context, input }) =>
-      guard(() =>
+      orNotFound(() =>
         templatesRepo.createFromDocument(
           context.db,
           context.principal.organizationId,
@@ -107,7 +97,7 @@ export const templatesRouter = {
     .input(idInput)
     .output(documentDetailSchema)
     .handler(({ context, input }) =>
-      guard(async () => {
+      orNotFound(async () => {
         const doc = await templatesRepo.use(
           context.db,
           context.principal.organizationId,
@@ -177,7 +167,7 @@ export const recurringRouter = {
     )
     .output(ruleSchema)
     .handler(({ context, input }) =>
-      guard(() => recurringRepo.create(context.db, context.principal.organizationId, input)),
+      orNotFound(() => recurringRepo.create(context.db, context.principal.organizationId, input)),
     ),
 
   update: procedure({
@@ -209,7 +199,7 @@ export const recurringRouter = {
     .output(ruleSchema)
     .handler(({ context, input }) => {
       const { id, ...patch } = input
-      return guard(() =>
+      return orNotFound(() =>
         recurringRepo.update(context.db, context.principal.organizationId, id, patch),
       )
     }),

@@ -1,7 +1,8 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
-import { procedure } from '../orpc'
 import { bankRepo } from '../bank/repo'
+import { guardBank } from '../bank/router'
+import { procedure } from '../orpc'
 import { bankAccountsRepo } from './repo'
 import {
   bankAccountInputSchema,
@@ -9,7 +10,6 @@ import {
   bankAccountSchema,
   presentAccount,
 } from './schema'
-import { guardBank } from '../bank/router'
 
 const idInput = z.object({ id: z.string().min(1) })
 const notFound = () => new ORPCError('NOT_FOUND', { message: 'Bank account not found' })

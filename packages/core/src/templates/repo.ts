@@ -9,7 +9,8 @@ import {
   type VatTreatment,
 } from '@fakturky/domain'
 import { and, asc, desc, eq, lte } from 'drizzle-orm'
-import { DocumentError, documentsRepo } from '../documents/repo'
+import { documentsRepo } from '../documents/repo'
+import { DomainError } from '../errors'
 
 const { template, recurringRule } = schema
 
@@ -34,7 +35,7 @@ export const templatesRepo = {
 
   async createFromDocument(db: Db, orgId: string, name: string, documentId: string) {
     const doc = await documentsRepo.get(db, orgId, documentId)
-    if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (!doc) throw new DomainError('NOT_FOUND', 'Document not found')
     const [row] = await db
       .insert(template)
       .values({
@@ -75,7 +76,7 @@ export const templatesRepo = {
   /** New draft from a template with today's dates. */
   async use(db: Db, orgId: string, actorId: string, id: string, issueDate?: string) {
     const t = await this.get(db, orgId, id)
-    if (!t) throw new DocumentError('NOT_FOUND', 'Template not found')
+    if (!t) throw new DomainError('NOT_FOUND', 'Template not found')
     // Foreign-currency drafts get the ČNB rate of the issue date so they can be issued straight away.
     let exchangeRate: string | undefined
     if (t.body.currency && t.body.currency !== 'CZK') {
@@ -131,7 +132,7 @@ export const recurringRepo = {
     },
   ) {
     if (!(await templatesRepo.get(db, orgId, input.templateId))) {
-      throw new DocumentError('NOT_FOUND', 'Template not found')
+      throw new DomainError('NOT_FOUND', 'Template not found')
     }
     const [row] = await db
       .insert(recurringRule)

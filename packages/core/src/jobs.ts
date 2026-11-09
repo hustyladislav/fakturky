@@ -13,15 +13,19 @@ import { recurringRepo } from './templates/repo'
 export const jobs = {
   /** Issues invoices from recurring rules that are due, and mails those set to auto-send. */
   async recurring(db: Db, services: Services | undefined) {
-    const results = await recurringRepo.runDue(db, undefined, async (orgId, documentId, autoSend) => {
-      if (!autoSend) return
-      try {
-        await documentsRepo.send(db, orgId, 'system:recurring', documentId, services)
-      } catch (e) {
-        // The invoice stays issued; the missing mail is visible in its history (no "sent" entry).
-        console.warn(`[recurring] auto-send failed for ${documentId}: ${(e as Error).message}`)
-      }
-    })
+    const results = await recurringRepo.runDue(
+      db,
+      undefined,
+      async (orgId, documentId, autoSend) => {
+        if (!autoSend) return
+        try {
+          await documentsRepo.send(db, orgId, 'system:recurring', documentId, services)
+        } catch (e) {
+          // The invoice stays issued; the missing mail is visible in its history (no "sent" entry).
+          console.warn(`[recurring] auto-send failed for ${documentId}: ${(e as Error).message}`)
+        }
+      },
+    )
     return { processed: results.length, results }
   },
 

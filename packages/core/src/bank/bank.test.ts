@@ -2,8 +2,8 @@ import { randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import type { DbHandle } from '@fakturky/db'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-import { bankRepo } from './repo'
 import { clientFor, createTestDb, seedOrg } from '../testing'
+import { bankRepo } from './repo'
 
 const fixture = (name: string) =>
   readFileSync(new URL(`../../../domain/test/fixtures/bank/${name}`, import.meta.url), 'utf8')

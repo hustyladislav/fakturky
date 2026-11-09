@@ -25,17 +25,13 @@ import { and, asc, desc, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-or
 import type { z } from 'zod'
 import { MailError, type Services } from '../context'
 import { paymentQrInput } from './payment-qr'
-import type {
-  DisplayStatus,
-  DraftInput,
-  DraftPatch,
-  documentDetailSchema,
-} from './schema'
+import type { DisplayStatus, DraftInput, DraftPatch, documentDetailSchema } from './schema'
 
 type DocumentDetail = z.infer<typeof documentDetailSchema>
 
 import { appearanceRepo } from '../appearance/repo'
 import { bankAccountsRepo } from '../bank-accounts/repo'
+import { DomainError } from '../errors'
 import { amountTerm, foldedWordsMatch } from '../fold'
 import { renderIssuedPdf } from './pdf'
 
@@ -53,17 +49,6 @@ const {
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 type DocRow = typeof document.$inferSelect
-
-/** Domain-level failure; the router maps `code` onto an oRPC error. */
-export class DocumentError extends Error {
-  constructor(
-    readonly code: 'NOT_FOUND' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'BAD_REQUEST',
-    message: string,
-    readonly fields?: string[],
-  ) {
-    super(message)
-  }
-}
 
 const scoped = (orgId: string, id: string) =>
   and(eq(document.organizationId, orgId), eq(document.id, id), isNull(document.deletedAt))
@@ -119,7 +104,7 @@ const SERIES_NAMES: Record<string, string> = {
 /** A user-supplied money string ("1500", "1 500,5"); anything else is a client error, not a 500. */
 function parseAmount(raw: string) {
   const v = raw.replace(/[\s\u00a0]/g, '').replace(',', '.')
-  if (!/^-?\d+(\.\d+)?$/.test(v)) throw new DocumentError('BAD_REQUEST', 'Amount is not a number')
+  if (!/^-?\d+(\.\d+)?$/.test(v)) throw new DomainError('BAD_REQUEST', 'Amount is not a number')
   return parseDecimal(v)
 }
 
@@ -159,7 +144,7 @@ function assertVatLines(
       !(VAT_RATES.CZ as readonly string[]).includes(String(Number(l.vatRate))),
   )
   if (bad) {
-    throw new DocumentError(
+    throw new DomainError(
       'BAD_REQUEST',
       'Use a VAT rate of 21 or 12, or choose a VAT regime (exempt, reverse charge, …) for the line',
       ['line.vatRate'],
@@ -383,7 +368,7 @@ export async function loadOriginal(db: Db | Tx, orgId: string, doc: DocRow) {
  */
 async function partialCreditLines(db: Db, orgId: string, src: DocumentDetail, amountInput: string) {
   const amount = parseAmount(amountInput)
-  if (amount.lte(0)) throw new DocumentError('BAD_REQUEST', 'Amount must be positive')
+  if (amount.lte(0)) throw new DomainError('BAD_REQUEST', 'Amount must be positive')
   const earlier = await db
     .select({ total: document.total })
     .from(document)
@@ -402,7 +387,7 @@ async function partialCreditLines(db: Db, orgId: string, src: DocumentDetail, am
     parseDecimal(src.total),
   )
   if (amount.gt(creditable)) {
-    throw new DocumentError(
+    throw new DomainError(
       'BAD_REQUEST',
       `The credited amount exceeds what is still creditable (${toFixed(creditable, 2)})`,
     )
@@ -421,7 +406,7 @@ async function partialCreditLines(db: Db, orgId: string, src: DocumentDetail, am
         },
       ]
   const grossSum = groups.reduce((sum, g) => sum.plus(g.gross), new Decimal(0))
-  if (grossSum.lte(0)) throw new DocumentError('CONFLICT', 'Nothing left to credit on this invoice')
+  if (grossSum.lte(0)) throw new DomainError('CONFLICT', 'Nothing left to credit on this invoice')
   const shares = allocateGross(
     amount,
     groups.map((g) => g.gross),
@@ -740,13 +725,13 @@ export const documentsRepo = {
     via?: 'assistant',
   ) {
     if (input.type === 'payment_receipt' && !opts.relatedDocumentId) {
-      throw new DocumentError(
+      throw new DomainError(
         'BAD_REQUEST',
         'Tax receipts are created from a paid proforma (createPaymentReceipt)',
       )
     }
     if (input.type === 'credit_note' && !opts.relatedDocumentId) {
-      throw new DocumentError(
+      throw new DomainError(
         'BAD_REQUEST',
         'Credit notes are created from an invoice (createCreditNote)',
       )
@@ -760,7 +745,7 @@ export const documentsRepo = {
           .select()
           .from(contact)
           .where(and(eq(contact.organizationId, orgId), eq(contact.id, input.contactId)))
-        if (!c) throw new DocumentError('NOT_FOUND', 'Contact not found')
+        if (!c) throw new DomainError('NOT_FOUND', 'Contact not found')
         dueDays = c.defaultDueDays ?? dueDays
       }
       const currency = input.currency ?? profile?.defaultCurrency ?? 'CZK'
@@ -779,8 +764,7 @@ export const documentsRepo = {
       const bank = input.bankAccountId
         ? await bankAccountsRepo.get(tx, orgId, input.bankAccountId)
         : await bankAccountsRepo.defaultFor(tx, orgId, currency)
-      if (input.bankAccountId && !bank)
-        throw new DocumentError('NOT_FOUND', 'Bank account not found')
+      if (input.bankAccountId && !bank) throw new DomainError('NOT_FOUND', 'Bank account not found')
       const [row] = await tx
         .insert(document)
         .values({
@@ -819,9 +803,9 @@ export const documentsRepo = {
   async updateDraft(db: Db, orgId: string, actorId: string, id: string, patch: DraftPatch) {
     await db.transaction(async (tx) => {
       const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
-      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (!doc) throw new DomainError('NOT_FOUND', 'Document not found')
       if (doc.status !== 'draft') {
-        throw new DocumentError(
+        throw new DomainError(
           'CONFLICT',
           'Only drafts can be edited; issued documents are immutable',
         )
@@ -832,10 +816,10 @@ export const documentsRepo = {
           .select({ id: contact.id })
           .from(contact)
           .where(and(eq(contact.organizationId, orgId), eq(contact.id, rest.contactId)))
-        if (!c) throw new DocumentError('NOT_FOUND', 'Contact not found')
+        if (!c) throw new DomainError('NOT_FOUND', 'Contact not found')
       }
       if (rest.bankAccountId && !(await bankAccountsRepo.get(tx, orgId, rest.bankAccountId))) {
-        throw new DocumentError('NOT_FOUND', 'Bank account not found')
+        throw new DomainError('NOT_FOUND', 'Bank account not found')
       }
       const profile = await loadProfile(tx, orgId)
       const currency = rest.currency ?? doc.currency
@@ -876,24 +860,20 @@ export const documentsRepo = {
   async issue(db: Db, orgId: string, actorId: string, id: string) {
     await db.transaction(async (tx) => {
       const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
-      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
-      if (doc.status !== 'draft') throw new DocumentError('CONFLICT', 'Document is already issued')
+      if (!doc) throw new DomainError('NOT_FOUND', 'Document not found')
+      if (doc.status !== 'draft') throw new DomainError('CONFLICT', 'Document is already issued')
       const profile = await loadProfile(tx, orgId)
       if (!profile) {
-        throw new DocumentError(
-          'PRECONDITION_FAILED',
-          'Fill in your business profile before issuing',
-        )
+        throw new DomainError('PRECONDITION_FAILED', 'Fill in your business profile before issuing')
       }
-      if (!doc.contactId) throw new DocumentError('PRECONDITION_FAILED', 'Choose a customer first')
+      if (!doc.contactId) throw new DomainError('PRECONDITION_FAILED', 'Choose a customer first')
       const lines = await tx
         .select()
         .from(documentLine)
         .where(and(eq(documentLine.organizationId, orgId), eq(documentLine.documentId, id)))
-      if (lines.length === 0)
-        throw new DocumentError('PRECONDITION_FAILED', 'Add at least one line')
+      if (lines.length === 0) throw new DomainError('PRECONDITION_FAILED', 'Add at least one line')
       if (doc.currency !== 'CZK' && !doc.exchangeRate) {
-        throw new DocumentError(
+        throw new DomainError(
           'PRECONDITION_FAILED',
           'Exchange rate is required for foreign currency',
         )
@@ -903,13 +883,13 @@ export const documentsRepo = {
         .select()
         .from(contact)
         .where(and(eq(contact.organizationId, orgId), eq(contact.id, doc.contactId)))
-      if (!customer) throw new DocumentError('NOT_FOUND', 'Contact not found')
+      if (!customer) throw new DomainError('NOT_FOUND', 'Contact not found')
       // §29 ZDPH: a tax document needs the customer's name and address; the DIČ only if the customer is registered
       // (a consumer has none), so a missing IČO/DIČ must not block issuing.
       if (vatOnNow) {
         const exempt = lines.filter((l) => l.vatTreatment === 'exempt')
         if (exempt.some((l) => !l.vatNote?.trim())) {
-          throw new DocumentError(
+          throw new DomainError(
             'PRECONDITION_FAILED',
             'Exempt lines need the statutory basis (§ of the VAT act)',
             ['line.vatNote'],
@@ -939,7 +919,7 @@ export const documentsRepo = {
           missing.push('country')
         }
         if (missing.length > 0) {
-          throw new DocumentError(
+          throw new DomainError(
             'PRECONDITION_FAILED',
             `The customer is missing: ${missing.join(', ')}`,
             missing.map((f) => `customer.${f}`),
@@ -952,7 +932,7 @@ export const documentsRepo = {
 
       // Totals are recomputed under the VAT status being snapshotted (it may have changed since the draft).
       if (doc.type === 'credit_note' && (!doc.relatedDocumentId || !doc.introText?.trim())) {
-        throw new DocumentError(
+        throw new DomainError(
           'PRECONDITION_FAILED',
           'A credit note needs the corrected invoice and a reason',
         )
@@ -991,7 +971,7 @@ export const documentsRepo = {
           parseDecimal(totals.total),
         )
         if (orig && credited.abs().greaterThan(parseDecimal(orig.total).abs())) {
-          throw new DocumentError(
+          throw new DomainError(
             'CONFLICT',
             'The credit notes would refund more than the invoice total',
           )
@@ -1155,20 +1135,20 @@ export const documentsRepo = {
     } = {},
   ) {
     const found = await this.forExport(db, orgId, id)
-    if (!found) throw new DocumentError('NOT_FOUND', 'Issued document not found')
+    if (!found) throw new DomainError('NOT_FOUND', 'Issued document not found')
     const { doc, lines } = found
     if (doc.status === 'cancelled' || (opts.reminder && doc.status !== 'issued')) {
-      throw new DocumentError('CONFLICT', 'This document cannot be sent')
+      throw new DomainError('CONFLICT', 'This document cannot be sent')
     }
     if (doc.type === 'credit_note' && opts.reminder) {
-      throw new DocumentError('CONFLICT', 'Reminders do not apply to credit notes')
+      throw new DomainError('CONFLICT', 'Reminders do not apply to credit notes')
     }
     if (opts.reminder && (!doc.dueDate || doc.dueDate >= todayPrague())) {
-      throw new DocumentError('CONFLICT', 'Reminders can only be sent for overdue invoices')
+      throw new DomainError('CONFLICT', 'Reminders can only be sent for overdue invoices')
     }
     const customerEmails = (doc.customerSnapshot?.emails as string[] | undefined) ?? []
     const to = opts.to ?? customerEmails[0]
-    if (!to) throw new DocumentError('PRECONDITION_FAILED', 'The customer has no e-mail address')
+    if (!to) throw new DomainError('PRECONDITION_FAILED', 'The customer has no e-mail address')
     if (
       !services?.sendInvoice ||
       !services.renderPdf ||
@@ -1227,9 +1207,9 @@ export const documentsRepo = {
 
   async duplicate(db: Db, orgId: string, actorId: string, id: string) {
     const src = await this.get(db, orgId, id)
-    if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (!src) throw new DomainError('NOT_FOUND', 'Document not found')
     if (src.type === 'credit_note') {
-      throw new DocumentError('CONFLICT', 'Credit notes cannot be duplicated')
+      throw new DomainError('CONFLICT', 'Credit notes cannot be duplicated')
     }
     return this.createDraft(db, orgId, actorId, {
       type: src.type as 'invoice' | 'proforma' | 'credit_note',
@@ -1272,17 +1252,17 @@ export const documentsRepo = {
     allocations?: { vatRate: '21' | '12'; amount: string }[],
   ) {
     const src = await this.get(db, orgId, id)
-    if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (!src) throw new DomainError('NOT_FOUND', 'Document not found')
     if (src.type !== 'proforma' || src.status !== 'paid') {
-      throw new DocumentError('CONFLICT', 'A receipt needs a fully paid proforma')
+      throw new DomainError('CONFLICT', 'A receipt needs a fully paid proforma')
     }
     const profile = await loadProfile(db, orgId)
     if (!vatApplies(profile, 'payment_receipt')) {
-      throw new DocumentError('CONFLICT', 'Only VAT payers issue a tax receipt for an advance')
+      throw new DomainError('CONFLICT', 'Only VAT payers issue a tax receipt for an advance')
     }
     // One receipt = one tax point: an advance received on several days needs a receipt per payment date.
     if (new Set(src.payments.map((p) => p.paidOn)).size > 1) {
-      throw new DocumentError(
+      throw new DomainError(
         'CONFLICT',
         'The advance was received on different dates; issue a receipt for each payment separately',
       )
@@ -1294,7 +1274,7 @@ export const documentsRepo = {
       split.some((a) => parseDecimal(a.amount).lte(0)) ||
       !split.reduce((s, a) => s.plus(parseDecimal(a.amount)), new Decimal(0)).eq(paid)
     ) {
-      throw new DocumentError(
+      throw new DomainError(
         'BAD_REQUEST',
         `The allocations must use each VAT rate once and add up to the amount received (${toFixed(paid, 2)})`,
       )
@@ -1328,7 +1308,7 @@ export const documentsRepo = {
           ),
         )
       if (existing) {
-        throw new DocumentError('CONFLICT', 'A tax receipt already exists for this proforma')
+        throw new DomainError('CONFLICT', 'A tax receipt already exists for this proforma')
       }
       return this.createDraft(
         tx,
@@ -1370,9 +1350,9 @@ export const documentsRepo = {
    */
   async createFinalInvoice(db: Db, orgId: string, actorId: string, id: string) {
     const src = await this.get(db, orgId, id)
-    if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (!src) throw new DomainError('NOT_FOUND', 'Document not found')
     if (src.type !== 'proforma' || src.status !== 'paid') {
-      throw new DocumentError('CONFLICT', 'A final invoice needs a fully paid proforma')
+      throw new DomainError('CONFLICT', 'A final invoice needs a fully paid proforma')
     }
     const profile = await loadProfile(db, orgId)
     const payer = vatApplies(profile, 'invoice')
@@ -1399,7 +1379,7 @@ export const documentsRepo = {
             .orderBy(asc(documentLine.position))
         : []
       if (!r || rls.length === 0) {
-        throw new DocumentError(
+        throw new DomainError(
           'PRECONDITION_FAILED',
           'Issue the tax receipt for the received advance first',
         )
@@ -1426,7 +1406,7 @@ export const documentsRepo = {
           ),
         )
       if (existing) {
-        throw new DocumentError('CONFLICT', 'A final invoice already exists for this proforma')
+        throw new DomainError('CONFLICT', 'A final invoice already exists for this proforma')
       }
       return this.createDraft(
         tx,
@@ -1503,9 +1483,9 @@ export const documentsRepo = {
     amount?: string | null,
   ) {
     const src = await this.get(db, orgId, id)
-    if (!src) throw new DocumentError('NOT_FOUND', 'Document not found')
+    if (!src) throw new DomainError('NOT_FOUND', 'Document not found')
     if (src.type !== 'invoice' || (src.status !== 'issued' && src.status !== 'paid')) {
-      throw new DocumentError('CONFLICT', 'A credit note can only correct an issued invoice')
+      throw new DomainError('CONFLICT', 'A credit note can only correct an issued invoice')
     }
     const partial = amount ? await partialCreditLines(db, orgId, src, amount) : null
     const draft = await this.createDraft(
@@ -1552,20 +1532,20 @@ export const documentsRepo = {
   ) {
     await db.transaction(async (tx) => {
       const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
-      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (!doc) throw new DomainError('NOT_FOUND', 'Document not found')
       if (doc.status !== 'issued') {
-        throw new DocumentError('CONFLICT', 'Only issued, unpaid documents can be marked as paid')
+        throw new DomainError('CONFLICT', 'Only issued, unpaid documents can be marked as paid')
       }
       const already = (await paidSums(tx, orgId, [id])).get(id) ?? new Decimal(0)
       const remaining = parseDecimal(doc.total).minus(already)
       const amount = input.amount ? parseAmount(input.amount) : remaining
-      if (amount.lte(0)) throw new DocumentError('BAD_REQUEST', 'Amount must be positive')
+      if (amount.lte(0)) throw new DomainError('BAD_REQUEST', 'Amount must be positive')
       if (amount.minus(remaining).greaterThan('0.005')) {
-        throw new DocumentError('BAD_REQUEST', 'The payment exceeds the remaining balance')
+        throw new DomainError('BAD_REQUEST', 'The payment exceeds the remaining balance')
       }
       const paidOn = input.paidOn ?? todayPrague()
       if (paidOn > todayPrague()) {
-        throw new DocumentError('BAD_REQUEST', 'The payment date cannot be in the future')
+        throw new DomainError('BAD_REQUEST', 'The payment date cannot be in the future')
       }
       await tx.insert(payment).values({
         organizationId: orgId,
@@ -1594,18 +1574,18 @@ export const documentsRepo = {
   async markUnpaid(db: Db, orgId: string, actorId: string, id: string, paymentId?: string) {
     await db.transaction(async (tx) => {
       const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
-      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (!doc) throw new DomainError('NOT_FOUND', 'Document not found')
       if (doc.status !== 'paid' && doc.status !== 'issued') {
-        throw new DocumentError('CONFLICT', 'Only issued or paid documents can be marked unpaid')
+        throw new DomainError('CONFLICT', 'Only issued or paid documents can be marked unpaid')
       }
       if (doc.type === 'invoice' && doc.relatedDocumentId && parseDecimal(doc.total).lte(0)) {
-        throw new DocumentError(
+        throw new DomainError(
           'CONFLICT',
           'This invoice is settled by the advance and cannot be reopened',
         )
       }
       if (doc.type === 'payment_receipt') {
-        throw new DocumentError(
+        throw new DomainError(
           'CONFLICT',
           'A tax receipt documents a received payment; cancel it instead',
         )
@@ -1624,7 +1604,7 @@ export const documentsRepo = {
             ),
           )
         if (dep) {
-          throw new DocumentError(
+          throw new DomainError(
             'CONFLICT',
             'A final invoice already uses this advance; cancel it first',
           )
@@ -1658,7 +1638,7 @@ export const documentsRepo = {
         )
         .returning({ id: payment.id })
       if (paymentId && removed.length === 0) {
-        throw new DocumentError('NOT_FOUND', 'Payment not found on this document')
+        throw new DomainError('NOT_FOUND', 'Payment not found on this document')
       }
       await tx.update(document).set({ status: 'issued', paidAt: null }).where(scoped(orgId, id))
       await logActivity(tx, orgId, actorId, id, 'unpaid')
@@ -1669,9 +1649,9 @@ export const documentsRepo = {
   async cancel(db: Db, orgId: string, actorId: string, id: string) {
     await db.transaction(async (tx) => {
       const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
-      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (!doc) throw new DomainError('NOT_FOUND', 'Document not found')
       if (doc.status !== 'issued' && doc.status !== 'paid') {
-        throw new DocumentError('CONFLICT', 'Only issued documents can be cancelled')
+        throw new DomainError('CONFLICT', 'Only issued documents can be cancelled')
       }
       const [credit] = await tx
         .select({ id: document.id })
@@ -1686,7 +1666,7 @@ export const documentsRepo = {
           ),
         )
       if (credit) {
-        throw new DocumentError(
+        throw new DomainError(
           'CONFLICT',
           'This invoice already has a credit note; cancelling it too would correct it twice',
         )
@@ -1737,9 +1717,9 @@ export const documentsRepo = {
   async rotatePublicToken(db: Db, orgId: string, actorId: string, id: string) {
     await db.transaction(async (tx) => {
       const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
-      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (!doc) throw new DomainError('NOT_FOUND', 'Document not found')
       if (doc.status === 'draft') {
-        throw new DocumentError('CONFLICT', 'Drafts have no public link; issue the document first')
+        throw new DomainError('CONFLICT', 'Drafts have no public link; issue the document first')
       }
       await tx
         .update(document)
@@ -1754,9 +1734,9 @@ export const documentsRepo = {
   async deleteDraft(db: Db, orgId: string, actorId: string, id: string) {
     return db.transaction(async (tx) => {
       const [doc] = await tx.select().from(document).where(scoped(orgId, id)).for('update')
-      if (!doc) throw new DocumentError('NOT_FOUND', 'Document not found')
+      if (!doc) throw new DomainError('NOT_FOUND', 'Document not found')
       if (doc.status !== 'draft') {
-        throw new DocumentError(
+        throw new DomainError(
           'CONFLICT',
           'Only drafts can be deleted; cancel issued documents instead',
         )

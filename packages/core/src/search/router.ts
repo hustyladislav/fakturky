@@ -1,7 +1,7 @@
 import { z } from 'zod'
+import { displayStatusSchema } from '../documents/schema'
 import { procedure } from '../orpc'
 import { searchRepo } from './repo'
-import { displayStatusSchema } from '../documents/schema'
 
 export const searchRouter = {
   global: procedure({

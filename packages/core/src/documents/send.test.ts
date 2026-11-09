@@ -2,8 +2,8 @@ import { type DbHandle, schema } from '@fakturky/db'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { MailError, type SendInvoiceArgs } from '../context'
-import { documentsRepo } from './repo'
 import { clientFor, createTestDb, seedOrg } from '../testing'
+import { documentsRepo } from './repo'
 
 let handle: DbHandle
 beforeAll(async () => {

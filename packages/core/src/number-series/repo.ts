@@ -8,7 +8,7 @@ import {
   todayPrague,
 } from '@fakturky/domain'
 import { and, asc, eq, sql } from 'drizzle-orm'
-import { DocumentError } from '../documents/repo'
+import { DomainError } from '../errors'
 
 const { numberSeries, numberSeriesCounter } = schema
 
@@ -29,17 +29,17 @@ export function validatePattern(pattern: string, reset: 'yearly' | 'monthly' | '
   try {
     tokens = parseNumberPattern(pattern)
   } catch (e) {
-    throw new DocumentError('BAD_REQUEST', (e as Error).message)
+    throw new DomainError('BAD_REQUEST', (e as Error).message)
   }
   const hasYear = tokens.some((t) => t.type === 'year4' || t.type === 'year2')
   if (reset !== 'never' && !hasYear) {
-    throw new DocumentError(
+    throw new DomainError(
       'BAD_REQUEST',
       'A series that restarts needs {YYYY} or {YY} in the pattern',
     )
   }
   if (reset === 'monthly' && !tokens.some((t) => t.type === 'month')) {
-    throw new DocumentError('BAD_REQUEST', 'A monthly series needs {MM} in the pattern')
+    throw new DomainError('BAD_REQUEST', 'A monthly series needs {MM} in the pattern')
   }
 }
 
@@ -151,7 +151,7 @@ export const numberSeriesRepo = {
           ),
         )
       if (c && value < c.nextValue) {
-        throw new DocumentError('CONFLICT', 'The next number can only be raised, never lowered')
+        throw new DomainError('CONFLICT', 'The next number can only be raised, never lowered')
       }
       if (c) {
         await tx

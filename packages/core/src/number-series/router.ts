@@ -1,7 +1,6 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
+import { orNotFound } from '../errors'
 import { procedure } from '../orpc'
-import { DocumentError } from '../documents/repo'
 import { numberSeriesRepo } from './repo'
 
 const tag = ['Number series']
@@ -16,16 +15,7 @@ const seriesSchema = z.object({
   nextNumber: z.string().describe('The number the next issued document will get'),
 })
 
-async function guard<T>(fn: () => Promise<T | null>): Promise<T> {
-  try {
-    const out = await fn()
-    if (out === null) throw new ORPCError('NOT_FOUND', { message: 'Series not found' })
-    return out
-  } catch (e) {
-    if (e instanceof DocumentError) throw new ORPCError(e.code, { message: e.message })
-    throw e
-  }
-}
+const guard = <T>(fn: () => Promise<T | null>) => orNotFound(fn, 'Series not found')
 
 export const numberSeriesRouter = {
   list: procedure({

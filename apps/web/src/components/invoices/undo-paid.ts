@@ -6,5 +6,6 @@ export function undoPaidInput(paid: Paid) {
     (newest, p) => (newest && newest.createdAt > p.createdAt ? newest : p),
     undefined,
   )
-  return { id: paid.id, paymentId: added?.id }
+  // Without an id the API would remove every payment, so no id means nothing to undo.
+  return added ? { id: paid.id, paymentId: added.id } : null
 }

@@ -52,7 +52,7 @@ describe('server errors shown to a person', () => {
     )
     expect(
       serverErrorMessage('The credited amount exceeds what is still creditable (250.00)'),
-    ).toContain('250.00')
+    ).toContain('250,00')
   })
 
   test('an unknown message falls back to Czech instead of leaking English', () => {

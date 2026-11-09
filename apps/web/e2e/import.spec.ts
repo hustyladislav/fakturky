@@ -20,6 +20,7 @@ test('CSV import: preview changes nothing, import keeps the original numbers and
   await expect(result).toContainText('Náhled importu')
   await expect(result).toContainText('Doklady: 2 nových')
   await page.goto('/faktury')
+  await page.waitForLoadState('networkidle')
   await expect(page.getByText('2024-0001')).toHaveCount(0)
 
   // The real import.

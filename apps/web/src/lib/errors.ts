@@ -1,3 +1,4 @@
+import { formatNumber } from '@fakturky/domain/money'
 import { cs } from '@/i18n/cs'
 
 /** Czech message for an API error; field-level validation errors name what is missing. */
@@ -24,9 +25,9 @@ export function serverErrorMessage(message: string | undefined): string {
   const known = cs.serverErrors[message]
   if (known) return known
   const allocations = message.match(/^The allocations must .*\((.+)\)$/)
-  if (allocations?.[1]) return cs.serverErrorsDynamic.allocations(allocations[1])
+  if (allocations?.[1]) return cs.serverErrorsDynamic.allocations(formatNumber(allocations[1]))
   const credit = message.match(/^The credited amount exceeds .*\((.+)\)$/)
-  if (credit?.[1]) return cs.serverErrorsDynamic.creditExceeded(credit[1])
+  if (credit?.[1]) return cs.serverErrorsDynamic.creditExceeded(formatNumber(credit[1]))
   if (message.startsWith('Invalid pattern, stray brace')) return cs.serverErrorsDynamic.strayBrace
   return cs.common.error
 }

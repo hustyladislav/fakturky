@@ -23,7 +23,7 @@ mark paid. Deployed to production. Everything else below lands in small follow-u
    `/f/:token` with download PDF + ISDOC; ISDOC export.
 7. **Templates & recurring** — save as template, one-click "use"; recurring rules (monthly/quarterly/yearly),
    auto-issue and optionally auto-send. Unlimited.
-8. **Email** — send invoice (PDF attached + link), reminders before/after due date, editable templates
+8. **Email** — send invoice (PDF attached + link), reminders before/after due date
    (requires email provider; feature-flagged).
 9. **Dashboard** — revenue this month/year, unpaid, overdue, VAT-registration turnover tracker, recent documents,
    monthly chart.
@@ -36,6 +36,8 @@ mark paid. Deployed to production. Everything else below lands in small follow-u
     latest DeepSeek Flash (V4.1) via Vercel AI Gateway, US-hosted with zero data retention, hard $100/month global spend cap, per-org caps.
 14. **Support & feedback** — "Kup mi kávu" link (buymeacoffee.com/ladislavhusty), feedback link, GitHub issues.
 15. **Fast & responsive** — keyboard shortcuts (N = new invoice, / = search, ⌘K command palette), mobile layout.
+16. **Bank & VAT** — statement import (CSV, ABO/GPC, CAMT.053) and Fio sync with automatic pairing; VAT return,
+    control and EC statements as XML for EPO.
 
 ## Later
 

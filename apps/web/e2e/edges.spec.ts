@@ -140,3 +140,21 @@ test('a contact never reads as fully paid while its figures failed to load', asy
   await expect(page.getByRole('button', { name: 'Zkusit znovu' })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByText('Vše zaplaceno')).toHaveCount(0)
 })
+
+test('a page that fails to load offers a Czech retry, not a raw error', async ({ page }) => {
+  await signUp(page, testEmail('contact-list'))
+  await onboardByIco(page, ICO.nonPayerSupplier, 'E2E Neplátce Novák')
+  await createContact(page, 'Seznam s.r.o.')
+  await page.route(/contacts\/list/, (route) => route.abort())
+  await page.goto('/prehled')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('link', { name: 'Kontakty' }).locator('visible=true').first().click()
+  const retry = page.getByRole('button', { name: 'Zkusit znovu' })
+  await expect(retry).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('Something went wrong')).toHaveCount(0)
+  await expect(page.getByText('Failed to fetch')).toHaveCount(0)
+
+  await page.unroute(/contacts\/list/)
+  await retry.click()
+  await expect(page.getByText('Seznam s.r.o.').locator('visible=true').first()).toBeVisible()
+})

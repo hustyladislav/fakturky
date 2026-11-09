@@ -2,6 +2,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { createRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import { createIsomorphicFn } from '@tanstack/react-start'
+import { RouteError } from '@/components/route-error'
 import { routeTree } from './routeTree.gen'
 import { nonceStore } from './server/nonce'
 
@@ -21,6 +22,7 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    defaultErrorComponent: RouteError,
     // Cross-fade + 8 px slide of the content area (`vt-page`); a no-op where unsupported or reduced motion.
     defaultViewTransition: true,
     ssr: { nonce: requestNonce() },

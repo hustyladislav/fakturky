@@ -17,16 +17,34 @@ import { DomainError } from '../errors'
 import { assertVatLines, totalColumns, totalsFor, vatOn, writeLines } from './lines'
 import { get } from './queries'
 import type { DraftInput } from './schema'
-import { loadProfile, logActivity, scoped } from './shared'
+import { loadProfile, logActivity, scoped, type Tx } from './shared'
 import { CREDIT_NOTE_METHOD, paidSums } from './status'
 
-const { document, documentLine, payment, contact, numberSeries } = schema
+const { document, documentLine, payment, contact, numberSeries, businessProfile, orgAsset } = schema
 
 const SERIES_NAMES: Record<string, string> = {
   invoice: 'Faktury',
   proforma: 'Zálohové faktury',
   credit_note: 'Opravné doklady',
   payment_receipt: 'Doklady k přijaté platbě',
+}
+
+/** Freezes the document look (colour, brand line, logo/signature versions) at issue. */
+async function appearanceSnapshot(db: Db | Tx, orgId: string) {
+  const [p] = await db
+    .select({ accentColor: businessProfile.accentColor, showBrand: businessProfile.showBrand })
+    .from(businessProfile)
+    .where(eq(businessProfile.organizationId, orgId))
+  const assets = await db
+    .select({ id: orgAsset.id, kind: orgAsset.kind })
+    .from(orgAsset)
+    .where(and(eq(orgAsset.organizationId, orgId), isNull(orgAsset.supersededAt)))
+  return {
+    accentColor: p?.accentColor ?? null,
+    showBrand: p?.showBrand ?? true,
+    logoAssetId: assets.find((a) => a.kind === 'logo')?.id ?? null,
+    signatureAssetId: assets.find((a) => a.kind === 'signature')?.id ?? null,
+  }
 }
 
 export async function issue(db: Db, orgId: string, actorId: string, id: string) {
@@ -202,6 +220,7 @@ export async function issue(db: Db, orgId: string, actorId: string, id: string) 
         bankAccountId: bank?.id ?? null,
         issueDate,
         publicToken: randomBytes(24).toString('base64url'),
+        appearance: await appearanceSnapshot(tx, orgId),
         supplierSnapshot: {
           name: profile.legalName,
           ico: profile.ico,

@@ -341,13 +341,15 @@ export async function get(db: Db | Tx, orgId: string, id: string) {
       total: r.total,
     })),
     activity: acts,
-    /** Look frozen at issue (live settings for drafts); logo/signature as data URLs. */
-    look: await appearanceRepo.forDocument(db, orgId, doc.appearance).then((l) => ({
-      accentColor: l.accentColor,
-      showBrand: l.showBrand,
-      logo: l.logo?.dataUrl ?? null,
-      signature: l.signature?.dataUrl ?? null,
-    })),
+    /** Look frozen at issue; a draft follows the live settings. Logo/signature as data URLs. */
+    look: await appearanceRepo
+      .forDocument(db, orgId, doc.status === 'draft' ? null : doc.appearance)
+      .then((l) => ({
+        accentColor: l.accentColor,
+        showBrand: l.showBrand,
+        logo: l.logo?.dataUrl ?? null,
+        signature: l.signature?.dataUrl ?? null,
+      })),
     paymentQr:
       doc.status === 'draft' ? null : await renderPaymentQr(paymentQrInput(doc, lines, paid)),
     /** The document this one corrects or was created from (proforma, invoice), if any. */

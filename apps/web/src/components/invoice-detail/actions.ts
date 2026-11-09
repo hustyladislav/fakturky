@@ -1,3 +1,4 @@
+import { parseDecimal } from '@fakturky/domain/money'
 export type ActionId =
   | 'issue'
   | 'share'
@@ -54,7 +55,8 @@ export function planActions(d: ActionInput): ActionPlan {
     (!d.vatPayer || d.related.some((r) => r.type === 'payment_receipt' && r.status === 'paid'))
   const canSend = open || d.status === 'paid' || (d.type === 'credit_note' && d.status === 'issued')
   const canCredit = d.type === 'invoice' && (open || d.status === 'paid')
-  const canMarkUnpaid = d.status === 'paid' && !(d.type === 'invoice' && Number(d.total) <= 0)
+  const canMarkUnpaid =
+    d.status === 'paid' && !(d.type === 'invoice' && parseDecimal(d.total).lte(0))
 
   // A fresh invoice still has to reach the customer; once it was sent or viewed, or is late, getting
   // paid is the next step. The PDF is primary only when nothing else is left to do.

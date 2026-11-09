@@ -1,4 +1,5 @@
 import { formatDateCs, todayPrague } from '@fakturky/domain/dates'
+import { parseDecimal } from '@fakturky/domain/money'
 import { Amount } from '@fakturky/ui/components/amount'
 import { RelativeDate } from '@fakturky/ui/components/relative-date'
 import { diffDays, parseIsoDate } from '@fakturky/ui/lib/dates'
@@ -42,11 +43,13 @@ function Row({ label, children }: { label: ReactNode; children: ReactNode }) {
 export function Summary({ d, children }: { d: DocumentDetail; children?: ReactNode }) {
   const mode = modeOf(d)
   const overdueDays = overdueDaysOf(d)
-  const paidPart = Number(d.paidAmount)
-  const totalNum = Number(d.total)
   const bankPayments = d.payments.filter((p) => p.source === 'bank')
   const lastBank = bankPayments[bankPayments.length - 1]
-  const showProgress = mode === 'open' && paidPart > 0 && totalNum > 0
+  const showProgress =
+    mode === 'open' && parseDecimal(d.paidAmount).gt(0) && parseDecimal(d.total).gt(0)
+  const paidPercent = showProgress
+    ? Math.min(100, parseDecimal(d.paidAmount).div(d.total).times(100).toNumber())
+    : 0
   const progressLabel = t.hero.paidOfTotal(
     formatMoney(d.paidAmount, d.currency),
     formatMoney(d.total, d.currency),
@@ -88,14 +91,11 @@ export function Summary({ d, children }: { d: DocumentDetail; children?: ReactNo
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuenow={Math.min(100, Math.round((paidPart / totalNum) * 100))}
+            aria-valuenow={Math.round(paidPercent)}
             aria-label={progressLabel}
             className="h-1 overflow-hidden rounded-full bg-muted"
           >
-            <div
-              className="h-full rounded-full bg-success"
-              style={{ width: `${Math.min(100, (paidPart / totalNum) * 100)}%` }}
-            />
+            <div className="h-full rounded-full bg-success" style={{ width: `${paidPercent}%` }} />
           </div>
           <p className="mt-1.5 text-xs text-muted-foreground tabular-nums">{progressLabel}</p>
         </div>

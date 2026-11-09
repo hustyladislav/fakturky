@@ -1,4 +1,5 @@
 import type { RouterOutputs } from '@fakturky/core/router'
+import { parseDecimal } from '@fakturky/domain/money'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Button } from '@fakturky/ui/components/button'
 import { RelativeDate } from '@fakturky/ui/components/relative-date'
@@ -66,13 +67,14 @@ function SortHeader({
 }
 
 function Unpaid({ s }: { s: Stat | undefined }) {
-  if (!s || Number(s.outstanding) <= 0) return <span className="text-muted-foreground">—</span>
+  if (!s || parseDecimal(s.outstanding).lte(0))
+    return <span className="text-muted-foreground">—</span>
   return (
     <Amount
       value={s.outstanding}
       size="inline"
       hideZeroFraction
-      tone={Number(s.overdue) > 0 ? 'overdue' : 'default'}
+      tone={parseDecimal(s.overdue).gt(0) ? 'overdue' : 'default'}
     />
   )
 }
@@ -140,7 +142,7 @@ export function ContactList({
       <ul className="@4xl:hidden">
         {rows.map((c) => {
           const s = byId.get(c.id)
-          const overdue = s && Number(s.overdue) > 0
+          const overdue = s && parseDecimal(s.overdue).gt(0)
           return (
             <li
               key={c.id}
@@ -159,7 +161,7 @@ export function ContactList({
                 </div>
                 <div className="mt-0.5 flex items-baseline justify-between gap-3 text-[13px] text-muted-foreground">
                   <span className="truncate">{c.ico ? `${t.ico} ${c.ico}` : ''}</span>
-                  {s && Number(s.outstanding) > 0 && (
+                  {s && parseDecimal(s.outstanding).gt(0) && (
                     <span className={cn('whitespace-nowrap', overdue && 'text-destructive')}>
                       {t.columns.outstanding.toLowerCase()} {crowns(s.outstanding)}
                     </span>

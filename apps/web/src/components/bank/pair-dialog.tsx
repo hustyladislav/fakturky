@@ -1,3 +1,4 @@
+import { parseDecimal } from '@fakturky/domain/money'
 import { Button } from '@fakturky/ui/components/button'
 import {
   Dialog,
@@ -45,7 +46,7 @@ export function PairDialog({
     }),
   )
   const candidates = (list.data ?? []).filter(
-    (d) => d.currency === transaction?.currency && Number(d.remaining) > 0,
+    (d) => d.currency === transaction?.currency && parseDecimal(d.remaining).gt(0),
   )
 
   return (

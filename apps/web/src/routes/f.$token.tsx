@@ -1,3 +1,4 @@
+import { parseDecimal } from '@fakturky/domain/money'
 import { InvoiceSheet, type InvoiceSheetInput } from '@fakturky/pdf/html'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Button } from '@fakturky/ui/components/button'
@@ -5,6 +6,7 @@ import { LogoMark } from '@fakturky/ui/components/logo'
 import { RelativeDate } from '@fakturky/ui/components/relative-date'
 import { type DocumentStatus, StatusBadge } from '@fakturky/ui/components/status-badge'
 import { diffDays, formatDate, parseIsoDate, startOfDay } from '@fakturky/ui/lib/dates'
+import { formatMoney } from '@fakturky/ui/lib/money'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { Check, Copy, Download, FileCode2, Printer } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -91,7 +93,7 @@ function PublicInvoice() {
   const d = Route.useLoaderData()
   const { token } = Route.useParams()
   const supplierName = d.supplier.name
-  const open = d.status === 'issued' && Number(d.remaining) > 0
+  const open = d.status === 'issued' && parseDecimal(d.remaining).gt(0)
   const due = parseIsoDate(d.dueDate)
   const overdueDays =
     d.overdue && due ? Math.max(1, diffDays(startOfDay(new Date()), due)) : undefined
@@ -250,7 +252,7 @@ function PublicInvoice() {
                   )}
                   <PayRow
                     label={t.amountField}
-                    value={`${Number(d.remaining).toLocaleString('cs-CZ', { minimumFractionDigits: 2 })} ${d.currency === 'CZK' ? 'Kč' : d.currency}`}
+                    value={formatMoney(d.remaining, d.currency)}
                     copy={d.remaining}
                   />
                   {d.bank && <PayRow label={t.iban} value={d.bank.iban} copy={d.bank.iban} />}

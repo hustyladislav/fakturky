@@ -5,6 +5,7 @@ import {
   readDelimited,
 } from '@fakturky/domain/bank'
 import { formatDateCs } from '@fakturky/domain/dates'
+import { parseDecimal } from '@fakturky/domain/money'
 import { Button } from '@fakturky/ui/components/button'
 import {
   Dialog,
@@ -129,7 +130,7 @@ function DropZone({
 
 function StatementPreview({ statement }: { statement: ParsedStatement }) {
   const rows = statement.transactions
-  const outgoing = rows.filter((r) => Number(r.amount) < 0).length
+  const outgoing = rows.filter((r) => parseDecimal(r.amount).lt(0)).length
   return (
     <section aria-label={t.previewTitle} className="space-y-2" data-testid="import-preview">
       <h3 className="text-sm font-medium">{t.previewTitle}</h3>
@@ -139,7 +140,7 @@ function StatementPreview({ statement }: { statement: ParsedStatement }) {
       </p>
       <ul className="max-h-64 divide-y overflow-auto rounded-lg border">
         {rows.slice(0, PREVIEW_ROWS).map((r, i) => {
-          const debit = Number(r.amount) < 0
+          const debit = parseDecimal(r.amount).lt(0)
           return (
             <li key={i} className="flex items-start justify-between gap-3 px-3 py-2 text-sm">
               <div className="min-w-0">

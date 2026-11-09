@@ -52,11 +52,11 @@ function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name)
     if (statSync(path).isDirectory()) return name === 'node_modules' ? [] : sources(path)
-    return /\.(tsx|css)$/.test(name) ? [path] : []
+    return /(?<!\.test)\.(ts|tsx|css)$/.test(name) ? [path] : []
   })
 }
 
-describe('motion and type rules (docs/agents/ui.md)', () => {
+describe('code rules (docs/agents/ui.md, AGENTS.md)', () => {
   const files = [join(repo, 'apps/web/src'), join(repo, 'packages/ui/src')]
     .flatMap(sources)
     .map((path) => ({ path, text: readFileSync(path, 'utf8') }))
@@ -66,6 +66,10 @@ describe('motion and type rules (docs/agents/ui.md)', () => {
     ['ease-in on UI (feels sluggish)', /\bease-in\b(?!-out)/],
     ['entering from scale 0', /scale\(0\)|\bscale-0\b/],
     ['serif in the app (documents only)', /\bfont-serif\b/],
+    [
+      'money through Number() (use parseDecimal)',
+      /\bNumber\(\w+\??\.(remaining|outstanding|total|paidAmount|overdue|invoiced|amount)\)/,
+    ],
   ])('no %s', (_rule, pattern) => {
     expect(files.filter((f) => pattern.test(f.text)).map((f) => f.path)).toEqual([])
   })

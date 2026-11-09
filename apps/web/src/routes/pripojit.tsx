@@ -85,6 +85,7 @@ function Review({ code }: { code: string }) {
   const request = useQuery({
     queryKey: ['device-request', code],
     retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
     queryFn: async () => {
       const res = await authClient.device({ query: { user_code: code } })
       if (res.error || res.data?.status !== 'pending') throw new Error('invalid')

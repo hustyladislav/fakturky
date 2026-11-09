@@ -148,3 +148,24 @@ test('device login stops when the user denies access', async () => {
   ).rejects.toThrow('zamítnut')
   vi.unstubAllGlobals()
 })
+
+test('device login ends with a clear message on a gateway error page', async () => {
+  const replies = [
+    Response.json({
+      device_code: 'd',
+      user_code: 'A',
+      verification_uri_complete: 'u',
+      interval: 1,
+    }),
+    new Response('<html>Bad gateway</html>', { status: 502 }),
+  ]
+  vi.stubGlobal('fetch', async () => replies.shift())
+  await expect(
+    deviceLogin(
+      'http://x',
+      () => {},
+      async () => {},
+    ),
+  ).rejects.toThrow('nepodařilo dokončit')
+  vi.unstubAllGlobals()
+})

@@ -35,12 +35,13 @@ export async function deviceLogin(
       device_code: flow.device_code,
       client_id: BRAND.slug,
     })
-    const data = (await res.json()) as { api_key?: string; error?: string }
+    // A gateway error page is not JSON; it ends the login with the message below.
+    const data = (await res.json().catch(() => ({}))) as { api_key?: string; error?: string }
     if (data.api_key) return data.api_key
     if (data.error === 'slow_down') wait += SLOW_DOWN_SECONDS
     else if (data.error === 'access_denied') throw new ApiError(403, 'Přístup byl zamítnut.')
     else if (data.error !== 'authorization_pending') {
-      throw new ApiError(res.status, 'Platnost přihlášení vypršela. Spusťte ho znovu.')
+      throw new ApiError(res.status, 'Přihlášení se nepodařilo dokončit. Spusťte ho znovu.')
     }
   }
 }

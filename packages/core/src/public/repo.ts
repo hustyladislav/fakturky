@@ -1,7 +1,7 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
-import { loadOriginal } from '../documents/repo'
+import { loadOriginal } from '../documents/queries'
 
 const { document, documentLine, payment, activity } = schema
 

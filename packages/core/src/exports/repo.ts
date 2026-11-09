@@ -3,7 +3,8 @@ import { schema } from '@fakturky/db'
 import { Decimal, parseDecimal, toFixed } from '@fakturky/domain'
 import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { toCsv } from '../csv'
-import { deriveStatus, periodWhere } from '../documents/repo'
+import { periodWhere } from '../documents/queries'
+import { deriveStatus } from '../documents/status'
 
 const {
   document,

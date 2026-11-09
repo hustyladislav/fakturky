@@ -1,4 +1,5 @@
 import type { RouterOutputs } from '@fakturky/core/router'
+import { parseDecimal } from '@fakturky/domain/money'
 import { Money } from '@fakturky/ui/components/money'
 import { cn } from '@fakturky/ui/lib/utils'
 import { cs } from '@/i18n/cs'
@@ -12,10 +13,10 @@ const t = cs.overview.vatLimit
  * legal thresholds marked (2 000 000 and 2 536 500 Kč). The state is always spelled out in text.
  */
 export function VatLimitCard({ vat, className }: { vat: VatLimit; className?: string }) {
-  const limit = Number(vat.limit)
-  const immediate = Number(vat.immediateLimit)
+  const limit = parseDecimal(vat.limit).toNumber()
+  const immediate = parseDecimal(vat.immediateLimit).toNumber()
   const scale = immediate * 1.04
-  const fillPct = Math.min(100, (Number(vat.turnover) / scale) * 100)
+  const fillPct = Math.min(100, (parseDecimal(vat.turnover).toNumber() / scale) * 100)
   const warn = vat.percent >= 80
   return (
     <section className={className}>

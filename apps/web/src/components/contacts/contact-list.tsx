@@ -1,5 +1,5 @@
 import type { RouterOutputs } from '@fakturky/core/router'
-import { parseDecimal } from '@fakturky/domain/money'
+import { Decimal, parseDecimal } from '@fakturky/domain/money'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Button } from '@fakturky/ui/components/button'
 import { RelativeDate } from '@fakturky/ui/components/relative-date'
@@ -19,8 +19,8 @@ const t = cs.contacts
 const czech = new Intl.Collator('cs')
 
 function sortValue(c: Contact, s: Stat | undefined, key: SortKey) {
-  if (key === 'invoiced') return Number(s?.invoiced ?? 0)
-  if (key === 'outstanding') return Number(s?.outstanding ?? 0)
+  if (key === 'invoiced') return parseDecimal(s?.invoiced ?? 0)
+  if (key === 'outstanding') return parseDecimal(s?.outstanding ?? 0)
   if (key === 'last') return s?.lastInvoiceDate ?? ''
   return c.name
 }
@@ -117,13 +117,9 @@ export function ContactList({
       const x = sortValue(a, byId.get(a.id), sort)
       const y = sortValue(b, byId.get(b.id), sort)
       const r =
-        typeof x === 'string' && typeof y === 'string'
-          ? czech.compare(x, y)
-          : x < y
-            ? -1
-            : x > y
-              ? 1
-              : 0
+        x instanceof Decimal && y instanceof Decimal
+          ? x.cmp(y)
+          : czech.compare(String(x), String(y))
       const byName = r || czech.compare(a.name, b.name)
       return dir === 'asc' ? byName : -byName
     })

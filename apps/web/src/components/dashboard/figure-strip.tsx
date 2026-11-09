@@ -1,4 +1,5 @@
 import type { RouterOutputs } from '@fakturky/core/router'
+import { parseDecimal } from '@fakturky/domain/money'
 import { Amount } from '@fakturky/ui/components/amount'
 import { cn } from '@fakturky/ui/lib/utils'
 import type { ReactNode } from 'react'
@@ -35,9 +36,10 @@ function Figure({
 }
 
 /** "+12 % vs. minulý měsíc": plain text, no chip; nothing when both months are empty. */
-function Trend({ current, previous }: { current: number; previous: number }) {
-  if (previous === 0) return current === 0 ? null : <p>{t.lastMonthZero}</p>
-  const percent = deltaPercent(current, previous) ?? 0
+function Trend({ current, previous }: { current: string; previous: string }) {
+  const [now, before] = [parseDecimal(current), parseDecimal(previous)]
+  if (before.isZero()) return now.isZero() ? null : <p>{t.lastMonthZero}</p>
+  const percent = deltaPercent(now.toNumber(), before.toNumber()) ?? 0
   return (
     <p className="tabular-nums">
       {percent >= 0 ? '+' : '−'}
@@ -71,16 +73,16 @@ export function OutstandingFigures({ s, className }: { s: Summary; className?: s
 /** This month's turnover and received payments; the "bez DPH, včetně dobropisů" caveat stays visible. */
 export function MonthFigures({ s, className }: { s: Summary; className?: string }) {
   const prev = s.months.at(-2)
-  const credit = Number(s.monthCreditNotes) < 0
+  const credit = parseDecimal(s.monthCreditNotes).lt(0)
   return (
     <dl className={cn('grid grid-cols-2 gap-x-6 gap-y-6', className)}>
       <Figure label={t.month} amount={s.monthTurnover} size="md" tone="ink">
         <p>{credit ? t.monthCredit(crowns(s.monthCreditNotes)) : t.monthHint}</p>
-        <Trend current={Number(s.monthTurnover)} previous={Number(prev?.turnover ?? 0)} />
+        <Trend current={s.monthTurnover} previous={prev?.turnover ?? '0'} />
       </Figure>
       <Figure label={t.received} amount={s.monthReceived} size="md">
         <p>{t.receivedHint}</p>
-        <Trend current={Number(s.monthReceived)} previous={Number(prev?.received ?? 0)} />
+        <Trend current={s.monthReceived} previous={prev?.received ?? '0'} />
       </Figure>
     </dl>
   )

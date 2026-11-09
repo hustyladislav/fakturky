@@ -1,3 +1,4 @@
+import { parseDecimal } from '@fakturky/domain/money'
 import { cn } from '@fakturky/ui/lib/utils'
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react'
 import { Fragment } from 'react'
@@ -65,7 +66,7 @@ function SortHeader({
 }
 
 function MonthLabel({ group, partial }: { group: MonthGroup<Doc>; partial: boolean }) {
-  const sum = partial || Number(group.sum) === 0 ? null : crowns(group.sum)
+  const sum = partial || parseDecimal(group.sum).isZero() ? null : crowns(group.sum)
   return (
     <span className="flex items-baseline justify-between gap-4">
       <span className="text-[13px] font-medium capitalize">{monthLabel(group.key)}</span>

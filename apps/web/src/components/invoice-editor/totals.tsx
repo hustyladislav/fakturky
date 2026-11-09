@@ -1,3 +1,4 @@
+import { parseDecimal } from '@fakturky/domain/money'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Money } from '@fakturky/ui/components/money'
 import { cn } from '@fakturky/ui/lib/utils'
@@ -48,12 +49,15 @@ export function Totals({ draft }: { draft: InvoiceDraft }) {
               ))}
             </>
           )}
-          {Number(totals.rounding) !== 0 && (
+          {!parseDecimal(totals.rounding).isZero() && (
             <Row label={t.rounding} amount={totals.rounding} currency={currency} muted />
           )}
-          {vatPayer && foreign && validNum(exchangeRate) && Number(num(exchangeRate)) > 0 && (
-            <Row label={t.vatInCzk} amount={totals.vatTotalCzk} currency="CZK" muted />
-          )}
+          {vatPayer &&
+            foreign &&
+            validNum(exchangeRate) &&
+            parseDecimal(num(exchangeRate)).gt(0) && (
+              <Row label={t.vatInCzk} amount={totals.vatTotalCzk} currency="CZK" muted />
+            )}
           <div className="hairline mt-2 flex items-baseline justify-between gap-6 pt-3">
             <span className="text-muted-foreground">{t.total}</span>
             <Amount value={totals.total} currency={currency} size="lg" />

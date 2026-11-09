@@ -1,5 +1,5 @@
 import type { RouterOutputs } from '@fakturky/core/router'
-import { sum } from '@fakturky/domain/money'
+import { parseDecimal, sum } from '@fakturky/domain/money'
 import { Amount } from '@fakturky/ui/components/amount'
 import { formatMoney } from '@fakturky/ui/lib/money'
 import { cn } from '@fakturky/ui/lib/utils'
@@ -40,7 +40,9 @@ function monthParts(key: string) {
  */
 export function RevenueChart({ months, className }: { months: Month[]; className?: string }) {
   // Start the axis at the first month with data (at least 6 months); new accounts default to 6.
-  const firstData = months.findIndex((m) => Number(m.turnover) !== 0 || Number(m.received) !== 0)
+  const firstData = months.findIndex(
+    (m) => !parseDecimal(m.turnover).isZero() || !parseDecimal(m.received).isZero(),
+  )
   const history = firstData < 0 ? 0 : months.length - firstData
   const [range, setRange] = useState<6 | 12>(history > 6 ? 12 : 6)
   const headingId = useId()
@@ -50,8 +52,8 @@ export function RevenueChart({ months, className }: { months: Month[]; className
   const rows = useMemo(
     () =>
       shown.map((m) => {
-        const paid = Math.max(0, Number(m.paid))
-        const unpaid = Math.max(0, Number(m.unpaid))
+        const paid = Math.max(0, parseDecimal(m.paid).toNumber())
+        const unpaid = Math.max(0, parseDecimal(m.unpaid).toNumber())
         return { ...m, paidN: paid, unpaidN: unpaid, stack: paid + unpaid }
       }),
     [shown],

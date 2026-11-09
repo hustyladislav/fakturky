@@ -1,4 +1,5 @@
 import { formatDateCs } from '@fakturky/domain/dates'
+import { parseDecimal } from '@fakturky/domain/money'
 import { Money } from '@fakturky/ui/components/money'
 import type { ReactNode } from 'react'
 import { SettingsSection } from '@/components/settings-section'
@@ -44,8 +45,8 @@ export function ControlStatementSection({
 }) {
   const { a1, a4, a5 } = report.kh
   const a5Count = report.contributions.filter((c) => c.rowKey === 'kh.A5').length
-  const a5Empty = ['base21', 'vat21', 'base12', 'vat12'].every(
-    (k) => Number(a5[k as keyof typeof a5]) === 0,
+  const a5Empty = ['base21', 'vat21', 'base12', 'vat12'].every((k) =>
+    parseDecimal(a5[k as keyof typeof a5]).isZero(),
   )
   const none = <p className="text-sm text-muted-foreground">{t.none}</p>
   const head = 'text-left text-xs text-muted-foreground'

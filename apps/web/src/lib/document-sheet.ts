@@ -2,6 +2,7 @@ import { BRAND } from '@fakturky/core/brand'
 import { partyFromSnapshot } from '@fakturky/core/export'
 import type { RouterOutputs } from '@fakturky/core/router'
 import type { DocumentLanguage, ExportPaymentMethod, VatTreatment } from '@fakturky/domain'
+import { parseDecimal } from '@fakturky/domain/money'
 import { computeDocumentTotals } from '@fakturky/domain/vat'
 import type { InvoiceSheetDraft, QrData } from '@fakturky/pdf/html'
 import { num, validNum } from './invoice-numbers'
@@ -226,9 +227,9 @@ export function formToSheet(
 ): InvoiceSheetDraft {
   const clean = (v: string, fallback = '0') => (validNum(v) ? num(v) : fallback)
   const foreign = s.currency !== 'CZK'
-  const rate = foreign && validNum(s.exchangeRate) && Number(num(s.exchangeRate)) > 0
+  const rate = foreign && validNum(s.exchangeRate) && parseDecimal(num(s.exchangeRate)).gt(0)
   const lines = s.lines
-    .filter((l) => l.description.trim() !== '' || Number(clean(l.unitPrice)) !== 0)
+    .filter((l) => l.description.trim() !== '' || !parseDecimal(clean(l.unitPrice)).isZero())
     .map((l) => ({
       description: l.description,
       detail: s.vatPayer && l.vatTreatment === 'exempt' ? l.vatNote.trim() || null : null,

@@ -1,3 +1,4 @@
+import { parseDecimal } from '@fakturky/domain/money'
 import { formatDate, parseIsoDate } from '@fakturky/ui/lib/dates'
 import { moneyParts } from '@fakturky/ui/lib/money'
 import { cs } from '../../i18n/cs'
@@ -58,7 +59,7 @@ export function documentSummary(tool: string, doc: SummaryDoc): ApprovalSummary 
   } else if (doc.lines.length > 1) {
     facts.push(t.lines(doc.lines.length))
   }
-  facts.push(t.total(money(doc.total, doc.currency), Number(doc.vatTotal) !== 0))
+  facts.push(t.total(money(doc.total, doc.currency), !parseDecimal(doc.vatTotal).isZero()))
   const due = parseIsoDate(doc.dueDate)
   if (due && tool === 'issue_invoice') facts.push(t.due(formatDate(due)))
   return { title, facts }

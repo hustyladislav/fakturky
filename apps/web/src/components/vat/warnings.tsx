@@ -1,6 +1,6 @@
 import { cn } from '@fakturky/ui/lib/utils'
 import { TriangleAlert } from 'lucide-react'
-import { SettingsSection } from '@/components/settings/settings-section'
+import { SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { DocLink } from './drill'
 import type { VatReport } from './use-vat-report'

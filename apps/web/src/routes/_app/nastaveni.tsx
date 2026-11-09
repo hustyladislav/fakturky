@@ -4,6 +4,7 @@ import { cn } from '@fakturky/ui/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { BusinessCard } from '@/components/business-profile/business-card'
 import {
   BusinessProfileForm,
   type ProfileValues,
@@ -11,10 +12,9 @@ import {
 import { ApiKeys } from '@/components/settings/api-keys'
 import { AppearanceCard } from '@/components/settings/appearance-card'
 import { BankAccountsCard } from '@/components/settings/bank-accounts-card'
-import { BusinessCard } from '@/components/settings/business-card'
 import { NumberSeriesCard } from '@/components/settings/number-series-card'
 import { DataExport, ReminderSettings } from '@/components/settings/reminder-settings'
-import { SettingsSection } from '@/components/settings/settings-section'
+import { SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'

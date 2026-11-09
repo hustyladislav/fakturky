@@ -14,7 +14,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { PromptDialog } from '@/components/prompt-dialog'
-import { RowList, SettingsSection } from '@/components/settings/settings-section'
+import { RowList, SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
 

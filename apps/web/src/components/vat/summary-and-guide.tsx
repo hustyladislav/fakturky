@@ -1,7 +1,7 @@
 import { Button } from '@fakturky/ui/components/button'
 import { Money } from '@fakturky/ui/components/money'
 import { ExternalLink } from 'lucide-react'
-import { SettingsSection } from '@/components/settings/settings-section'
+import { SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import type { VatReport } from './use-vat-report'
 

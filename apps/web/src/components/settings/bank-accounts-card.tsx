@@ -17,7 +17,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { bankErrorMessage } from '@/components/bank/bank-errors'
 import { COMMON_CURRENCIES, CURRENCY_CODES, currencyLabel } from '@/components/settings/currencies'
-import { RowList, SettingsSection } from '@/components/settings/settings-section'
+import { RowList, SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 

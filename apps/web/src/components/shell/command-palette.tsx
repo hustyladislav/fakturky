@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useNewInvoiceFor } from '@/components/contacts/contact-menu'
-import { InvoiceStatus } from '@/components/invoices/invoice-status'
+import { InvoiceStatus } from '@/components/invoice-status'
 import {
   fuzzyScore,
   PALETTE_POOL,

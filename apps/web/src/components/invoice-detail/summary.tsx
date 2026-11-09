@@ -6,7 +6,7 @@ import { diffDays, parseIsoDate } from '@fakturky/ui/lib/dates'
 import { formatMoney } from '@fakturky/ui/lib/money'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
-import { InvoiceStatus } from '@/components/invoices/invoice-status'
+import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
 import type { DocumentDetail } from '@/lib/document-sheet'
 

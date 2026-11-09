@@ -1,7 +1,7 @@
 import { Button } from '@fakturky/ui/components/button'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { SettingsSection } from '@/components/settings/settings-section'
+import { SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { client, orpc } from '@/lib/orpc'
 

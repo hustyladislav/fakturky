@@ -2,6 +2,7 @@ import { cn } from '@fakturky/ui/lib/utils'
 import { Check, Minus, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cs } from '@/i18n/cs'
+import { anchor, container, h2, inlineLink, lead, sectionY } from './styles'
 
 const t = cs.landing.compare
 
@@ -35,18 +36,18 @@ function Cell({ value, ours }: { value: string; ours?: boolean }) {
 /** Honest free-tier comparison: facts from the public price lists, with sources. */
 export function Comparison() {
   return (
-    <section id="srovnani" className="mx-auto max-w-[1200px] px-5 py-14 md:px-8 md:py-20">
-      <h2 className="max-w-3xl text-[32px] leading-[38px] tracking-[-0.02em] text-balance md:text-5xl md:leading-[50px]">
-        {t.title}
-      </h2>
-      <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-pretty text-muted-foreground">
-        {t.text}
-      </p>
+    <section id="srovnani" className={`${container} ${sectionY} ${anchor}`}>
+      <h2 className={`max-w-3xl ${h2}`}>{t.title}</h2>
+      <p className={`mt-4 max-w-2xl ${lead}`}>{t.text}</p>
 
       <ul className="mt-8 divide-y border-y md:hidden">
         {t.rows.map(([feature, us, fakturoid, idoklad]) => (
-          <li key={feature} className="space-y-2 py-4 text-sm">
-            <div className="font-medium">{feature}</div>
+          // Subgrid: the name column fits the longest name, identically in every group.
+          <li
+            key={feature}
+            className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-2 py-4 text-sm"
+          >
+            <div className="col-span-2 font-medium">{feature}</div>
             {(
               [
                 [t.us, us, true],
@@ -54,8 +55,8 @@ export function Comparison() {
                 [t.idoklad, idoklad, false],
               ] as const
             ).map(([name, value, ours]) => (
-              <div key={name} className="grid grid-cols-[6.5rem_1fr] gap-3">
-                <span className="text-muted-foreground">{name}</span>
+              <div key={name} className="col-span-2 grid grid-cols-subgrid">
+                <span className="whitespace-nowrap text-muted-foreground">{name}</span>
                 <Cell value={value} ours={ours} />
               </div>
             ))}
@@ -67,8 +68,8 @@ export function Comparison() {
         <table className="w-full border-separate border-spacing-0 text-left text-sm">
           <caption className="sr-only">{t.caption}</caption>
           <thead>
-            <tr className="[&>th]:border-b [&>th]:px-4 [&>th]:py-3 [&>th]:font-medium">
-              <th scope="col" className="w-[22%] pl-0">
+            <tr className="[&>th]:border-b [&>th]:px-4 [&>th]:py-3 [&>th]:font-medium [&>th:first-child]:pl-0">
+              <th scope="col" className="w-[22%]">
                 {t.feature}
               </th>
               <th scope="col" className="w-[26%] bg-muted">
@@ -82,10 +83,10 @@ export function Comparison() {
               </th>
             </tr>
           </thead>
-          <tbody className="[&_td]:border-b [&_td]:px-4 [&_td]:py-3.5 [&_td]:align-top [&_th]:border-b [&_th]:px-4 [&_th]:py-3.5 [&_tr:last-child_td]:border-b-0 [&_tr:last-child_th]:border-b-0">
+          <tbody className="[&_td]:border-b [&_td]:px-4 [&_td]:py-3.5 [&_td]:align-top [&_th]:border-b [&_th]:py-3.5 [&_th]:pr-4 [&_tr:last-child_td]:border-b-0 [&_tr:last-child_th]:border-b-0">
             {t.rows.map(([feature, us, fakturoid, idoklad]) => (
               <tr key={feature}>
-                <th scope="row" className="pl-0 text-left font-medium">
+                <th scope="row" className="text-left font-medium">
                   {feature}
                 </th>
                 <td className="bg-muted">
@@ -107,12 +108,7 @@ export function Comparison() {
         {SOURCES.map(([name, href], i) => (
           <span key={name}>
             {i > 0 && ', '}
-            <a
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              className="text-foreground underline underline-offset-4"
-            >
+            <a href={href} target="_blank" rel="noreferrer" className={inlineLink}>
               {name}
             </a>
           </span>

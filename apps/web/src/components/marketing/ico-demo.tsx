@@ -8,6 +8,7 @@ import { ArrowRight, Loader2, Search } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { cs } from '@/i18n/cs'
 import { type AresSupplier, demoInvoiceFor } from './demo-invoice'
+import { anchor, container, focusRing, h2, lead, sectionY } from './styles'
 
 const t = cs.landing.demo
 
@@ -71,15 +72,11 @@ export function IcoDemo() {
   const doc = useMemo(() => demoInvoiceFor(supplier, t.placeholderName), [supplier])
 
   return (
-    <section id="demo" className="mx-auto max-w-[1200px] px-5 py-14 md:px-8 md:py-20">
+    <section id="demo" className={`${container} ${sectionY} ${anchor}`}>
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-14">
         <div>
-          <h2 className="text-[32px] leading-[38px] tracking-[-0.02em] text-balance md:text-5xl md:leading-[50px]">
-            {t.title}
-          </h2>
-          <p className="mt-4 text-[17px] leading-relaxed text-pretty text-muted-foreground">
-            {t.text}
-          </p>
+          <h2 className={h2}>{t.title}</h2>
+          <p className={`mt-4 ${lead}`}>{t.text}</p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-3" noValidate>
             <Label htmlFor="demo-ico">{t.label}</Label>
@@ -124,7 +121,7 @@ export function IcoDemo() {
                     setValue(ico)
                     run(ico)
                   }}
-                  className="inline-flex min-h-9 items-center px-1 tabular-nums underline underline-offset-4 transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none pointer-coarse:min-h-11"
+                  className={`inline-flex min-h-9 items-center px-1 tabular-nums underline underline-offset-4 transition-colors hover:text-foreground pointer-coarse:min-h-11 ${focusRing}`}
                 >
                   {ico}
                 </button>
@@ -155,8 +152,9 @@ export function IcoDemo() {
           <p className="mt-4 text-xs text-muted-foreground">{t.source}</p>
         </div>
 
-        <div className="min-w-0">
-          <div className="mb-2 flex items-center justify-between">
+        {/* Label, button and sheet share one width box, so their edges line up. */}
+        <div className="mx-auto w-full max-w-[34rem] min-w-0">
+          <div className="mb-2 flex items-center justify-between gap-3">
             <span className="text-[13px] text-muted-foreground">{t.invoiceTitle}</span>
             <Button
               variant="outline"
@@ -168,7 +166,7 @@ export function IcoDemo() {
               <ArrowRight data-icon="inline-end" />
             </Button>
           </div>
-          <div className="mx-auto max-w-[34rem] overflow-hidden rounded-[3px] shadow-[0_0_0_1px_var(--border),0_12px_30px_-16px_rgb(0_0_0/0.25)]">
+          <div className="overflow-hidden rounded-[3px] shadow-[0_0_0_1px_var(--border),0_12px_30px_-16px_rgb(0_0_0/0.25)]">
             <InvoiceSheet doc={doc} maxScale={1.4} headingLevel={3} decorative density="compact" />
           </div>
         </div>

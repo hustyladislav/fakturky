@@ -1,4 +1,4 @@
-const NBSP = ' '
+const NBSP = '\u00a0'
 
 // Czech typesetting: no one-letter preposition or conjunction at a line end, no number split from what it counts.
 const SINGLE_LETTER = /(?<![\p{L}\p{N}])([kKsSvVzZoOuUaAiI]) +(?=\S)/gu

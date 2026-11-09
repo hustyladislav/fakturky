@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { typesetCopy, typesetCzech } from './typeset'
 
-const nb = (s: string) => s.replaceAll('~', ' ')
+const nb = (s: string) => s.replaceAll('~', '\u00a0')
 
 describe('typesetCzech', () => {
   it.each([

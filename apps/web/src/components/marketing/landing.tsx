@@ -53,8 +53,8 @@ function SiteHeader() {
     <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
       <div className={`${container} flex h-14 items-center gap-3 sm:gap-6`}>
         <Link to="/" className={focusRing}>
-          {/* Below 430 px the wordmark yields so sign-in and sign-up both fit; it stays the link's name. */}
-          <Logo name={BRAND.name} markClassName="size-7" nameClassName="max-[429px]:sr-only" />
+          {/* Below 390 px the wordmark yields so sign-in and sign-up both fit; it stays the link's name. */}
+          <Logo name={BRAND.name} markClassName="size-7" nameClassName="max-[390px]:sr-only" />
         </Link>
         <nav className="hidden items-center gap-6 text-sm lg:flex" aria-label="Sekce">
           <a href="#funkce" className={link}>

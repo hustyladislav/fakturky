@@ -1,3 +1,4 @@
+import { DEVICE_CLIENT_ID } from '../auth'
 import { BRAND } from '../brand'
 import { ONBOARDING_RULES } from './status'
 
@@ -29,7 +30,12 @@ Pick the first option you can do yourself. Do not ask the user which one.
 
 The client opens a browser window. That is the one thing only the user can do: sign up or sign in, then allow access. New users can create the account on that same page. Tell them so in one sentence, and wait.
 
-**REST.** Without MCP, the user creates an API key in the app under Nastavení → API klíče and gives it to you. Send it as \`Authorization: Bearer ${BRAND.apiKeyPrefix}…\` to \`${origin}/api/v1\`. The checklist is \`GET /onboarding/status\`; the other operations are in \`${origin}/api/v1/openapi.json\`.
+**No MCP: get an API key with the device login.**
+
+1. \`curl -X POST ${origin}/api/auth/device/code -H 'content-type: application/json' -d '{"client_id":"${DEVICE_CLIENT_ID}"}'\`
+2. Give the user \`verification_uri_complete\` and \`user_code\`. Open the link for them if you can drive a browser; they sign up or sign in there and approve. New users can create the account on that same page.
+3. Every \`interval\` seconds: \`curl -X POST ${origin}/api/device/token -H 'content-type: application/json' -d '{"device_code":"…","client_id":"${DEVICE_CLIENT_ID}"}'\`. Keep polling on \`authorization_pending\`, wait longer on \`slow_down\`, stop on \`access_denied\` or \`expired_token\`. Success returns \`api_key\`.
+4. Keep the key out of chat, logs and files in the repository. Send it as \`Authorization: Bearer ${BRAND.apiKeyPrefix}…\` to \`${origin}/api/v1\` or \`${mcp}\`. The checklist is \`GET /onboarding/status\`; the other operations are in \`${origin}/api/v1/openapi.json\`.
 
 ## 2. Work through the checklist
 

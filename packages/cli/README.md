@@ -6,7 +6,8 @@ Commands are generated from the server's OpenAPI spec, so every API capability i
 > Not published to npm yet; the commands below work once it is.
 
 ```bash
-npx fakturky login              # paste an API key (Nastavení → API klíče); stored with mode 0600
+npx fakturky login              # approve in the browser; the API key is stored with mode 0600
+npx fakturky login --key fk_…   # or store an existing key (Nastavení → API klíče)
 npx fakturky whoami
 npx fakturky contacts list --json
 npx fakturky contacts create --name "ACME s.r.o." --ico 12345678 --emails '["fakturace@acme.cz"]'

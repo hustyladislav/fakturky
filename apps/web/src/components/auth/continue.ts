@@ -7,5 +7,7 @@ export function continueAfterAuth(search: string): string | null {
   if (query.get('client_id') && query.get('response_type')) {
     return `/api/auth/oauth2/authorize${search}`
   }
+  const device = query.get('pripojit')
+  if (device && /^[\w-]{1,32}$/.test(device)) return `/pripojit?user_code=${device}`
   return null
 }

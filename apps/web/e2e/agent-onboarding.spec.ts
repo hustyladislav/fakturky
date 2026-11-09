@@ -111,3 +111,65 @@ test('an agent sets up a new account from the checklist and stops at a draft', a
   // A draft allocates no number, so the numbering question is still open.
   expect(status.steps.find((s) => s.id === 'history')?.status).toBe('todo')
 })
+
+test('an agent with no MCP gets a key after a new user approves in the browser', async ({
+  page,
+  request,
+  baseURL,
+}) => {
+  const started = await request.post('/api/auth/device/code', {
+    headers: { origin: baseURL ?? '' },
+    data: { client_id: 'fakturky' },
+  })
+  expect(started.ok(), await started.text()).toBe(true)
+  const flow = (await started.json()) as {
+    device_code: string
+    user_code: string
+    verification_uri_complete: string
+  }
+  const poll = () =>
+    request.post('/api/device/token', {
+      data: { device_code: flow.device_code, client_id: 'fakturky' },
+    })
+  expect((await (await poll()).json()).error).toBe('authorization_pending')
+
+  await page.goto(flow.verification_uri_complete)
+  await expect(page).toHaveURL(/\/prihlaseni/)
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('link', { name: 'Vytvořit účet' }).click()
+  await expect(page).toHaveURL(/\/registrace.*pripojit=/)
+  await page.waitForLoadState('networkidle')
+  await page.getByLabel('Jméno a příjmení').fill('Nová Agentka')
+  await page.getByLabel('E-mail').fill(`device-${Date.now()}@example.com`)
+  await page.getByLabel('Heslo').fill('agent-heslo-123')
+  await page.getByRole('button', { name: 'Vytvořit účet' }).click()
+
+  await expect(page.getByTestId('device-code')).toHaveText(flow.user_code)
+  await page.getByRole('button', { name: 'Povolit' }).click()
+  await expect(page.getByText('Asistent je připojený')).toBeVisible()
+
+  await expect
+    .poll(
+      async () => {
+        const body = await (await poll()).json()
+        return body.api_key ?? body.error
+      },
+      { timeout: 20_000, intervals: [5_500] },
+    )
+    .toMatch(/^fk_/)
+})
+
+test('the approval page rejects a made-up code', async ({ page, request, baseURL }) => {
+  await request.post('/api/auth/sign-up/email', {
+    headers: { origin: baseURL ?? '' },
+    data: {
+      name: 'Kontrola',
+      email: `code-${Date.now()}@example.com`,
+      password: 'agent-heslo-123',
+    },
+  })
+  const cookies = await request.storageState()
+  await page.context().addCookies(cookies.cookies)
+  await page.goto('/pripojit?user_code=NEEXISTUJE')
+  await expect(page.getByText('Tento kód neplatí')).toBeVisible()
+})

@@ -7,7 +7,7 @@ import { passkey } from '@better-auth/passkey'
 import { type Db, newId, schema } from '@fakturky/db'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { jwt, magicLink, oAuthProxy, organization } from 'better-auth/plugins'
+import { deviceAuthorization, jwt, magicLink, oAuthProxy, organization } from 'better-auth/plugins'
 import { eq } from 'drizzle-orm'
 import { BRAND } from './brand'
 import type { Principal } from './context'
@@ -43,6 +43,9 @@ function slugify(input: string): string {
     .replace(/^-|-$/g, '')
   return `${base || 'firma'}-${newId().slice(-8)}`
 }
+
+/** The one client allowed to start the device login: the CLI and agents without MCP. */
+export const DEVICE_CLIENT_ID = BRAND.slug
 
 /** OAuth scope an MCP client must hold to call tools. */
 export const MCP_SCOPE = 'mcp:tools'
@@ -103,6 +106,7 @@ export function createAuth(options: CreateAuthOptions) {
         '/sign-in/email': { window: 60, max: 5 },
         '/sign-up/email': { window: 3600, max: options.signUpRateLimitMax ?? 10 },
         '/sign-in/magic-link': { window: 600, max: 5 },
+        '/device/code': { window: 60, max: 10 },
         '/request-password-reset': { window: 3600, max: 5 },
         '/reset-password': { window: 3600, max: 10 },
         '/passkey/generate-authenticate-options': { window: 60, max: 20 },
@@ -157,6 +161,12 @@ export function createAuth(options: CreateAuthOptions) {
         rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 600 },
       }),
       dash(),
+      deviceAuthorization({
+        verificationUri: '/pripojit',
+        expiresIn: '15m',
+        interval: '5s',
+        validateClient: (clientId) => clientId === DEVICE_CLIENT_ID,
+      }),
       jwt({ disableSettingJwtHeader: true }),
       mcp({
         loginPage: '/prihlaseni',

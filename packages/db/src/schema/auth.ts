@@ -197,6 +197,23 @@ export const jwks = pgTable('jwks', {
   crv: text('crv'),
 })
 
+export const deviceCode = pgTable(
+  'device_code',
+  {
+    id: id(),
+    deviceCode: text('device_code').notNull().unique(),
+    userCode: text('user_code').notNull().unique(),
+    userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    status: text('status').notNull(),
+    lastPolledAt: timestamp('last_polled_at', { withTimezone: true }),
+    pollingInterval: integer('polling_interval'),
+    clientId: text('client_id'),
+    scope: text('scope'),
+  },
+  (t) => [index('device_code_user_id_idx').on(t.userId)],
+)
+
 export const oauthClient = pgTable(
   'oauth_client',
   {

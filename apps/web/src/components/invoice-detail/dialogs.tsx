@@ -22,7 +22,7 @@ function templateName(d: { lines: { description: string }[]; customerName: strin
 
 /** Every confirmation dialog of the detail page; which one is open lives in the controller. */
 export function InvoiceDialogs({ d, ctrl }: { d: DocumentDetail; ctrl: InvoiceController }) {
-  const { id, dialog, setDialog } = ctrl
+  const { dialog, setDialog, pending } = ctrl
   const [rate12, setRate12] = useState('')
   const split = splitReceipt(d.paidAmount, rate12)
   const [receiptRate, setReceiptRate] = useState<'21' | '12' | 'split'>('21')
@@ -37,11 +37,8 @@ export function InvoiceDialogs({ d, ctrl }: { d: DocumentDetail; ctrl: InvoiceCo
         description={t.cancelConfirm}
         confirmLabel={t.cancel}
         destructive
-        pending={ctrl.cancel.isPending}
-        onConfirm={() => {
-          setDialog(null)
-          ctrl.cancel.mutate({ id })
-        }}
+        pending={pending.cancel}
+        onConfirm={ctrl.cancel}
       />
       <PromptDialog
         open={dialog === 'delete'}
@@ -50,11 +47,8 @@ export function InvoiceDialogs({ d, ctrl }: { d: DocumentDetail; ctrl: InvoiceCo
         description={t.deleteConfirm}
         confirmLabel={t.delete}
         destructive
-        pending={ctrl.remove.isPending}
-        onConfirm={() => {
-          setDialog(null)
-          ctrl.remove.mutate({ id })
-        }}
+        pending={pending.delete}
+        onConfirm={ctrl.remove}
       />
       <PromptDialog
         open={dialog === 'rotate'}
@@ -62,37 +56,28 @@ export function InvoiceDialogs({ d, ctrl }: { d: DocumentDetail; ctrl: InvoiceCo
         title={t.rotateLink}
         description={t.rotateLinkConfirm}
         confirmLabel={t.rotateLink}
-        pending={ctrl.rotateLink.isPending}
-        onConfirm={() => {
-          setDialog(null)
-          ctrl.rotateLink.mutate({ id })
-        }}
+        pending={pending.rotate}
+        onConfirm={ctrl.rotateLink}
       />
       <PromptDialog
         open={dialog === 'template'}
         onOpenChange={close}
         title={cs.templates.saveAs}
         confirmLabel={cs.common.save}
-        pending={ctrl.saveTemplate.isPending}
+        pending={pending.template}
         input={{
           label: cs.templates.namePrompt,
           defaultValue: templateName(d),
           required: true,
         }}
-        onConfirm={(name) => {
-          setDialog(null)
-          ctrl.saveTemplate.mutate({ documentId: id, name })
-        }}
+        onConfirm={ctrl.saveTemplate}
       />
       <CreditNoteDialog
         open={dialog === 'credit'}
         onOpenChange={close}
         doc={d}
-        pending={ctrl.creditNote.isPending}
-        onConfirm={(v) => {
-          setDialog(null)
-          ctrl.creditNote.mutate({ id, reason: v.reason, amount: v.amount })
-        }}
+        pending={!!pending.credit}
+        onConfirm={(v) => ctrl.creditNote({ reason: v.reason, amount: v.amount })}
       />
       <PromptDialog
         open={dialog === 'receipt'}
@@ -100,22 +85,17 @@ export function InvoiceDialogs({ d, ctrl }: { d: DocumentDetail; ctrl: InvoiceCo
         title={t.receipt}
         description={t.receiptDescription(d.paidAmount, d.currency)}
         confirmLabel={t.receipt}
-        pending={ctrl.receipt.isPending}
+        pending={pending.receipt}
         blocked={receiptRate === 'split' && !split}
         onConfirm={() => {
-          setDialog(null)
-          if (receiptRate === 'split') {
-            if (!split) return
-            ctrl.receipt.mutate({
-              id,
-              allocations: [
-                { vatRate: '21', amount: split.standard },
-                { vatRate: '12', amount: split.reduced },
-              ],
-            })
-          } else {
-            ctrl.receipt.mutate({ id, vatRate: receiptRate })
-          }
+          if (receiptRate !== 'split') return ctrl.receipt({ vatRate: receiptRate })
+          if (!split) return
+          ctrl.receipt({
+            allocations: [
+              { vatRate: '21', amount: split.standard },
+              { vatRate: '12', amount: split.reduced },
+            ],
+          })
         }}
       >
         <div className="space-y-2">

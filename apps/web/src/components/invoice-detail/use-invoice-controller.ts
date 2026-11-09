@@ -18,8 +18,8 @@ export type DetailDialog = 'cancel' | 'delete' | 'rotate' | 'template' | 'credit
 export type DetailPanel = 'pay' | 'send'
 
 /**
- * Everything the invoice detail does to a document: the mutations, which dialog or inline panel is open,
- * and `run(action)` so a button only has to name the action it stands for.
+ * Everything the invoice detail does to a document. Callers name what the user chose and read `pending`;
+ * the document id, the mutations and closing the dialog stay in here.
  */
 export function useInvoiceController(id: string, d: DocumentDetail | undefined, openPay: boolean) {
   const navigate = useNavigate()
@@ -165,7 +165,7 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
     })
   }
 
-  const pending: Partial<Record<ActionId, boolean>> = {
+  const pending: Partial<Record<ActionId | 'rotate', boolean>> = {
     issue: issue.isPending,
     pay: markPaid.isPending,
     send: send.isPending,
@@ -177,6 +177,12 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
     credit: creditNote.isPending,
     cancel: cancel.isPending,
     delete: remove.isPending,
+    rotate: rotateLink.isPending,
+  }
+
+  const fromDialog = (start: () => void) => {
+    setDialog(null)
+    start()
   }
 
   /** Runs an action that is not a plain link (edit and pdf are links). */
@@ -219,14 +225,16 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
     setDialog,
     pending,
     run,
-    markPaid,
-    send,
-    cancel,
-    remove,
-    rotateLink,
-    saveTemplate,
-    creditNote,
-    receipt,
+    pay: (v: Omit<Parameters<typeof markPaid.mutate>[0], 'id'>) => markPaid.mutate({ id, ...v }),
+    send: (v: Omit<Parameters<typeof send.mutate>[0], 'id'>) => send.mutate({ id, ...v }),
+    cancel: () => fromDialog(() => cancel.mutate({ id })),
+    remove: () => fromDialog(() => remove.mutate({ id })),
+    rotateLink: () => fromDialog(() => rotateLink.mutate({ id })),
+    saveTemplate: (name: string) => fromDialog(() => saveTemplate.mutate({ documentId: id, name })),
+    creditNote: (v: Omit<Parameters<typeof creditNote.mutate>[0], 'id'>) =>
+      fromDialog(() => creditNote.mutate({ id, ...v })),
+    receipt: (v: Omit<Parameters<typeof receipt.mutate>[0], 'id'>) =>
+      fromDialog(() => receipt.mutate({ id, ...v })),
   }
 }
 

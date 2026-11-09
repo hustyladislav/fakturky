@@ -95,7 +95,7 @@ export function InvoiceDetailView({
           {ctrl.publicUrl && (
             <PublicLinkSection
               url={ctrl.publicUrl}
-              rotating={ctrl.rotateLink.isPending}
+              rotating={!!ctrl.pending.rotate}
               onRotate={() => ctrl.setDialog('rotate')}
               className={`order-4 ${SECTION}`}
             />

@@ -8,7 +8,7 @@ export const onboardingRouter = {
       name: 'get_onboarding_status',
       title: 'What is left to set up, and how',
       description:
-        'The setup checklist for this organization: each step says whether it is done, whether to act or ask the user (with the question ready to ask) and which tools to use. Call it first when the user wants to set up the app, then again after each step until `next` is null.',
+        'The setup checklist for this organization: each step says whether it is done, whether to act or ask the user (with the question ready to ask) and which tools to use. Call it first when the user wants to set up the app, then again after each step, passing `settled`, until `next` is null.',
       readOnly: true,
       idempotent: true,
     },
@@ -19,7 +19,18 @@ export const onboardingRouter = {
       tags: ['Account'],
     },
   })
-    .input(z.object({}))
+    .input(
+      z.object({
+        // Optional so the first call needs no arguments.
+        settled: z
+          .array(z.string())
+          .max(20)
+          .optional()
+          .describe('Ids of steps the user answered with nothing to save, or declined'),
+      }),
+    )
     .output(onboardingStatusSchema)
-    .handler(({ context }) => onboardingStatus(context.db, context.principal.organizationId)),
+    .handler(({ context, input }) =>
+      onboardingStatus(context.db, context.principal.organizationId, input.settled ?? []),
+    ),
 }

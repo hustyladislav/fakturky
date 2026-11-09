@@ -29,6 +29,20 @@ describe('checklist', () => {
     expect(status).toMatchObject({ complete: true, next: 'bank_account' })
   })
 
+  test('a settled step is skipped without being marked done', () => {
+    const status = summarize(onboardingSteps({ ...blank, profileFilled: true, bankAccounts: 1 }), [
+      'history',
+    ])
+    expect(status.next).toBe('first_draft')
+    expect(status.steps.find((s) => s.id === 'history')?.status).toBe('todo')
+    expect(
+      summarize(onboardingSteps({ ...blank, profileFilled: true, bankAccounts: 1 }), [
+        'history',
+        'first_draft',
+      ]).next,
+    ).toBeNull()
+  })
+
   test('nothing is left once every step is done', () => {
     const facts = { profileFilled: true, bankAccounts: 1, documents: 1, issuedInvoices: 1 }
     expect(summarize(onboardingSteps({ ...blank, ...facts }))).toMatchObject({

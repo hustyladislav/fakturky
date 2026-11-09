@@ -51,7 +51,7 @@ export type OnboardingFacts = {
 
 export const ONBOARDING_RULES = [
   'Do everything you can yourself; ask only what the steps mark as `ask`, one question at a time, using your own question UI when you have one, with the recommended option first.',
-  'Ask each step at most once per session. If the user declines an optional step, move on to the next one.',
+  'Ask each step at most once per session. Pass the ids of steps the user answered without anything to save, or declined, as `settled`, so `next` moves on.',
   'Show the user the data you are about to save when it has legal effect (company, VAT status, bank account).',
   'Never call issue_invoice or send anything to a customer during setup: issuing allocates a legal document number that can never be reused. Setup ends at a draft.',
   'Never log in to internet banking or type a password for the user. Sign-in, consent and bank tokens are done by the user.',
@@ -160,10 +160,11 @@ export function onboardingSteps(f: OnboardingFacts): Step[] {
   return steps.filter((s) => s !== null)
 }
 
-export function summarize(steps: Step[]): OnboardingStatus {
+/** `settled`: steps the user already answered or declined, so `next` moves on without storing anything. */
+export function summarize(steps: Step[], settled: string[] = []): OnboardingStatus {
   return {
     complete: steps.every((s) => !s.required || s.status === 'done'),
-    next: steps.find((s) => s.status === 'todo')?.id ?? null,
+    next: steps.find((s) => s.status === 'todo' && !settled.includes(s.id))?.id ?? null,
     rules: ONBOARDING_RULES,
     steps,
   }
@@ -202,7 +203,7 @@ async function loadFacts(db: Db, orgId: string): Promise<OnboardingFacts> {
         isNull(bankAccount.fioTokenEncrypted),
       ),
     ),
-    countOf(document, live),
+    countOf(document, and(live, eq(document.type, 'invoice'))),
     countOf(document, and(live, eq(document.type, 'invoice'), ne(document.status, 'draft'))),
     db
       .select({ id: numberSeriesCounter.seriesId })
@@ -234,6 +235,10 @@ async function loadFacts(db: Db, orgId: string): Promise<OnboardingFacts> {
   }
 }
 
-export async function onboardingStatus(db: Db, orgId: string): Promise<OnboardingStatus> {
-  return summarize(onboardingSteps(await loadFacts(db, orgId)))
+export async function onboardingStatus(
+  db: Db,
+  orgId: string,
+  settled: string[],
+): Promise<OnboardingStatus> {
+  return summarize(onboardingSteps(await loadFacts(db, orgId)), settled)
 }

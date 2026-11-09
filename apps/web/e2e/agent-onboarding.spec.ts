@@ -107,6 +107,7 @@ test('an agent sets up a new account from the checklist and stops at a draft', a
 
   status = await tool<Status>('get_onboarding_status')
   expect(status.steps.find((s) => s.id === 'first_draft')?.status).toBe('done')
+  expect((await tool<Status>('get_onboarding_status', { settled: ['history'] })).next).toBeNull()
   // A draft allocates no number, so the numbering question is still open.
   expect(status.steps.find((s) => s.id === 'history')?.status).toBe('todo')
 })

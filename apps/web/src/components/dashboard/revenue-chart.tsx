@@ -4,8 +4,8 @@ import { Amount } from '@fakturky/ui/components/amount'
 import { formatMoney } from '@fakturky/ui/lib/money'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useId, useMemo, useState } from 'react'
+import { compactCz, niceTicks } from '@/components/dashboard/chart-scale'
 import { cs } from '@/i18n/cs'
-import { compactCz, niceTicks } from '@/lib/chart-scale'
 import { wholeCrowns } from '@/lib/crowns'
 
 type Month = RouterOutputs['dashboard']['summary']['months'][number]

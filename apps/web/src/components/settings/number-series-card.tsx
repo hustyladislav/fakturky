@@ -4,7 +4,7 @@ import { Label } from '@fakturky/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { RowList, SettingsSection } from '@/components/settings-section'
+import { RowList, SettingsSection } from '@/components/settings/settings-section'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 

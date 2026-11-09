@@ -26,10 +26,15 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useNewInvoiceFor } from '@/components/contacts/contact-menu'
-import { InvoiceStatus } from '@/components/invoice-status'
+import { InvoiceStatus } from '@/components/invoices/invoice-status'
+import {
+  fuzzyScore,
+  PALETTE_POOL,
+  parseIntent,
+  searchTerm,
+} from '@/components/shell/palette-search'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
-import { fuzzyScore, PALETTE_POOL, parseIntent, searchTerm } from '@/lib/palette-search'
 import { NEW_INVOICE_PATH, useNavItems } from './nav'
 import { readRecent } from './recent-pages'
 import { useShell } from './shell-context'

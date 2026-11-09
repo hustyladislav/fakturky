@@ -1,7 +1,7 @@
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
-import type { ProfileValues } from '@/components/business-profile-form'
+import type { ProfileValues } from '@/components/business-profile/business-profile-form'
 import { cs } from '@/i18n/cs'
 
 export type SetField = (key: keyof ProfileValues) => (e: { target: { value: string } }) => void

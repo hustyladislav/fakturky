@@ -8,7 +8,7 @@ import { PageHeader } from '@fakturky/ui/components/page-header'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { SettingsSection } from '@/components/settings-section'
+import { SettingsSection } from '@/components/settings/settings-section'
 import { cs } from '@/i18n/cs'
 import { orpc } from '@/lib/orpc'
 

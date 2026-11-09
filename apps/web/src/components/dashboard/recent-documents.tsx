@@ -1,7 +1,7 @@
 import type { RouterOutputs } from '@fakturky/core/router'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Link } from '@tanstack/react-router'
-import { InvoiceStatus } from '@/components/invoice-status'
+import { InvoiceStatus } from '@/components/invoices/invoice-status'
 import { cs } from '@/i18n/cs'
 
 type Doc = RouterOutputs['documents']['list'][number]

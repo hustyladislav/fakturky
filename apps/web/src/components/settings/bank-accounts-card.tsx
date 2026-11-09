@@ -16,9 +16,9 @@ import { ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { bankErrorMessage } from '@/components/bank/bank-errors'
-import { RowList, SettingsSection } from '@/components/settings-section'
+import { COMMON_CURRENCIES, CURRENCY_CODES, currencyLabel } from '@/components/settings/currencies'
+import { RowList, SettingsSection } from '@/components/settings/settings-section'
 import { cs } from '@/i18n/cs'
-import { COMMON_CURRENCIES, CURRENCY_CODES, currencyLabel } from '@/lib/currencies'
 import { orpc } from '@/lib/orpc'
 
 const t = cs.bankAccounts

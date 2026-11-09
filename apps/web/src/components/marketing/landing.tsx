@@ -57,7 +57,7 @@ function SiteHeader() {
         <Link to="/">
           <Logo name={BRAND.name} markClassName="size-7" />
         </Link>
-        <nav className="hidden items-center gap-6 text-sm md:flex" aria-label="Sekce">
+        <nav className="hidden items-center gap-6 text-sm lg:flex" aria-label="Sekce">
           <a href="#funkce" className={link}>
             {t.nav.features}
           </a>

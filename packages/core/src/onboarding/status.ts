@@ -131,7 +131,7 @@ export function onboardingSteps(f: OnboardingFacts): Step[] {
             options: [option('Teď ne', true), option('Ano, vytvořím token')],
             freeText: true,
           },
-          path: '/banka',
+          path: '/nastaveni',
         }
       : null,
     {
@@ -160,11 +160,12 @@ export function onboardingSteps(f: OnboardingFacts): Step[] {
   return steps.filter((s) => s !== null)
 }
 
-/** `settled`: steps the user already answered or declined, so `next` moves on without storing anything. */
+/** `settled`: optional steps the user already answered or declined, so `next` moves on without storing anything. */
 export function summarize(steps: Step[], settled: string[] = []): OnboardingStatus {
   return {
     complete: steps.every((s) => !s.required || s.status === 'done'),
-    next: steps.find((s) => s.status === 'todo' && !settled.includes(s.id))?.id ?? null,
+    next:
+      steps.find((s) => s.status === 'todo' && (s.required || !settled.includes(s.id)))?.id ?? null,
     rules: ONBOARDING_RULES,
     steps,
   }

@@ -43,6 +43,10 @@ describe('checklist', () => {
     ).toBeNull()
   })
 
+  test('a required step cannot be settled away', () => {
+    expect(summarize(onboardingSteps(blank), ['business_profile']).next).toBe('business_profile')
+  })
+
   test('nothing is left once every step is done', () => {
     const facts = { profileFilled: true, bankAccounts: 1, documents: 1, issuedInvoices: 1 }
     expect(summarize(onboardingSteps({ ...blank, ...facts }))).toMatchObject({
@@ -61,7 +65,7 @@ describe('checklist', () => {
     expect(byId({}).bank_sync).toBeUndefined()
     expect(byId({ fioAccountWithoutToken: true }).bank_sync).toMatchObject({
       kind: 'human',
-      path: '/banka',
+      path: '/nastaveni',
     })
   })
 

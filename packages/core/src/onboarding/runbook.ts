@@ -34,8 +34,8 @@ The client opens a browser window. That is the one thing only the user can do: s
 
 1. \`curl -X POST ${origin}/api/auth/device/code -H 'content-type: application/json' -d '{"client_id":"${DEVICE_CLIENT_ID}"}'\`
 2. Give the user \`verification_uri_complete\` and \`user_code\`. Open the link for them if you can drive a browser; they sign up or sign in there and approve. New users can create the account on that same page.
-3. Every \`interval\` seconds: \`curl -X POST ${origin}/api/device/token -H 'content-type: application/json' -d '{"device_code":"…","client_id":"${DEVICE_CLIENT_ID}"}'\`. Keep polling on \`authorization_pending\`, wait longer on \`slow_down\`, stop on \`access_denied\` or \`expired_token\`. Success returns \`api_key\`.
-4. Keep the key out of chat, logs and files in the repository. Send it as \`Authorization: Bearer ${BRAND.apiKeyPrefix}…\` to \`${origin}/api/v1\` or \`${mcp}\`. The checklist is \`GET /onboarding/status\`; the other operations are in \`${origin}/api/v1/openapi.json\`.
+3. Every \`interval\` seconds, writing the answer to a file so the key never reaches your output: \`(umask 077; curl -s -X POST ${origin}/api/device/token -H 'content-type: application/json' -d '{"device_code":"…","client_id":"${DEVICE_CLIENT_ID}"}' -o ~/.${BRAND.slug}-key.json)\`, then read only the error with \`jq -r .error ~/.${BRAND.slug}-key.json\`. Keep polling on \`authorization_pending\`, wait longer on \`slow_down\`, stop on \`access_denied\` or \`expired_token\`. \`null\` means the file holds \`api_key\`.
+4. Never print the key or put it in chat or the repository. Send it as \`Authorization: Bearer $(jq -r .api_key ~/.${BRAND.slug}-key.json)\` to \`${origin}/api/v1\` or \`${mcp}\`. The checklist is \`GET /onboarding/status\`; the other operations are in \`${origin}/api/v1/openapi.json\`.
 
 ## 2. Work through the checklist
 

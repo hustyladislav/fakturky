@@ -11,6 +11,7 @@ import { exportsRouter } from '../exports/router'
 import { importRouter } from '../import/router'
 import { lookupRouter } from '../lookup/router'
 import { numberSeriesRouter } from '../number-series/router'
+import { onboardingRouter } from '../onboarding/router'
 import { publicRouter } from '../public/router'
 import { searchRouter } from '../search/router'
 import { recurringRouter, templatesRouter } from '../templates/router'
@@ -29,6 +30,7 @@ export const router = {
   import: importRouter,
   lookup: lookupRouter,
   numberSeries: numberSeriesRouter,
+  onboarding: onboardingRouter,
   public: publicRouter,
   search: searchRouter,
   recurring: recurringRouter,

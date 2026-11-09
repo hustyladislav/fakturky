@@ -2,9 +2,10 @@ import { Button } from '@fakturky/ui/components/button'
 import { Input } from '@fakturky/ui/components/input'
 import { Label } from '@fakturky/ui/components/label'
 import { useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { AuthLayout } from '@/components/auth/auth-layout'
+import { continueAfterAuth } from '@/components/auth/continue'
 import { Divider, GoogleButton, MagicLinkButton } from '@/components/auth/social-sign-in'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
@@ -17,8 +18,19 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   // Before hydration the browser would submit the form natively (GET), putting the
   // password into the URL. Keep the button disabled until the JS handler is attached.
   const [hydrated, setHydrated] = useState(false)
-  useEffect(() => setHydrated(true), [])
+  // The raw query: an OAuth request in it is signed, and the router's parsed copy re-encodes it.
+  const [search, setSearch] = useState('')
+  useEffect(() => {
+    setHydrated(true)
+    setSearch(window.location.search)
+  }, [])
   const signUp = mode === 'sign-up'
+  const resume = continueAfterAuth(search)
+  const finish = async () => {
+    queryClient.clear()
+    if (resume) window.location.href = resume
+    else await navigate({ to: '/' })
+  }
 
   return (
     <AuthLayout>
@@ -50,14 +62,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
                 setError(signUp ? cs.auth.signUpFailed : cs.auth.invalidCredentials)
                 return
               }
-              queryClient.clear()
-              // Signing in as part of an OAuth (MCP) authorization: continue to the consent step.
-              const next = (result.data as { redirect?: boolean; url?: string } | null)?.url
-              if ((result.data as { redirect?: boolean } | null)?.redirect && next) {
-                window.location.href = next
-                return
-              }
-              await navigate({ to: '/' })
+              await finish()
             }}
           >
             {signUp && (
@@ -106,8 +111,9 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
             </Button>
           </form>
           <Divider />
-          <GoogleButton />
+          <GoogleButton callbackURL={resume ?? '/'} />
           <MagicLinkButton
+            callbackURL={resume ?? '/'}
             getEmail={() =>
               (document.getElementById('email') as HTMLInputElement | null)?.value ?? ''
             }
@@ -119,10 +125,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
               onClick={async () => {
                 const result = await authClient.signIn.passkey()
                 if (result?.error) setError(cs.auth.invalidCredentials)
-                else {
-                  queryClient.clear()
-                  await navigate({ to: '/' })
-                }
+                else await finish()
               }}
             >
               {cs.auth.passkeyAction}
@@ -130,12 +133,12 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           )}
           <p className="text-center text-sm text-muted-foreground">
             {signUp ? cs.auth.haveAccount : cs.auth.noAccount}{' '}
-            <Link
-              to={signUp ? '/prihlaseni' : '/registrace'}
+            <a
+              href={`${signUp ? '/prihlaseni' : '/registrace'}${search}`}
               className="text-foreground underline underline-offset-4"
             >
               {signUp ? cs.auth.signInAction : cs.auth.signUpAction}
-            </Link>
+            </a>
           </p>
         </div>
       </div>

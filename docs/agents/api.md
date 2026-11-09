@@ -18,6 +18,7 @@ Open this file before adding or changing a procedure, an endpoint, an MCP tool o
 ## Surfaces
 - **UI/REST/CLI:** `/api/rpc`, `/api/v1` (API key or session), `/docs/api` (OpenAPI/Scalar).
 - **MCP:** `mcp-handler` at `/mcp`; one tool per procedure that has `meta.mcp`; OAuth 2.1 (CIMD) or API key.
+- **Agent setup:** `/start` (runbook, `packages/core/src/onboarding/runbook.ts`) and `get_onboarding_status`. A step names only existing tools (tested) and never one that issues or sends.
 - **Assistant:** `/api/agent`; tools are built from the same metadata and run with the signed-in user's context. Model, caps and budget: [0009](../decisions/0009-assistant-vercel-ai-gateway-hard-spend-caps.md).
 - **Cron:** `/api/cron/*` authorises and runs one job from `packages/core/src/jobs.ts` — scheduled work across organizations lives there, never in the route.
 - **Public:** `/f/:token` goes through the `publicRouter` (`packages/core/src/public/router.ts`) only; no authenticated surface may leak into it.

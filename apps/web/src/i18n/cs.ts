@@ -1780,6 +1780,7 @@ export const cs = {
       send_invoice_email: 'Odesílám fakturu e-mailem',
       rotate_document_public_link: 'Měním veřejný odkaz faktury',
       whoami: 'Zjišťuji, kdo jste',
+      get_onboarding_status: 'Zjišťuji, co zbývá nastavit',
       list_number_series: 'Načítám číselné řady',
       update_number_series: 'Upravuji číselnou řadu',
       set_next_document_number: 'Nastavuji další číslo dokladu',

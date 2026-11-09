@@ -70,7 +70,6 @@ export function Summary({ d, children }: { d: DocumentDetail; children?: ReactNo
         size="hero"
         value={mode === 'open' ? d.remaining : d.total}
         currency={d.currency}
-        animate
         tone={
           d.displayStatus === 'overdue'
             ? 'overdue'

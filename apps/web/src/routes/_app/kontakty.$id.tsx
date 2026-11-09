@@ -131,7 +131,7 @@ function ContactDetail() {
             label={t.stats.invoiced}
             hint={s ? t.stats.invoicedHint(s.documentCount) : undefined}
           >
-            <Amount value={s?.invoiced ?? '0.00'} size="lg" hideZeroFraction animate />
+            <Amount value={s?.invoiced ?? '0.00'} size="lg" hideZeroFraction />
           </Figure>
           <Figure
             label={t.stats.outstanding}
@@ -149,7 +149,6 @@ function ContactDetail() {
               value={s?.outstanding ?? '0.00'}
               size="lg"
               hideZeroFraction
-              animate
               tone={overdue ? 'overdue' : 'default'}
             />
           </Figure>

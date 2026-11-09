@@ -67,7 +67,7 @@ function Panel({ dark }: { dark?: boolean }) {
           <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
             <div>
               <div className="label-caps mb-1">Neuhrazeno</div>
-              <Amount value="94985.00" size="hero" animate />
+              <Amount value="94985.00" size="hero" />
             </div>
             <div>
               <div className="label-caps mb-1">Po splatnosti</div>

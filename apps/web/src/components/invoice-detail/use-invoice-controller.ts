@@ -61,7 +61,8 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
         // The new payment is the one that was not on the page before; undo removes only that one.
         const before = new Set((d?.payments ?? []).map((p) => p.id))
         const added = paid.payments.find((p) => !before.has(p.id))
-        toast.success(t.paid, {
+        const left = Number(paid.remaining) > 0
+        toast.success(left ? t.partlyPaid(formatMoney(paid.remaining, paid.currency)) : t.paid, {
           duration: 5000,
           ...(added && {
             action: {

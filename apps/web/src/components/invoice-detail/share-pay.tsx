@@ -101,12 +101,15 @@ export function ShareButton({
 /** One click pays the remaining amount today; the caret opens the amount/date form. */
 export function PaySplitButton({
   variant = 'default',
+  compact,
   className,
   disabled,
   onPayNow,
   onMore,
 }: {
   variant?: 'default' | 'outline'
+  /** In a half-width slot the full label does not fit. */
+  compact: boolean
   className?: string
   disabled?: boolean
   onPayNow: () => void
@@ -120,7 +123,14 @@ export function PaySplitButton({
         disabled={disabled}
         onClick={onPayNow}
       >
-        {t.markPaid}
+        {compact ? (
+          <>
+            {t.markPaidShort}
+            <span className="sr-only">: {t.markPaid}</span>
+          </>
+        ) : (
+          t.markPaid
+        )}
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger

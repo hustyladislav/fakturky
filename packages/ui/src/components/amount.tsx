@@ -1,6 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from 'cn'
-import { useCountUp } from '../hooks/use-count-up'
 import { moneyParts } from '../lib/money'
 
 const amountVariants = cva('whitespace-nowrap tabular-nums', {
@@ -30,32 +29,23 @@ const amountVariants = cva('whitespace-nowrap tabular-nums', {
 /**
  * Money amount from a decimal string. Always Inter tabular;
  * haléře are dimmed; negative amounts get a real minus and a muted red (not alarming).
- * `animate` counts up once on first paint (reduced-motion safe).
  */
 function Amount({
   value,
   currency = 'CZK',
   size,
   tone,
-  animate = false,
   hideZeroFraction = false,
   className,
 }: {
   /** Decimal string, e.g. "94985.00" (never a JS number). */
   value: string
   currency?: string
-  animate?: boolean
   /** Drop ",00" (compact lists); non-zero haléře always stay. */
   hideZeroFraction?: boolean
   className?: string
 } & VariantProps<typeof amountVariants>) {
-  const exact = moneyParts(value, currency)
-  const frac = Number(`${exact.integer.replace(/\s/g, '')}.${exact.fraction}`)
-  const counted = useCountUp(Math.abs(frac), { enabled: animate })
-  const p =
-    animate && counted !== Math.abs(frac)
-      ? moneyParts(`${exact.negative ? '-' : ''}${counted.toFixed(2)}`, currency)
-      : exact
+  const p = moneyParts(value, currency)
   const showFraction = !(hideZeroFraction && p.fraction === '00')
   const negativeTone = p.negative && (tone ?? 'default') === 'default'
   return (

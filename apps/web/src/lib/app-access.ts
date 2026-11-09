@@ -22,6 +22,8 @@ export async function requireAppAccess(client: QueryClient) {
 
 /** Another tab may have switched accounts meanwhile; ask now so the next click already knows. */
 export function recheckAppAccess(client: QueryClient) {
+  // A check on its way answers this too; removing it would cancel the navigation waiting for it.
+  if (client.isFetching({ queryKey })) return
   client.removeQueries({ queryKey })
   void client.prefetchQuery(accessQuery)
 }

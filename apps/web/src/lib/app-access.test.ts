@@ -69,6 +69,18 @@ describe('recheckAppAccess', () => {
     expect(await requireAppAccess(client)).toEqual(other)
     expect(ask).toHaveBeenCalledTimes(2)
   })
+
+  it('leaves a check already on its way alone, so a waiting navigation still gets its answer', async () => {
+    const client = new QueryClient()
+    let answer: (value: typeof pass) => void = () => {}
+    ask.mockReset()
+    ask.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+    const navigation = requireAppAccess(client)
+    recheckAppAccess(client)
+    answer(pass)
+    await expect(navigation).resolves.toEqual(user)
+    expect(ask).toHaveBeenCalledOnce()
+  })
 })
 
 describe('reportIfSessionRefused', () => {

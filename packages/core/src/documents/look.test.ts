@@ -1,5 +1,5 @@
 import { type DbHandle, schema } from '@fakturky/db'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { clientFor, createTestDb, seedOrg } from '../testing'
 
@@ -80,7 +80,7 @@ test('a draft that still carries a stored look ignores it and replaces it at iss
         signatureAssetId: null,
       },
     })
-    .where(eq(schema.document.id, draft.id))
+    .where(and(eq(schema.document.organizationId, org), eq(schema.document.id, draft.id)))
   await api.appearance.update({ accentColor: '#222222', showBrand: true })
 
   const live = { accentColor: '#222222', showBrand: true }
@@ -89,6 +89,6 @@ test('a draft that still carries a stored look ignores it and replaces it at iss
   const [row] = await handle.db
     .select({ appearance: schema.document.appearance })
     .from(schema.document)
-    .where(eq(schema.document.id, draft.id))
+    .where(and(eq(schema.document.organizationId, org), eq(schema.document.id, draft.id)))
   expect(row?.appearance).toMatchObject(live)
 })

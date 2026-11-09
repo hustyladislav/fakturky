@@ -83,6 +83,7 @@ export function ActionButton({
       return (
         <PaySplitButton
           variant={variant}
+          compact={!primary}
           className={cn(primary ? 'h-10 pointer-coarse:h-11' : 'h-9 pointer-coarse:h-11', cls)}
           disabled={disabled}
           onPayNow={() => ctrl.run('pay')}

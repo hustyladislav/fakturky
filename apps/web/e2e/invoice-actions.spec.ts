@@ -22,6 +22,12 @@ test('after issuing, Sdílet is primary and copies the link; paying has one clic
   await page.waitForLoadState('networkidle')
 
   const hero = page.getByTestId('doc-hero')
+  const clipped = await hero
+    .getByRole('button')
+    .evaluateAll((buttons) =>
+      buttons.filter((b) => b.scrollWidth > b.clientWidth).map((b) => b.textContent),
+    )
+  expect(clipped).toEqual([])
   await hero.getByRole('button', { name: 'Sdílet' }).click()
   await expect(hero.getByRole('button', { name: 'Zkopírováno' })).toBeVisible()
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/\/f\/[\w-]+$/)
@@ -29,7 +35,7 @@ test('after issuing, Sdílet is primary and copies the link; paying has one clic
   // Paying is a single click on the main segment and can be undone for a few seconds.
   await hero.getByRole('button', { name: 'Označit jako zaplacenou' }).click()
   await expect(page.getByText('Zaplacená', { exact: true }).first()).toBeVisible()
-  await page.getByRole('button', { name: 'Vrátit zpět' }).click()
+  await page.getByRole('button', { name: 'Vrátit', exact: true }).click()
   await expect(page.getByText('Vystavená', { exact: true }).first()).toBeVisible()
   await expect(page.getByText('Platba byla odebrána.')).toBeVisible()
 

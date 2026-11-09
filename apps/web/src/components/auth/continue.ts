@@ -5,7 +5,7 @@
 export function continueAfterAuth(search: string): string | null {
   const query = new URLSearchParams(search)
   if (query.get('client_id') && query.get('response_type')) {
-    return `/api/auth/oauth2/authorize?${query.toString()}`
+    return `/api/auth/oauth2/authorize${search}`
   }
   return null
 }

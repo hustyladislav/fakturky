@@ -1,6 +1,6 @@
 import type { Db } from '@fakturky/db'
 import { schema } from '@fakturky/db'
-import { and, count, eq, gt, isNull, ne } from 'drizzle-orm'
+import { and, count, eq, gt, isNull, like, ne, or } from 'drizzle-orm'
 import { z } from 'zod'
 
 const FIO_BANK_CODE = '2010'
@@ -44,8 +44,8 @@ export type OnboardingFacts = {
   bankAccounts: number
   fioAccountWithoutToken: boolean
   documents: number
-  /** Issued or imported documents: this organization already has a numbering history here. */
-  nonDraftDocuments: number
+  /** Issued or imported invoices: this organization already has an invoice numbering history here. */
+  issuedInvoices: number
   numberingAdvanced: boolean
 }
 
@@ -70,7 +70,7 @@ export function onboardingSteps(f: OnboardingFacts): Step[] {
       kind: 'ask',
       title: 'Firma',
       instruction:
-        'Call lookup_company_by_ico with the answer, then show the company name, address and VAT status from ARES in one message for the user to confirm. ARES only knows payer or non-payer, so offer "Neplátce DPH", "Plátce DPH" and "Identifikovaná osoba" with the ARES result recommended. Then call update_business_profile with legalName, ico, dic, address, vatStatus and registryNote. A user with no IČO gives name and address instead.',
+        'Call lookup_company_by_ico with the answer, then show the company name, address and VAT status from ARES in one message for the user to confirm. ARES only knows payer or non-payer, so offer "Neplátce DPH", "Plátce DPH" and "Identifikovaná osoba" with the ARES result recommended. Then call update_business_profile with legalName, ico, dic, address, vatStatus and registryNote. If ARES has no registry note for a non-payer, ask for the line from their trade or commercial register: the invoice must show it.',
       tools: ['lookup_company_by_ico', 'update_business_profile'],
       ask: { question: 'Jaké je IČO vaší firmy?', options: [], freeText: true },
       path: null,
@@ -93,7 +93,7 @@ export function onboardingSteps(f: OnboardingFacts): Step[] {
     },
     {
       id: 'history',
-      status: f.nonDraftDocuments > 0 || f.numberingAdvanced ? 'done' : 'todo',
+      status: f.issuedInvoices > 0 || f.numberingAdvanced ? 'done' : 'todo',
       required: false,
       kind: 'ask',
       title: 'Dosavadní fakturace',
@@ -170,7 +170,7 @@ export function summarize(steps: Step[]): OnboardingStatus {
 }
 
 async function loadFacts(db: Db, orgId: string): Promise<OnboardingFacts> {
-  const { bankAccount, businessProfile, document, numberSeriesCounter } = schema
+  const { bankAccount, businessProfile, document, numberSeries, numberSeriesCounter } = schema
   const countOf = async (
     table: typeof bankAccount | typeof document,
     where: ReturnType<typeof and>,
@@ -179,23 +179,41 @@ async function loadFacts(db: Db, orgId: string): Promise<OnboardingFacts> {
     return row?.n ?? 0
   }
   const active = and(eq(bankAccount.organizationId, orgId), isNull(bankAccount.archivedAt))
-  const [[profile], accounts, fio, documents, nonDraft, [advanced]] = await Promise.all([
+  const live = and(eq(document.organizationId, orgId), isNull(document.deletedAt))
+  const [[profile], accounts, fio, documents, issuedInvoices, [advanced]] = await Promise.all([
     db
-      .select({ onboardedAt: businessProfile.onboardedAt, address: businessProfile.address })
+      .select({
+        onboardedAt: businessProfile.onboardedAt,
+        ico: businessProfile.ico,
+        address: businessProfile.address,
+      })
       .from(businessProfile)
       .where(eq(businessProfile.organizationId, orgId)),
     countOf(bankAccount, active),
     countOf(
       bankAccount,
-      and(active, eq(bankAccount.bankCode, FIO_BANK_CODE), isNull(bankAccount.fioTokenEncrypted)),
+      and(
+        active,
+        // An account entered as an IBAN has no bank code; the code is inside the IBAN.
+        or(
+          eq(bankAccount.bankCode, FIO_BANK_CODE),
+          like(bankAccount.iban, `CZ__${FIO_BANK_CODE}%`),
+        ),
+        isNull(bankAccount.fioTokenEncrypted),
+      ),
     ),
-    countOf(document, eq(document.organizationId, orgId)),
-    countOf(document, and(eq(document.organizationId, orgId), ne(document.status, 'draft'))),
+    countOf(document, live),
+    countOf(document, and(live, eq(document.type, 'invoice'), ne(document.status, 'draft'))),
     db
       .select({ id: numberSeriesCounter.seriesId })
       .from(numberSeriesCounter)
+      .innerJoin(numberSeries, eq(numberSeries.id, numberSeriesCounter.seriesId))
       .where(
-        and(eq(numberSeriesCounter.organizationId, orgId), gt(numberSeriesCounter.nextValue, 1)),
+        and(
+          eq(numberSeriesCounter.organizationId, orgId),
+          eq(numberSeries.documentType, 'invoice'),
+          gt(numberSeriesCounter.nextValue, 1),
+        ),
       )
       .limit(1),
   ])
@@ -203,6 +221,7 @@ async function loadFacts(db: Db, orgId: string): Promise<OnboardingFacts> {
     // Any profile update stamps onboardedAt, so a partial one must not count as a finished setup.
     profileFilled: Boolean(
       profile?.onboardedAt &&
+        profile.ico &&
         profile.address?.street &&
         profile.address.city &&
         profile.address.zip,
@@ -210,7 +229,7 @@ async function loadFacts(db: Db, orgId: string): Promise<OnboardingFacts> {
     bankAccounts: accounts,
     fioAccountWithoutToken: fio > 0,
     documents,
-    nonDraftDocuments: nonDraft,
+    issuedInvoices,
     numberingAdvanced: advanced !== undefined,
   }
 }

@@ -9,7 +9,7 @@ const blank: OnboardingFacts = {
   bankAccounts: 0,
   fioAccountWithoutToken: false,
   documents: 0,
-  nonDraftDocuments: 0,
+  issuedInvoices: 0,
   numberingAdvanced: false,
 }
 const tools = new Set(listToolDescriptors().map((t) => t.name))
@@ -30,7 +30,7 @@ describe('checklist', () => {
   })
 
   test('nothing is left once every step is done', () => {
-    const facts = { profileFilled: true, bankAccounts: 1, documents: 1, nonDraftDocuments: 1 }
+    const facts = { profileFilled: true, bankAccounts: 1, documents: 1, issuedInvoices: 1 }
     expect(summarize(onboardingSteps({ ...blank, ...facts }))).toMatchObject({
       complete: true,
       next: null,
@@ -39,7 +39,7 @@ describe('checklist', () => {
 
   test('numbering history is settled by issued documents or a raised counter, not by a draft', () => {
     expect(byId({ documents: 1 }).history?.status).toBe('todo')
-    expect(byId({ documents: 1, nonDraftDocuments: 1 }).history?.status).toBe('done')
+    expect(byId({ documents: 1, issuedInvoices: 1 }).history?.status).toBe('done')
     expect(byId({ numberingAdvanced: true }).history?.status).toBe('done')
   })
 
@@ -89,10 +89,56 @@ describe('against the database', () => {
     expect((await api.onboarding.status({})).next).toBe('business_profile')
 
     await api.businessProfile.update({
+      address: { street: 'Dlouhá 1', city: 'Praha', zip: '11000', country: 'CZ' },
+    })
+    expect((await api.onboarding.status({})).next).toBe('business_profile')
+
+    await api.businessProfile.update({
       legalName: 'Firma s.r.o.',
+      ico: '12345016',
       address: { street: 'Dlouhá 1', city: 'Praha', zip: '11000', country: 'CZ' },
     })
     const after = await api.onboarding.status({})
     expect(after).toMatchObject({ complete: true, next: 'bank_account' })
+  })
+
+  test('a deleted draft no longer counts as the first draft', async () => {
+    const handle = await handlePromise
+    const organizationId = await seedOrg(handle, 'deleted-draft')
+    const api = clientFor(handle, { userId: 'u', organizationId, via: 'apiKey' })
+    const step = async (id: string) =>
+      (await api.onboarding.status({})).steps.find((s) => s.id === id)?.status
+
+    const draft = await api.documents.createDraft({})
+    expect(await step('first_draft')).toBe('done')
+    await api.documents.delete({ id: draft.id })
+    expect(await step('first_draft')).toBe('todo')
+  })
+
+  test('only the invoice series settles the numbering question', async () => {
+    const handle = await handlePromise
+    const organizationId = await seedOrg(handle, 'series')
+    const api = clientFor(handle, { userId: 'u', organizationId, via: 'apiKey' })
+    const history = async () =>
+      (await api.onboarding.status({})).steps.find((s) => s.id === 'history')?.status
+    const series = await api.numberSeries.list({})
+    const of = (type: string) => series.find((s) => s.documentType === type)?.id ?? ''
+
+    await api.numberSeries.setNext({ id: of('proforma'), value: 42 })
+    expect(await history()).toBe('todo')
+    await api.numberSeries.setNext({ id: of('invoice'), value: 42 })
+    expect(await history()).toBe('done')
+  })
+
+  test('a Fio account entered as an IBAN is offered the bank sync', async () => {
+    const handle = await handlePromise
+    const organizationId = await seedOrg(handle, 'fio-iban')
+    const api = clientFor(handle, { userId: 'u', organizationId, via: 'apiKey' })
+    await api.bankAccounts.create({
+      label: 'Fio',
+      account: 'CZ9620100000002400222233',
+    })
+    const { steps } = await api.onboarding.status({})
+    expect(steps.find((s) => s.id === 'bank_sync')?.status).toBe('todo')
   })
 })

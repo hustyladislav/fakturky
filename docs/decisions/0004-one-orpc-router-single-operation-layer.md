@@ -9,7 +9,7 @@ The product promise is that everything a user can do in the UI is also available
 Separate implementations per surface drift, and each would need its own tenant scoping and validation.
 
 ## Decision
-Every capability is an oRPC procedure in `packages/core/src/router`, defined once with Zod input/output and `meta` (`mcp`, `openapi`).
+Every capability is an oRPC procedure in `packages/core/src/<feature>/router.ts` (composed in `router/index.ts`), defined once with Zod input/output and `meta` (`mcp`, `openapi`).
 The web UI, REST (`/api/v1`), MCP (`/mcp`), the CLI and the assistant's tools are adapters that read the router and its metadata.
 Auth, organization scoping and validation belong to the procedure, not the adapter. Working rules: `docs/agents/api.md`.
 

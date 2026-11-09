@@ -11,6 +11,7 @@ import { RecentDocuments } from '@/components/dashboard/recent-documents'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
 import { VatDeadline } from '@/components/dashboard/vat-deadline'
 import { VatLimitCard } from '@/components/dashboard/vat-limit'
+import { ErrorState } from '@/components/error-state'
 import { cs } from '@/i18n/cs'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
@@ -83,7 +84,7 @@ function Overview() {
 
       {recent.isSuccess && !hasDocs && <FirstInvoice noBankAccount={noBankAccount} />}
 
-      {summary.isError && <p className="text-sm text-muted-foreground">{cs.common.error}</p>}
+      {summary.isError && <ErrorState onRetry={() => summary.refetch()} />}
       {summary.isPending && <Loading />}
 
       {s && (

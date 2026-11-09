@@ -9,6 +9,7 @@ import { Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { ErrorState } from '@/components/error-state'
 import { cs } from '@/i18n/cs'
+import { refreshDocumentData } from '@/lib/document-cache'
 import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
 
@@ -33,7 +34,7 @@ function Row({ doc }: { doc: Doc }) {
     orpc.documents.send.mutationOptions({
       onSuccess: () => {
         toast.success(t.reminded)
-        qc.invalidateQueries({ queryKey: orpc.documents.key() })
+        void refreshDocumentData(qc)
       },
       onError: (e) => toast.error(apiErrorMessage(e)),
     }),

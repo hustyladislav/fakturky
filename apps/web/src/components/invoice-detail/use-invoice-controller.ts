@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import type { ActionId } from '@/components/invoice-detail/actions'
 import { useShareLink } from '@/components/invoice-detail/share-pay'
 import { cs } from '@/i18n/cs'
+import { refreshDocumentData } from '@/lib/document-cache'
 import type { DocumentDetail } from '@/lib/document-sheet'
 import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
@@ -31,7 +32,7 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
   }, [openPay])
   const { share, copied } = useShareLink()
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
+  const refresh = () => refreshDocumentData(queryClient)
   const onError = (e: unknown) => toast.error(apiErrorMessage(e))
   const toDraftEditor = (message: string) => async (n: { id: string }) => {
     toast.success(message)

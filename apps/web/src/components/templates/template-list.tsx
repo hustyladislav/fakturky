@@ -11,6 +11,7 @@ import { Pause, Play, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
+import { refreshDocumentData } from '@/lib/document-cache'
 import { orpc } from '@/lib/orpc'
 import { RepeatForm } from './repeat-form'
 
@@ -32,7 +33,7 @@ function useTemplateActions(onRuleCreated: () => void) {
     orpc.templates.use.mutationOptions({
       onSuccess: async (d) => {
         toast.success(t.used)
-        await queryClient.invalidateQueries({ queryKey: orpc.documents.key() })
+        await refreshDocumentData(queryClient)
         navigate({ to: '/faktury/$id/upravit', params: { id: d.id } })
       },
       onError,

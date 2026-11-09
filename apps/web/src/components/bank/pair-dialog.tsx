@@ -1,4 +1,3 @@
-import { formatMoney } from '@fakturky/domain'
 import { Button } from '@fakturky/ui/components/button'
 import {
   Dialog,
@@ -9,6 +8,7 @@ import {
 } from '@fakturky/ui/components/dialog'
 import { Input } from '@fakturky/ui/components/input'
 import { Money } from '@fakturky/ui/components/money'
+import { formatMoney } from '@fakturky/ui/lib/money'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'

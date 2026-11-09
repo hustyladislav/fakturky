@@ -10,8 +10,9 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, FilePlus2 } from 'lucide-react'
 import { ContactInvoices } from '@/components/contacts/contact-invoices'
 import { ContactMenu, useNewInvoiceFor } from '@/components/contacts/contact-menu'
-import { crowns } from '@/components/invoices/summary-strip'
+import { ErrorState } from '@/components/error-state'
 import { cs } from '@/i18n/cs'
+import { crowns } from '@/lib/crowns'
 import { pageHead } from '@/lib/head'
 import { orpc } from '@/lib/orpc'
 
@@ -61,6 +62,11 @@ function ContactDetail() {
   const s = stats.data?.[0]
 
   if (contact.isError) {
+    // A missing contact is final; anything else (offline, 5xx) is worth another try.
+    const code = (contact.error as { code?: string } | null)?.code
+    if (code !== 'NOT_FOUND' && code !== 'BAD_REQUEST') {
+      return <ErrorState onRetry={() => contact.refetch()} />
+    }
     return (
       <div className="mx-auto max-w-[1200px]">
         <EmptyState illustration="contacts" title={t.notFound}>

@@ -1,11 +1,12 @@
 import type { RouterOutputs } from '@fakturky/core/router'
+import { sum } from '@fakturky/domain/money'
 import { Amount } from '@fakturky/ui/components/amount'
 import { formatMoney } from '@fakturky/ui/lib/money'
 import { cn } from '@fakturky/ui/lib/utils'
 import { useId, useMemo, useState } from 'react'
 import { cs } from '@/i18n/cs'
 import { compactCz, niceTicks } from '@/lib/chart-scale'
-import { wholeCrowns } from './kpi-card'
+import { wholeCrowns } from '@/lib/crowns'
 
 type Month = RouterOutputs['dashboard']['summary']['months'][number]
 
@@ -58,7 +59,7 @@ export function RevenueChart({ months, className }: { months: Month[]; className
   const peak = Math.max(0, ...rows.map((r) => r.stack))
   const ticks = niceTicks(Math.max(peak, 1))
   const top = ticks.at(-1) ?? 1
-  const total = shown.reduce((sum, m) => sum + Number(m.turnover), 0)
+  const total = sum(shown.map((m) => m.turnover))
   const empty = peak === 0
   const currentKey = months.at(-1)?.month
 

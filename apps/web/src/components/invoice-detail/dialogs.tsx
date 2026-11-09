@@ -3,6 +3,7 @@ import { Label } from '@fakturky/ui/components/label'
 import { NativeSelect } from '@fakturky/ui/components/native-select'
 import { useState } from 'react'
 import { CreditNoteDialog } from '@/components/invoice-detail/credit-note-dialog'
+import { splitReceipt } from '@/components/invoice-detail/receipt-split'
 import type { InvoiceController } from '@/components/invoice-detail/use-invoice-controller'
 import { PromptDialog } from '@/components/prompt-dialog'
 import { cs } from '@/i18n/cs'
@@ -23,6 +24,7 @@ function templateName(d: { lines: { description: string }[]; customerName: strin
 export function InvoiceDialogs({ d, ctrl }: { d: DocumentDetail; ctrl: InvoiceController }) {
   const { id, dialog, setDialog } = ctrl
   const [rate12, setRate12] = useState('')
+  const split = splitReceipt(d.paidAmount, rate12)
   const [receiptRate, setReceiptRate] = useState<'21' | '12' | 'split'>('21')
   const close = (o: boolean) => !o && setDialog(null)
 
@@ -99,16 +101,16 @@ export function InvoiceDialogs({ d, ctrl }: { d: DocumentDetail; ctrl: InvoiceCo
         description={t.receiptDescription(d.paidAmount, d.currency)}
         confirmLabel={t.receipt}
         pending={ctrl.receipt.isPending}
+        blocked={receiptRate === 'split' && !split}
         onConfirm={() => {
           setDialog(null)
           if (receiptRate === 'split') {
-            const reduced = Number(rate12.replace(',', '.') || 0)
-            const total = Number(d.paidAmount)
+            if (!split) return
             ctrl.receipt.mutate({
               id,
               allocations: [
-                { vatRate: '21', amount: (total - reduced).toFixed(2) },
-                { vatRate: '12', amount: reduced.toFixed(2) },
+                { vatRate: '21', amount: split.standard },
+                { vatRate: '12', amount: split.reduced },
               ],
             })
           } else {
@@ -138,9 +140,7 @@ export function InvoiceDialogs({ d, ctrl }: { d: DocumentDetail; ctrl: InvoiceCo
               onChange={(e) => setRate12(e.target.value)}
             />
             <p className="text-muted-foreground text-xs">
-              {t.receiptAmount21(
-                (Number(d.paidAmount) - Number(rate12.replace(',', '.') || 0)).toFixed(2),
-              )}
+              {split ? t.receiptAmount21(split.standard) : t.receiptAmountHint}
             </p>
           </div>
         )}

@@ -2,10 +2,10 @@ import { cn } from '@fakturky/ui/lib/utils'
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react'
 import { Fragment } from 'react'
 import { cs } from '@/i18n/cs'
+import { crowns } from '@/lib/crowns'
 import type { MonthGroup } from '@/lib/invoice-groups'
 import { type Doc, InvoiceCompactRow, InvoiceRow } from './invoice-rows'
 import type { Dir, Sort } from './list-search'
-import { crowns } from './money'
 
 const t = cs.invoices
 

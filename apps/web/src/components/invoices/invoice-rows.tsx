@@ -63,8 +63,10 @@ export function useDocActions() {
       onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
-  const undoPaid = (paid: Parameters<typeof undoPaidInput>[0]) =>
-    markUnpaid.mutate(undoPaidInput(paid))
+  const undoPaid = (paid: Parameters<typeof undoPaidInput>[0]) => {
+    const input = undoPaidInput(paid)
+    if (input) markUnpaid.mutate(input)
+  }
   const markPaid = useMutation(
     orpc.documents.markPaid.mutationOptions({
       onSuccess: (d) => {
@@ -245,7 +247,7 @@ export function InvoiceCompactRow({ d }: { d: Doc }) {
           <Amount value={d.total} currency={d.currency} size="inline" className="shrink-0" />
         </span>
         <span className="flex items-baseline justify-between gap-3 text-[13px] leading-[18px] text-muted-foreground">
-          <span className="min-w-0 truncate tabular-nums">
+          <span className="min-w-0 break-words tabular-nums">
             {d.number ?? t.noNumber}
             {type && ` · ${type}`}
             {showDue && (

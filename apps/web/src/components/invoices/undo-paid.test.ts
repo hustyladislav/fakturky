@@ -23,4 +23,8 @@ describe('undoPaidInput', () => {
     }
     expect(undoPaidInput(paid)).toEqual({ id: 'doc', paymentId: 'just-added' })
   })
+
+  test('with no payment to name it undoes nothing, rather than removing all', () => {
+    expect(undoPaidInput({ id: 'doc', payments: [] })).toBeNull()
+  })
 })

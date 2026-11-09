@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { ProfileFields } from '@/components/business-profile-fields'
 import { FoundSummary, IcoEntry } from '@/components/business-profile-ico-first'
 import { cs } from '@/i18n/cs'
+import { apiErrorMessage } from '@/lib/errors'
 import { client, orpc } from '@/lib/orpc'
 
 type Profile = Awaited<ReturnType<typeof client.businessProfile.get>>
@@ -119,7 +120,7 @@ export function BusinessProfileForm({
   }
 
   // A newly typed, valid IČO looks itself up (never the saved one: it would overwrite manual edits).
-  const lastAuto = useRef(profile.ico ?? '')
+  const lastAuto = useRef((profile.ico ?? '').replace(/\s/g, ''))
   useEffect(() => {
     const ico = values.ico.replace(/\s/g, '')
     if (!isValidIco(ico) || ico.length !== 8 || ico === lastAuto.current) return
@@ -150,7 +151,7 @@ export function BusinessProfileForm({
       await queryClient.invalidateQueries({ queryKey: orpc.businessProfile.key() })
       await onSaved?.()
     },
-    onError: () => toast.error(cs.common.error),
+    onError: (e) => toast.error(apiErrorMessage(e)),
   })
 
   const icoRow = (

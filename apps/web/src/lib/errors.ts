@@ -15,5 +15,17 @@ export function apiErrorMessage(e: unknown): string {
       .filter(Boolean)
       .join(' ')
   }
-  return (e as Error).message || cs.common.error
+  return serverErrorMessage((e as Error).message)
+}
+
+/** The API speaks English for REST and MCP clients; a person here must never read that. */
+export function serverErrorMessage(message: string | undefined): string {
+  if (!message) return cs.common.error
+  const known = cs.serverErrors[message]
+  if (known) return known
+  const allocations = message.match(/^The allocations must .*\((.+)\)$/)
+  if (allocations?.[1]) return cs.serverErrorsDynamic.allocations(allocations[1])
+  const credit = message.match(/^The credited amount exceeds .*\((.+)\)$/)
+  if (credit?.[1]) return cs.serverErrorsDynamic.creditExceeded(credit[1])
+  return cs.common.error
 }

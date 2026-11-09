@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
+import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
 import type { VatProfile } from './use-vat-report'
 
@@ -31,7 +32,7 @@ export function FilingDetails({ profile }: { profile: VatProfile }) {
         await queryClient.invalidateQueries({ queryKey: orpc.businessProfile.key() })
         await queryClient.invalidateQueries({ queryKey: orpc.vat.key() })
       },
-      onError: (e) => toast.error((e as Error).message || cs.common.error),
+      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
   const complete = Boolean(f) && Boolean(profile.dic)

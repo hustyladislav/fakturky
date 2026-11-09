@@ -116,43 +116,54 @@ function ContactDetail() {
         }
       />
 
-      <div className="mb-8 grid grid-cols-2 gap-x-8 gap-y-5 border-y py-5 sm:grid-cols-3">
-        <Figure
-          label={t.stats.invoiced}
-          hint={s ? t.stats.invoicedHint(s.documentCount) : undefined}
-        >
-          <Amount value={s?.invoiced ?? '0.00'} size="lg" hideZeroFraction animate />
-        </Figure>
-        <Figure
-          label={t.stats.outstanding}
-          hint={
-            s && Number(s.outstanding) > 0 ? (
-              overdue ? (
-                <span className="text-destructive">{t.stats.overdue(crowns(s.overdue))}</span>
-              ) : undefined
-            ) : (
-              t.stats.noneOwed
-            )
-          }
-        >
-          <Amount
-            value={s?.outstanding ?? '0.00'}
-            size="lg"
-            hideZeroFraction
-            animate
-            tone={overdue ? 'overdue' : 'default'}
-          />
-        </Figure>
-        <Figure label={t.stats.last} hint={lastDate ? formatDate(lastDate) : t.stats.lastNone}>
-          <span className="text-[28px] leading-8 tracking-[-0.02em]">
-            {lastDate ? (
-              <RelativeDate date={s?.lastInvoiceDate} />
-            ) : (
-              <span className="text-muted-foreground">—</span>
-            )}
-          </span>
-        </Figure>
-      </div>
+      {/* Never "Vše zaplaceno" before the figures are known. */}
+      {stats.isError ? (
+        <div className="mb-8">
+          <ErrorState onRetry={() => stats.refetch()} />
+        </div>
+      ) : stats.isPending ? (
+        <div className="mb-8 border-y py-5" aria-busy="true">
+          <Skeleton className="h-16 w-full" />
+        </div>
+      ) : (
+        <div className="mb-8 grid grid-cols-2 gap-x-8 gap-y-5 border-y py-5 sm:grid-cols-3">
+          <Figure
+            label={t.stats.invoiced}
+            hint={s ? t.stats.invoicedHint(s.documentCount) : undefined}
+          >
+            <Amount value={s?.invoiced ?? '0.00'} size="lg" hideZeroFraction animate />
+          </Figure>
+          <Figure
+            label={t.stats.outstanding}
+            hint={
+              s && Number(s.outstanding) > 0 ? (
+                overdue ? (
+                  <span className="text-destructive">{t.stats.overdue(crowns(s.overdue))}</span>
+                ) : undefined
+              ) : (
+                t.stats.noneOwed
+              )
+            }
+          >
+            <Amount
+              value={s?.outstanding ?? '0.00'}
+              size="lg"
+              hideZeroFraction
+              animate
+              tone={overdue ? 'overdue' : 'default'}
+            />
+          </Figure>
+          <Figure label={t.stats.last} hint={lastDate ? formatDate(lastDate) : t.stats.lastNone}>
+            <span className="text-[28px] leading-8 tracking-[-0.02em]">
+              {lastDate ? (
+                <RelativeDate date={s?.lastInvoiceDate} />
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </span>
+          </Figure>
+        </div>
+      )}
 
       <div className="grid items-start gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <section>

@@ -268,6 +268,14 @@ describe('ABO / GPC', () => {
 describe('CAMT.053', () => {
   const s = parseCamt053(fixture('camt053.xml'))
 
+  test('skips a negative <Amt> instead of emitting a malformed amount', () => {
+    const xml = fixture('camt053.xml').replace('<Amt Ccy="EUR">49.90</Amt>', '<Amt Ccy="EUR">-49.90</Amt>')
+    const parsed = parseCamt053(xml)
+    expect(parsed.transactions).toHaveLength(s.transactions.length - 1)
+    expect(parsed.transactions.every((t) => /^-?\d+\.\d{2}$/.test(t.amount))).toBe(true)
+    expect(parsed.warnings.some((w) => w.includes('skipped'))).toBe(true)
+  })
+
   test('statement account and booked entries only', () => {
     expect(s.format).toBe('camt053')
     expect(s.iban).toBe('CZ8720100000002400123455')

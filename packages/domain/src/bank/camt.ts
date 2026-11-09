@@ -1,3 +1,4 @@
+import { parseDecimal } from '../money.ts'
 import { blankToNull, cleanSymbol, parseBankAmount, parseBankDate } from './text.ts'
 import { type ParsedStatement, type ParsedTransaction, StatementParseError } from './types.ts'
 import { type XNode, all, at, find, parseXml, textAt } from './xml.ts'
@@ -65,11 +66,11 @@ export function parseCamt053(xml: string): ParsedStatement {
         const raw = amtNode?.text.trim()
         const amountAbs = raw ? parseBankAmount(raw, 'dot') : null
         const currency = (amtNode?.attrs.Ccy ?? entryAmt?.attrs.Ccy ?? stmtCcy)?.toUpperCase()
-        if (!bookedOn || !amountAbs || !currency) {
+        if (!bookedOn || !amountAbs || amountAbs.startsWith('-') || !currency) {
           warnings.push(`Entry ${n + 1}: skipped (missing date, amount or currency)`)
           continue
         }
-        const amount = credit || Number(amountAbs) === 0 ? amountAbs : `-${amountAbs}`
+        const amount = credit || parseDecimal(amountAbs).isZero() ? amountAbs : `-${amountAbs}`
         const parties = at(tx, 'RltdPties')
         const partyNode = find(parties, credit ? 'Dbtr' : 'Cdtr')
         const acctNode = at(parties, credit ? 'DbtrAcct' : 'CdtrAcct')

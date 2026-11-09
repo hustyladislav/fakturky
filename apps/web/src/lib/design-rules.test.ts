@@ -56,6 +56,16 @@ function sources(dir: string): string[] {
   })
 }
 
+/** Fields and call results are where amounts live, so any name counts unless known not to be money. */
+const NOT_MONEY =
+  /^(e\.target\.value|\w+\.slice\(|\w+\[(\d|i\])|request\.headers\.|s\.w\b|l\.vatRate|r\.rate)/
+
+function numberOnField(code: string) {
+  return [...code.matchAll(/\bNumber\(\s*([\w$]+(?:\?\.|\.|\[|\().*)/g)]
+    .map((m) => m[1] as string)
+    .filter((arg) => !NOT_MONEY.test(arg))
+}
+
 describe('code rules (docs/agents/ui.md, AGENTS.md)', () => {
   const files = [join(repo, 'apps/web/src'), join(repo, 'packages/ui/src')]
     .flatMap(sources)
@@ -66,11 +76,31 @@ describe('code rules (docs/agents/ui.md, AGENTS.md)', () => {
     ['ease-in on UI (feels sluggish)', /\bease-in\b(?!-out)/],
     ['entering from scale 0', /scale\(0\)|\bscale-0\b/],
     ['serif in the app (documents only)', /\bfont-serif\b/],
-    [
-      'money through Number() (use parseDecimal)',
-      /\bNumber\(\w+\??\.(remaining|outstanding|total|paidAmount|overdue|invoiced|amount)\)/,
-    ],
   ])('no %s', (_rule, pattern) => {
     expect(files.filter((f) => pattern.test(f.text)).map((f) => f.path)).toEqual([])
+  })
+
+  it('no money through Number() (use parseDecimal)', () => {
+    expect(files.flatMap((f) => numberOnField(f.text).map((a) => `${f.path}: ${a}`))).toEqual([])
+  })
+
+  it.each([
+    'Number(d.remaining)',
+    'Number( d.remaining )',
+    "Number(d.remaining ?? '0')",
+    'Number(s?.invoiced ?? 0)',
+    'Number(clean(l.unitPrice))',
+    'Number(a5[key])',
+  ])('catches %s', (code) => {
+    expect(numberOnField(code)).toHaveLength(1)
+  })
+
+  it.each([
+    'Number(next)',
+    'Number(e.target.value)',
+    'Number(iso.slice(8, 10))',
+    'formatNumber(a.b)',
+  ])('allows %s', (code) => {
+    expect(numberOnField(code)).toEqual([])
   })
 })

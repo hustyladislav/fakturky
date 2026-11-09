@@ -4,6 +4,7 @@ import {
   clickMoreAction,
   createContact,
   ICO,
+  issueInvoice,
   onboardByIco,
   PASSWORD,
   signUp,
@@ -157,4 +158,72 @@ test('a page that fails to load offers a Czech retry, not a raw error', async ({
   await page.unroute(/contacts\/list/)
   await retry.click()
   await expect(page.getByText('Seznam s.r.o.').locator('visible=true').first()).toBeVisible()
+})
+
+test('an action that fails says so in Czech instead of doing nothing', async ({ page }) => {
+  await signUp(page, testEmail('silent-failure'))
+  await onboardByIco(page, ICO.nonPayerSupplier, 'E2E Neplátce Novák')
+  await addBankAccount(page)
+  await page.route(/bankAccounts\/delete/, (route) => route.abort())
+  await page.getByRole('button', { name: 'Smazat' }).first().click()
+  await expect(page.getByText('Něco se pokazilo. Zkuste to prosím znovu.')).toBeVisible()
+  await expect(page.getByText('Failed to fetch')).toHaveCount(0)
+  await expect(page.getByText('CZ6508000000192000145399')).toBeVisible()
+})
+
+test('bulk mark paid reports failures, keeps the selection and can be retried', async ({
+  page,
+}) => {
+  await signUp(page, testEmail('bulk-fail'))
+  await onboardByIco(page, ICO.nonPayerSupplier, 'E2E Neplátce Novák')
+  await addBankAccount(page)
+  await createContact(page, 'Hromadně s.r.o.')
+  await issueInvoice(page, 'Hromadně s.r.o.')
+  await issueInvoice(page, 'Hromadně s.r.o.')
+  await page.goto('/faktury')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('checkbox', { name: 'Vybrat všechny' }).click()
+  const bar = page.getByRole('toolbar', { name: 'Vybráno: 2' })
+  const markPaid = bar.getByRole('button', { name: /Označit jako zaplacené/ })
+
+  await page.route(/documents\/markPaid/, (route) => route.abort())
+  await markPaid.click()
+  await expect(page.getByText('Označeno jako zaplacené: 0, nepodařilo se: 2.')).toBeVisible()
+  await expect(bar).toBeVisible()
+
+  await page.unroute(/documents\/markPaid/)
+  let calls = 0
+  await page.route(/documents\/markPaid/, (route) =>
+    calls++ === 0 ? route.abort() : route.continue(),
+  )
+  await markPaid.click()
+  const partial = page
+    .locator('[data-sonner-toast]')
+    .filter({ hasText: 'Označeno jako zaplacené: 1, nepodařilo se: 1.' })
+  await expect(partial).toBeVisible()
+  await expect(partial.getByRole('button', { name: 'Vrátit' })).toBeVisible()
+  await expect(bar).toHaveCount(0)
+})
+
+test('the bank search box follows the URL and never writes an old term back', async ({ page }) => {
+  await signUp(page, testEmail('bank-search'))
+  await onboardByIco(page, ICO.nonPayerSupplier, 'E2E Neplátce Novák')
+  await addBankAccount(page)
+  await page.goto('/banka')
+  await page.waitForLoadState('networkidle')
+  const search = page.getByPlaceholder('Hledat podle názvu, zprávy nebo symbolu')
+  await search.fill('nájem')
+  await expect(page).toHaveURL(/q=n%C3%A1jem/)
+
+  await page.getByRole('link', { name: 'Přehled' }).locator('visible=true').first().click()
+  await expect(page).toHaveURL(/\/prehled/)
+  await page.goBack()
+  await expect(page).toHaveURL(/q=n%C3%A1jem/)
+  await expect(search).toHaveValue('nájem')
+
+  await page.getByRole('link', { name: 'Banka' }).locator('visible=true').first().click()
+  await expect(page).not.toHaveURL(/q=/)
+  await expect(search).toHaveValue('')
+  await page.waitForTimeout(500)
+  await expect(page).not.toHaveURL(/q=/)
 })

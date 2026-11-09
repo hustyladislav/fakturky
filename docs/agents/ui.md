@@ -17,6 +17,7 @@ Every new or touched screen is built from shadcn components (Base UI flavour, `b
 - Motion and hover follow DESIGN.md → Motion; `apps/web/src/lib/design-rules.test.ts` fails on `transition-all`, `ease-in`, `scale(0)`, `font-serif` and AA contrast misses.
 - Amounts: Czech format `148 500,00 Kč` with non-breaking spaces via the `Amount` component; JetBrains Mono only for IBAN/VS/keys, never for amounts.
 - The product name is `BRAND` from `@fakturky/core/brand`, never a literal.
+- A failed mutation shows a Czech toast by default (`createMutationCache`). Add `onError` only when the mutation reports the error itself, such as inline in a form.
 
 ## Czech copy
 - All strings live in `i18n/cs.ts`; no English leaking into the UI, no inline strings.

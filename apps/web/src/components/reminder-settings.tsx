@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
-import { apiErrorMessage } from '@/lib/errors'
 import { client, orpc } from '@/lib/orpc'
 
 export function DataExport() {
@@ -45,7 +44,6 @@ export function ReminderSettings() {
         toast.success(cs.settings.profileSaved)
         await queryClient.invalidateQueries({ queryKey: orpc.businessProfile.key() })
       },
-      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
   return (

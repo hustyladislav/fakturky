@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { RowList, SettingsRow, SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
-import { apiErrorMessage } from '@/lib/errors'
 import { client, orpc } from '@/lib/orpc'
 import { AppearancePreview } from './appearance-preview'
 
@@ -116,7 +115,6 @@ export function AppearanceCard() {
         if (v.accentColor !== undefined) setColor((c) => (c === v.accentColor ? null : c))
         flashSaved()
       },
-      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
   const a = q.data

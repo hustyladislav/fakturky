@@ -14,7 +14,6 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { CountrySelect } from '@/components/country-select'
 import { cs } from '@/i18n/cs'
-import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
 
 export function NewContact({
@@ -39,7 +38,6 @@ export function NewContact({
         setOpen(false)
         await queryClient.invalidateQueries({ queryKey: orpc.contacts.key() })
       },
-      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
 
@@ -142,7 +140,6 @@ export function EditContactDialog({
         setOpen(false)
         await queryClient.invalidateQueries({ queryKey: orpc.contacts.key() })
       },
-      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
   const field = (id: string, label: string, value: string | null | undefined, extra = {}) => (

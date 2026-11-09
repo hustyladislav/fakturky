@@ -6,7 +6,6 @@ import { Loader2, Plus, X } from 'lucide-react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
-import { apiErrorMessage } from '@/lib/errors'
 import { client, orpc } from '@/lib/orpc'
 
 export type PickedCustomer = { id: string; name: string; ico?: string | null }
@@ -109,7 +108,6 @@ export function CustomerCard({
       await queryClient.invalidateQueries({ queryKey: orpc.contacts.key() })
       pick({ id: c.id, name: c.name, ico: c.ico })
     },
-    onError: (e) => toast.error(apiErrorMessage(e)),
   })
 
   function pick(c: PickedCustomer) {
@@ -355,7 +353,6 @@ function NewCustomer({
       await queryClient.invalidateQueries({ queryKey: orpc.contacts.key() })
       onCreated({ id: c.id, name: c.name, ico: c.ico })
     },
-    onError: (e) => toast.error(apiErrorMessage(e)),
   })
 
   return (

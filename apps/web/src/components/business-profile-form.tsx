@@ -10,7 +10,6 @@ import { toast } from 'sonner'
 import { ProfileFields } from '@/components/business-profile-fields'
 import { FoundSummary, IcoEntry } from '@/components/business-profile-ico-first'
 import { cs } from '@/i18n/cs'
-import { apiErrorMessage } from '@/lib/errors'
 import { client, orpc } from '@/lib/orpc'
 
 type Profile = Awaited<ReturnType<typeof client.businessProfile.get>>
@@ -151,7 +150,6 @@ export function BusinessProfileForm({
       await queryClient.invalidateQueries({ queryKey: orpc.businessProfile.key() })
       await onSaved?.()
     },
-    onError: (e) => toast.error(apiErrorMessage(e)),
   })
 
   const icoRow = (

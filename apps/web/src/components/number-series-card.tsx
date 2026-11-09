@@ -6,7 +6,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { RowList, SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
-import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
 
 const t = cs.numberSeries
@@ -25,14 +24,12 @@ function Row({ s }: { s: Series }) {
   const [pattern, setPattern] = useState(s.pattern)
   const [next, setNext] = useState('')
   const refresh = () => queryClient.invalidateQueries({ queryKey: orpc.numberSeries.key() })
-  const onError = (e: unknown) => toast.error(apiErrorMessage(e))
   const update = useMutation(
     orpc.numberSeries.update.mutationOptions({
       onSuccess: async () => {
         toast.success(t.saved)
         await refresh()
       },
-      onError,
     }),
   )
   const setNextValue = useMutation(
@@ -42,7 +39,6 @@ function Row({ s }: { s: Series }) {
         setNext('')
         await refresh()
       },
-      onError,
     }),
   )
   return (

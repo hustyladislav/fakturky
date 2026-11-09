@@ -12,7 +12,6 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { cs } from '@/i18n/cs'
 import { refreshDocumentData } from '@/lib/document-cache'
-import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
 import { RepeatForm } from './repeat-form'
 
@@ -28,7 +27,6 @@ function useTemplateActions(onRuleCreated: () => void) {
     await queryClient.invalidateQueries({ queryKey: orpc.templates.key() })
     await queryClient.invalidateQueries({ queryKey: orpc.recurring.key() })
   }
-  const onError = (e: unknown) => toast.error(apiErrorMessage(e))
 
   const use = useMutation(
     orpc.templates.use.mutationOptions({
@@ -37,7 +35,6 @@ function useTemplateActions(onRuleCreated: () => void) {
         await refreshDocumentData(queryClient)
         navigate({ to: '/faktury/$id/upravit', params: { id: d.id } })
       },
-      onError,
     }),
   )
   const del = useMutation(
@@ -46,7 +43,6 @@ function useTemplateActions(onRuleCreated: () => void) {
         toast.success(t.deleted)
         await refresh()
       },
-      onError,
     }),
   )
   const create = useMutation(
@@ -56,17 +52,15 @@ function useTemplateActions(onRuleCreated: () => void) {
         onRuleCreated()
         await refresh()
       },
-      onError,
     }),
   )
-  const update = useMutation(orpc.recurring.update.mutationOptions({ onSuccess: refresh, onError }))
+  const update = useMutation(orpc.recurring.update.mutationOptions({ onSuccess: refresh }))
   const delRule = useMutation(
     orpc.recurring.delete.mutationOptions({
       onSuccess: async () => {
         toast.success(t.ruleDeleted)
         await refresh()
       },
-      onError,
     }),
   )
   return { use, del, create, update, delRule }

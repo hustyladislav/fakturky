@@ -17,7 +17,6 @@ import { PromptDialog } from '@/components/prompt-dialog'
 import { RowList, SettingsSection } from '@/components/settings-section'
 import { cs } from '@/i18n/cs'
 import { authClient } from '@/lib/auth-client'
-import { apiErrorMessage } from '@/lib/errors'
 
 const keysKey = (organizationId?: string) => ['api-keys', organizationId]
 
@@ -51,7 +50,6 @@ export function ApiKeys() {
       toast.success(cs.apiKeys.revoked)
       await queryClient.invalidateQueries({ queryKey: keysKey(organizationId) })
     },
-    onError: (e) => toast.error(apiErrorMessage(e)),
   })
 
   return (
@@ -125,7 +123,6 @@ function NewKey({ organizationId }: { organizationId: string }) {
       setSecret(key)
       await queryClient.invalidateQueries({ queryKey: keysKey(organizationId) })
     },
-    onError: (e) => toast.error(apiErrorMessage(e)),
   })
 
   const close = (next: boolean) => {

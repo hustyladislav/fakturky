@@ -3,6 +3,7 @@ import { createRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import { createIsomorphicFn } from '@tanstack/react-start'
 import { RouteError } from '@/components/route-error'
+import { createMutationCache } from '@/lib/mutation-errors'
 import { routeTree } from './routeTree.gen'
 import { nonceStore } from './server/nonce'
 
@@ -13,6 +14,7 @@ const requestNonce = createIsomorphicFn()
 
 export function getRouter() {
   const queryClient = new QueryClient({
+    mutationCache: createMutationCache(),
     // One quick retry, then show the error state (the default 3 retries leave skeletons up for ~7 s offline).
     defaultOptions: { queries: { staleTime: 30_000, retry: 1, retryDelay: 1000 } },
   })

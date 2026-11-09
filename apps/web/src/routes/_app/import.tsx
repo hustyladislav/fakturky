@@ -55,6 +55,8 @@ function Result({ summary }: { summary: Summary }) {
 function useImportMutation<T extends 'fakturoid' | 'file'>(kind: T) {
   const queryClient = useQueryClient()
   const options = orpc.import[kind].mutationOptions({
+    // Shown inline in the form.
+    onError: () => {},
     onSuccess: async () => {
       await queryClient.invalidateQueries()
     },

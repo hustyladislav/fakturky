@@ -14,7 +14,6 @@ import { toast } from 'sonner'
 import { InvoiceStatus } from '@/components/invoice-status'
 import { cs } from '@/i18n/cs'
 import { refreshDocumentData } from '@/lib/document-cache'
-import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
 import { undoPaidInput } from './undo-paid'
 
@@ -60,7 +59,6 @@ export function useDocActions() {
   const markUnpaid = useMutation(
     orpc.documents.markUnpaid.mutationOptions({
       onSuccess: refresh,
-      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
   const undoPaid = (paid: Parameters<typeof undoPaidInput>[0]) => {
@@ -75,7 +73,6 @@ export function useDocActions() {
           action: { label: t.rowActions.undo, onClick: () => undoPaid(d) },
         })
       },
-      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
   const duplicate = useMutation(
@@ -84,7 +81,6 @@ export function useDocActions() {
         refresh()
         navigate({ to: '/faktury/$id/upravit', params: { id: d.id } })
       },
-      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
   return { markPaid, undoPaid, duplicate, refresh }

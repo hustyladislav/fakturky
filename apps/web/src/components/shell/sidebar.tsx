@@ -42,7 +42,6 @@ import { toast } from 'sonner'
 import { clearAssistantStorage } from '@/components/assistant/assistant-storage'
 import { cs } from '@/i18n/cs'
 import { refreshDocumentData } from '@/lib/document-cache'
-import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
 import { NEW_INVOICE_PATH, navItems, useNavItems } from './nav'
 import { useShell } from './shell-context'
@@ -313,7 +312,6 @@ export function NewInvoiceButton() {
         await refreshDocumentData(queryClient)
         await navigate({ to: '/faktury/$id/upravit', params: { id: d.id } })
       },
-      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
   return (

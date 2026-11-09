@@ -10,7 +10,6 @@ import { toast } from 'sonner'
 import { ErrorState } from '@/components/error-state'
 import { cs } from '@/i18n/cs'
 import { refreshDocumentData } from '@/lib/document-cache'
-import { apiErrorMessage } from '@/lib/errors'
 import { orpc } from '@/lib/orpc'
 
 type Doc = RouterOutputs['documents']['list'][number]
@@ -36,7 +35,6 @@ function Row({ doc }: { doc: Doc }) {
         toast.success(t.reminded)
         void refreshDocumentData(qc)
       },
-      onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
   return (

@@ -33,7 +33,6 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
   const { share, copied } = useShareLink()
 
   const refresh = () => refreshDocumentData(queryClient)
-  const onError = (e: unknown) => toast.error(apiErrorMessage(e))
   const toDraftEditor = (message: string) => async (n: { id: string }) => {
     toast.success(message)
     await refresh()
@@ -46,7 +45,6 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
         toast.success(t.issued(n.number ?? ''))
         await refresh()
       },
-      onError,
     }),
   )
   const markUnpaid = useMutation(
@@ -55,7 +53,6 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
         toast.success(t.unpaid)
         await refresh()
       },
-      onError,
     }),
   )
   const markPaid = useMutation(
@@ -76,7 +73,6 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
         setPanel(null)
         await refresh()
       },
-      onError,
     }),
   )
   const cancel = useMutation(
@@ -85,7 +81,6 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
         toast.success(t.cancelled)
         await refresh()
       },
-      onError,
     }),
   )
   const rotateLink = useMutation(
@@ -94,11 +89,10 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
         toast.success(t.linkRotated)
         await refresh()
       },
-      onError,
     }),
   )
   const duplicate = useMutation(
-    orpc.documents.duplicate.mutationOptions({ onSuccess: toDraftEditor(t.duplicated), onError }),
+    orpc.documents.duplicate.mutationOptions({ onSuccess: toDraftEditor(t.duplicated) }),
   )
   const send = useMutation(
     orpc.documents.send.mutationOptions({
@@ -109,26 +103,23 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
       },
       onError: (e) => {
         const reason = (e as { data?: { reason?: keyof typeof t.mail } }).data?.reason
-        toast.error(reason ? t.mail[reason] : (e as Error).message || cs.common.error)
+        toast.error(reason ? t.mail[reason] : apiErrorMessage(e))
       },
     }),
   )
   const creditNote = useMutation(
     orpc.documents.createCreditNote.mutationOptions({
       onSuccess: toDraftEditor(t.creditNoteCreated),
-      onError,
     }),
   )
   const finalInvoice = useMutation(
     orpc.documents.createFinalInvoice.mutationOptions({
       onSuccess: toDraftEditor(t.finalInvoiceCreated),
-      onError,
     }),
   )
   const receipt = useMutation(
     orpc.documents.createPaymentReceipt.mutationOptions({
       onSuccess: toDraftEditor(t.receiptCreated),
-      onError,
     }),
   )
   const saveTemplate = useMutation(
@@ -143,7 +134,6 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
         })
         await queryClient.invalidateQueries({ queryKey: orpc.templates.key() })
       },
-      onError,
     }),
   )
   const remove = useMutation(
@@ -153,7 +143,6 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
         await refresh()
         navigate({ to: '/faktury' })
       },
-      onError,
     }),
   )
 

@@ -1,4 +1,5 @@
 import { BRAND } from '@fakturky/core/brand'
+import type { Services } from '@fakturky/core/context'
 import { toDocumentForExport } from '@fakturky/core/export'
 import type { DocumentLanguage } from '@fakturky/domain'
 import { provideFontFiles, renderInvoicePdf } from '@fakturky/pdf'
@@ -30,23 +31,14 @@ function loadFonts(): Promise<void> {
   return fontsLoaded
 }
 
-type Doc = Parameters<typeof toDocumentForExport>[0]
-type Lines = Parameters<typeof toDocumentForExport>[1]
-
-/** Renders an issued document. Private notes are never part of the export. */
-export async function renderDocumentPdf(
-  doc: Doc,
-  lines: Lines,
-  original?: Parameters<typeof toDocumentForExport>[2],
-): Promise<Uint8Array> {
+/** Renders an issued document with the look core resolved for it. Private notes are never part of the export. */
+export const renderDocumentPdf: NonNullable<Services['renderPdf']> = async (
+  doc,
+  lines,
+  original,
+  look,
+) => {
   await loadFonts()
-  const [{ getRuntime }, { appearanceRepo }] = await Promise.all([
-    import('./runtime'),
-    import('@fakturky/core/appearance-repo'),
-  ])
-  const { handle } = await getRuntime()
-  // Issued documents render with the look frozen at issue (see documents.appearance).
-  const look = await appearanceRepo.forDocument(handle.db, doc.organizationId, doc.appearance)
   const base = toDocumentForExport(doc, lines, original)
   return renderInvoicePdf({
     ...base,

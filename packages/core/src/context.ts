@@ -41,12 +41,23 @@ export type Services = {
   sendInvoice?: (args: SendInvoiceArgs) => Promise<void>
   /** HTTP transport for outbound integrations (Fakturoid import); tests inject recorded responses. */
   fetch?: (input: string, init?: RequestInit) => Promise<Response>
-  /** Renders an issued document to PDF bytes. */
+  /** Renders an issued document to PDF bytes; call it through `renderIssuedPdf`, which resolves the look. */
   renderPdf?: (
     doc: IssuedDocument,
     lines: IssuedLine[],
-    original?: OriginalDocument | null,
+    original: OriginalDocument | null | undefined,
+    look: DocumentLook,
   ) => Promise<Uint8Array>
+}
+
+type Asset = { bytes: Uint8Array; dataUrl: string }
+
+/** How a document is drawn: accent, branding, logo and signature. */
+export type DocumentLook = {
+  accentColor: string | null
+  showBrand: boolean
+  logo: Asset | null
+  signature: Asset | null
 }
 
 /** The corrected document of a credit note. */

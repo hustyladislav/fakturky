@@ -403,7 +403,7 @@ describe('review hardening 2', () => {
     }
     const mapped = mapInvoice(row)
     expect(mapped).toMatchObject({ oss: true, bank: { accountNumber: '1234', bankCode: '2010' } })
-    const { importRepo } = await import('../repositories/import')
+    const { importRepo } = await import('./repo')
     const out = await importRepo.run(
       handle.db,
       org,

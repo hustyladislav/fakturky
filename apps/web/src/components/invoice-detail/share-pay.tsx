@@ -121,10 +121,16 @@ export function PaySplitButton({
         variant={variant}
         className="h-full min-w-0 flex-1 rounded-r-none"
         disabled={disabled}
-        aria-label={t.markPaid}
         onClick={onPayNow}
       >
-        {compact ? t.markPaidShort : t.markPaid}
+        {compact ? (
+          <>
+            {t.markPaidShort}
+            <span className="sr-only">: {t.markPaid}</span>
+          </>
+        ) : (
+          t.markPaid
+        )}
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger

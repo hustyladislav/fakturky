@@ -53,10 +53,9 @@ export function SendPanel({ d, ctrl }: { d: DocumentDetail; ctrl: InvoiceControl
       </div>
       <div className="flex gap-2">
         <Button
-          disabled={ctrl.send.isPending || !(to || defaultTo)}
+          disabled={ctrl.pending.send || !(to || defaultTo)}
           onClick={() =>
-            ctrl.send.mutate({
-              id: ctrl.id,
+            ctrl.send({
               to: to || undefined,
               message: message || undefined,
               reminder: d.displayStatus === 'overdue',
@@ -94,10 +93,9 @@ export function PayPanel({ d, ctrl }: { d: DocumentDetail; ctrl: InvoiceControll
       </div>
       <div className="flex gap-2">
         <Button
-          disabled={ctrl.markPaid.isPending}
+          disabled={ctrl.pending.pay}
           onClick={() =>
-            ctrl.markPaid.mutate({
-              id: ctrl.id,
+            ctrl.pay({
               amount: amount ? amount.replace(',', '.') : null,
               paidOn: paidOn || undefined,
             })

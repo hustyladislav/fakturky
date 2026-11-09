@@ -29,11 +29,12 @@ export function HeroComposition() {
   return (
     <div
       aria-hidden="true"
-      className="mx-auto max-w-5xl overflow-hidden rounded-xl border bg-background motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in"
+      className="mx-auto max-w-5xl overflow-hidden rounded-xl border xl:max-w-none bg-background motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in"
     >
-      <div className="grid md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-        <div className="p-5 md:p-8">
-          <div className="grid gap-5 sm:grid-cols-2 sm:gap-4">
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,34rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,40rem)]">
+        <div className="@container p-5 md:p-8">
+          {/* By the pane's own width: two hero amounts need ~28rem side by side. */}
+          <div className="grid gap-5 @md:grid-cols-2 @md:gap-4">
             <Figure label={t.kpiMonth} amount="148500.00" />
             <Figure label={t.kpiReceived} amount="112300.00" />
           </div>
@@ -52,9 +53,10 @@ export function HeroComposition() {
             ))}
           </ul>
         </div>
-        <div className="hidden border-l bg-muted p-6 md:block">
-          <div className="overflow-hidden rounded-[3px] shadow-[0_0_0_1px_var(--border),0_12px_30px_-16px_rgb(0_0_0/0.25)]">
-            <InvoiceSheet doc={demoInvoice} maxScale={1.2} headingLevel={4} decorative />
+        {/* The paper runs off the bottom edge: shown large enough to read, cropped to the left pane's height. */}
+        <div className="relative hidden overflow-hidden border-l bg-muted lg:block">
+          <div className="absolute inset-x-8 top-8 overflow-hidden rounded-t-[3px] shadow-[0_0_0_1px_var(--border),0_12px_30px_-16px_rgb(0_0_0/0.25)]">
+            <InvoiceSheet doc={demoInvoice} maxScale={1} headingLevel={4} decorative />
           </div>
         </div>
       </div>

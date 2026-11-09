@@ -1,6 +1,7 @@
 import { BRAND } from '@fakturky/core/brand'
 import { privacySections, termsSections } from './legal'
 import offline from './offline.json'
+import { typesetCopy } from './typeset'
 
 /** All user-facing copy lives here. Natural Czech, correct diacritics. */
 export const cs = {
@@ -116,171 +117,176 @@ export const cs = {
     metaTitle: `${BRAND.name} — fakturace zdarma pro živnostníky a firmy`,
     metaDescription:
       'Svobodný fakturační program: neomezeně faktur a kontaktů, QR platba, ARES, DPH a ISDOC. Zdarma, s otevřeným kódem.',
-    nav: {
-      features: 'Funkce',
-      compare: 'Srovnání',
-      why: 'Proč zdarma',
-      ai: 'Pro AI asistenty',
-      faq: 'Časté dotazy',
-    },
-    signIn: 'Přihlásit se',
-    start: 'Začít zdarma',
-    heroTitle: 'Faktury zdarma, bez limitů.',
-    heroText:
-      'Zadáte IČO, zbytek doplníme z ARES. DPH, QR platba i export do ISDOC jsou součástí, bez karty a bez reklam.',
-    heroNote: 'Účet si vytvoříte za minutu.',
-    docs: 'Dokumentace API',
-    hero: {
-      kpiMonth: 'Obrat tento měsíc',
-      kpiReceived: 'Zaplaceno tento měsíc',
-      awaiting: 'Čeká na platbu',
-    },
-    demoFields: (ico: string, dic: string | null) => `IČO ${ico}${dic ? ` · DIČ ${dic}` : ''}`,
-    demo: {
-      title: 'Zadejte IČO, zbytek doplníme',
-      text: 'Údaje o firmě se načtou z registru ARES a hned se objeví na faktuře i s QR platbou. Nic se neukládá a účet nepotřebujete.',
-      label: 'IČO',
-      placeholder: '8 číslic, např. 27082440',
-      submit: 'Doplnit z ARES',
-      loading: 'Hledám v ARES…',
-      examples: 'Zkuste například',
-      supplier: 'Dodavatel z ARES',
-      vatPayer: 'Plátce DPH',
-      nonPayer: 'Neplátce DPH',
-      placeholderName: 'Vaše firma',
-      source:
-        'Zdroj: veřejný registr ARES (Ministerstvo financí). Zobrazená faktura je jen ukázka.',
-      invoiceTitle: 'Živý náhled faktury',
-      cta: 'Vystavit první fakturu',
-      errors: {
-        invalid: 'Zkontrolujte IČO. Musí mít 8 číslic a platný kontrolní součet.',
-        notFound: 'ARES tohle IČO nezná.',
-        limited: 'Příliš mnoho dotazů za sebou. Zkuste to prosím za minutu.',
-        upstream: 'Registr ARES teď neodpovídá. Zkuste to prosím za chvíli.',
+    // Meta strings are not laid out by a browser, so they skip the no-break spaces.
+    ...typesetCopy({
+      nav: {
+        features: 'Funkce',
+        compare: 'Srovnání',
+        why: 'Proč zdarma',
+        ai: 'Pro AI asistenty',
+        faq: 'Časté dotazy',
       },
-    },
-    compare: {
-      title: 'Zdarma u nás a v bezplatných tarifech jinde',
-      text: 'Všechny porovnávané služby mají bezplatný tarif. Liší se tím, co v něm najdete. Údaje jsou z jejich veřejných ceníků ke dni 2. 11. 2026.',
-      caption: 'Porovnání bezplatných tarifů',
-      feature: 'Funkce',
-      us: BRAND.name,
-      fakturoid: 'Fakturoid Zdarma',
-      idoklad: 'iDoklad Zdarma',
-      yes: 'Ano',
-      no: 'Ne',
-      rows: [
-        ['Odběratelé a kontakty', 'Neomezeně', 'Do 5 odběratelů', 'Do 5 kontaktů'],
-        [
-          'Počet faktur',
-          'Neomezeně',
-          'Neomezeně, ale jen pro 5 odběratelů',
-          'Nové faktury jen pro 5 vybraných kontaktů',
+      signIn: 'Přihlásit se',
+      start: 'Začít zdarma',
+      heroTitle: 'Faktury zdarma, bez limitů.',
+      heroText:
+        'Zadáte IČO, zbytek doplníme z ARES. DPH, QR platba i export do ISDOC jsou součástí, bez karty a bez reklam.',
+      heroNote: 'Účet si vytvoříte za minutu.',
+      docs: 'Dokumentace API',
+      hero: {
+        kpiMonth: 'Obrat tento měsíc',
+        kpiReceived: 'Zaplaceno tento měsíc',
+        awaiting: 'Čeká na platbu',
+      },
+      demoFields: (ico: string, dic: string | null) => `IČO ${ico}${dic ? ` · DIČ ${dic}` : ''}`,
+      demo: {
+        title: 'Zadejte IČO, zbytek doplníme',
+        text: 'Údaje o firmě se načtou z registru ARES a hned se objeví na faktuře i s QR platbou. Nic se neukládá a účet nepotřebujete.',
+        label: 'IČO',
+        placeholder: '8 číslic, např. 27082440',
+        submit: 'Doplnit z ARES',
+        loading: 'Hledám v ARES…',
+        examples: 'Zkuste například',
+        supplier: 'Dodavatel z ARES',
+        vatPayer: 'Plátce DPH',
+        nonPayer: 'Neplátce DPH',
+        placeholderName: 'Vaše firma',
+        source:
+          'Zdroj: veřejný registr ARES (Ministerstvo financí). Zobrazená faktura je jen ukázka.',
+        invoiceTitle: 'Živý náhled faktury',
+        cta: 'Vystavit první fakturu',
+        errors: {
+          invalid: 'Zkontrolujte IČO. Musí mít 8 číslic a platný kontrolní součet.',
+          notFound: 'ARES tohle IČO nezná.',
+          limited: 'Příliš mnoho dotazů za sebou. Zkuste to prosím za minutu.',
+          upstream: 'Registr ARES teď neodpovídá. Zkuste to prosím za chvíli.',
+        },
+      },
+      compare: {
+        title: 'Zdarma u nás a v bezplatných tarifech jinde',
+        text: 'Všechny porovnávané služby mají bezplatný tarif. Liší se tím, co v něm najdete. Údaje jsou z jejich veřejných ceníků ke dni 2. 11. 2026.',
+        caption: 'Porovnání bezplatných tarifů',
+        feature: 'Funkce',
+        us: BRAND.name,
+        fakturoid: 'Fakturoid Zdarma',
+        idoklad: 'iDoklad Zdarma',
+        yes: 'Ano',
+        no: 'Ne',
+        rows: [
+          ['Odběratelé a kontakty', 'Neomezeně', 'Do 5 odběratelů', 'Do 5 kontaktů'],
+          [
+            'Počet faktur',
+            'Neomezeně',
+            'Neomezeně, ale jen pro 5 odběratelů',
+            'Nové faktury jen pro 5 vybraných kontaktů',
+          ],
+          ['Opakované faktury', 'yes', 'Ne (od tarifu Na maximum)', 'Ve veřejném ceníku neuvedeno'],
+          ['Automatické upomínky', 'yes', 'Ne (od tarifu Na každý den)', 'Ne (od tarifu Oblíbený)'],
+          [
+            'Párování plateb s bankou',
+            'yes',
+            'Ne (od tarifu Na každý den)',
+            'Ne (od tarifu Oblíbený)',
+          ],
+          [
+            'API a MCP server pro AI asistenty',
+            'REST API a MCP server bez měsíčního limitu požadavků',
+            '1 500 API požadavků měsíčně, MCP v ceníku neuvedeno',
+            'API: 0 požadavků měsíčně, MCP v ceníku neuvedeno',
+          ],
+          [
+            'Přiznání k DPH a kontrolní hlášení',
+            'yes',
+            'Ne (od tarifu Na maximum)',
+            'Ne (od tarifu Oblíbený)',
+          ],
         ],
-        ['Opakované faktury', 'yes', 'Ne (od tarifu Na maximum)', 'Ve veřejném ceníku neuvedeno'],
-        ['Automatické upomínky', 'yes', 'Ne (od tarifu Na každý den)', 'Ne (od tarifu Oblíbený)'],
+        disclaimer:
+          'Placené tarify těchto služeb nabízejí víc, než tu uvádíme, a ceníky se mění. Před rozhodnutím si údaje ověřte u poskytovatele.',
+        sources: 'Zdroje',
+      },
+      whyTitle: 'Proč zdarma?',
+      whyText: [
+        `${BRAND.name} je projekt jednoho člověka. Chtěl jsem fakturační program, který nenutí platit za počet faktur, a nenašel jsem ho.`,
+        'Provoz se platí z dobrovolných darů. Žádné reklamy, žádné prodávání dat. Kód je otevřený na GitHubu, takže vidíte, co se s vašimi daty děje, a můžete si službu spustit sami.',
+        'Když vám aplikace ušetří čas, můžete mi koupit kávu. Nemusíte.',
+      ],
+      whyCoffee: 'Kupte mi kávu',
+      whyGithub: 'Kód na GitHubu',
+      featuresTitle: 'Co dostanete zdarma',
+      features: [
         [
-          'Párování plateb s bankou',
-          'yes',
-          'Ne (od tarifu Na každý den)',
-          'Ne (od tarifu Oblíbený)',
+          'Neomezeně faktur a kontaktů',
+          'Žádné měsíční limity ani tarify. Vystavujte, kolik potřebujete.',
         ],
         [
-          'API a MCP server pro AI asistenty',
-          'REST API a MCP server bez měsíčního limitu požadavků',
-          '1 500 API požadavků měsíčně, MCP v ceníku neuvedeno',
-          'API: 0 požadavků měsíčně, MCP v ceníku neuvedeno',
+          'QR platba',
+          'Faktury v Kč hrazené převodem nesou QR kód, který klient naskenuje v bankovní aplikaci.',
+        ],
+        ['ARES', 'Zadejte IČO a název, adresa i DIČ se doplní z registru.'],
+        [
+          'DPH bez starostí',
+          'Plátci i neplátci. DPH se počítá po sazbách a zaokrouhluje podle pravidel.',
         ],
         [
-          'Přiznání k DPH a kontrolní hlášení',
-          'yes',
-          'Ne (od tarifu Na maximum)',
-          'Ne (od tarifu Oblíbený)',
+          'Opakované faktury a upomínky',
+          'Pravidelné služby se vystaví samy a nezaplacené faktury se připomenou, vy to jen hlídáte.',
+        ],
+        [
+          'ISDOC a PDF',
+          'Doklady ve formátu, který přijme každý účetní. PDF čitelné i při černobílém tisku.',
         ],
       ],
-      disclaimer:
-        'Placené tarify těchto služeb nabízejí víc, než tu uvádíme, a ceníky se mění. Před rozhodnutím si údaje ověřte u poskytovatele.',
-      sources: 'Zdroje',
-    },
-    whyTitle: 'Proč zdarma?',
-    whyText: [
-      `${BRAND.name} je projekt jednoho člověka. Chtěl jsem fakturační program, který nenutí platit za počet faktur, a nenašel jsem ho.`,
-      'Provoz se platí z dobrovolných darů. Žádné reklamy, žádné prodávání dat. Kód je otevřený na GitHubu, takže vidíte, co se s vašimi daty děje, a můžete si službu spustit sami.',
-      'Když vám aplikace ušetří čas, můžete mi koupit kávu. Nemusíte.',
-    ],
-    whyCoffee: 'Kupte mi kávu',
-    whyGithub: 'Kód na GitHubu',
-    featuresTitle: 'Co dostanete zdarma',
-    features: [
-      [
-        'Neomezeně faktur a kontaktů',
-        'Žádné měsíční limity ani tarify. Vystavujte, kolik potřebujete.',
+      aiTitle: 'Pro AI asistenty',
+      aiConfigTitle: 'Konfigurace MCP klienta (Cursor, Claude Desktop)',
+      aiConfigHint: 'Klíč vytvoříte v Nastavení → API klíče.',
+      aiMcpDocs: 'Návod pro MCP',
+      aiText:
+        'Vše, co umíte v aplikaci, je dostupné i programově. Váš AI asistent nebo skript může připravit koncept faktury, dohledat kontakt nebo zjistit, co je po splatnosti. Vy ho vždy schvalujete.',
+      aiCards: [
+        ['REST API', 'Dostupné už dnes. Klíč vytvoříte v Nastavení, popis najdete v dokumentaci.'],
+        [
+          'MCP server',
+          'Dostupný už dnes. Napojíte Claude, Cursor nebo jiného asistenta přímo na své faktury.',
+        ],
+        ['Příkazová řádka', 'Připravujeme. Fakturujte z terminálu nebo skriptu.'],
       ],
-      [
-        'QR platba',
-        'Faktury v Kč hrazené převodem nesou QR kód, který klient naskenuje v bankovní aplikaci.',
+      faqTitle: 'Časté dotazy',
+      faq: [
+        [
+          'Opravdu je to zdarma?',
+          'Ano. Bez omezení počtu faktur a kontaktů, bez skrytých poplatků. Provoz se hradí z dobrovolných darů.',
+        ],
+        [
+          'Kdo za tím stojí?',
+          'Jeden člověk, který program vyvíjí a provozuje ve volném čase. Kód je veřejný na GitHubu.',
+        ],
+        [
+          'Co když projekt skončí?',
+          'Data si můžete vyžádat a kód je otevřený, takže si službu můžete spustit sami.',
+        ],
+        [
+          'Jsou faktury v souladu s českými předpisy?',
+          'Doklady obsahují zákonné náležitosti a DPH se počítá podle pravidel. Program ale nenahrazuje účetního; důležité věci si vždy ověřte.',
+        ],
+        ['Umí to fakturovat v eurech?', 'Ano, včetně kurzu a přepočtu DPH do Kč.'],
+        [
+          'Jak je to s mými daty?',
+          'Každý účet je izolovaný. Nic neprodáváme ani nesledujeme. Podrobnosti jsou v zásadách ochrany osobních údajů.',
+        ],
       ],
-      ['ARES', 'Zadejte IČO a název, adresa i DIČ se doplní z registru.'],
-      [
-        'DPH bez starostí',
-        'Plátci i neplátci. DPH se počítá po sazbách a zaokrouhluje podle pravidel.',
-      ],
-      [
-        'Opakované faktury a upomínky',
-        'Pravidelné služby se vystaví samy a nezaplacené faktury se připomenou, vy to jen hlídáte.',
-      ],
-      [
-        'ISDOC a PDF',
-        'Doklady ve formátu, který přijme každý účetní. PDF čitelné i při černobílém tisku.',
-      ],
-    ],
-    aiTitle: 'Pro AI asistenty',
-    aiConfigTitle: 'Konfigurace MCP klienta (Cursor, Claude Desktop)',
-    aiConfigHint: 'Klíč vytvoříte v Nastavení → API klíče.',
-    aiMcpDocs: 'Návod pro MCP',
-    aiText:
-      'Vše, co umíte v aplikaci, je dostupné i programově. Váš AI asistent nebo skript může připravit koncept faktury, dohledat kontakt nebo zjistit, co je po splatnosti. Vy ho vždy schvalujete.',
-    aiCards: [
-      ['REST API', 'Dostupné už dnes. Klíč vytvoříte v Nastavení, popis najdete v dokumentaci.'],
-      [
-        'MCP server',
-        'Dostupný už dnes. Napojíte Claude, Cursor nebo jiného asistenta přímo na své faktury.',
-      ],
-      ['Příkazová řádka', 'Připravujeme. Fakturujte z terminálu nebo skriptu.'],
-    ],
-    faqTitle: 'Časté dotazy',
-    faq: [
-      [
-        'Opravdu je to zdarma?',
-        'Ano. Bez omezení počtu faktur a kontaktů, bez skrytých poplatků. Provoz se hradí z dobrovolných darů.',
-      ],
-      [
-        'Kdo za tím stojí?',
-        'Jeden člověk, který program vyvíjí a provozuje ve volném čase. Kód je veřejný na GitHubu.',
-      ],
-      [
-        'Co když projekt skončí?',
-        'Data si můžete vyžádat a kód je otevřený, takže si službu můžete spustit sami.',
-      ],
-      [
-        'Jsou faktury v souladu s českými předpisy?',
-        'Doklady obsahují zákonné náležitosti a DPH se počítá podle pravidel. Program ale nenahrazuje účetního; důležité věci si vždy ověřte.',
-      ],
-      ['Umí to fakturovat v eurech?', 'Ano, včetně kurzu a přepočtu DPH do Kč.'],
-      [
-        'Jak je to s mými daty?',
-        'Každý účet je izolovaný. Nic neprodáváme ani nesledujeme. Podrobnosti jsou v zásadách ochrany osobních údajů.',
-      ],
-    ],
-    ctaTitle: 'Vystavte první fakturu ještě dnes',
-    footer: {
-      product: 'Produkt',
-      project: 'Projekt',
-      legal: 'Právní',
-      feedback: 'Zpětná vazba',
-      contact: 'Kontakt',
-      made: 'Vyrobeno v Česku jedním člověkem.',
-    },
+      ctaTitle: 'Vystavte první fakturu ještě dnes',
+      footer: {
+        product: 'Produkt',
+        project: 'Projekt',
+        legal: 'Právní',
+        feedback: 'Zpětná vazba',
+        contact: 'Kontakt',
+        made: 'Vyrobeno v Česku jedním člověkem.',
+      },
+      copy: 'Kopírovat',
+      copied: 'Zkopírováno',
+    }),
   },
   theme: {
     system: 'Podle systému',

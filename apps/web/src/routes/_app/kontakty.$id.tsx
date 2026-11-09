@@ -1,3 +1,4 @@
+import { parseDecimal } from '@fakturky/domain/money'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Button } from '@fakturky/ui/components/button'
 import { EmptyState } from '@fakturky/ui/components/empty-state'
@@ -93,7 +94,7 @@ function ContactDetail() {
     .filter(Boolean)
     .join(' · ')
   const lastDate = parseIsoDate(s?.lastInvoiceDate)
-  const overdue = s && Number(s.overdue) > 0
+  const overdue = s && parseDecimal(s.overdue).gt(0)
 
   return (
     <div className="mx-auto max-w-[1200px]">
@@ -136,7 +137,7 @@ function ContactDetail() {
           <Figure
             label={t.stats.outstanding}
             hint={
-              s && Number(s.outstanding) > 0 ? (
+              s && parseDecimal(s.outstanding).gt(0) ? (
                 overdue ? (
                   <span className="text-destructive">{t.stats.overdue(crowns(s.overdue))}</span>
                 ) : undefined

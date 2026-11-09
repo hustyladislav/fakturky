@@ -1,5 +1,6 @@
 import type { RouterOutputs } from '@fakturky/core/router'
 import { formatDateCs } from '@fakturky/domain/dates'
+import { parseDecimal } from '@fakturky/domain/money'
 import { Amount } from '@fakturky/ui/components/amount'
 import { Button } from '@fakturky/ui/components/button'
 import { formatMoney } from '@fakturky/ui/lib/money'
@@ -47,7 +48,7 @@ function Suggestion({
 
 function Row({ tx, onPair }: { tx: Tx; onPair: (target: PairTarget) => void }) {
   const { confirm, unmatch, ignore } = useBankRowActions()
-  const incoming = Number(tx.amount) > 0
+  const incoming = parseDecimal(tx.amount).gt(0)
   const open = tx.matchStatus === 'unmatched' && incoming
   const pairing = { id: tx.id, amount: tx.amount, currency: tx.currency }
   return (

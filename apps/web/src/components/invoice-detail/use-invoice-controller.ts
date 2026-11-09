@@ -1,4 +1,5 @@
 import { formatDateCs } from '@fakturky/domain/dates'
+import { parseDecimal } from '@fakturky/domain/money'
 import { formatMoney } from '@fakturky/ui/lib/money'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
@@ -61,7 +62,7 @@ export function useInvoiceController(id: string, d: DocumentDetail | undefined, 
         // The new payment is the one that was not on the page before; undo removes only that one.
         const before = new Set((d?.payments ?? []).map((p) => p.id))
         const added = paid.payments.find((p) => !before.has(p.id))
-        const left = Number(paid.remaining) > 0
+        const left = parseDecimal(paid.remaining).gt(0)
         toast.success(left ? t.partlyPaid(formatMoney(paid.remaining, paid.currency)) : t.paid, {
           duration: 5000,
           ...(added && {

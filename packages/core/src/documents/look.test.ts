@@ -1,4 +1,5 @@
 import { type DbHandle, schema } from '@fakturky/db'
+import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { clientFor, createTestDb, seedOrg } from '../testing'
 
@@ -57,4 +58,37 @@ test('a draft made with a logo is issued without it once the logo is removed', a
   await api.appearance.deleteAsset({ kind: 'logo' })
   expect((await api.documents.get({ id: draft.id })).look.logo).toBeNull()
   expect((await api.documents.issue({ id: draft.id })).look.logo).toBeNull()
+})
+
+test('a draft that still carries a stored look ignores it and replaces it at issue', async () => {
+  const org = await seedOrg(handle, 'look-stale')
+  await handle.db.insert(schema.businessProfile).values({ organizationId: org, legalName: 'Firma' })
+  const api = clientFor(handle, { userId: 'u', organizationId: org, via: 'session' })
+  const c = await api.contacts.create({ name: 'K' })
+  const draft = await api.documents.createDraft({
+    contactId: c.id,
+    lines: [{ description: 'x', quantity: '1', unitPrice: '1' }],
+  })
+  // Drafts made before the look moved to issue time have one stored.
+  await handle.db
+    .update(schema.document)
+    .set({
+      appearance: {
+        accentColor: '#aaaaaa',
+        showBrand: false,
+        logoAssetId: null,
+        signatureAssetId: null,
+      },
+    })
+    .where(and(eq(schema.document.organizationId, org), eq(schema.document.id, draft.id)))
+  await api.appearance.update({ accentColor: '#222222', showBrand: true })
+
+  const live = { accentColor: '#222222', showBrand: true }
+  expect((await api.documents.get({ id: draft.id })).look).toMatchObject(live)
+  expect((await api.documents.issue({ id: draft.id })).look).toMatchObject(live)
+  const [row] = await handle.db
+    .select({ appearance: schema.document.appearance })
+    .from(schema.document)
+    .where(and(eq(schema.document.organizationId, org), eq(schema.document.id, draft.id)))
+  expect(row?.appearance).toMatchObject(live)
 })

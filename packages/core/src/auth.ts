@@ -82,7 +82,8 @@ export function createAuth(options: CreateAuthOptions) {
         }
       : {},
     // OAuth provider mode: the plugin's own /token and set-auth-jwt header must be off.
-    disabledPaths: ['/token'],
+    // /device/token would hand out a raw session; devices only ever get an API key (redeemDeviceCode).
+    disabledPaths: ['/token', '/device/token'],
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,

@@ -84,6 +84,14 @@ test('approval yields one API key for the approver, and no session is left behin
   await claim(userCode, cookie)
   expect((await post('/device/approve', { userCode }, cookie)).ok).toBe(true)
 
+  // The plugin's own endpoint would hand out a session; only the exchange below may redeem a grant.
+  const direct = await post('/device/token', {
+    grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+    device_code: deviceCode,
+    client_id: DEVICE_CLIENT_ID,
+  })
+  expect(direct.status).toBe(404)
+
   const before = await handle.db.select().from(schema.session)
   const result = await redeem(deviceCode)
   if (!result.ok) throw new Error(result.error)

@@ -232,6 +232,7 @@ export function InvoiceCompactRow({ d }: { d: Doc }) {
   const name = d.customerName ?? '—'
   // Overdue and paid statuses already say it; the date only adds value for open documents.
   const showDue = ['draft', 'issued', 'partially_paid'].includes(d.displayStatus) && !!d.dueDate
+  const type = typeShort(d)
   return (
     <li>
       <Link
@@ -246,6 +247,7 @@ export function InvoiceCompactRow({ d }: { d: Doc }) {
         <span className="flex items-baseline justify-between gap-3 text-[13px] leading-[18px] text-muted-foreground">
           <span className="min-w-0 truncate tabular-nums">
             {d.number ?? t.noNumber}
+            {type && ` · ${type}`}
             {showDue && (
               <>
                 {' · '}

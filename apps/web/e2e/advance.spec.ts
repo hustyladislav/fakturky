@@ -19,6 +19,14 @@ test('proforma → paid → final invoice with the advance deducted (non-VAT pay
   await page.getByRole('button', { name: 'Vystavit', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^Z\d{4}-0001$/)
 
+  // On a phone the type must still be readable: a proforma is not an invoice.
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/faktury')
+  await expect(page.getByText(/Z\d{4}-0001 · /).locator('visible=true')).toContainText('Zálohová')
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goBack()
+  await page.waitForLoadState('networkidle')
+
   await page.getByRole('button', { name: 'Označit jako zaplacenou' }).first().click()
   await expect(page.getByText('Zaplacená', { exact: true }).first()).toBeVisible()
 

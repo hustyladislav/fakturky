@@ -58,7 +58,7 @@ function sources(dir: string): string[] {
 
 /** Fields and call results are where amounts live, so any name counts unless known not to be money. */
 const NOT_MONEY =
-  /^(e\.target\.value|\w+\.slice\(|\w+\[(\d|i\])|request\.headers\.|s\.w\b|l\.vatRate|r\.rate)/
+  /^(e\.target\.value|\w+\.slice\(|m\[\d\]\)|arr\[i\]\)|request\.headers\.|s\.w\b|l\.vatRate|r\.rate)/
 
 function numberOnField(code: string) {
   return [...code.matchAll(/\bNumber\(\s*([\w$]+(?:\?\.|\.|\[|\().*)/g)]
@@ -91,12 +91,15 @@ describe('code rules (docs/agents/ui.md, AGENTS.md)', () => {
     'Number(s?.invoiced ?? 0)',
     'Number(clean(l.unitPrice))',
     'Number(a5[key])',
+    'Number(a5[0])',
+    'Number(rows[0].amount)',
   ])('catches %s', (code) => {
     expect(numberOnField(code)).toHaveLength(1)
   })
 
   it.each([
     'Number(next)',
+    'Number(m[1])',
     'Number(e.target.value)',
     'Number(iso.slice(8, 10))',
     'formatNumber(a.b)',

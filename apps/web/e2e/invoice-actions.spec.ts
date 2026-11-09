@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
   addBankAccount,
+  amountRe,
   createContact,
   ICO,
   issueInvoice,
@@ -109,4 +110,30 @@ test.describe('on a phone', () => {
       .poll(() => page.evaluate(() => (window as unknown as { __shared?: unknown }).__shared))
       .toMatchObject({ files: ['application/pdf'], text: expect.stringMatching(/\/f\/[\w-]+$/) })
   })
+})
+
+test('a partial payment says what is left; a new public link replaces the old one', async ({
+  page,
+}) => {
+  await signUp(page, testEmail('partial-toast'))
+  await onboardByIco(page, ICO.nonPayerSupplier, 'E2E Neplátce Novák')
+  await addBankAccount(page)
+  await createContact(page, 'Částečně s.r.o.')
+  await issueInvoice(page, 'Částečně s.r.o.', '1000')
+  await page.waitForLoadState('networkidle')
+
+  await page.getByRole('button', { name: 'Další možnosti platby' }).first().click()
+  await page.getByRole('menuitem', { name: 'Jiná částka nebo datum…' }).click()
+  await page.getByLabel('Přijatá částka').fill('100')
+  await page.getByRole('button', { name: 'Uložit platbu' }).click()
+  await expect(
+    page.getByText(amountRe('Platba byla uložena. Zbývá uhradit 900,00 Kč.')),
+  ).toBeVisible()
+  await expect(page.getByText('Faktura byla označena jako zaplacená.')).toHaveCount(0)
+
+  const open = page.getByRole('link', { name: 'Otevřít veřejnou stránku' })
+  const before = await open.getAttribute('href')
+  await page.getByRole('button', { name: 'Vytvořit nový odkaz' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Vytvořit nový odkaz' }).click()
+  await expect(open).not.toHaveAttribute('href', before ?? '')
 })

@@ -713,6 +713,7 @@ export const cs = {
       linkCopied: 'Odkaz byl zkopírován.',
       manual: 'Označeno ručně',
       paid: 'Faktura byla označena jako zaplacená.',
+      partlyPaid: (left: string) => `Platba byla uložena. Zbývá uhradit ${left}.`,
       unpaid: 'Platba byla odebrána.',
       cancelled: 'Faktura byla stornována.',
       duplicated: 'Vytvořili jsme nový koncept.',

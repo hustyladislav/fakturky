@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   addBankAccount,
   clickMoreAction,
+  createContact,
   ICO,
   onboardByIco,
   PASSWORD,
@@ -125,4 +126,17 @@ test('issued invoice can be duplicated into a draft and cancelled (number stays 
   await page.getByLabel('Cena za MJ', { exact: true }).locator('visible=true').first().fill('50')
   await page.getByRole('button', { name: 'Vystavit', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^\d{4}-0002$/)
+})
+
+test('a contact never reads as fully paid while its figures failed to load', async ({ page }) => {
+  await signUp(page, testEmail('contact-stats'))
+  await onboardByIco(page, ICO.nonPayerSupplier, 'E2E Neplátce Novák')
+  await createContact(page, 'Statistiky s.r.o.')
+  await page.goto('/kontakty')
+  await page.waitForLoadState('networkidle')
+  await page.route(/contacts\/stats/, (route) => route.abort())
+  await page.getByText('Statistiky s.r.o.').locator('visible=true').first().click()
+  await expect(page.getByRole('heading', { name: 'Statistiky s.r.o.' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Zkusit znovu' })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('Vše zaplaceno')).toHaveCount(0)
 })

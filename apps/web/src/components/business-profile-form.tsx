@@ -120,7 +120,7 @@ export function BusinessProfileForm({
   }
 
   // A newly typed, valid IČO looks itself up (never the saved one: it would overwrite manual edits).
-  const lastAuto = useRef(profile.ico ?? '')
+  const lastAuto = useRef((profile.ico ?? '').replace(/\s/g, ''))
   useEffect(() => {
     const ico = values.ico.replace(/\s/g, '')
     if (!isValidIco(ico) || ico.length !== 8 || ico === lastAuto.current) return

@@ -84,6 +84,11 @@ describe('against the database', () => {
     expect((await api.onboarding.status({})).next).toBe('business_profile')
 
     await api.businessProfile.update({
+      address: { street: 'Dlouhá 1', city: '', zip: '', country: 'CZ' },
+    })
+    expect((await api.onboarding.status({})).next).toBe('business_profile')
+
+    await api.businessProfile.update({
       legalName: 'Firma s.r.o.',
       address: { street: 'Dlouhá 1', city: 'Praha', zip: '11000', country: 'CZ' },
     })

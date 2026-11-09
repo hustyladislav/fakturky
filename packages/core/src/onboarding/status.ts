@@ -98,8 +98,13 @@ export function onboardingSteps(f: OnboardingFacts): Step[] {
       kind: 'ask',
       title: 'Dosavadní fakturace',
       instruction:
-        'Invoice numbers must continue without a gap. Starting fresh: nothing to do. From Fakturoid: ask for the API client id, secret and account slug the user creates in Fakturoid, call import_from_fakturoid with dryRun true, show the summary, then run it for real; numbering continues by itself. Elsewhere: ask for the last invoice number used this year, then call list_number_series and set_next_document_number.',
-      tools: ['import_from_fakturoid', 'list_number_series', 'set_next_document_number'],
+        'Invoice numbers must continue without a gap. Starting fresh: nothing to do. From Fakturoid: ask for the API client id, secret and account slug the user creates in Fakturoid, call import_from_fakturoid with dryRun true, show the summary, then run it for real; numbering continues by itself. Elsewhere: ask for the last invoice number used this year and compare it with list_number_series; if its format differs, change the series pattern with update_number_series first, then call set_next_document_number with the number after it.',
+      tools: [
+        'import_from_fakturoid',
+        'list_number_series',
+        'update_number_series',
+        'set_next_document_number',
+      ],
       ask: {
         question: 'Fakturujete už někde jinde?',
         options: [
@@ -196,7 +201,12 @@ async function loadFacts(db: Db, orgId: string): Promise<OnboardingFacts> {
   ])
   return {
     // Any profile update stamps onboardedAt, so a partial one must not count as a finished setup.
-    profileFilled: Boolean(profile?.onboardedAt && profile.address?.street),
+    profileFilled: Boolean(
+      profile?.onboardedAt &&
+        profile.address?.street &&
+        profile.address.city &&
+        profile.address.zip,
+    ),
     bankAccounts: accounts,
     fioAccountWithoutToken: fio > 0,
     documents,

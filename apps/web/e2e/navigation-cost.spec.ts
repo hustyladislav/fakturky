@@ -55,11 +55,9 @@ test('a refused API call outside the query cache still sends the next click to l
   await expect(page).toHaveURL(/\/faktury$/)
 
   await context.clearCookies()
-  const exportRefused = page.waitForResponse(
-    (r) => r.url().includes('/api/rpc/exports') && r.status() === 401,
-  )
   await page.getByRole('button', { name: 'Export do CSV' }).click()
-  await exportRefused
+  // The toast comes from the caller's catch, so the API client has already seen the refusal.
+  await expect(page.getByText('Něco se pokazilo. Zkuste to prosím znovu.')).toBeVisible()
   await link(page, '/prehled').click()
 
   await expect(page).toHaveURL(/\/prihlaseni$/)

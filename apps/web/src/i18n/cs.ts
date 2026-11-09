@@ -1930,6 +1930,7 @@ export const cs = {
       'Přehledy DPH jsou jen pro plátce DPH. Stav plátcovství nastavíte ve firemních údajích.',
   } as Record<string, string>,
   serverErrorsDynamic: {
+    strayBrace: 'Ve vzoru nesedí složené závorky. Zkontrolujte ho, například {YYYY}-{NNNN}.',
     allocations: (total: string) =>
       `Rozdělení musí použít každou sazbu DPH jednou a dát dohromady přijatou částku (${total}).`,
     creditExceeded: (limit: string) =>

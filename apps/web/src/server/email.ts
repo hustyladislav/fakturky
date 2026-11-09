@@ -1,6 +1,8 @@
 import { MailError, type SendInvoiceArgs } from '@fakturky/core/context'
-import { EmailDeliveryError, sendInvoiceEmail, sendMagicLinkEmail } from '@fakturky/email'
 import { APIError } from 'better-auth/api'
+
+/** Loaded on first send: a cold start for a plain read must not pay for the e-mail templates. */
+const loadEmail = () => import('@fakturky/email')
 
 /**
  * Magic-link delivery. Without RESEND_API_KEY: log the link outside production (local dev),
@@ -15,6 +17,7 @@ export async function deliverMagicLink({ email, url }: { email: string; url: str
     }
     throw new APIError('SERVICE_UNAVAILABLE', { message: 'EMAIL_NOT_CONFIGURED' })
   }
+  const { EmailDeliveryError, sendMagicLinkEmail } = await loadEmail()
   try {
     await sendMagicLinkEmail(
       { apiKey, from: process.env.EMAIL_FROM ?? 'Fakturky <onboarding@resend.dev>' },
@@ -56,6 +59,7 @@ export async function deliverInvoice(args: SendInvoiceArgs): Promise<void> {
     }
     throw new MailError('EMAIL_NOT_CONFIGURED')
   }
+  const { EmailDeliveryError, sendInvoiceEmail } = await loadEmail()
   try {
     await sendInvoiceEmail(
       { apiKey, from: process.env.EMAIL_FROM ?? 'Fakturky <onboarding@resend.dev>' },

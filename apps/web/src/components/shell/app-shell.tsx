@@ -28,6 +28,7 @@ import { clearAssistantStorage } from '@/components/assistant/assistant-storage'
 import { InstallHint } from '@/components/pwa/install-hint'
 import { PALETTE_POOL } from '@/components/shell/palette-search'
 import { cs } from '@/i18n/cs'
+import { recheckAppAccess } from '@/lib/app-access'
 import { orpc } from '@/lib/orpc'
 import { type NavItem, NEW_INVOICE_PATH, navItems, useInEditor, useNavItems } from './nav'
 import { useRecordRecent } from './recent-pages'
@@ -72,6 +73,11 @@ export function AppShell({
     }
     const h = setTimeout(warm, 1500)
     return () => clearTimeout(h)
+  }, [shellQueryClient])
+  useEffect(() => {
+    const recheck = () => recheckAppAccess(shellQueryClient)
+    window.addEventListener('focus', recheck)
+    return () => window.removeEventListener('focus', recheck)
   }, [shellQueryClient])
   const [helpOpen, setHelpOpen] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)

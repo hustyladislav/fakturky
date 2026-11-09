@@ -63,8 +63,10 @@ export function useDocActions() {
       onError: (e) => toast.error(apiErrorMessage(e)),
     }),
   )
-  const undoPaid = (paid: Parameters<typeof undoPaidInput>[0]) =>
-    markUnpaid.mutate(undoPaidInput(paid))
+  const undoPaid = (paid: Parameters<typeof undoPaidInput>[0]) => {
+    const input = undoPaidInput(paid)
+    if (input) markUnpaid.mutate(input)
+  }
   const markPaid = useMutation(
     orpc.documents.markPaid.mutationOptions({
       onSuccess: (d) => {

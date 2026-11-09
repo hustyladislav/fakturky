@@ -3,9 +3,10 @@ import { Button } from '@fakturky/ui/components/button'
 import { Logo } from '@fakturky/ui/components/logo'
 import { ThemeToggle } from '@fakturky/ui/components/theme'
 import { Link } from '@tanstack/react-router'
-import { ArrowRight, Coffee } from 'lucide-react'
+import { ArrowRight, Check, Coffee, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { CopyButton } from '@/components/copy-button'
+import { toast } from 'sonner'
+import { CopyButton, useCopy } from '@/components/copy-button'
 import { cs } from '@/i18n/cs'
 import { Comparison } from './comparison'
 import { HeroComposition } from './hero-composition'
@@ -34,11 +35,12 @@ export function Landing() {
       <SiteHeader />
       <main>
         <Hero />
-        <IcoDemo />
+        <How />
+        <ForAssistants />
         <Features />
         <Comparison />
         <Why />
-        <ForAssistants />
+        <IcoDemo />
         <Faq />
         <FinalCta />
       </main>
@@ -57,6 +59,12 @@ function SiteHeader() {
           <Logo name={BRAND.name} markClassName="size-7" nameClassName="max-[390px]:sr-only" />
         </Link>
         <nav className="hidden items-center gap-6 text-sm lg:flex" aria-label="Sekce">
+          <a href="#jak-to-funguje" className={link}>
+            {t.nav.how}
+          </a>
+          <a href="#ai" className={link}>
+            {t.nav.ai}
+          </a>
           <a href="#funkce" className={link}>
             {t.nav.features}
           </a>
@@ -65,9 +73,6 @@ function SiteHeader() {
           </a>
           <a href="#proc-zdarma" className={link}>
             {t.nav.why}
-          </a>
-          <a href="#ai" className={link}>
-            {t.nav.ai}
           </a>
           <a href="#faq" className={link}>
             {t.nav.faq}
@@ -95,6 +100,34 @@ function SiteHeader() {
   )
 }
 
+/** Current origin, so a pasted link or key never points at another deployment. */
+function useOrigin() {
+  const [origin, setOrigin] = useState<string>(BRAND.productionUrl)
+  useEffect(() => setOrigin(window.location.origin), [])
+  return origin
+}
+
+/** The one sentence a user gives their agent: the page's main action. */
+function AgentPrompt() {
+  const origin = useOrigin()
+  const prompt = t.agentPrompt(`${origin}/start`)
+  const { copied, copy } = useCopy(prompt, () => toast.error(t.promptCopyFailed))
+  return (
+    <figure className="mx-auto mt-8 max-w-2xl text-left">
+      <figcaption className="mb-1.5 text-[13px] text-muted-foreground">{t.promptLabel}</figcaption>
+      <div className="flex flex-col gap-2 rounded-xl border p-2 sm:flex-row sm:items-center">
+        <p className="min-w-0 flex-1 px-2 py-1 text-[15px] break-words" data-testid="agent-prompt">
+          {prompt}
+        </p>
+        <Button variant="brand" size="lg" className="h-11 shrink-0 px-5" onClick={copy}>
+          {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
+          <span aria-live="polite">{copied ? t.promptCopied : t.promptCopy}</span>
+        </Button>
+      </div>
+    </figure>
+  )
+}
+
 function Hero() {
   return (
     <section className={`${container} pt-14 pb-12 md:pt-24 md:pb-20`}>
@@ -105,20 +138,33 @@ function Hero() {
         <p className="mx-auto mt-5 max-w-xl text-lg text-pretty text-muted-foreground">
           {t.heroText}
         </p>
-        <Button
-          variant="brand"
-          size="lg"
-          className="mt-8 h-12 px-6 text-base"
-          nativeButton={false}
-          render={<Link to="/registrace" />}
-        >
-          {t.start}
-          <ArrowRight data-icon="inline-end" />
-        </Button>
-        <p className="mt-3 text-sm text-muted-foreground">{t.heroNote}</p>
+        <AgentPrompt />
+        <p className="mt-4 text-sm text-muted-foreground">
+          <Link to="/registrace" className={inlineLink}>
+            {t.withoutAgent}
+          </Link>
+        </p>
       </div>
       <div className="mt-12 md:mt-16">
         <HeroComposition />
+      </div>
+    </section>
+  )
+}
+
+function How() {
+  return (
+    <section id="jak-to-funguje" className={`bg-muted ${sectionY} ${anchor}`}>
+      <div className={container}>
+        <h2 className={`max-w-2xl ${h2}`}>{t.howTitle}</h2>
+        <ol className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+          {t.how.map(([title, text]) => (
+            <li key={title} className="border-t border-foreground/15 pt-4">
+              <h3 className="text-base font-medium">{title}</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">{text}</p>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   )
@@ -228,9 +274,7 @@ function Snippet({ title, children }: { title: string; children: string }) {
 }
 
 function ApiExample() {
-  // Derived from the current origin so the key never points at another deployment.
-  const [origin, setOrigin] = useState<string>(BRAND.productionUrl)
-  useEffect(() => setOrigin(window.location.origin), [])
+  const origin = useOrigin()
   const mcp = JSON.stringify(
     {
       mcpServers: {
@@ -290,14 +334,15 @@ function FinalCta() {
   return (
     <section className={`${container} py-16 text-center md:py-24`}>
       <h2 className={`mx-auto max-w-2xl ${h2}`}>{t.ctaTitle}</h2>
+      <AgentPrompt />
       <Button
-        variant="brand"
+        variant="outline"
         size="lg"
-        className="mt-8 h-12 px-6 text-base"
+        className="mt-4"
         nativeButton={false}
         render={<Link to="/registrace" />}
       >
-        {t.start}
+        {t.withoutAgent}
         <ArrowRight data-icon="inline-end" />
       </Button>
     </section>

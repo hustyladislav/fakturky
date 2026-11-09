@@ -62,3 +62,18 @@ test.describe('on a phone', () => {
     expect(heading.y).toBeGreaterThanOrEqual(header.y + header.height + 24)
   })
 })
+
+test('the main action is one sentence pointing an agent at the runbook', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto('/')
+  await page.waitForLoadState('networkidle')
+  const expected = `Nastav mi Fakturky podle návodu na ${baseURL}/start`
+  await expect(page.getByTestId('agent-prompt').first()).toHaveText(expected)
+  await page.getByRole('button', { name: 'Kopírovat' }).first().click()
+  await expect(page.getByRole('button', { name: 'Zkopírováno' }).first()).toBeVisible()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(expected)
+})

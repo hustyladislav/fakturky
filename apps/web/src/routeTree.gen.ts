@@ -19,6 +19,7 @@ import { Route as PrihlaseniRouteImport } from './routes/prihlaseni'
 import { Route as RegistraceRouteImport } from './routes/registrace'
 import { Route as SouhlasRouteImport } from './routes/souhlas'
 import { Route as SoukromiRouteImport } from './routes/soukromi'
+import { Route as StartRouteImport } from './routes/start'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known.$'
 import { Route as AppBankaRouteImport } from './routes/_app/banka'
 import { Route as AppDphRouteImport } from './routes/_app/dph'
@@ -101,6 +102,11 @@ const SouhlasRoute = SouhlasRouteImport.update({
 const SoukromiRoute = SoukromiRouteImport.update({
   id: '/soukromi',
   path: '/soukromi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StartRoute = StartRouteImport.update({
+  id: '/start',
+  path: '/start',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/registrace': typeof RegistraceRoute
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
+  '/start': typeof StartRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/banka': typeof AppBankaRoute
   '/dph': typeof AppDphRoute
@@ -329,6 +336,7 @@ export interface FileRoutesByTo {
   '/registrace': typeof RegistraceRoute
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
+  '/start': typeof StartRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/banka': typeof AppBankaRoute
   '/dph': typeof AppDphRoute
@@ -374,6 +382,7 @@ export interface FileRoutesById {
   '/registrace': typeof RegistraceRoute
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
+  '/start': typeof StartRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/_app/banka': typeof AppBankaRoute
   '/_app/dph': typeof AppDphRoute
@@ -421,6 +430,7 @@ export interface FileRouteTypes {
     | '/registrace'
     | '/souhlas'
     | '/soukromi'
+    | '/start'
     | '/.well-known/$'
     | '/banka'
     | '/dph'
@@ -466,6 +476,7 @@ export interface FileRouteTypes {
     | '/registrace'
     | '/souhlas'
     | '/soukromi'
+    | '/start'
     | '/.well-known/$'
     | '/banka'
     | '/dph'
@@ -510,6 +521,7 @@ export interface FileRouteTypes {
     | '/registrace'
     | '/souhlas'
     | '/soukromi'
+    | '/start'
     | '/.well-known/$'
     | '/_app/banka'
     | '/_app/dph'
@@ -557,6 +569,7 @@ export interface RootRouteChildren {
   RegistraceRoute: typeof RegistraceRoute
   SouhlasRoute: typeof SouhlasRoute
   SoukromiRoute: typeof SoukromiRoute
+  StartRoute: typeof StartRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
   DevSheetRoute: typeof DevSheetRoute
   DevUiRoute: typeof DevUiRoute
@@ -646,6 +659,13 @@ declare module '@tanstack/react-router' {
       path: '/soukromi'
       fullPath: '/soukromi'
       preLoaderRoute: typeof SoukromiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/start': {
+      id: '/start'
+      path: '/start'
+      fullPath: '/start'
+      preLoaderRoute: typeof StartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/$': {
@@ -971,6 +991,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegistraceRoute: RegistraceRoute,
   SouhlasRoute: SouhlasRoute,
   SoukromiRoute: SoukromiRoute,
+  StartRoute: StartRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
   DevSheetRoute: DevSheetRoute,
   DevUiRoute: DevUiRoute,

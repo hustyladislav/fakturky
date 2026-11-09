@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { buildAgentTools } from '../agent-tools'
 import { BRAND } from '../brand'
 import type { BaseContext } from '../context'
+import { MCP_INSTRUCTIONS } from '../onboarding/runbook'
 
 const GUIDE = `# ${BRAND.name} – příručka pro AI agenty
 
@@ -22,7 +23,10 @@ Vystavené doklady jsou neměnné; opravy se dělají storno dokladem nebo dupli
 /** Per-request MCP server exposing every `meta.mcp` procedure for the given caller context. */
 export function createMcpFetchHandler(context: BaseContext) {
   return createMcpHandler(() => {
-    const server = new McpServer({ name: BRAND.slug, version: '1.0.0' })
+    const server = new McpServer(
+      { name: BRAND.slug, version: '1.0.0' },
+      { instructions: MCP_INSTRUCTIONS },
+    )
 
     for (const tool of buildAgentTools()) {
       server.registerTool(
@@ -44,6 +48,25 @@ export function createMcpFetchHandler(context: BaseContext) {
         },
       )
     }
+
+    server.registerPrompt(
+      'nastav_fakturky',
+      {
+        title: `Nastav ${BRAND.name}`,
+        description: 'Projde nastavení účtu a vše, co jde, udělá za vás.',
+      },
+      () => ({
+        messages: [
+          {
+            role: 'user' as const,
+            content: {
+              type: 'text' as const,
+              text: `Nastav mi ${BRAND.name}. Řiď se nástrojem get_onboarding_status, udělej všechno, co jde, a ptej se jen na to, co musím rozhodnout já.`,
+            },
+          },
+        ],
+      }),
+    )
 
     server.registerPrompt(
       'vystav_fakturu',

@@ -26,14 +26,18 @@ function GoogleMark() {
   )
 }
 
-export function GoogleButton() {
+export function GoogleButton({ callbackURL }: { callbackURL: string }) {
   return (
     <Button
       type="button"
       variant="outline"
       className="h-11 w-full"
       onClick={() =>
-        authClient.signIn.social({ provider: 'google', callbackURL: '/', newUserCallbackURL: '/' })
+        authClient.signIn.social({
+          provider: 'google',
+          callbackURL,
+          newUserCallbackURL: callbackURL,
+        })
       }
     >
       <GoogleMark />
@@ -53,7 +57,13 @@ export function Divider() {
 }
 
 /** Sends a magic link to the e-mail currently typed in the form (read from the DOM input). */
-export function MagicLinkButton({ getEmail }: { getEmail: () => string }) {
+export function MagicLinkButton({
+  getEmail,
+  callbackURL,
+}: {
+  getEmail: () => string
+  callbackURL: string
+}) {
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
   const [pending, setPending] = useState(false)
 
@@ -68,7 +78,7 @@ export function MagicLinkButton({ getEmail }: { getEmail: () => string }) {
           const email = getEmail().trim()
           if (!email) return setMessage({ text: cs.auth.magicLinkNeedsEmail, error: true })
           setPending(true)
-          const result = await authClient.signIn.magicLink({ email, callbackURL: '/' })
+          const result = await authClient.signIn.magicLink({ email, callbackURL })
           setPending(false)
           if (!result.error) return setMessage({ text: cs.auth.magicLinkSent, error: false })
           const code = result.error.message ?? ''

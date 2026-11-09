@@ -3,6 +3,8 @@
 Command-line client for [Fakturky](https://fakturky.vercel.app), the free Czech invoicing app.
 Commands are generated from the server's OpenAPI spec, so every API capability is available.
 
+> Not published to npm yet; the commands below work once it is.
+
 ```bash
 npx fakturky login              # paste an API key (Nastavení → API klíče); stored with mode 0600
 npx fakturky whoami

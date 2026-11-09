@@ -1,6 +1,8 @@
 # Product scope
 
 Free forever, no limits on invoices, contacts, bank accounts, currencies, recurring invoices or API calls.
+The main selling point is first-class developer and AI support: a user points their own agent at `/start` and the agent
+sets up everything it can, asking only what the user must decide.
 Funded by donations (Buy Me a Coffee). Czech UI. Target: OSVČ and small s.r.o., later Slovakia.
 
 ## MVP (ship first, then iterate)

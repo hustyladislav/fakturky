@@ -1,5 +1,9 @@
 import { isValidIsoDate } from '@fakturky/domain/dates'
-import { navigateTool, openDocumentTool, prefillInvoiceFormTool } from '@/lib/agent-client-tools'
+import {
+  navigateTool,
+  openDocumentTool,
+  prefillInvoiceFormTool,
+} from '@/components/assistant/agent-client-tools'
 import { setInvoicePrefill } from '@/lib/invoice-prefill'
 
 type Navigate = (options: {
@@ -8,7 +12,7 @@ type Navigate = (options: {
   search?: unknown
 }) => unknown
 
-/** Browser-side implementations of the tools declared in `lib/agent-client-tools`. */
+/** Browser-side implementations of the tools declared in `./agent-client-tools`. */
 export function createClientTools(navigate: Navigate) {
   return [
     navigateTool.client(async ({ to, filter, q }) => {

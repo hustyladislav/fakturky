@@ -5,10 +5,12 @@ import { ThemeToggle } from '@fakturky/ui/components/theme'
 import { Link } from '@tanstack/react-router'
 import { ArrowRight, Coffee } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { CopyButton } from '@/components/copy-button'
 import { cs } from '@/i18n/cs'
 import { Comparison } from './comparison'
 import { HeroComposition } from './hero-composition'
 import { IcoDemo } from './ico-demo'
+import { anchor, container, focusRing, h2, inlineLink, lead, sectionY } from './styles'
 
 function Github({ className, ...props }: React.ComponentProps<'svg'> & { 'data-icon'?: string }) {
   return (
@@ -25,10 +27,6 @@ function Github({ className, ...props }: React.ComponentProps<'svg'> & { 'data-i
 }
 
 const t = cs.landing
-
-const container = 'mx-auto max-w-[1200px] px-5 md:px-8'
-const h2 =
-  'text-[32px] leading-[38px] tracking-[-0.02em] text-balance md:text-5xl md:leading-[50px]'
 
 export function Landing() {
   return (
@@ -50,12 +48,13 @@ export function Landing() {
 }
 
 function SiteHeader() {
-  const link = 'text-muted-foreground transition-colors hover:text-foreground'
+  const link = `text-muted-foreground transition-colors hover:text-foreground ${focusRing}`
   return (
     <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
-      <div className={`${container} flex h-14 items-center gap-6`}>
-        <Link to="/">
-          <Logo name={BRAND.name} markClassName="size-7" />
+      <div className={`${container} flex h-14 items-center gap-3 sm:gap-6`}>
+        <Link to="/" className={focusRing}>
+          {/* Below 390 px the wordmark yields so sign-in and sign-up both fit; it stays the link's name. */}
+          <Logo name={BRAND.name} markClassName="size-7" nameClassName="max-[390px]:sr-only" />
         </Link>
         <nav className="hidden items-center gap-6 text-sm lg:flex" aria-label="Sekce">
           <a href="#funkce" className={link}>
@@ -75,13 +74,13 @@ function SiteHeader() {
           </a>
         </nav>
         <div className="ml-auto flex items-center gap-1">
-          <div className="max-[359px]:hidden">
+          <div className="max-sm:hidden">
             <ThemeToggle labels={cs.theme} />
           </div>
           <Button
             variant="ghost"
             size="lg"
-            className="hidden sm:inline-flex"
+            className="max-sm:px-2.5"
             nativeButton={false}
             render={<Link to="/prihlaseni" />}
           >
@@ -127,7 +126,7 @@ function Hero() {
 
 function Features() {
   return (
-    <section id="funkce" className="bg-muted py-14 md:py-20">
+    <section id="funkce" className={`bg-muted ${sectionY} ${anchor}`}>
       <div className={container}>
         <h2 className={`max-w-2xl ${h2}`}>{t.featuresTitle}</h2>
         <ul className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -145,7 +144,7 @@ function Features() {
 
 function Why() {
   return (
-    <section id="proc-zdarma" className="bg-muted py-14 md:py-20">
+    <section id="proc-zdarma" className={`bg-muted ${sectionY} ${anchor}`}>
       <div className={`${container} grid gap-8 md:grid-cols-[1fr_1.4fr] md:gap-14`}>
         <h2 className={h2}>{t.whyTitle}</h2>
         <div className="space-y-4 text-[17px] leading-relaxed text-pretty">
@@ -180,13 +179,11 @@ function Why() {
 
 function ForAssistants() {
   return (
-    <section id="ai" className="py-14 md:py-20">
+    <section id="ai" className={`${sectionY} ${anchor}`}>
       <div className={`${container} grid gap-10 lg:grid-cols-2 lg:gap-14`}>
         <div>
           <h2 className={h2}>{t.aiTitle}</h2>
-          <p className="mt-4 max-w-lg text-[17px] leading-relaxed text-pretty text-muted-foreground">
-            {t.aiText}
-          </p>
+          <p className={`mt-4 max-w-lg ${lead}`}>{t.aiText}</p>
           <ul className="mt-8 divide-y border-y">
             {t.aiCards.map(([title, text]) => (
               <li key={title} className="py-3.5">
@@ -216,9 +213,16 @@ function Snippet({ title, children }: { title: string; children: string }) {
   return (
     <figure className="min-w-0">
       <figcaption className="mb-1.5 text-xs font-medium text-muted-foreground">{title}</figcaption>
-      <pre className="overflow-x-auto rounded-lg bg-muted p-4 font-mono text-[13px] leading-relaxed">
-        <code>{children}</code>
-      </pre>
+      <div className="relative">
+        <pre className="overflow-x-auto rounded-lg bg-muted p-4 pr-14 font-mono text-[13px] leading-relaxed">
+          <code>{children}</code>
+        </pre>
+        <CopyButton
+          text={children}
+          labels={t}
+          className="absolute top-2 right-2 text-muted-foreground hover:bg-background hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 data-copied:text-success"
+        />
+      </div>
     </figure>
   )
 }
@@ -244,7 +248,7 @@ function ApiExample() {
       <Snippet title={t.aiConfigTitle}>{mcp}</Snippet>
       <p className="-mt-2 text-xs text-muted-foreground">
         {t.aiConfigHint}{' '}
-        <a href="/docs/mcp" className="text-foreground underline underline-offset-4">
+        <a href="/docs/mcp" className={inlineLink}>
           {t.aiMcpDocs}
         </a>
       </p>
@@ -256,13 +260,15 @@ function ApiExample() {
 
 function Faq() {
   return (
-    <section id="faq" className="bg-muted py-14 md:py-20">
+    <section id="faq" className={`bg-muted ${sectionY} ${anchor}`}>
       <div className="mx-auto max-w-3xl px-5 md:px-8">
         <h2 className={h2}>{t.faqTitle}</h2>
         <div className="mt-8 divide-y divide-foreground/15 border-y border-foreground/15">
           {t.faq.map(([q, a]) => (
             <details key={q} className="group">
-              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-3 font-medium [&::-webkit-details-marker]:hidden">
+              <summary
+                className={`flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-3 font-medium [&::-webkit-details-marker]:hidden ${focusRing}`}
+              >
                 {q}
                 <span
                   className="text-xl text-muted-foreground transition-transform duration-150 ease-out group-open:rotate-45"
@@ -299,13 +305,18 @@ function FinalCta() {
 }
 
 function SiteFooter() {
-  const link = 'text-muted-foreground hover:text-foreground'
+  // Touch gets 44 px rows; a fine pointer keeps the compact desktop column.
+  const link = `inline-flex items-center self-start text-muted-foreground transition-colors hover:text-foreground pointer-coarse:min-h-11 ${focusRing}`
   return (
     <footer className="border-t">
-      <div className="mx-auto grid max-w-[1200px] gap-8 px-5 py-12 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:px-8">
+      <div className={`${container} grid gap-8 py-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]`}>
         <div>
           <Logo name={BRAND.name} markClassName="size-8" />
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">{t.footer.made}</p>
+          {/* The header drops the theme switch on phones; it lives here instead. */}
+          <div className="mt-4 -ml-2.5 sm:hidden">
+            <ThemeToggle labels={cs.theme} />
+          </div>
         </div>
         <FooterCol title={t.footer.product}>
           <a href="#funkce" className={link}>
@@ -344,7 +355,7 @@ function SiteFooter() {
 
 function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-2 text-sm">
+    <div className="flex flex-col gap-2 text-sm pointer-coarse:gap-0">
       <div className="mb-1 font-medium">{title}</div>
       {children}
     </div>

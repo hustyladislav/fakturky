@@ -1,7 +1,7 @@
 import { Decimal } from '@fakturky/domain/money'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { czkTotal } from '@/lib/invoice-groups'
+import { czkTotal } from '@/components/invoices/invoice-groups'
 import { type Doc, docPath } from './invoice-rows'
 
 function isTyping(target: EventTarget | null) {

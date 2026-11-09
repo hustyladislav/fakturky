@@ -1,8 +1,8 @@
 import { buildAgentTools } from '@fakturky/core/agent-tools'
 import { expect, test } from 'vitest'
 import { cs } from '../../i18n/cs'
-import { clientToolDefinitions } from '../../lib/agent-client-tools'
 import { buildServerTools } from '../../server/agent/tools'
+import { clientToolDefinitions } from './agent-client-tools'
 
 // Every tool the model can call shows a Czech label in the panel — never a raw identifier.
 test('all server and client tools have a Czech label', () => {

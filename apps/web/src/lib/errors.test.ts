@@ -4,19 +4,25 @@ import { describe, expect, test } from 'vitest'
 import { cs } from '@/i18n/cs'
 import { apiErrorMessage, serverErrorMessage } from '@/lib/errors'
 
-const CORE = join(__dirname, '../../../../packages/core/src')
-// Developer-facing: never produced by a request a person makes in the app.
-const INTERNAL = /^(Duplicate tool name|Tool \$\{)/
+const PACKAGES = join(__dirname, '../../../../packages')
+// Upstream failures and developer-facing checks: the generic Czech message is the right one.
+const INTERNAL =
+  /^(DocumentForExport|No ČNB|Duplicate tool name|Tool \$\{|Request failed|Invalid XML|Invalid ISO|Invalid decimal|Invalid IČO|Invalid VAT|Invalid Czech bank account$|Invalid pattern|Invalid workplace|Unsupported VAT ID|Unrecognized|Malformed|Unexpected (QR|VIES)|EPC amount|Use either|XML too large|No XML|ARES responded|VIES responded|ČNB|Fio responded)/
 const THROWN =
   /new (?:DocumentError|ORPCError|[A-Za-z]*Error)\(\s*(?:'[A-Z_]+'\s*,\s*)?(?:\{\s*message:\s*)?(['`])((?:[^'`\\]|\\.)*?)\1/g
 
-function serverMessages(): string[] {
-  const files = readdirSync(CORE, { recursive: true, encoding: 'utf8' }).filter(
-    (f) => f.endsWith('.ts') && !f.includes('.test.') && !f.includes('testing'),
+function sources(): string[] {
+  return ['core/src', 'domain/src'].flatMap((root) =>
+    readdirSync(join(PACKAGES, root), { recursive: true, encoding: 'utf8' })
+      .filter((f) => f.endsWith('.ts') && !f.includes('.test.') && !f.includes('testing'))
+      .map((f) => join(PACKAGES, root, f)),
   )
+}
+
+function serverMessages(): string[] {
   const found = new Set<string>()
-  for (const file of files) {
-    for (const [, , text] of readFileSync(join(CORE, file), 'utf8').matchAll(THROWN)) {
+  for (const file of sources()) {
+    for (const [, , text] of readFileSync(file, 'utf8').matchAll(THROWN)) {
       // Lower-case or constant-like strings are invariants ("insert returned no row"), not messages.
       if (text && /^[A-ZČ]/.test(text) && text !== text.toUpperCase() && !INTERNAL.test(text)) {
         found.add(text)

@@ -1784,6 +1784,26 @@ export const cs = {
   },
   /** Czech for each English API error; `errors.test.ts` fails if the server gains one without an entry. */
   serverErrors: {
+    'Could not find a header row with a date and an amount column. Map the columns manually.':
+      'V souboru se nepodařilo najít řádek se sloupci datum a částka. Přiřaďte sloupce ručně.',
+    'Fio refused the period (older than 90 days needs authorization in Fio internet banking)':
+      'Fio období odmítlo. Starší než 90 dní je potřeba povolit ve Fio internetovém bankovnictví.',
+    'Invalid tax office code (c_ufo)': 'Kód finančního úřadu není platný.',
+    'Invalid taxpayer DIČ': 'DIČ daňového subjektu není platné.',
+    'Could not reach Fio': 'Nepodařilo se spojit s Fio. Zkuste to za chvíli.',
+    'Fio allows one request per 30 seconds':
+      'Fio povoluje jeden dotaz za 30 sekund. Zkuste to za chvíli.',
+    'Fio rejected the token (invalid or expired)':
+      'Fio token odmítlo. Je neplatný nebo mu vypršela platnost.',
+    'Fio returned an unreadable response':
+      'Fio vrátilo odpověď, které nerozumíme. Zkuste to za chvíli.',
+    'Not a CAMT document (missing <Document> root)': 'Soubor není výpis ve formátu CAMT.',
+    'Not a CAMT.053 statement (no <Stmt> found)': 'Soubor není výpis ve formátu CAMT.053.',
+    'Not an ABO/GPC statement (no 074/075 records found)': 'Soubor není výpis ve formátu ABO/GPC.',
+    'Pattern must contain exactly one counter token like {NNNN}':
+      'Vzor musí obsahovat právě jeden čítač, například {NNNN}.',
+    'The file is empty': 'Soubor je prázdný.',
+    'Unexpected response from Fio': 'Fio vrátilo odpověď, které nerozumíme. Zkuste to za chvíli.',
     'A credit note can only correct an issued invoice':
       'Opravný doklad lze vystavit jen k vystavené faktuře.',
     'A credit note needs the corrected invoice and a reason':

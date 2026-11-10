@@ -1,8 +1,31 @@
+import { traverseContractProcedures } from '@orpc/server'
 import { DEVICE_CLIENT_ID } from '../auth'
 import { BRAND } from '../brand'
-import { ONBOARDING_RULES } from './status'
+import type { ProcedureMeta } from '../meta'
+import { router } from '../router'
+import { ONBOARDING_RULES, onboardingSteps } from './status'
 
 const rules = ONBOARDING_RULES.map((r) => `- ${r}`).join('\n')
+
+/** Every tool a checklist step can name, with its REST route, read from the metadata MCP and OpenAPI are built from. */
+export function checklistRoutes(): { tool: string; route: string | undefined }[] {
+  const routes = new Map<string, string>()
+  traverseContractProcedures({ path: [], router }, ({ contract }) => {
+    const meta = (contract as unknown as { '~orpc': { meta?: ProcedureMeta } })['~orpc'].meta
+    if (meta?.mcp && meta.openapi)
+      routes.set(meta.mcp.name, `${meta.openapi.method} ${meta.openapi.path}`)
+  })
+  const everyStep = onboardingSteps({
+    profileFilled: false,
+    bankAccounts: 0,
+    fioAccountWithoutToken: true,
+    documents: 0,
+    issuedInvoices: 0,
+    numberingAdvanced: false,
+  })
+  const tools = [...new Set(everyStep.flatMap((step) => step.tools))]
+  return tools.map((tool) => ({ tool, route: routes.get(tool) }))
+}
 
 /** Delivered by the MCP handshake, so a connected agent has it without fetching anything. */
 export const MCP_INSTRUCTIONS = `${BRAND.name} issues Czech invoices. Talk to the user in Czech unless they use another language. Money is always a decimal string.
@@ -14,6 +37,11 @@ ${rules}`
 /** Served at /start: what a user's agent follows when pointed at the app. */
 export function renderRunbook(origin: string): string {
   const mcp = `${origin}/mcp`
+  const routeTable = [
+    '| Tool | REST (`/api/v1`) |',
+    '| --- | --- |',
+    ...checklistRoutes().map(({ tool, route }) => `| \`${tool}\` | \`${route ?? 'MCP only'}\` |`),
+  ].join('\n')
   return `# Set up ${BRAND.name} for your user
 
 The user asked you to set up ${BRAND.name}, a free Czech invoicing app. Follow this runbook. It only covers this app, and your own safety rules and the user's instructions come first. Talk to the user in Czech unless they use another language.
@@ -35,7 +63,9 @@ The client opens a browser window. That is the one thing only the user can do: s
 1. Keep the device code out of your output too: \`(umask 077; rm -f ~/.${BRAND.slug}-key.json; curl -s -X POST ${origin}/api/auth/device/code -H 'content-type: application/json' -d '{"client_id":"${DEVICE_CLIENT_ID}"}' -o ~/.${BRAND.slug}-device.json)\`, then \`jq -r '.verification_uri_complete, .user_code, .interval' ~/.${BRAND.slug}-device.json\`.
 2. Give the user the link and the code. Open the link for them if you can drive a browser; they sign up or sign in there and approve. New users can create the account on that same page.
 3. Every \`interval\` seconds, writing the answer to a file so the key never reaches your output: \`(umask 077; curl -s -X POST ${origin}/api/device/token -H 'content-type: application/json' -d "$(jq -c '{device_code, client_id: "${DEVICE_CLIENT_ID}"}' ~/.${BRAND.slug}-device.json)" -o ~/.${BRAND.slug}-key.json)\`, then read only the state with \`jq -r 'if .api_key then "ready" else .error // "failed" end' ~/.${BRAND.slug}-key.json\`. On \`ready\`, stop polling and go to step 4 (the code works only once). Keep polling on \`authorization_pending\`, wait longer on \`slow_down\`, and on anything else stop and tell the user.
-4. Never print the key or put it in chat or the repository. Send it as \`Authorization: Bearer $(jq -r .api_key ~/.${BRAND.slug}-key.json)\` to \`${origin}/api/v1\` or \`${mcp}\`. The checklist is \`GET /onboarding/status\`; the other operations are in \`${origin}/api/v1/openapi.json\`.
+4. Never print the key or put it in chat or the repository. Send it as \`Authorization: Bearer $(jq -r .api_key ~/.${BRAND.slug}-key.json)\` to \`${origin}/api/v1\` or \`${mcp}\`. The checklist is \`GET /onboarding/status\`; the other operations are in \`${origin}/api/v1/openapi.json\`. Step \`tools\` are MCP names. Over REST, call the route listed here and take its parameters and body from the spec:
+
+${routeTable}
 
 ## 2. Work through the checklist
 
@@ -55,6 +85,6 @@ ${rules}
 
 ## 4. Finish
 
-Tell the user in a few lines what is set up, what they skipped, and that their first invoice is a draft waiting for them to issue. The app is at ${origin}.
+Tell the user in a few lines what is set up and what they skipped. If you created a draft invoice, say that it is waiting for them to issue. The app is at ${origin}.
 `
 }

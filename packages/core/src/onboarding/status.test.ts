@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from 'vitest'
 import { listToolDescriptors } from '../agent-tools'
 import { clientFor, createTestDb, seedOrg } from '../testing'
-import { renderRunbook } from './runbook'
+import { checklistRoutes, renderRunbook } from './runbook'
 import { type OnboardingFacts, onboardingSteps, summarize } from './status'
 
 const blank: OnboardingFacts = {
@@ -79,6 +79,14 @@ describe('checklist', () => {
     for (const step of onboardingSteps({ ...blank, fioAccountWithoutToken: true })) {
       for (const tool of step.tools) expect(tools, `${step.id}: ${tool}`).toContain(tool)
     }
+  })
+
+  test('the runbook gives each checklist tool its own REST route', () => {
+    // Two ARES lookups exist; the profile step needs the one that returns the registry note.
+    expect(renderRunbook('https://x.test')).toContain(
+      '| `lookup_company_by_ico` | `GET /ares/{ico}` |',
+    )
+    expect(checklistRoutes().filter((r) => !r.route)).toEqual([])
   })
 
   test('every tool the runbook names exists', () => {

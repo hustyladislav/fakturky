@@ -148,15 +148,23 @@ test('an agent with no MCP gets a key after a new user approves in the browser',
   await page.getByRole('button', { name: 'Povolit' }).click()
   await expect(page.getByText('Asistent je připojený')).toBeVisible()
 
+  let key = ''
   await expect
     .poll(
       async () => {
         const body = await (await poll()).json()
+        key = body.api_key ?? ''
         return body.api_key ?? body.error
       },
       { timeout: 20_000, intervals: [5_500] },
     )
     .toMatch(/^fk_/)
+
+  // The runbook's REST path: a single `settled` value arrives as a plain string.
+  const status = await request.get('/api/v1/onboarding/status?settled=history', {
+    headers: { authorization: `Bearer ${key}` },
+  })
+  expect(status.ok(), await status.text()).toBe(true)
 })
 
 test('the approval page rejects a made-up code', async ({ page, request, baseURL }) => {

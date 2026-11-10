@@ -21,10 +21,10 @@ export const onboardingRouter = {
   })
     .input(
       z.object({
-        // Optional so the first call needs no arguments.
+        // Optional so the first call needs no arguments; a REST query with one value arrives as a string.
         settled: z
-          .array(z.string())
-          .max(20)
+          .union([z.string(), z.array(z.string()).max(20)])
+          .transform((ids) => (typeof ids === 'string' ? [ids] : ids))
           .optional()
           .describe('Ids of steps the user answered with nothing to save, or declined'),
       }),

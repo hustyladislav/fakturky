@@ -16,6 +16,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PodminkyRouteImport } from './routes/podminky'
 import { Route as PrihlaseniRouteImport } from './routes/prihlaseni'
+import { Route as PripojitRouteImport } from './routes/pripojit'
 import { Route as RegistraceRouteImport } from './routes/registrace'
 import { Route as SouhlasRouteImport } from './routes/souhlas'
 import { Route as SoukromiRouteImport } from './routes/soukromi'
@@ -44,6 +45,7 @@ import { Route as ApiCronBankSyncRouteImport } from './routes/api/cron.bank-sync
 import { Route as ApiCronRecurringRouteImport } from './routes/api/cron.recurring'
 import { Route as ApiCronRemindersRouteImport } from './routes/api/cron.reminders'
 import { Route as ApiDevDbKindRouteImport } from './routes/api/dev.db-kind'
+import { Route as ApiDeviceTokenRouteImport } from './routes/api/device.token'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1.$'
 import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1.openapi[.]json'
@@ -87,6 +89,11 @@ const PodminkyRoute = PodminkyRouteImport.update({
 const PrihlaseniRoute = PrihlaseniRouteImport.update({
   id: '/prihlaseni',
   path: '/prihlaseni',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PripojitRoute = PripojitRouteImport.update({
+  id: '/pripojit',
+  path: '/pripojit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegistraceRoute = RegistraceRouteImport.update({
@@ -229,6 +236,11 @@ const ApiDevDbKindRoute = ApiDevDbKindRouteImport.update({
   path: '/api/dev/db-kind',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDeviceTokenRoute = ApiDeviceTokenRouteImport.update({
+  id: '/api/device/token',
+  path: '/api/device/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   id: '/api/rpc/$',
   path: '/api/rpc/$',
@@ -287,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/podminky': typeof PodminkyRoute
   '/prihlaseni': typeof PrihlaseniRoute
+  '/pripojit': typeof PripojitRoute
   '/registrace': typeof RegistraceRoute
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
@@ -313,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/dev/db-kind': typeof ApiDevDbKindRoute
+  '/api/device/token': typeof ApiDeviceTokenRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -333,6 +347,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/podminky': typeof PodminkyRoute
   '/prihlaseni': typeof PrihlaseniRoute
+  '/pripojit': typeof PripojitRoute
   '/registrace': typeof RegistraceRoute
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
@@ -357,6 +372,7 @@ export interface FileRoutesByTo {
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/dev/db-kind': typeof ApiDevDbKindRoute
+  '/api/device/token': typeof ApiDeviceTokenRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -379,6 +395,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/podminky': typeof PodminkyRoute
   '/prihlaseni': typeof PrihlaseniRoute
+  '/pripojit': typeof PripojitRoute
   '/registrace': typeof RegistraceRoute
   '/souhlas': typeof SouhlasRoute
   '/soukromi': typeof SoukromiRoute
@@ -405,6 +422,7 @@ export interface FileRoutesById {
   '/api/cron/recurring': typeof ApiCronRecurringRoute
   '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/dev/db-kind': typeof ApiDevDbKindRoute
+  '/api/device/token': typeof ApiDeviceTokenRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/v1/$': typeof ApiV1SplatRoute
   '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
@@ -427,6 +445,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/podminky'
     | '/prihlaseni'
+    | '/pripojit'
     | '/registrace'
     | '/souhlas'
     | '/soukromi'
@@ -453,6 +472,7 @@ export interface FileRouteTypes {
     | '/api/cron/recurring'
     | '/api/cron/reminders'
     | '/api/dev/db-kind'
+    | '/api/device/token'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -473,6 +493,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/podminky'
     | '/prihlaseni'
+    | '/pripojit'
     | '/registrace'
     | '/souhlas'
     | '/soukromi'
@@ -497,6 +518,7 @@ export interface FileRouteTypes {
     | '/api/cron/recurring'
     | '/api/cron/reminders'
     | '/api/dev/db-kind'
+    | '/api/device/token'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -518,6 +540,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/podminky'
     | '/prihlaseni'
+    | '/pripojit'
     | '/registrace'
     | '/souhlas'
     | '/soukromi'
@@ -544,6 +567,7 @@ export interface FileRouteTypes {
     | '/api/cron/recurring'
     | '/api/cron/reminders'
     | '/api/dev/db-kind'
+    | '/api/device/token'
     | '/api/rpc/$'
     | '/api/v1/$'
     | '/api/v1/openapi.json'
@@ -566,6 +590,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   PodminkyRoute: typeof PodminkyRoute
   PrihlaseniRoute: typeof PrihlaseniRoute
+  PripojitRoute: typeof PripojitRoute
   RegistraceRoute: typeof RegistraceRoute
   SouhlasRoute: typeof SouhlasRoute
   SoukromiRoute: typeof SoukromiRoute
@@ -582,6 +607,7 @@ export interface RootRouteChildren {
   ApiCronRecurringRoute: typeof ApiCronRecurringRoute
   ApiCronRemindersRoute: typeof ApiCronRemindersRoute
   ApiDevDbKindRoute: typeof ApiDevDbKindRoute
+  ApiDeviceTokenRoute: typeof ApiDeviceTokenRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiV1SplatRoute: typeof ApiV1SplatRoute
   ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
@@ -638,6 +664,13 @@ declare module '@tanstack/react-router' {
       path: '/prihlaseni'
       fullPath: '/prihlaseni'
       preLoaderRoute: typeof PrihlaseniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pripojit': {
+      id: '/pripojit'
+      path: '/pripojit'
+      fullPath: '/pripojit'
+      preLoaderRoute: typeof PripojitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/registrace': {
@@ -836,6 +869,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDevDbKindRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/device/token': {
+      id: '/api/device/token'
+      path: '/api/device/token'
+      fullPath: '/api/device/token'
+      preLoaderRoute: typeof ApiDeviceTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rpc/$': {
       id: '/api/rpc/$'
       path: '/api/rpc/$'
@@ -988,6 +1028,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   PodminkyRoute: PodminkyRoute,
   PrihlaseniRoute: PrihlaseniRoute,
+  PripojitRoute: PripojitRoute,
   RegistraceRoute: RegistraceRoute,
   SouhlasRoute: SouhlasRoute,
   SoukromiRoute: SoukromiRoute,
@@ -1004,6 +1045,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronRecurringRoute: ApiCronRecurringRoute,
   ApiCronRemindersRoute: ApiCronRemindersRoute,
   ApiDevDbKindRoute: ApiDevDbKindRoute,
+  ApiDeviceTokenRoute: ApiDeviceTokenRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiV1SplatRoute: ApiV1SplatRoute,
   ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,

@@ -101,6 +101,7 @@ test('a11y: signed-in pages, dialogs and the public invoice', async ({ page }) =
     '/kontakty',
     '/nastaveni',
     '/sablony',
+    '/pripojit',
   ]
   for (const theme of ['light', 'dark'] as const) {
     for (const path of pages) {

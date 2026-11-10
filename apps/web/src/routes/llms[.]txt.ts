@@ -27,7 +27,7 @@ Follow [the setup runbook](${origin}/start). It connects you, then walks the \`g
 - [MCP setup guide](${origin}/docs/mcp): Claude, Claude Code, ChatGPT, Cursor.
 - [REST API reference](${origin}/docs/api) and [OpenAPI spec](${origin}/api/v1/openapi.json): base URL \`${origin}/api/v1\`, bearer API key.
 - [CLI](${BRAND.repoUrl}/tree/main/packages/cli): source only for now, not published to npm yet. Use MCP or REST.
-- API keys are created by the user in the app: Nastavení → API klíče. A key acts on exactly one organization.
+- API keys: an agent gets one through the device login in [the runbook](${origin}/start); users can also create them in Nastavení → API klíče. A key acts on exactly one organization.
 
 ## MCP tools
 

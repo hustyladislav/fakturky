@@ -1,9 +1,10 @@
 import { mkdtemp, readFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { saveFile } from './commands'
 import { configDir } from './config'
+import { deviceLogin } from './device'
 import { render } from './format'
 import { coerce, groupOperations, kindOf, parseSpec } from './spec'
 
@@ -109,4 +110,62 @@ test('file results (PDF base64, ISDOC xml) are written to --out', async () => {
   expect(await saveFile({ filename: 'a.isdoc', xml: '<Invoice/>' }, xml)).toBe(true)
   expect(await readFile(xml, 'utf8')).toBe('<Invoice/>')
   expect(await saveFile({ id: '1' }, join(dir, 'x'))).toBe(false)
+})
+
+test('device login shows the link, waits out pending and slow_down, and returns the key', async () => {
+  const replies = [
+    { device_code: 'd', user_code: 'ABCD', verification_uri_complete: 'http://x/l', interval: 5 },
+    { error: 'authorization_pending' },
+    { error: 'slow_down' },
+    { api_key: 'fk_ok' },
+  ]
+  vi.stubGlobal('fetch', async () => Response.json(replies.shift()))
+  const waits: number[] = []
+  const shown: string[] = []
+  const key = await deviceLogin(
+    'http://x',
+    (link, code) => shown.push(link, code),
+    async (ms) => void waits.push(ms),
+  )
+  vi.unstubAllGlobals()
+  expect(key).toBe('fk_ok')
+  expect(shown).toEqual(['http://x/l', 'ABCD'])
+  expect(waits).toEqual([5000, 5000, 10000])
+})
+
+test('device login stops when the user denies access', async () => {
+  const replies = [
+    { device_code: 'd', user_code: 'A', verification_uri_complete: 'u', interval: 1 },
+    { error: 'access_denied' },
+  ]
+  vi.stubGlobal('fetch', async () => Response.json(replies.shift()))
+  await expect(
+    deviceLogin(
+      'http://x',
+      () => {},
+      async () => {},
+    ),
+  ).rejects.toThrow('zamítnut')
+  vi.unstubAllGlobals()
+})
+
+test('device login ends with a clear message on a gateway error page', async () => {
+  const replies = [
+    Response.json({
+      device_code: 'd',
+      user_code: 'A',
+      verification_uri_complete: 'u',
+      interval: 1,
+    }),
+    new Response('<html>Bad gateway</html>', { status: 502 }),
+  ]
+  vi.stubGlobal('fetch', async () => replies.shift())
+  await expect(
+    deviceLogin(
+      'http://x',
+      () => {},
+      async () => {},
+    ),
+  ).rejects.toThrow('nepodařilo dokončit')
+  vi.unstubAllGlobals()
 })

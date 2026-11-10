@@ -1596,6 +1596,25 @@ export const cs = {
     invalid: 'Neplatná žádost o autorizaci. Zkuste ji spustit znovu z aplikace.',
     footer: 'Přístup můžete kdykoli odebrat zrušením propojení v nastavení.',
   },
+  device: {
+    pageTitle: 'Připojit AI asistenta',
+    title: 'Připojit AI asistenta',
+    description: 'Váš AI asistent nebo příkazová řádka žádá o přístup k tomuto účtu.',
+    codeLabel: 'Kód z asistenta',
+    codeCheck: 'Zkontrolujte, že se kód shoduje s tím, který vám ukázal asistent.',
+    continue: 'Pokračovat',
+    scopeTitle: 'Asistent bude moci:',
+    scopeTools:
+      'číst a upravovat vaše kontakty, faktury a bankovní účty (včetně vystavování faktur)',
+    warning: 'Potvrďte jen tehdy, když jste o připojení sami požádali.',
+    allow: 'Povolit',
+    deny: 'Zamítnout',
+    allowed: 'Asistent je připojený',
+    allowedText: 'Můžete se vrátit k asistentovi. Klíč zrušíte v Nastavení → API klíče.',
+    denied: 'Přístup jste zamítli',
+    deniedText: 'Asistent se k vašemu účtu nepřipojí.',
+    invalid: 'Tento kód neplatí nebo už vypršel. Požádejte asistenta o nový.',
+  },
   apiKeys: {
     title: 'API klíče',
     description:

@@ -82,8 +82,13 @@ describe('checklist', () => {
   })
 
   test('every tool the runbook names exists', () => {
-    const named = renderRunbook('https://x.test').match(/`[a-z]+(?:_[a-z]+)+`/g) ?? []
-    expect(named.length).toBeGreaterThan(0)
+    // Everything else in backticks with an underscore is a field or error of the device login.
+    const protocol =
+      /^`(verification_uri_complete|user_code|authorization_pending|slow_down|access_denied|expired_token|api_key)`$/
+    const named = (renderRunbook('https://x.test').match(/`[a-z]+(?:_[a-z]+)+`/g) ?? []).filter(
+      (name) => !protocol.test(name),
+    )
+    expect(named).toContain('`get_onboarding_status`')
     for (const name of named) expect(tools).toContain(name.slice(1, -1))
   })
 })

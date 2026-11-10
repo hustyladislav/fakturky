@@ -1,10 +1,10 @@
-import * as p from '@clack/prompts'
 import { BRAND } from '@fakturky/core/brand'
 import { defineCommand, runMain } from 'citty'
 import pkg from '../package.json' with { type: 'json' }
 import { ApiError, loadOperations, request } from './api'
 import { buildGroupCommands, guard, output } from './commands'
 import { clearConfig, DEFAULT_URL, readConfig, resolveCredentials, writeConfig } from './config'
+import { deviceLogin } from './device'
 import { render } from './format'
 
 const credentials = async () => {
@@ -16,9 +16,12 @@ const credentials = async () => {
 }
 
 const login = defineCommand({
-  meta: { name: 'login', description: 'Store an API key (create one in Nastavení → API klíče)' },
+  meta: {
+    name: 'login',
+    description: 'Sign in through the browser, or store an API key with --key',
+  },
   args: {
-    key: { type: 'string', description: 'API key (fk_…); prompted when omitted' },
+    key: { type: 'string', description: 'API key (fk_…); browser sign-in when omitted' },
     url: { type: 'string', description: `Server URL (default ${DEFAULT_URL})` },
   },
   run: ({ args }) =>
@@ -28,16 +31,11 @@ const login = defineCommand({
         /\/+$/,
         '',
       )
-      let apiKey = args.key
-      if (!apiKey) {
-        p.intro(BRAND.name)
-        const answer = await p.password({
-          message: 'Vložte API klíč (fk_…)',
-          validate: (v) => (v?.startsWith('fk_') ? undefined : 'Klíč musí začínat fk_'),
-        })
-        if (p.isCancel(answer)) return p.cancel('Přerušeno.')
-        apiKey = answer
-      }
+      const apiKey =
+        args.key ??
+        (await deviceLogin(url, (link, code) => {
+          console.log(`Otevřete ${link}\na potvrďte přístup. Kód: ${code}`)
+        }))
       const me = (await request({ apiKey, url }, 'GET', '/whoami')) as { organizationName: string }
       await writeConfig({ apiKey, url })
       console.log(`Přihlášeno k organizaci ${me.organizationName} (${url}).`)

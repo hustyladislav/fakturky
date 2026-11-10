@@ -79,7 +79,6 @@ function Consent() {
               {cs.consent.deny}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">{cs.consent.footer}</p>
         </CardContent>
       </Card>
     </main>

@@ -1629,7 +1629,6 @@ export const cs = {
     allow: 'Povolit',
     deny: 'Zamítnout',
     invalid: 'Neplatná žádost o autorizaci. Zkuste ji spustit znovu z aplikace.',
-    footer: 'Přístup ukončíte odpojením aplikace v jejím nastavení.',
   },
   device: {
     pageTitle: 'Připojit AI asistenta',

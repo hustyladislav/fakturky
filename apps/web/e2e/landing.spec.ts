@@ -42,6 +42,24 @@ test('hero figures do not overlap on a tablet', async ({ page }) => {
   expect(apart).toBe(true)
 })
 
+for (const width of [1024, 1280]) {
+  test(`section links stay on one line at ${width} px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 })
+    await page.goto('/')
+    const wrapped = await page
+      .locator('header nav a')
+      .evaluateAll((links) =>
+        links
+          .filter(
+            (a) =>
+              a.getBoundingClientRect().height > Number.parseFloat(getComputedStyle(a).lineHeight),
+          )
+          .map((a) => a.textContent),
+      )
+    expect(wrapped).toEqual([])
+  })
+}
+
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 320, height: 700 }, hasTouch: true, isMobile: true })
 

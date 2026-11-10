@@ -58,7 +58,7 @@ function SiteHeader() {
           {/* Below 390 px the wordmark yields so sign-in and sign-up both fit; it stays the link's name. */}
           <Logo name={BRAND.name} markClassName="size-7" nameClassName="max-[390px]:sr-only" />
         </Link>
-        <nav className="hidden items-center gap-6 text-sm lg:flex" aria-label="Sekce">
+        <nav className="hidden items-center gap-6 text-sm xl:flex" aria-label="Sekce">
           <a href="#jak-to-funguje" className={link}>
             {t.nav.how}
           </a>

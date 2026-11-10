@@ -114,12 +114,15 @@ export const cs = {
     noFile: 'Žádný soubor',
   },
   landing: {
-    metaTitle: `${BRAND.name} — fakturace zdarma pro živnostníky a firmy`,
+    metaTitle: `${BRAND.name} — fakturace zdarma, kterou nastaví váš AI asistent`,
     metaDescription:
-      'Svobodný fakturační program: neomezeně faktur a kontaktů, QR platba, ARES, DPH a ISDOC. Zdarma, s otevřeným kódem.',
+      'Pošlete AI asistentovi jednu větu a nastaví vám fakturaci. MCP server, REST API, QR platba, ARES, DPH a ISDOC. Zdarma, bez limitů, s otevřeným kódem.',
+    // What the user pastes: outside the typeset copy, so the clipboard holds plain spaces.
+    agentPrompt: (url: string) => `Nastav mi ${BRAND.name} podle návodu na ${url}`,
     // Meta strings are not laid out by a browser, so they skip the no-break spaces.
     ...typesetCopy({
       nav: {
+        how: 'Jak to funguje',
         features: 'Funkce',
         compare: 'Srovnání',
         why: 'Proč zdarma',
@@ -128,10 +131,33 @@ export const cs = {
       },
       signIn: 'Přihlásit se',
       start: 'Začít zdarma',
-      heroTitle: 'Faktury zdarma, bez limitů.',
+      heroTitle: 'Fakturace, kterou nastaví váš AI asistent.',
       heroText:
-        'Zadáte IČO, zbytek doplníme z ARES. DPH, QR platba i export do ISDOC jsou součástí, bez karty a bez reklam.',
-      heroNote: 'Účet si vytvoříte za minutu.',
+        'Pošlete mu jednu větu. Připojí se, doplní firmu z ARES a připraví první fakturu. Ptá se jen na to, o čem musíte rozhodnout vy. Zdarma a bez limitů.',
+      promptLabel: 'Vložte svému AI asistentovi (Claude, ChatGPT, Cursor)',
+      promptCopy: 'Kopírovat',
+      promptCopied: 'Zkopírováno',
+      promptCopyFailed: 'Nepodařilo se zkopírovat. Označte text a zkopírujte ho ručně.',
+      withoutAgent: 'Nebo začněte bez asistenta',
+      howTitle: 'Jedna věta a asistent se o to postará',
+      how: [
+        [
+          'Vy pošlete jednu větu',
+          'V prohlížeči pak povolíte přístup. Účet založíte na téže stránce.',
+        ],
+        [
+          'Asistent udělá, co jde',
+          'Doplní firmu z ARES, přidá bankovní účet, navrhne číslování a připraví první fakturu.',
+        ],
+        [
+          'Rozhodnete jen to důležité',
+          'Zeptá se na DPH, účet a na to, jestli navazujete na jiný program. Stačí vybrat.',
+        ],
+        [
+          'Vystavujete vy',
+          'Nastavení končí konceptem. Číslo faktury se přidělí až ve chvíli, kdy ji vystavíte.',
+        ],
+      ],
       docs: 'Dokumentace API',
       hero: {
         kpiMonth: 'Obrat tento měsíc',
@@ -237,18 +263,19 @@ export const cs = {
           'Doklady ve formátu, který přijme každý účetní. PDF čitelné i při černobílém tisku.',
         ],
       ],
-      aiTitle: 'Pro AI asistenty',
+      aiTitle: 'Pro vývojáře a AI asistenty',
       aiConfigTitle: 'Konfigurace MCP klienta (Cursor, Claude Desktop)',
       aiConfigHint: 'Klíč vytvoříte v Nastavení → API klíče.',
       aiMcpDocs: 'Návod pro MCP',
       aiText:
-        'Vše, co umíte v aplikaci, je dostupné i programově. Váš AI asistent nebo skript může připravit koncept faktury, dohledat kontakt nebo zjistit, co je po splatnosti. Vy ho vždy schvalujete.',
+        'Co umíte v aplikaci, to umí i asistent nebo váš skript. Všechno jde přes jedno API. Nevratné akce jsou označené, aby se vás asistent před nimi zeptal.',
       aiCards: [
         ['REST API', 'Dostupné už dnes. Klíč vytvoříte v Nastavení, popis najdete v dokumentaci.'],
         [
           'MCP server',
           'Dostupný už dnes. Napojíte Claude, Cursor nebo jiného asistenta přímo na své faktury.',
         ],
+        ['Přihlášení bez kopírování klíčů', 'Přístup potvrdíte v prohlížeči jedním kliknutím.'],
         ['Příkazová řádka', 'Připravujeme. Fakturujte z terminálu nebo skriptu.'],
       ],
       faqTitle: 'Časté dotazy',
@@ -271,11 +298,19 @@ export const cs = {
         ],
         ['Umí to fakturovat v eurech?', 'Ano, včetně kurzu a přepočtu DPH do Kč.'],
         [
+          'Co asistent udělá bez mého svolení?',
+          'Náš návod mu při nastavení zakazuje vystavovat faktury a cokoli posílat zákazníkům. Později se před nevratnými akcemi ptá, pokud to váš asistent podporuje. API klíč kdykoli zrušíte v Nastavení.',
+        ],
+        [
+          'Kam jdou moje data, když použiji asistenta?',
+          'Co si asistent přečte, zpracuje služba, kterou používáte. Fakturky mu předají jen to, o co si řekne, a jen po vašem svolení.',
+        ],
+        [
           'Jak je to s mými daty?',
           'Každý účet je izolovaný. Nic neprodáváme ani nesledujeme. Podrobnosti jsou v zásadách ochrany osobních údajů.',
         ],
       ],
-      ctaTitle: 'Vystavte první fakturu ještě dnes',
+      ctaTitle: 'Nechte si fakturaci nastavit ještě dnes',
       footer: {
         product: 'Produkt',
         project: 'Projekt',
@@ -1594,7 +1629,6 @@ export const cs = {
     allow: 'Povolit',
     deny: 'Zamítnout',
     invalid: 'Neplatná žádost o autorizaci. Zkuste ji spustit znovu z aplikace.',
-    footer: 'Přístup můžete kdykoli odebrat zrušením propojení v nastavení.',
   },
   device: {
     pageTitle: 'Připojit AI asistenta',

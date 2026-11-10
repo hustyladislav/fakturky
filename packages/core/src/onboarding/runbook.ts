@@ -35,7 +35,7 @@ The client opens a browser window. That is the one thing only the user can do: s
 1. Keep the device code out of your output too: \`(umask 077; rm -f ~/.${BRAND.slug}-key.json; curl -s -X POST ${origin}/api/auth/device/code -H 'content-type: application/json' -d '{"client_id":"${DEVICE_CLIENT_ID}"}' -o ~/.${BRAND.slug}-device.json)\`, then \`jq -r '.verification_uri_complete, .user_code, .interval' ~/.${BRAND.slug}-device.json\`.
 2. Give the user the link and the code. Open the link for them if you can drive a browser; they sign up or sign in there and approve. New users can create the account on that same page.
 3. Every \`interval\` seconds, writing the answer to a file so the key never reaches your output: \`(umask 077; curl -s -X POST ${origin}/api/device/token -H 'content-type: application/json' -d "$(jq -c '{device_code, client_id: "${DEVICE_CLIENT_ID}"}' ~/.${BRAND.slug}-device.json)" -o ~/.${BRAND.slug}-key.json)\`, then read only the state with \`jq -r 'if .api_key then "ready" else .error // "failed" end' ~/.${BRAND.slug}-key.json\`. On \`ready\`, stop polling and go to step 4 (the code works only once). Keep polling on \`authorization_pending\`, wait longer on \`slow_down\`, and on anything else stop and tell the user.
-4. Never print the key or put it in chat or the repository. Send it as \`Authorization: Bearer $(jq -r .api_key ~/.${BRAND.slug}-key.json)\` to \`${origin}/api/v1\` or \`${mcp}\`. The checklist is \`GET /onboarding/status\`; the other operations are in \`${origin}/api/v1/openapi.json\`.
+4. Never print the key or put it in chat or the repository. Send it as \`Authorization: Bearer $(jq -r .api_key ~/.${BRAND.slug}-key.json)\` to \`${origin}/api/v1\` or \`${mcp}\`. The checklist is \`GET /onboarding/status\`; the other operations are in \`${origin}/api/v1/openapi.json\`. Step \`tools\` are MCP names, and REST paths differ (\`lookup_company_by_ico\` is \`GET /lookup/ares/{ico}\`), so look each one up there instead of guessing.
 
 ## 2. Work through the checklist
 
@@ -55,6 +55,6 @@ ${rules}
 
 ## 4. Finish
 
-Tell the user in a few lines what is set up, what they skipped, and that their first invoice is a draft waiting for them to issue. The app is at ${origin}.
+Tell the user in a few lines what is set up and what they skipped. If you created a draft invoice, say that it is waiting for them to issue. The app is at ${origin}.
 `
 }

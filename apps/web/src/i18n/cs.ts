@@ -299,7 +299,7 @@ export const cs = {
         ['Umí to fakturovat v eurech?', 'Ano, včetně kurzu a přepočtu DPH do Kč.'],
         [
           'Co asistent udělá bez mého svolení?',
-          'Náš návod mu při nastavení zakazuje vystavovat faktury a cokoli posílat zákazníkům. Později se před nevratnými akcemi ptá, pokud to váš asistent podporuje. Přístup kdykoli zrušíte v Nastavení.',
+          'Náš návod mu při nastavení zakazuje vystavovat faktury a cokoli posílat zákazníkům. Později se před nevratnými akcemi ptá, pokud to váš asistent podporuje. API klíč kdykoli zrušíte v Nastavení.',
         ],
         [
           'Kam jdou moje data, když použiji asistenta?',
@@ -1629,7 +1629,7 @@ export const cs = {
     allow: 'Povolit',
     deny: 'Zamítnout',
     invalid: 'Neplatná žádost o autorizaci. Zkuste ji spustit znovu z aplikace.',
-    footer: 'Přístup můžete kdykoli odebrat zrušením propojení v nastavení.',
+    footer: 'Přístup ukončíte odpojením aplikace v jejím nastavení.',
   },
   device: {
     pageTitle: 'Připojit AI asistenta',
